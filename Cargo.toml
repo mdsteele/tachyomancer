@@ -1,0 +1,9 @@
+[package]
+name = "tachyomancer"
+version = "0.1.0"
+authors = ["Matthew D. Steele <mdsteele@alum.mit.edu>"]
+license = "GPL-3.0+"
+description = "A circuit-programming puzzle game."
+
+[dependencies]
+getopts = "0.2"

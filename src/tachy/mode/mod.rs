@@ -17,12 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod context;
-mod event;
-mod window;
+mod common;
+mod run;
 
-pub use self::context::GuiContext;
-pub use self::event::{Event, KeyEventData, Keycode};
-pub use self::window::{Window, WindowOptions};
+pub use self::common::ModeChange;
+pub use self::run::run_mode;
 
 //===========================================================================//

@@ -17,12 +17,21 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod context;
-mod event;
-mod window;
+use tachy::save::SaveDir;
 
-pub use self::context::GuiContext;
-pub use self::event::{Event, KeyEventData, Keycode};
-pub use self::window::{Window, WindowOptions};
+//===========================================================================//
+
+pub struct GameState {
+    savedir: SaveDir,
+}
+
+impl GameState {
+    pub fn new(savedir: SaveDir) -> Result<GameState, String> {
+        // TODO: Load current profile.
+        Ok(GameState { savedir })
+    }
+
+    pub fn savedir(&self) -> &SaveDir { &self.savedir }
+}
 
 //===========================================================================//

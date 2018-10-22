@@ -28,21 +28,16 @@ extern crate toml;
 
 mod tachy;
 
-use self::tachy::gui::{Event, GuiContext, Window, WindowOptions};
+use self::tachy::gui::{GuiContext, Window, WindowOptions};
+use self::tachy::mode::{self, ModeChange};
 use self::tachy::save::SaveDir;
+use self::tachy::state::GameState;
 use std::path::PathBuf;
 
 // ========================================================================= //
 
-#[derive(Debug)]
-struct StartupOptions {
-    fullscreen: Option<bool>,
-    resolution: Option<(u32, u32)>,
-    save_dir: Option<PathBuf>,
-}
-
 fn main() {
-    match start_game(parse_options()) {
+    match start_game(&parse_flags()) {
         Ok(()) => {}
         Err(err) => {
             eprintln!("ERROR: {}", err);
@@ -51,7 +46,16 @@ fn main() {
     }
 }
 
-fn parse_options() -> StartupOptions {
+//===========================================================================//
+
+#[derive(Debug)]
+struct StartupFlags {
+    fullscreen: Option<bool>,
+    resolution: Option<(u32, u32)>,
+    save_dir: Option<PathBuf>,
+}
+
+fn parse_flags() -> StartupFlags {
     let mut opts = getopts::Options::new();
     opts.optflag("h", "help", "print this help menu");
     opts.optflagopt("", "fullscreen", "override fullscreen setting", "BOOL");
@@ -85,47 +89,58 @@ fn parse_options() -> StartupOptions {
         })
     });
     let save_dir = matches.opt_str("save_dir").map(PathBuf::from);
-    StartupOptions {
+    StartupFlags {
         fullscreen,
         resolution,
         save_dir,
     }
 }
 
-fn start_game(options: StartupOptions) -> Result<(), String> {
-    let savedir = SaveDir::create_or_load(&options.save_dir)?;
+//===========================================================================//
+
+fn start_game(flags: &StartupFlags) -> Result<(), String> {
+    let savedir = SaveDir::create_or_load(&flags.save_dir)?;
+    let mut state = GameState::new(savedir)?;
     let mut gui_context = GuiContext::init()?;
+    let mut window_options =
+        Some(initial_window_options(flags, state.savedir(), &gui_context)?);
+    while let Some(options) = window_options {
+        window_options = boot_window(&mut state, &mut gui_context, &options)?;
+    }
+    Ok(())
+}
+
+fn initial_window_options(flags: &StartupFlags, savedir: &SaveDir,
+                          gui_context: &GuiContext)
+                          -> Result<WindowOptions, String> {
     let fullscreen =
-        options.fullscreen.unwrap_or_else(|| savedir.prefs().fullscreen());
-    let resolution = if let Some(res) = options.resolution {
+        flags.fullscreen.unwrap_or_else(|| savedir.prefs().fullscreen());
+    let resolution = if let Some(res) = flags.resolution {
         res
     } else if let Some(res) = savedir.prefs().resolution() {
         res
     } else {
         gui_context.get_native_resolution()?
     };
-    let window_options = WindowOptions {
-        fullscreen,
-        resolution,
-    };
-    boot_window(&mut gui_context, &window_options)?;
-    Ok(())
+    Ok(WindowOptions {
+           fullscreen,
+           resolution,
+       })
 }
 
 // ========================================================================= //
 
-fn boot_window(context: &mut GuiContext, options: &WindowOptions)
-               -> Result<(), String> {
-    let mut window = Window::create(context, options)?;
+fn boot_window(state: &mut GameState, gui_context: &mut GuiContext,
+               window_options: &WindowOptions)
+               -> Result<Option<WindowOptions>, String> {
+    let mut window = Window::create(gui_context, window_options)?;
     loop {
-        match window.poll_event() {
-            Some(Event::Quit) => return Ok(()),
-            None => {
-                unsafe {
-                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                }
-                window.swap();
+        match mode::run_mode(state, &mut window) {
+            ModeChange::Next => continue,
+            ModeChange::RebootWindow(new_options) => {
+                return Ok(Some(new_options))
             }
+            ModeChange::Quit => return Ok(None),
         }
     }
 }

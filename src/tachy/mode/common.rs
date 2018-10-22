@@ -17,12 +17,15 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod context;
-mod event;
-mod window;
+use tachy::gui::WindowOptions;
 
-pub use self::context::GuiContext;
-pub use self::event::{Event, KeyEventData, Keycode};
-pub use self::window::{Window, WindowOptions};
+//===========================================================================//
+
+#[allow(dead_code)]
+pub enum ModeChange {
+    Next,
+    RebootWindow(WindowOptions),
+    Quit,
+}
 
 //===========================================================================//

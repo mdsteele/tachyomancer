@@ -64,7 +64,7 @@ impl<'a> Window<'a> {
                     .video_subsystem
                     .window(WINDOW_TITLE, width, height)
                     .opengl()
-                    .fullscreen_desktop()
+                    .fullscreen()
                     .build()
             } else {
                 gui_context
@@ -94,12 +94,24 @@ impl<'a> Window<'a> {
            })
     }
 
+    pub fn options(&self) -> WindowOptions {
+        WindowOptions {
+            fullscreen: self.sdl_window.fullscreen_state() !=
+                sdl2::video::FullscreenType::Off,
+            resolution: self.sdl_window.size(),
+        }
+    }
+
     pub fn poll_event(&mut self) -> Option<Event> {
-        match self.gui_context.event_pump.poll_event() {
-            None => None,
-            Some(sdl2::event::Event::Quit { .. }) => Some(Event::Quit),
-            // TODO: Other event types
-            Some(_) => None,
+        loop {
+            match self.gui_context.event_pump.poll_event() {
+                None => return None,
+                Some(sdl_event) => {
+                    if let Some(event) = Event::from_sdl_event(sdl_event) {
+                        return Some(event);
+                    }
+                }
+            }
         }
     }
 

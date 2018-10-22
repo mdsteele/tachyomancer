@@ -21,6 +21,8 @@
 mod macros;
 
 pub mod gui;
+pub mod mode;
 pub mod save;
+pub mod state;
 
 //===========================================================================//

@@ -17,12 +17,33 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod context;
-mod event;
-mod window;
+use super::common::ModeChange;
+use gl;
+use tachy::gui::{Event, Keycode, Window};
+use tachy::state::GameState;
 
-pub use self::context::GuiContext;
-pub use self::event::{Event, KeyEventData, Keycode};
-pub use self::window::{Window, WindowOptions};
+//===========================================================================//
+
+pub fn run_mode(_state: &mut GameState, window: &mut Window) -> ModeChange {
+    loop {
+        match window.poll_event() {
+            Some(Event::Quit) => return ModeChange::Quit,
+            Some(Event::KeyDown(key)) => {
+                if key.command && key.shift && key.code == Keycode::F {
+                    let mut window_options = window.options();
+                    window_options.fullscreen = !window_options.fullscreen;
+                    return ModeChange::RebootWindow(window_options);
+                }
+            }
+            None => {
+                unsafe {
+                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+                }
+                window.swap();
+            }
+        }
+    }
+
+}
 
 //===========================================================================//

@@ -17,8 +17,15 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+extern crate app_dirs;
 extern crate getopts;
+#[macro_use]
+extern crate serde_derive;
+extern crate toml;
 
+mod tachy;
+
+use self::tachy::save::SaveDir;
 use std::path::PathBuf;
 
 // ========================================================================= //
@@ -74,7 +81,9 @@ fn parse_options() -> StartupOptions {
 }
 
 fn start_game(options: StartupOptions) {
+    let savedir = SaveDir::create_or_load(&options.save_dir).unwrap();
     println!("options: {:?}", options);
+    println!("prefs fullscreen: {:?}", savedir.prefs().fullscreen());
 }
 
 // ========================================================================= //

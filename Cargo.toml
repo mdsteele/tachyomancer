@@ -6,4 +6,8 @@ license = "GPL-3.0+"
 description = "A circuit-programming puzzle game."
 
 [dependencies]
+app_dirs = "1.2"
 getopts = "0.2"
+serde = "1"
+serde_derive = "1"
+toml = "0.4"

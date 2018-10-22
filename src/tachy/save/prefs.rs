@@ -64,6 +64,8 @@ impl Prefs {
     }
 
     pub fn fullscreen(&self) -> bool { self.fullscreen.unwrap_or(true) }
+
+    pub fn resolution(&self) -> Option<(u32, u32)> { self.resolution }
 }
 
 //===========================================================================//

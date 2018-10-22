@@ -18,13 +18,17 @@
 // +--------------------------------------------------------------------------+
 
 extern crate app_dirs;
+extern crate cgmath;
 extern crate getopts;
+extern crate gl;
+extern crate sdl2;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;
 
 mod tachy;
 
+use self::tachy::gui::{Event, GuiContext, Window, WindowOptions};
 use self::tachy::save::SaveDir;
 use std::path::PathBuf;
 
@@ -37,7 +41,15 @@ struct StartupOptions {
     save_dir: Option<PathBuf>,
 }
 
-fn main() { start_game(parse_options()); }
+fn main() {
+    match start_game(parse_options()) {
+        Ok(()) => {}
+        Err(err) => {
+            eprintln!("ERROR: {}", err);
+            std::process::exit(1);
+        }
+    }
+}
 
 fn parse_options() -> StartupOptions {
     let mut opts = getopts::Options::new();
@@ -80,10 +92,42 @@ fn parse_options() -> StartupOptions {
     }
 }
 
-fn start_game(options: StartupOptions) {
-    let savedir = SaveDir::create_or_load(&options.save_dir).unwrap();
-    println!("options: {:?}", options);
-    println!("prefs fullscreen: {:?}", savedir.prefs().fullscreen());
+fn start_game(options: StartupOptions) -> Result<(), String> {
+    let savedir = SaveDir::create_or_load(&options.save_dir)?;
+    let mut gui_context = GuiContext::init()?;
+    let fullscreen =
+        options.fullscreen.unwrap_or_else(|| savedir.prefs().fullscreen());
+    let resolution = if let Some(res) = options.resolution {
+        res
+    } else if let Some(res) = savedir.prefs().resolution() {
+        res
+    } else {
+        gui_context.get_native_resolution()?
+    };
+    let window_options = WindowOptions {
+        fullscreen,
+        resolution,
+    };
+    boot_window(&mut gui_context, &window_options)?;
+    Ok(())
 }
 
 // ========================================================================= //
+
+fn boot_window(context: &mut GuiContext, options: &WindowOptions)
+               -> Result<(), String> {
+    let mut window = Window::create(context, options)?;
+    loop {
+        match window.poll_event() {
+            Some(Event::Quit) => return Ok(()),
+            None => {
+                unsafe {
+                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+                }
+                window.swap();
+            }
+        }
+    }
+}
+
+//===========================================================================//

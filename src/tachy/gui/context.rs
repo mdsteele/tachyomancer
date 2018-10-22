@@ -17,10 +17,32 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-#[macro_use]
-mod macros;
+use sdl2;
 
-pub mod gui;
-pub mod save;
+//===========================================================================//
+
+pub struct GuiContext {
+    _sdl_context: sdl2::Sdl,
+    pub(super) video_subsystem: sdl2::VideoSubsystem,
+    pub(super) event_pump: sdl2::EventPump,
+}
+
+impl GuiContext {
+    pub fn init() -> Result<GuiContext, String> {
+        let sdl_context = sdl2::init()?;
+        let video_subsystem = sdl_context.video()?;
+        let event_pump = sdl_context.event_pump()?;
+        Ok(GuiContext {
+               _sdl_context: sdl_context,
+               video_subsystem,
+               event_pump,
+           })
+    }
+
+    pub fn get_native_resolution(&self) -> Result<(u32, u32), String> {
+        let display_mode = self.video_subsystem.desktop_display_mode(0)?;
+        Ok((display_mode.w as u32, display_mode.h as u32))
+    }
+}
 
 //===========================================================================//

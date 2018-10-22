@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-#[macro_use]
-mod macros;
+mod context;
+mod event;
+mod window;
 
-pub mod gui;
-pub mod save;
+pub use self::context::GuiContext;
+pub use self::event::Event;
+pub use self::window::{Window, WindowOptions};
 
 //===========================================================================//

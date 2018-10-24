@@ -17,14 +17,32 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod context;
-mod event;
-mod resource;
-mod window;
+use super::common::ModeChange;
+use tachy::gui::{Event, Window};
+use tachy::state::GameState;
+use tachy::view::CircuitView;
 
-pub use self::context::GuiContext;
-pub use self::event::{Event, KeyEventData, Keycode};
-pub use self::resource::Resources;
-pub use self::window::{Window, WindowOptions};
+//===========================================================================//
+
+pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
+    let mut view = CircuitView::new(window.size());
+    loop {
+        match window.poll_event() {
+            Some(Event::Quit) => return ModeChange::Quit,
+            Some(event) => {
+                let toggle = view.handle_event(&event, state);
+                if toggle {
+                    let mut window_options = window.options();
+                    window_options.fullscreen = !window_options.fullscreen;
+                    return ModeChange::RebootWindow(window_options);
+                }
+            }
+            None => {
+                view.draw(window.resources(), state);
+                window.swap();
+            }
+        }
+    }
+}
 
 //===========================================================================//

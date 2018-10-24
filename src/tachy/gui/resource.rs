@@ -17,14 +17,21 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod context;
-mod event;
-mod resource;
-mod window;
+use tachy::shader::Shaders;
 
-pub use self::context::GuiContext;
-pub use self::event::{Event, KeyEventData, Keycode};
-pub use self::resource::Resources;
-pub use self::window::{Window, WindowOptions};
+//===========================================================================//
+
+pub struct Resources {
+    shaders: Shaders,
+}
+
+impl Resources {
+    pub(super) fn new() -> Result<Resources, String> {
+        let shaders = Shaders::new()?;
+        Ok(Resources { shaders })
+    }
+
+    pub fn shaders(&self) -> &Shaders { &self.shaders }
+}
 
 //===========================================================================//

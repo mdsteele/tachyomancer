@@ -34,7 +34,12 @@ impl Event {
             sdl2::event::Event::Quit { .. } => Some(Event::Quit),
             sdl2::event::Event::KeyDown { keycode, keymod, .. } => {
                 if let Some(code) = keycode {
-                    Some(Event::KeyDown(KeyEventData::new(code, keymod)))
+                    let data = KeyEventData::new(code, keymod);
+                    if data.code == Keycode::Q && data.command {
+                        Some(Event::Quit)
+                    } else {
+                        Some(Event::KeyDown(data))
+                    }
                 } else {
                     None
                 }

@@ -20,9 +20,12 @@
 #[macro_use]
 mod macros;
 
+pub mod gl;
 pub mod gui;
 pub mod mode;
 pub mod save;
+pub mod shader;
 pub mod state;
+pub mod view;
 
 //===========================================================================//

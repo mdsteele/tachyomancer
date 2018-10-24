@@ -17,14 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod context;
-mod event;
-mod resource;
-mod window;
+mod circuit;
 
-pub use self::context::GuiContext;
-pub use self::event::{Event, KeyEventData, Keycode};
-pub use self::resource::Resources;
-pub use self::window::{Window, WindowOptions};
+pub use self::circuit::CircuitView;
 
 //===========================================================================//

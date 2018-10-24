@@ -19,6 +19,7 @@
 
 use super::context::GuiContext;
 use super::event::Event;
+use super::resource::Resources;
 use gl;
 use sdl2;
 use std::os::raw::c_void;
@@ -39,6 +40,7 @@ pub struct Window<'a> {
     gui_context: &'a mut GuiContext,
     sdl_window: sdl2::video::Window,
     _gl_context: sdl2::video::GLContext,
+    resources: Resources,
 }
 
 impl<'a> Window<'a> {
@@ -87,20 +89,26 @@ impl<'a> Window<'a> {
         gui_context
             .video_subsystem
             .gl_set_swap_interval(sdl2::video::SwapInterval::VSync);
+        let resources = Resources::new()?;
         Ok(Window {
                gui_context,
                sdl_window,
                _gl_context: gl_context,
+               resources,
            })
     }
+
+    pub fn size(&self) -> (u32, u32) { self.sdl_window.size() }
 
     pub fn options(&self) -> WindowOptions {
         WindowOptions {
             fullscreen: self.sdl_window.fullscreen_state() !=
                 sdl2::video::FullscreenType::Off,
-            resolution: self.sdl_window.size(),
+            resolution: self.size(),
         }
     }
+
+    pub fn resources(&self) -> &Resources { &self.resources }
 
     pub fn poll_event(&mut self) -> Option<Event> {
         loop {

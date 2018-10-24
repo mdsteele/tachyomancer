@@ -17,16 +17,32 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath;
+use cgmath::{self, Matrix4};
 use gl;
-use tachy::gui::{Event, Keycode, Resources};
+use tachy::gl::{VertexArray, VertexBuffer};
+use tachy::gui::{Event, Keycode, Rect, Resources};
 use tachy::state::GameState;
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const QUAD_VERTEX_DATA: &[f32] = &[
+    0.0, 0.0, 0.0,
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    1.0, 1.0, 0.0,
+];
 
 //===========================================================================//
 
 pub struct CircuitView {
     width: u32,
     height: u32,
+    varray: VertexArray,
+    vbuffer: VertexBuffer<f32>,
 }
 
 impl CircuitView {
@@ -34,6 +50,8 @@ impl CircuitView {
         CircuitView {
             width: size.0,
             height: size.1,
+            varray: VertexArray::new(1),
+            vbuffer: VertexBuffer::new(QUAD_VERTEX_DATA),
         }
     }
 
@@ -48,16 +66,30 @@ impl CircuitView {
                                        0.0,
                                        -1.0,
                                        1.0);
+        let model_mtx =
+            Matrix4::from_translation(cgmath::vec3(200.0, 150.0, 0.0)) *
+                Matrix4::from_nonuniform_scale(100.0, 50.0, 1.0);
         let shader = resources.shaders().solid();
         shader.bind();
         shader.set_color((1.0, 0.0, 0.0));
-        shader.set_mvp(&projection);
-        // TODO: draw something
+        shader.set_mvp(&(projection * model_mtx));
+        self.varray.bind();
+        self.vbuffer.attrib(0, 3, 0, 0);
+        unsafe {
+            gl::DrawArrays(gl::TRIANGLES, 0, 6);
+        }
     }
 
     pub fn handle_event(&mut self, event: &Event, _state: &mut GameState)
                         -> bool {
         match event {
+            Event::MouseDown(mouse) => {
+                if mouse.left &&
+                    Rect::new(200, 150, 100, 50).contains_point(mouse.pt)
+                {
+                    return true;
+                }
+            }
             Event::KeyDown(key) => {
                 if key.command && key.shift && key.code == Keycode::F {
                     return true;

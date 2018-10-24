@@ -19,12 +19,15 @@
 
 use sdl2;
 pub use sdl2::keyboard::Keycode;
+use sdl2::mouse::MouseButton;
+use sdl2::rect::Point;
 
 //===========================================================================//
 
 pub enum Event {
     Quit,
     KeyDown(KeyEventData),
+    MouseDown(MouseEventData),
 }
 
 impl Event {
@@ -42,6 +45,17 @@ impl Event {
                     }
                 } else {
                     None
+                }
+            }
+            sdl2::event::Event::MouseButtonDown {
+                x, y, mouse_btn, ..
+            } => {
+                match mouse_btn {
+                    MouseButton::Left | MouseButton::Right => {
+                        let data = MouseEventData::new(x, y, mouse_btn);
+                        Some(Event::MouseDown(data))
+                    }
+                    _ => None,
                 }
             }
             _ => None,
@@ -69,6 +83,24 @@ impl KeyEventData {
             code: keycode,
             shift: keymod.intersects(shift),
             command: keymod.intersects(command),
+        }
+    }
+}
+
+//===========================================================================//
+
+pub struct MouseEventData {
+    pub pt: Point,
+    pub left: bool,
+    pub right: bool,
+}
+
+impl MouseEventData {
+    fn new(x: i32, y: i32, button: MouseButton) -> MouseEventData {
+        MouseEventData {
+            pt: Point::new(x, y),
+            left: button == MouseButton::Left,
+            right: button == MouseButton::Right,
         }
     }
 }

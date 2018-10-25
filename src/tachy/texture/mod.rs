@@ -17,16 +17,46 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-#[macro_use]
-mod macros;
+use tachy::gl::Texture1D;
 
-pub mod gl;
-pub mod gui;
-pub mod mode;
-pub mod save;
-pub mod shader;
-pub mod state;
-pub mod texture;
-pub mod view;
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const WIRES_TEXTURE1D_DATA: &[u8; 128] = &[
+    // 0-bit (4 pixels):
+    255, 0, 0, 255,
+    // 1-bit (6 pixels):
+    255, 0, 128, 128, 0, 255,
+    // 2-bit (10 pixels):
+    255, 0, 128, 128, 0, 0, 128, 128, 0, 255,
+    // 4-bit (16 pixels):
+    255, 0, 128, 128, 0, 128, 128, 0, 0, 128, 128, 0, 128, 128, 0, 255,
+    // 8-bit (22 pixels):
+    255, 0, 128, 0, 128, 0, 0, 128, 0, 128, 0,
+    0, 128, 0, 128, 0, 0, 128, 0, 128, 0, 255,
+    // 16-bit (30 pixels):
+    255, 0, 128, 0, 128, 0, 128, 0, 0, 128, 0, 128, 0, 128, 0,
+    0, 128, 0, 128, 0, 128, 0, 0, 128, 0, 128, 0, 128, 0, 255,
+    // 32-bit (40 pixels):
+    255, 0, 128, 0, 128, 0, 128, 0, 128, 0,
+    128, 0, 128, 0, 128, 0, 128, 0, 128, 0,
+    0, 128, 0, 128, 0, 128, 0, 128, 0, 128,
+    0, 128, 0, 128, 0, 128, 0, 128, 0, 255,
+];
+
+//===========================================================================//
+
+pub struct Textures {
+    wires: Texture1D,
+}
+
+impl Textures {
+    pub fn new() -> Result<Textures, String> {
+        let wires = Texture1D::new_gray(WIRES_TEXTURE1D_DATA)?;
+        Ok(Textures { wires })
+    }
+
+    pub fn wires(&self) -> &Texture1D { &self.wires }
+}
 
 //===========================================================================//

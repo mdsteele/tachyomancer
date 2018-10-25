@@ -25,15 +25,18 @@ use tachy::state::GameState;
 
 //===========================================================================//
 
+const TEX_START: f32 = 4.0 / 128.0;
+const TEX_END: f32 = 10.0 / 128.0;
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const QUAD_VERTEX_DATA: &[f32] = &[
-    0.0, 0.0, 0.0,
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0,  TEX_START,
+    1.0, 0.0, 0.0,  TEX_START,
+    0.0, 1.0, 0.0,  TEX_END,
 
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    1.0, 1.0, 0.0,
+    1.0, 0.0, 0.0,  TEX_START,
+    0.0, 1.0, 0.0,  TEX_END,
+    1.0, 1.0, 0.0,  TEX_END,
 ];
 
 //===========================================================================//
@@ -50,7 +53,7 @@ impl CircuitView {
         CircuitView {
             width: size.0,
             height: size.1,
-            varray: VertexArray::new(1),
+            varray: VertexArray::new(2),
             vbuffer: VertexBuffer::new(QUAD_VERTEX_DATA),
         }
     }
@@ -69,12 +72,15 @@ impl CircuitView {
         let model_mtx =
             Matrix4::from_translation(cgmath::vec3(200.0, 150.0, 0.0)) *
                 Matrix4::from_nonuniform_scale(100.0, 50.0, 1.0);
-        let shader = resources.shaders().solid();
+        let shader = resources.shaders().wire();
         shader.bind();
-        shader.set_color((1.0, 0.0, 0.0));
         shader.set_mvp(&(projection * model_mtx));
+        shader.set_wire_color((0.0, 1.0, 1.0));
+        resources.textures().wires().bind();
         self.varray.bind();
-        self.vbuffer.attrib(0, 3, 0, 0);
+        self.vbuffer.attrib(0, 3, 4, 0);
+        self.varray.bind();
+        self.vbuffer.attrib(1, 1, 4, 3);
         unsafe {
             gl::DrawArrays(gl::TRIANGLES, 0, 6);
         }

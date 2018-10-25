@@ -18,20 +18,25 @@
 // +--------------------------------------------------------------------------+
 
 use tachy::shader::Shaders;
+use tachy::texture::Textures;
 
 //===========================================================================//
 
 pub struct Resources {
     shaders: Shaders,
+    textures: Textures,
 }
 
 impl Resources {
     pub(super) fn new() -> Result<Resources, String> {
         let shaders = Shaders::new()?;
-        Ok(Resources { shaders })
+        let textures = Textures::new()?;
+        Ok(Resources { shaders, textures })
     }
 
     pub fn shaders(&self) -> &Shaders { &self.shaders }
+
+    pub fn textures(&self) -> &Textures { &self.textures }
 }
 
 //===========================================================================//

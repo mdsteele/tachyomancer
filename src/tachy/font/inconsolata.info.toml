@@ -1,0 +1,9 @@
+name = "Inconsolata"
+artist = "Raph Levien"
+license = "OFL 1.1"
+year = 2006
+url = "https://www.levien.com/type/myfonts/inconsolata.html"
+comments = """
+Downloaded from
+https://github.com/google/fonts/blob/efcbdc5/ofl/inconsolata/Inconsolata-Regular.ttf
+"""

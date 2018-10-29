@@ -82,8 +82,8 @@ impl<A: VertexAtom> VertexBuffer<A> {
         }
     }
 
-    pub fn attrib(&self, attrib_index: GLuint, atoms_per_vertex: GLint,
-                  stride: usize, offset: usize) {
+    pub fn attribf(&self, attrib_index: GLuint, atoms_per_vertex: GLint,
+                   stride: usize, offset: usize) {
         unsafe {
             gl::BindBuffer(gl::ARRAY_BUFFER, self.name);
             gl::VertexAttribPointer(attrib_index,
@@ -93,6 +93,22 @@ impl<A: VertexAtom> VertexBuffer<A> {
                                     (mem::size_of::<A>() * stride) as GLsizei,
                                     (mem::size_of::<A>() * offset) as
                                         *const GLvoid);
+        }
+    }
+}
+
+impl<A: VertexIntAtom> VertexBuffer<A> {
+    pub fn attribi(&self, attrib_index: GLuint, atoms_per_vertex: GLint,
+                   stride: usize, offset: usize) {
+        unsafe {
+            gl::BindBuffer(gl::ARRAY_BUFFER, self.name);
+            gl::VertexAttribIPointer(attrib_index,
+                                     atoms_per_vertex,
+                                     A::gl_type(),
+                                     (mem::size_of::<A>() * stride) as
+                                         GLsizei,
+                                     (mem::size_of::<A>() * offset) as
+                                         *const GLvoid);
         }
     }
 }
@@ -112,8 +128,15 @@ pub trait VertexAtom {
     fn gl_type() -> GLenum;
 }
 
+pub trait VertexIntAtom: VertexAtom {}
+
 impl VertexAtom for f32 {
     fn gl_type() -> GLenum { gl::FLOAT }
 }
+
+impl VertexAtom for u8 {
+    fn gl_type() -> GLenum { gl::UNSIGNED_BYTE }
+}
+impl VertexIntAtom for u8 {}
 
 //===========================================================================//

@@ -25,7 +25,7 @@ mod vertex;
 
 pub use self::program::ShaderProgram;
 pub use self::shader::{Shader, ShaderType};
-pub use self::texture::Texture1D;
+pub use self::texture::{Texture1D, Texture2D};
 pub use self::uniform::ShaderUniform;
 pub use self::vertex::{VertexArray, VertexBuffer};
 

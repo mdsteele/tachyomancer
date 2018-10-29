@@ -20,6 +20,7 @@
 #[macro_use]
 mod macros;
 
+pub mod font;
 pub mod gl;
 pub mod gui;
 pub mod mode;

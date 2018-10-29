@@ -17,22 +17,31 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use tachy::font::Fonts;
 use tachy::shader::Shaders;
 use tachy::texture::Textures;
 
 //===========================================================================//
 
 pub struct Resources {
+    fonts: Fonts,
     shaders: Shaders,
     textures: Textures,
 }
 
 impl Resources {
     pub(super) fn new() -> Result<Resources, String> {
+        let fonts = Fonts::new()?;
         let shaders = Shaders::new()?;
         let textures = Textures::new()?;
-        Ok(Resources { shaders, textures })
+        Ok(Resources {
+               fonts,
+               shaders,
+               textures,
+           })
     }
+
+    pub fn fonts(&self) -> &Fonts { &self.fonts }
 
     pub fn shaders(&self) -> &Shaders { &self.shaders }
 

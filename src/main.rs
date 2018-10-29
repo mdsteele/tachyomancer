@@ -21,6 +21,7 @@ extern crate app_dirs;
 extern crate cgmath;
 extern crate getopts;
 extern crate gl;
+extern crate png;
 extern crate sdl2;
 #[macro_use]
 extern crate serde_derive;

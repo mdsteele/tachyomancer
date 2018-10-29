@@ -4,12 +4,18 @@ version = "0.1.0"
 authors = ["Matthew D. Steele <mdsteele@alum.mit.edu>"]
 license = "GPL-3.0+"
 description = "A circuit-programming puzzle game."
+build = "build.rs"
+
+[build-dependencies]
+png = "0.13"
+rusttype = "0.7"
 
 [dependencies]
 app_dirs = "1.2"
 cgmath = "0.16"
 getopts = "0.2"
 gl = "0.10"
+png = "0.13"
 sdl2 = { version = "0.31", features = ["use_mac_framework"] }
 serde = "1"
 serde_derive = "1"

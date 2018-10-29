@@ -62,4 +62,12 @@ impl UniformValue for Matrix4<f32> {
     }
 }
 
+impl UniformValue for [u32; 64] {
+    fn set_uniform(&self, loc: GLint) {
+        unsafe {
+            gl::Uniform1uiv(loc, 64, self.as_ptr());
+        }
+    }
+}
+
 //===========================================================================//

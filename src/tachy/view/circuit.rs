@@ -19,6 +19,7 @@
 
 use cgmath::{self, Matrix4};
 use gl;
+use tachy::font::Align;
 use tachy::gl::{VertexArray, VertexBuffer};
 use tachy::gui::{Event, Keycode, Rect, Resources};
 use tachy::state::GameState;
@@ -69,6 +70,11 @@ impl CircuitView {
                                        0.0,
                                        -1.0,
                                        1.0);
+        resources.fonts().roman().draw(&projection,
+                                       (16.0, 30.0),
+                                       Align::Left,
+                                       (50.0, 50.0),
+                                       "Hello, world!");
         let model_mtx =
             Matrix4::from_translation(cgmath::vec3(200.0, 150.0, 0.0)) *
                 Matrix4::from_nonuniform_scale(100.0, 50.0, 1.0);
@@ -78,9 +84,8 @@ impl CircuitView {
         shader.set_wire_color((0.0, 1.0, 1.0));
         resources.textures().wires().bind();
         self.varray.bind();
-        self.vbuffer.attrib(0, 3, 4, 0);
-        self.varray.bind();
-        self.vbuffer.attrib(1, 1, 4, 3);
+        self.vbuffer.attribf(0, 3, 4, 0);
+        self.vbuffer.attribf(1, 1, 4, 3);
         unsafe {
             gl::DrawArrays(gl::TRIANGLES, 0, 6);
         }

@@ -20,29 +20,29 @@
 use super::shader::Shader;
 use super::uniform::{ShaderUniform, UniformValue};
 use gl;
-use gl::types::{GLchar, GLint, GLsizei, GLuint};
+use gl::types::{GLchar, GLenum, GLint, GLsizei, GLuint};
 use std::ffi::CString;
 use std::ptr;
 
 //===========================================================================//
 
 pub struct ShaderProgram {
-    name: GLuint,
+    id: GLuint,
 }
 
 impl ShaderProgram {
     pub fn new(shaders: &[&Shader]) -> Result<ShaderProgram, String> {
         unsafe {
-            let program = ShaderProgram { name: gl::CreateProgram() };
+            let program = ShaderProgram { id: gl::CreateProgram() };
             for shader in shaders.iter() {
-                gl::AttachShader(program.name, shader.name);
+                gl::AttachShader(program.id, shader.id);
             }
-            gl::LinkProgram(program.name);
+            gl::LinkProgram(program.id);
             for shader in shaders.iter() {
-                gl::DetachShader(program.name, shader.name);
+                gl::DetachShader(program.id, shader.id);
             }
             let mut result: GLint = 0;
-            gl::GetProgramiv(program.name, gl::LINK_STATUS, &mut result);
+            gl::GetProgramiv(program.id, gl::LINK_STATUS, &mut result);
             if result != (gl::TRUE as GLint) {
                 return Err(program.get_info_log());
             }
@@ -53,12 +53,12 @@ impl ShaderProgram {
     pub fn get_info_log(&self) -> String {
         let mut length: GLint = 0;
         unsafe {
-            gl::GetProgramiv(self.name, gl::INFO_LOG_LENGTH, &mut length);
+            gl::GetProgramiv(self.id, gl::INFO_LOG_LENGTH, &mut length);
         }
         if length > 0 {
             let mut buffer = vec![0u8; length as usize + 1];
             unsafe {
-                gl::GetProgramInfoLog(self.name,
+                gl::GetProgramInfoLog(self.id,
                                       buffer.len() as GLsizei,
                                       ptr::null_mut(),
                                       buffer.as_mut_ptr() as *mut GLchar);
@@ -72,13 +72,16 @@ impl ShaderProgram {
     /// Sets this as the current shader program.
     pub fn bind(&self) {
         unsafe {
-            gl::UseProgram(self.name);
+            gl::UseProgram(self.id);
         }
     }
 
-    pub fn get_uniform<T: UniformValue>(
-        &self, name: &str)
-        -> Result<ShaderUniform<T>, String> {
+    pub fn get_uniform<T>(&self, name: &str)
+                          -> Result<ShaderUniform<T>, String>
+    where
+        T: UniformValue,
+    {
+        // Get the location for the uniform (and make sure it exists):
         let cstring =
             CString::new(name)
                 .map_err(|err| {
@@ -86,13 +89,39 @@ impl ShaderProgram {
                                      name,
                                      err)
                          })?;
-        let loc =
-            unsafe { gl::GetUniformLocation(self.name, cstring.as_ptr()) };
+        let loc = unsafe { gl::GetUniformLocation(self.id, cstring.as_ptr()) };
         if loc < 0 {
             return Err(format!("No uniform named {:?}", name));
         }
-        // TODO: Use glGetActiveUniform to check that the type of the uniform
-        //   matches T.
+
+        // Make sure that the actual type of the uniform, as declared in the
+        // shader code, matches the type we're ascribing to it.
+        let mut array_size: GLint = 0;
+        let mut gl_type: GLenum = 0;
+        unsafe {
+            let mut index: GLuint = 0;
+            gl::GetUniformIndices(self.id, 1, &cstring.as_ptr(), &mut index);
+            gl::GetActiveUniform(self.id,
+                                 index,
+                                 0,
+                                 ptr::null_mut(),
+                                 &mut array_size,
+                                 &mut gl_type,
+                                 ptr::null_mut());
+        }
+        if gl_type != T::gl_type() {
+            return Err(format!("Uniform {:?} actually has type {}, not {}",
+                               name,
+                               gl_type_name(gl_type),
+                               gl_type_name(T::gl_type())));
+        }
+        if array_size != T::array_size() {
+            return Err(format!("Uniform {:?} actually has size {}, not {}",
+                               name,
+                               array_size,
+                               T::array_size()));
+        }
+
         return Ok(ShaderUniform::new(loc));
     }
 }
@@ -101,7 +130,7 @@ impl ShaderProgram {
 impl Drop for ShaderProgram {
     fn drop(&mut self) {
         unsafe {
-            gl::DeleteProgram(self.name);
+            gl::DeleteProgram(self.id);
         }
     }
 }
@@ -109,5 +138,23 @@ impl Drop for ShaderProgram {
 // TODO: impl !Send for ShaderProgram {}
 
 // TODO: impl !Sync for ShaderProgram {}
+
+//===========================================================================//
+
+fn gl_type_name(gl_type: GLenum) -> String {
+    if gl_type == gl::FLOAT {
+        "FLOAT".to_string()
+    } else if gl_type == gl::FLOAT_MAT4 {
+        "FLOAT_MAT4".to_string()
+    } else if gl_type == gl::FLOAT_VEC3 {
+        "FLOAT_VEC3".to_string()
+    } else if gl_type == gl::INT {
+        "INT".to_string()
+    } else if gl_type == gl::UNSIGNED_INT {
+        "UNSIGNED_INT".to_string()
+    } else {
+        format!("({})", gl_type)
+    }
+}
 
 //===========================================================================//

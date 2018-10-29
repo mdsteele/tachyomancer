@@ -19,7 +19,7 @@
 
 use cgmath::Matrix4;
 use gl;
-use gl::types::GLint;
+use gl::types::{GLenum, GLint};
 use std::marker::PhantomData;
 
 //===========================================================================//
@@ -43,10 +43,13 @@ impl<T: UniformValue> ShaderUniform<T> {
 //===========================================================================//
 
 pub trait UniformValue {
+    fn gl_type() -> GLenum;
+    fn array_size() -> GLint { 1 }
     fn set_uniform(&self, loc: GLint);
 }
 
 impl UniformValue for (f32, f32, f32) {
+    fn gl_type() -> GLenum { gl::FLOAT_VEC3 }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform3f(loc, self.0, self.1, self.2);
@@ -55,6 +58,7 @@ impl UniformValue for (f32, f32, f32) {
 }
 
 impl UniformValue for Matrix4<f32> {
+    fn gl_type() -> GLenum { gl::FLOAT_MAT4 }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::UniformMatrix4fv(loc, 1, gl::FALSE, &self[0][0]);
@@ -63,6 +67,8 @@ impl UniformValue for Matrix4<f32> {
 }
 
 impl UniformValue for [u32; 64] {
+    fn gl_type() -> GLenum { gl::UNSIGNED_INT }
+    fn array_size() -> GLint { 64 }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform1uiv(loc, 64, self.as_ptr());

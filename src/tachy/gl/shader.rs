@@ -42,7 +42,7 @@ impl ShaderType {
 
 /// Represents a GL shader.
 pub struct Shader {
-    pub(super) name: GLuint,
+    pub(super) id: GLuint,
 }
 
 impl Shader {
@@ -50,14 +50,14 @@ impl Shader {
                -> Result<Shader, String> {
         let shader = unsafe {
             let shader =
-                Shader { name: gl::CreateShader(shader_type.to_gl_enum()) };
-            gl::ShaderSource(shader.name,
+                Shader { id: gl::CreateShader(shader_type.to_gl_enum()) };
+            gl::ShaderSource(shader.id,
                              1,
                              &(code.as_ptr() as *const GLchar),
                              &(code.len() as GLint));
-            gl::CompileShader(shader.name);
+            gl::CompileShader(shader.id);
             let mut result: GLint = 0;
-            gl::GetShaderiv(shader.name, gl::COMPILE_STATUS, &mut result);
+            gl::GetShaderiv(shader.id, gl::COMPILE_STATUS, &mut result);
             if result != (gl::TRUE as GLint) {
                 return Err(format!("Error compiling {}:\n{}",
                                    name,
@@ -77,12 +77,12 @@ impl Shader {
     pub fn get_info_log(&self) -> String {
         let mut length: GLint = 0;
         unsafe {
-            gl::GetShaderiv(self.name, gl::INFO_LOG_LENGTH, &mut length);
+            gl::GetShaderiv(self.id, gl::INFO_LOG_LENGTH, &mut length);
         }
         if length > 0 {
             let mut buffer = vec![0u8; length as usize + 1];
             unsafe {
-                gl::GetShaderInfoLog(self.name,
+                gl::GetShaderInfoLog(self.id,
                                      buffer.len() as GLsizei,
                                      ptr::null_mut(),
                                      buffer.as_mut_ptr() as *mut GLchar);
@@ -98,7 +98,7 @@ impl Shader {
 impl Drop for Shader {
     fn drop(&mut self) {
         unsafe {
-            gl::DeleteShader(self.name);
+            gl::DeleteShader(self.id);
         }
     }
 }

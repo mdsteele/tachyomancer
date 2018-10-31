@@ -26,11 +26,12 @@ use tachy::view::CircuitView;
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     let mut view = CircuitView::new(window.size());
+    let grid = state.edit_grid().unwrap(); // TODO
     loop {
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
-                let toggle = view.handle_event(&event, state);
+                let toggle = view.handle_event(&event, grid);
                 if toggle {
                     let mut window_options = window.options();
                     window_options.fullscreen = !window_options.fullscreen;
@@ -38,7 +39,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 }
             }
             None => {
-                view.draw(window.resources(), state);
+                view.draw(window.resources(), grid);
                 window.swap();
             }
         }

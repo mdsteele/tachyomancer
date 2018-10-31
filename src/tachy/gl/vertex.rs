@@ -25,6 +25,23 @@ use std::os::raw::c_void;
 
 //===========================================================================//
 
+#[derive(Clone, Copy)]
+pub enum Primitive {
+    Triangles,
+    TriangleStrip,
+}
+
+impl Primitive {
+    fn to_gl_enum(self) -> GLenum {
+        match self {
+            Primitive::Triangles => gl::TRIANGLES,
+            Primitive::TriangleStrip => gl::TRIANGLE_STRIP,
+        }
+    }
+}
+
+//===========================================================================//
+
 pub struct VertexArray {
     name: GLuint,
 }
@@ -45,6 +62,14 @@ impl VertexArray {
     pub fn bind(&self) {
         unsafe {
             gl::BindVertexArray(self.name);
+        }
+    }
+
+    pub fn draw(&self, primitive: Primitive, first: usize, count: usize) {
+        unsafe {
+            gl::DrawArrays(primitive.to_gl_enum(),
+                           first as GLint,
+                           count as GLsizei);
         }
     }
 }
@@ -111,6 +136,21 @@ impl<A: VertexIntAtom> VertexBuffer<A> {
                                          *const GLvoid);
         }
     }
+
+    #[allow(dead_code)]
+    pub fn attribn(&self, attrib_index: GLuint, atoms_per_vertex: GLint,
+                   stride: usize, offset: usize) {
+        unsafe {
+            gl::BindBuffer(gl::ARRAY_BUFFER, self.name);
+            gl::VertexAttribPointer(attrib_index,
+                                    atoms_per_vertex,
+                                    A::gl_type(),
+                                    gl::TRUE,
+                                    (mem::size_of::<A>() * stride) as GLsizei,
+                                    (mem::size_of::<A>() * offset) as
+                                        *const GLvoid);
+        }
+    }
 }
 
 /// Deletes the underlying GL buffer when dropped.
@@ -133,6 +173,11 @@ pub trait VertexIntAtom: VertexAtom {}
 impl VertexAtom for f32 {
     fn gl_type() -> GLenum { gl::FLOAT }
 }
+
+impl VertexAtom for i8 {
+    fn gl_type() -> GLenum { gl::BYTE }
+}
+impl VertexIntAtom for i8 {}
 
 impl VertexAtom for u8 {
     fn gl_type() -> GLenum { gl::UNSIGNED_BYTE }

@@ -17,8 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::Matrix4;
-use tachy::gl::{Shader, ShaderProgram, ShaderType, ShaderUniform};
+use cgmath::{Matrix4, vec3};
+use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
+                VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -54,7 +55,6 @@ impl Shaders {
         Ok(Shaders { solid, wire })
     }
 
-    #[allow(dead_code)]
     pub fn solid(&self) -> &SolidShader { &self.solid }
 
     pub fn wire(&self) -> &WireShader { &self.wire }
@@ -66,27 +66,37 @@ pub struct SolidShader {
     program: ShaderProgram,
     color: ShaderUniform<(f32, f32, f32)>,
     mvp: ShaderUniform<Matrix4<f32>>,
+    varray: VertexArray,
+    rect_vbuffer: VertexBuffer<u8>,
 }
 
 impl SolidShader {
     fn new(program: ShaderProgram) -> Result<SolidShader, String> {
         let color = program.get_uniform("SolidColor")?;
         let mvp = program.get_uniform("MVP")?;
+        let varray = VertexArray::new(1);
+        let rect_vbuffer =
+            VertexBuffer::new(&[0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0]);
         Ok(SolidShader {
                program,
                color,
                mvp,
+               varray,
+               rect_vbuffer,
            })
     }
 
-    #[allow(dead_code)]
-    pub fn bind(&self) { self.program.bind() }
-
-    #[allow(dead_code)]
-    pub fn set_color(&self, color: (f32, f32, f32)) { self.color.set(&color); }
-
-    #[allow(dead_code)]
-    pub fn set_mvp(&self, mvp: &Matrix4<f32>) { self.mvp.set(mvp); }
+    pub fn fill_rect(&self, matrix: &Matrix4<f32>, color: (f32, f32, f32),
+                     (left, top, width, height): (f32, f32, f32, f32)) {
+        self.program.bind();
+        self.color.set(&color);
+        let mvp = matrix * Matrix4::from_translation(vec3(left, top, 0.0)) *
+            Matrix4::from_nonuniform_scale(width, height, 1.0);
+        self.mvp.set(&mvp);
+        self.varray.bind();
+        self.rect_vbuffer.attribf(0, 3, 0, 0);
+        self.varray.draw(Primitive::TriangleStrip, 0, 4);
+    }
 }
 
 //===========================================================================//
@@ -108,7 +118,7 @@ impl WireShader {
            })
     }
 
-    pub fn bind(&self) { self.program.bind() }
+    pub fn bind(&self) { self.program.bind(); }
 
     pub fn set_wire_color(&self, color: (f32, f32, f32)) {
         self.wire_color.set(&color);

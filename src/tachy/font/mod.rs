@@ -18,11 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{Matrix4, vec3};
-use gl;
-use gl::types::GLint;
 use std::rc::Rc;
-use tachy::gl::{Shader, ShaderProgram, ShaderType, ShaderUniform, Texture2D,
-                VertexArray, VertexBuffer};
+use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
+                Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -99,7 +97,7 @@ struct TextShader {
     mvp: ShaderUniform<Matrix4<f32>>,
     text: ShaderUniform<[u32; MAX_CHARS]>,
     varray: VertexArray,
-    vbuffer: VertexBuffer<u8>,
+    _vbuffer: VertexBuffer<u8>,
 }
 
 impl TextShader {
@@ -126,13 +124,16 @@ impl TextShader {
         }
         debug_assert_eq!(data.len(), data_len);
         let vbuffer = VertexBuffer::new(&data);
+        varray.bind();
+        vbuffer.attribi(0, 2, 3, 0);
+        vbuffer.attribi(1, 1, 3, 2);
 
         Ok(TextShader {
                program,
                mvp,
                text,
                varray,
-               vbuffer,
+               _vbuffer: vbuffer,
            })
     }
 
@@ -160,13 +161,8 @@ impl TextShader {
         self.mvp.set(&mvp);
 
         self.varray.bind();
-        self.vbuffer.attribi(0, 2, 3, 0);
-        self.vbuffer.attribi(1, 1, 3, 2);
-        unsafe {
-            gl::DrawArrays(gl::TRIANGLES,
-                           0,
-                           (CHAR_VERTICES.len() * num_chars) as GLint);
-        }
+        self.varray
+            .draw(Primitive::Triangles, 0, CHAR_VERTICES.len() * num_chars);
     }
 }
 

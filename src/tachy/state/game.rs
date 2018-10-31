@@ -17,21 +17,28 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::edit::EditGrid;
 use tachy::save::SaveDir;
 
 //===========================================================================//
 
 pub struct GameState {
     savedir: SaveDir,
+    edit_grid: Option<EditGrid>,
 }
 
 impl GameState {
     pub fn new(savedir: SaveDir) -> Result<GameState, String> {
         // TODO: Load current profile.
-        Ok(GameState { savedir })
+        Ok(GameState {
+               savedir,
+               edit_grid: Some(EditGrid::example()),
+           })
     }
 
     pub fn savedir(&self) -> &SaveDir { &self.savedir }
+
+    pub fn edit_grid(&self) -> Option<&EditGrid> { self.edit_grid.as_ref() }
 }
 
 //===========================================================================//

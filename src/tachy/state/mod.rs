@@ -17,8 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod edit;
 mod game;
+mod geom;
 
+pub use self::edit::{ChipType, ChipsIter, EditGrid, WireColor,
+                     WireFragmentsIter, WireShape, WireSize};
 pub use self::game::GameState;
+pub use self::geom::{Coords, CoordsDelta, Direction, Orientation};
 
 //===========================================================================//

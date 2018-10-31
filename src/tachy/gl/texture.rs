@@ -29,9 +29,9 @@ pub struct Texture1D {
 }
 
 impl Texture1D {
-    /// Creates a new texture.  The length of the data array must be a power of
-    /// two, with one byte for each pixel.
-    pub fn new_gray(data: &[u8]) -> Result<Texture1D, String> {
+    /// Creates a new one-color texture.  The length of the data array must be
+    /// a power of two, with one byte for each pixel.
+    pub fn new_red(data: &[u8]) -> Result<Texture1D, String> {
         let width = data.len();
         if !width.is_power_of_two() {
             return Err(format!("1D texture has width of {}, \

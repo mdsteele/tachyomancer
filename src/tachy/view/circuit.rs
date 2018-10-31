@@ -17,12 +17,14 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{self, Matrix4};
+use super::wire::WireModel;
+use cgmath::{self, Deg, Matrix4, vec3};
 use gl;
 use tachy::font::Align;
-use tachy::gl::{VertexArray, VertexBuffer};
+use tachy::gl::{Primitive, VertexArray, VertexBuffer};
 use tachy::gui::{Event, Keycode, Rect, Resources};
-use tachy::state::GameState;
+use tachy::state::{ChipType, Coords, Direction, EditGrid, Orientation,
+                   WireColor, WireShape, WireSize};
 
 //===========================================================================//
 
@@ -31,13 +33,10 @@ const TEX_END: f32 = 10.0 / 128.0;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const QUAD_VERTEX_DATA: &[f32] = &[
-    0.0, 0.0, 0.0,  TEX_START,
-    1.0, 0.0, 0.0,  TEX_START,
-    0.0, 1.0, 0.0,  TEX_END,
-
-    1.0, 0.0, 0.0,  TEX_START,
-    0.0, 1.0, 0.0,  TEX_END,
-    1.0, 1.0, 0.0,  TEX_END,
+    0.0, 0.0,  TEX_START,
+    1.0, 0.0,  TEX_START,
+    0.0, 1.0,  TEX_END,
+    1.0, 1.0,  TEX_END,
 ];
 
 //===========================================================================//
@@ -47,6 +46,7 @@ pub struct CircuitView {
     height: u32,
     varray: VertexArray,
     vbuffer: VertexBuffer<f32>,
+    edit_grid: EditGridView,
 }
 
 impl CircuitView {
@@ -56,14 +56,16 @@ impl CircuitView {
             height: size.1,
             varray: VertexArray::new(2),
             vbuffer: VertexBuffer::new(QUAD_VERTEX_DATA),
+            edit_grid: EditGridView::new(size.0, size.1),
         }
     }
 
-    pub fn draw(&self, resources: &Resources, _state: &GameState) {
+    pub fn draw(&self, resources: &Resources, grid: &EditGrid) {
         unsafe {
             gl::ClearColor(0.0, 0.0, 0.4, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
+        self.edit_grid.draw(resources, grid);
         let projection = cgmath::ortho(0.0,
                                        self.width as f32,
                                        self.height as f32,
@@ -76,27 +78,24 @@ impl CircuitView {
                                        (50.0, 50.0),
                                        "Hello, world!");
         let model_mtx =
-            Matrix4::from_translation(cgmath::vec3(200.0, 150.0, 0.0)) *
+            Matrix4::from_translation(cgmath::vec3(200.0, 350.0, 0.0)) *
                 Matrix4::from_nonuniform_scale(100.0, 50.0, 1.0);
         let shader = resources.shaders().wire();
         shader.bind();
         shader.set_mvp(&(projection * model_mtx));
         shader.set_wire_color((0.0, 1.0, 1.0));
-        resources.textures().wires().bind();
+        resources.textures().wire().bind();
         self.varray.bind();
-        self.vbuffer.attribf(0, 3, 4, 0);
-        self.vbuffer.attribf(1, 1, 4, 3);
-        unsafe {
-            gl::DrawArrays(gl::TRIANGLES, 0, 6);
-        }
+        self.vbuffer.attribf(0, 3, 3, 0);
+        self.vbuffer.attribf(1, 1, 3, 2);
+        self.varray.draw(Primitive::TriangleStrip, 0, 4);
     }
 
-    pub fn handle_event(&mut self, event: &Event, _state: &mut GameState)
-                        -> bool {
+    pub fn handle_event(&mut self, event: &Event, _grid: &EditGrid) -> bool {
         match event {
             Event::MouseDown(mouse) => {
                 if mouse.left &&
-                    Rect::new(200, 150, 100, 50).contains_point(mouse.pt)
+                    Rect::new(200, 350, 100, 50).contains_point(mouse.pt)
                 {
                     return true;
                 }
@@ -110,6 +109,99 @@ impl CircuitView {
         }
         return false;
     }
+}
+
+//===========================================================================//
+
+const GRID_CELL_SIZE: i32 = 64;
+
+struct EditGridView {
+    width: u32,
+    height: u32,
+    wire_model: WireModel,
+}
+
+impl EditGridView {
+    pub fn new(width: u32, height: u32) -> EditGridView {
+        EditGridView {
+            width: width,
+            height: height,
+            wire_model: WireModel::new(),
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, grid: &EditGrid) {
+        let matrix = cgmath::ortho(0.0,
+                                   self.width as f32,
+                                   self.height as f32,
+                                   0.0,
+                                   -1.0,
+                                   1.0);
+        // TODO: translate based on current scrolling
+        for (coords, dir, shape) in grid.wire_fragments() {
+            match (shape, dir) {
+                (WireShape::Stub, _) => {
+                    // TODO
+                }
+                (WireShape::Straight, Direction::East) |
+                (WireShape::Straight, Direction::North) => {
+                    let matrix = coords_matrix(&matrix, coords, dir);
+                    self.wire_model.draw_straight(resources,
+                                                  &matrix,
+                                                  WireColor::Behavior,
+                                                  WireSize::Two);
+                }
+                (WireShape::TurnLeft, _) => {
+                    let matrix = coords_matrix(&matrix, coords, dir);
+                    self.wire_model.draw_corner(resources,
+                                                &matrix,
+                                                WireColor::Behavior,
+                                                WireSize::Two);
+                }
+                (WireShape::SplitTee, _) => {
+                    // TODO
+                }
+                (WireShape::SplitFour, Direction::East) => {
+                    // TODO
+                }
+                _ => {}
+            }
+        }
+        for (coords, ctype, orient) in grid.chips() {
+            self.draw_chip(resources,
+                           &coords_matrix(&matrix, coords, Direction::East),
+                           ctype,
+                           orient);
+        }
+    }
+
+    fn draw_chip(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                 ctype: ChipType, _orient: Orientation) {
+        resources
+            .shaders()
+            .solid()
+            .fill_rect(matrix, (1.0, 0.0, 0.5), (-0.9, -0.9, 1.8, 1.8));
+        resources.fonts().roman().draw(matrix,
+                                       (0.5, 1.0),
+                                       Align::Center,
+                                       (0.0, -0.5),
+                                       &format!("{:?}", ctype));
+    }
+}
+
+fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
+                 -> Matrix4<f32> {
+    let angle = match dir {
+        Direction::East => Deg(0.0),
+        Direction::South => Deg(90.0),
+        Direction::West => Deg(180.0),
+        Direction::North => Deg(-90.0),
+    };
+    let cx = (coords.x * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
+    let cy = (coords.y * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
+    matrix * Matrix4::from_translation(vec3(cx, cy, 0.0)) *
+        Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle) *
+        Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
 }
 
 //===========================================================================//

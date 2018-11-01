@@ -55,18 +55,6 @@ pub enum WireColor {
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum WireSize {
-    Zero,
-    One,
-    Two,
-    Four,
-    Eight,
-    Sixteen,
-    ThirtyTwo,
-}
-
-#[allow(dead_code)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum WireShape {
     /// Wire enters from side of cell but stops immediately.
     Stub,

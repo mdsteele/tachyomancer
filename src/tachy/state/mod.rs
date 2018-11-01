@@ -18,11 +18,14 @@
 // +--------------------------------------------------------------------------+
 
 mod edit;
+#[allow(dead_code)]
+mod eval;
 mod game;
 mod geom;
 
 pub use self::edit::{ChipType, ChipsIter, EditGrid, WireColor,
-                     WireFragmentsIter, WireShape, WireSize};
+                     WireFragmentsIter, WireShape};
+pub use self::eval::WireSize;
 pub use self::game::GameState;
 pub use self::geom::{Coords, CoordsDelta, Direction, Orientation};
 

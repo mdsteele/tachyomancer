@@ -52,6 +52,33 @@ impl Direction {
             Direction::North | Direction::South => true,
         }
     }
+
+    pub fn flip_vert(self) -> Direction {
+        match self {
+            Direction::East => Direction::East,
+            Direction::South => Direction::North,
+            Direction::West => Direction::West,
+            Direction::North => Direction::South,
+        }
+    }
+
+    pub fn rotate_cw(self) -> Direction {
+        match self {
+            Direction::East => Direction::South,
+            Direction::South => Direction::West,
+            Direction::West => Direction::North,
+            Direction::North => Direction::East,
+        }
+    }
+
+    pub fn rotate_ccw(self) -> Direction {
+        match self {
+            Direction::East => Direction::North,
+            Direction::South => Direction::East,
+            Direction::West => Direction::South,
+            Direction::North => Direction::West,
+        }
+    }
 }
 
 impl ops::Add<Direction> for Coords {
@@ -60,19 +87,70 @@ impl ops::Add<Direction> for Coords {
     fn add(self, other: Direction) -> Coords { self + other.delta() }
 }
 
+impl ops::Neg for Direction {
+    type Output = Direction;
+
+    fn neg(self) -> Direction {
+        match self {
+            Direction::East => Direction::West,
+            Direction::South => Direction::North,
+            Direction::West => Direction::East,
+            Direction::North => Direction::South,
+        }
+    }
+}
+
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Orientation {
-    dir: Direction,
-    mirrored: bool,
+    rotate: u8,
+    mirror: bool,
 }
 
 impl Default for Orientation {
     fn default() -> Orientation {
         Orientation {
-            dir: Direction::East,
-            mirrored: false,
+            rotate: 0,
+            mirror: false,
+        }
+    }
+}
+
+impl ops::Mul<Direction> for Orientation {
+    type Output = Direction;
+
+    fn mul(self, mut dir: Direction) -> Direction {
+        if self.mirror {
+            dir = dir.flip_vert();
+        }
+        match self.rotate {
+            0 => dir,
+            1 => dir.rotate_cw(),
+            2 => -dir,
+            3 => dir.rotate_ccw(),
+            _ => unreachable!(),
+        }
+    }
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::{Direction, Orientation};
+
+    const ALL_DIRECTIONS: &[Direction] = &[
+        Direction::East,
+        Direction::South,
+        Direction::West,
+        Direction::North,
+    ];
+
+    #[test]
+    fn default_orient_does_not_change_dir() {
+        for &dir in ALL_DIRECTIONS {
+            assert_eq!(Orientation::default() * dir, dir);
         }
     }
 }

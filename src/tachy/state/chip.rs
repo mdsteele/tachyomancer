@@ -17,20 +17,48 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod check;
-mod chip;
-mod edit;
-#[allow(dead_code)]
-mod eval;
-mod game;
-mod geom;
-mod port;
+use super::geom::{Direction, Orientation};
+use super::port::PortSpec;
 
-pub use self::check::{WireColor, WireShape};
-pub use self::chip::ChipType;
-pub use self::edit::{ChipsIter, EditGrid, WireFragmentsIter};
-pub use self::eval::WireSize;
-pub use self::game::GameState;
-pub use self::geom::{Coords, CoordsDelta, Direction, Orientation};
+//===========================================================================//
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ChipType {
+    Const(u32),
+    // Bitwise:
+    Not,
+    And,
+    // Events:
+    Delay,
+}
+
+impl ChipType {
+    pub(super) fn ports(self, orient: Orientation) -> Vec<PortSpec> {
+        match self {
+            ChipType::Const(_) => {
+                vec![PortSpec::bsend(orient * Direction::East)]
+            }
+            ChipType::Not => {
+                vec![
+                    PortSpec::bsend(orient * Direction::East),
+                    PortSpec::brecv(orient * Direction::West),
+                ]
+            }
+            ChipType::And => {
+                vec![
+                    PortSpec::bsend(orient * Direction::East),
+                    PortSpec::brecv(orient * Direction::West),
+                    PortSpec::brecv(orient * Direction::South),
+                ]
+            }
+            ChipType::Delay => {
+                vec![
+                    PortSpec::esend(orient * Direction::East),
+                    PortSpec::erecv(orient * Direction::West),
+                ]
+            }
+        }
+    }
+}
 
 //===========================================================================//

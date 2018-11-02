@@ -17,16 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::check::{self, WireInfo, WireShape};
+use super::chip::ChipType;
 use super::geom::{Coords, CoordsDelta, Direction, Orientation};
+use super::port::{PortColor, PortFlow};
 use std::collections::{HashMap, hash_map};
 
 //===========================================================================//
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ChipType {
-    Not,
-    And,
-}
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -40,50 +37,10 @@ pub enum ChipCell {
 
 //===========================================================================//
 
-#[allow(dead_code)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum WireColor {
-    /// A wire not connected to any ports (or not yet typechecked).
-    Unknown,
-    /// A wire connected to ports of different types.
-    Error,
-    /// A behavior wire.
-    Behavior,
-    /// An event wire.
-    Event,
-}
-
-#[allow(dead_code)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum WireShape {
-    /// Wire enters from side of cell but stops immediately.
-    Stub,
-    /// Wire enters from side of cell and goes straight to the other side.  The
-    /// opposite side will also be `Straight`.
-    Straight,
-    /// Wire enters from side of cell and turns 90 degrees left.  The adjacent
-    /// side will be `TurnRight`.
-    TurnLeft,
-    /// Wire enters from side of cell and turns 90 degrees right.  The adjacent
-    /// side will be `TurnLeft`.
-    TurnRight,
-    /// Wire enters from side of cell and splits, going straight and turning
-    /// left.
-    SplitLeft,
-    /// Wire enters from side of cell and splits, going straight and turning
-    /// right.
-    SplitRight,
-    /// Wire enters from side of cell and splits, turning left and right.
-    SplitTee,
-    /// Wire enters from side of cell and splits in all directions.
-    SplitFour,
-}
-
-//===========================================================================//
-
 pub struct EditGrid {
     fragments: HashMap<(Coords, Direction), WireShape>,
     chips: HashMap<Coords, ChipCell>,
+    wires: Vec<WireInfo>,
 }
 
 impl EditGrid {
@@ -112,13 +69,39 @@ impl EditGrid {
                      ChipCell::Chip(ChipType::Not, Orientation::default()));
         chips.insert((5, 1).into(),
                      ChipCell::Chip(ChipType::And, Orientation::default()));
-        EditGrid { fragments, chips }
+        chips.insert((5, 2).into(),
+                     ChipCell::Chip(ChipType::Delay, Orientation::default()));
+        chips.insert((2, 3).into(),
+                     ChipCell::Chip(ChipType::Const(7),
+                                    Orientation::default()));
+        let mut grid = EditGrid {
+            fragments,
+            chips,
+            wires: Vec::new(),
+        };
+        grid.typecheck_wires();
+        grid
     }
 
     pub fn chips(&self) -> ChipsIter { ChipsIter { inner: self.chips.iter() } }
 
     pub fn wire_fragments(&self) -> WireFragmentsIter {
         WireFragmentsIter { inner: self.fragments.iter() }
+    }
+
+    fn typecheck_wires(&mut self) {
+        let mut all_ports =
+            HashMap::<(Coords, Direction), (PortFlow, PortColor)>::new();
+        for (coords, ctype, orient) in self.chips() {
+            for port in ctype.ports(orient) {
+                all_ports.insert((coords + port.pos, port.dir),
+                                 (port.flow, port.color));
+            }
+        }
+
+        let mut wires = check::group_wires(&all_ports, &self.fragments);
+        let _errors = check::recolor_wires(&mut wires);
+        self.wires = wires;
     }
 }
 

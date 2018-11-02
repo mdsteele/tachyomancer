@@ -17,6 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use cgmath::Bounded;
+
 //===========================================================================//
 
 struct CircuitEval {
@@ -78,8 +80,7 @@ impl CircuitEval {
 
 //===========================================================================//
 
-#[allow(dead_code)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum WireSize {
     Zero,
     One,
@@ -102,6 +103,11 @@ impl WireSize {
             WireSize::ThirtyTwo => 0xffff_ffff,
         }
     }
+}
+
+impl Bounded for WireSize {
+    fn min_value() -> WireSize { WireSize::Zero }
+    fn max_value() -> WireSize { WireSize::ThirtyTwo }
 }
 
 //===========================================================================//
@@ -182,6 +188,24 @@ impl ChipEval for ClockChipEval {
     fn on_time_step(&mut self) {
         self.should_send = self.received;
         self.received = false;
+    }
+}
+
+struct ConstChipEval {
+    output: usize,
+    value: u32,
+    should_send: bool,
+}
+
+impl ChipEval for ConstChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        if self.should_send {
+            state.values[self.output] = (self.value, true);
+            self.should_send = false;
+            true
+        } else {
+            false
+        }
     }
 }
 

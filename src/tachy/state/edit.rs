@@ -17,11 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::check::{self, WireInfo, WireShape};
+use super::check::{self, WireColor, WireInfo, WireShape};
 use super::chip::ChipType;
 use super::geom::{Coords, CoordsDelta, Direction, Orientation};
 use super::port::{PortColor, PortConstraint, PortFlow};
+use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
+use std::usize;
 
 //===========================================================================//
 
@@ -38,32 +40,31 @@ pub enum ChipCell {
 //===========================================================================//
 
 pub struct EditGrid {
-    fragments: HashMap<(Coords, Direction), WireShape>,
+    fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
     chips: HashMap<Coords, ChipCell>,
     wires: Vec<WireInfo>,
 }
 
 impl EditGrid {
     pub fn example() -> EditGrid {
-        let mut fragments = HashMap::new();
-        fragments.insert(((1, 2).into(), Direction::East), WireShape::Stub);
-        fragments
-            .insert(((2, 2).into(), Direction::West), WireShape::Straight);
-        fragments
-            .insert(((2, 2).into(), Direction::East), WireShape::Straight);
-        fragments
-            .insert(((3, 2).into(), Direction::West), WireShape::TurnLeft);
-        fragments
-            .insert(((3, 2).into(), Direction::North), WireShape::TurnRight);
-        fragments
-            .insert(((3, 1).into(), Direction::South), WireShape::TurnRight);
-        fragments
-            .insert(((3, 1).into(), Direction::East), WireShape::TurnLeft);
-        fragments
-            .insert(((4, 1).into(), Direction::West), WireShape::Straight);
-        fragments
-            .insert(((4, 1).into(), Direction::East), WireShape::Straight);
-        fragments.insert(((5, 1).into(), Direction::West), WireShape::Stub);
+        let fragments = vec![
+            ((1, 2), Direction::East, WireShape::Stub),
+            ((2, 2), Direction::West, WireShape::Straight),
+            ((2, 2), Direction::East, WireShape::Straight),
+            ((3, 2), Direction::West, WireShape::TurnLeft),
+            ((3, 2), Direction::North, WireShape::TurnRight),
+            ((3, 1), Direction::South, WireShape::TurnRight),
+            ((3, 1), Direction::East, WireShape::TurnLeft),
+            ((4, 1), Direction::West, WireShape::Straight),
+            ((4, 1), Direction::East, WireShape::Straight),
+            ((5, 1), Direction::West, WireShape::Stub),
+        ];
+        let fragments = fragments
+            .into_iter()
+            .map(|(coords, dir, shape)| {
+                     ((coords.into(), dir), (shape, usize::MAX))
+                 })
+            .collect();
         let mut chips = HashMap::new();
         chips.insert((1, 2).into(),
                      ChipCell::Chip(ChipType::Not, Orientation::default()));
@@ -91,7 +92,10 @@ impl EditGrid {
     pub fn chips(&self) -> ChipsIter { ChipsIter { inner: self.chips.iter() } }
 
     pub fn wire_fragments(&self) -> WireFragmentsIter {
-        WireFragmentsIter { inner: self.fragments.iter() }
+        WireFragmentsIter {
+            inner: self.fragments.iter(),
+            wires: &self.wires,
+        }
     }
 
     fn typecheck_wires(&mut self) {
@@ -104,7 +108,7 @@ impl EditGrid {
             }
         }
 
-        let mut wires = check::group_wires(&all_ports, &self.fragments);
+        let mut wires = check::group_wires(&all_ports, &mut self.fragments);
         let _errors = check::recolor_wires(&mut wires);
         let constraints: Vec<PortConstraint> = self.chips()
             .flat_map(|(coords, ctype, orient)| {
@@ -142,14 +146,22 @@ impl<'a> Iterator for ChipsIter<'a> {
 //===========================================================================//
 
 pub struct WireFragmentsIter<'a> {
-    inner: hash_map::Iter<'a, (Coords, Direction), WireShape>,
+    inner: hash_map::Iter<'a, (Coords, Direction), (WireShape, usize)>,
+    wires: &'a Vec<WireInfo>,
 }
 
 impl<'a> Iterator for WireFragmentsIter<'a> {
-    type Item = (Coords, Direction, WireShape);
+    type Item = (Coords, Direction, WireShape, WireSize, WireColor);
 
-    fn next(&mut self) -> Option<(Coords, Direction, WireShape)> {
-        self.inner.next().map(|(&(coords, dir), &shape)| (coords, dir, shape))
+    fn next(&mut self)
+            -> Option<(Coords, Direction, WireShape, WireSize, WireColor)> {
+        if let Some((&(coords, dir), &(shape, index))) = self.inner.next() {
+            let wire = &self.wires[index];
+            let size = wire.size.lower_bound().unwrap_or(WireSize::One);
+            Some((coords, dir, shape, size, wire.color))
+        } else {
+            None
+        }
     }
 }
 

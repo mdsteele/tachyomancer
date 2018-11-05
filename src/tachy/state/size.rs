@@ -122,6 +122,10 @@ impl WireSizeInterval {
 
     pub fn is_ambiguous(&self) -> bool { self.lo < self.hi }
 
+    pub fn lower_bound(&self) -> Option<WireSize> {
+        if self.is_empty() { None } else { Some(self.lo) }
+    }
+
     pub fn make_at_least(&mut self, size: WireSize) -> bool {
         if !self.is_empty() && self.lo < size {
             self.lo = size;

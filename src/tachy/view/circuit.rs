@@ -24,7 +24,7 @@ use tachy::font::Align;
 use tachy::gl::{Primitive, VertexArray, VertexBuffer};
 use tachy::gui::{Event, Keycode, Rect, Resources};
 use tachy::state::{ChipType, Coords, Direction, EditGrid, Orientation,
-                   WireColor, WireShape, WireSize};
+                   WireShape};
 
 //===========================================================================//
 
@@ -138,7 +138,7 @@ impl EditGridView {
                                    -1.0,
                                    1.0);
         // TODO: translate based on current scrolling
-        for (coords, dir, shape) in grid.wire_fragments() {
+        for (coords, dir, shape, size, color) in grid.wire_fragments() {
             match (shape, dir) {
                 (WireShape::Stub, _) => {
                     // TODO
@@ -146,17 +146,13 @@ impl EditGridView {
                 (WireShape::Straight, Direction::East) |
                 (WireShape::Straight, Direction::North) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model.draw_straight(resources,
-                                                  &matrix,
-                                                  WireColor::Behavior,
-                                                  WireSize::Two);
+                    self.wire_model
+                        .draw_straight(resources, &matrix, color, size);
                 }
                 (WireShape::TurnLeft, _) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model.draw_corner(resources,
-                                                &matrix,
-                                                WireColor::Behavior,
-                                                WireSize::Two);
+                    self.wire_model
+                        .draw_corner(resources, &matrix, color, size);
                 }
                 (WireShape::SplitTee, _) => {
                     // TODO

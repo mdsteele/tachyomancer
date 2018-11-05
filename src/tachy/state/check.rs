@@ -90,11 +90,12 @@ pub struct WireInfo {
 
 pub fn group_wires(all_ports: &HashMap<(Coords, Direction),
                                        (PortFlow, PortColor)>,
-                   all_fragments: &HashMap<(Coords, Direction), WireShape>)
+                   all_fragments: &mut HashMap<(Coords, Direction),
+                                               (WireShape, usize)>)
                    -> Vec<WireInfo> {
     // TODO: Allow more limited starts for incremental typechecking.
     let mut starts: IndexMap<(Coords, Direction), WireShape> =
-        all_fragments.iter().map(|(&k, &v)| (k, v)).collect();
+        all_fragments.iter().map(|(&k, &(v, _))| (k, v)).collect();
 
     // Collect fragments into wires:
     let mut wires = Vec::<WireInfo>::new();
@@ -139,12 +140,18 @@ pub fn group_wires(all_ports: &HashMap<(Coords, Direction),
                 }
             }
             for &loc in next.iter() {
-                if let Some(&shape) = all_fragments.get(&loc) {
+                if let Some(&(shape, _)) = all_fragments.get(&loc) {
                     if wire_fragments.insert(loc) {
                         starts.remove(&loc);
                         stack.push((loc, shape));
                     }
                 }
+            }
+        }
+        let wire_index = wires.len();
+        for loc in wire_fragments.iter() {
+            if let Some(&mut (_, ref mut index)) = all_fragments.get_mut(loc) {
+                *index = wire_index;
             }
         }
         wires.push(WireInfo {
@@ -308,10 +315,11 @@ pub fn determine_wire_sizes(wires: &mut Vec<WireInfo>,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::usize;
 
     #[test]
     fn group_no_wires() {
-        let mut wires = group_wires(&HashMap::new(), &HashMap::new());
+        let mut wires = group_wires(&HashMap::new(), &mut HashMap::new());
         assert_eq!(0, wires.len());
         let errors = recolor_wires(&mut wires);
         assert_eq!(0, errors.len());
@@ -325,14 +333,21 @@ mod tests {
                      (PortFlow::Send, PortColor::Event));
         ports.insert(((2, 1).into(), Direction::West),
                      (PortFlow::Recv, PortColor::Behavior));
-        let mut frags = HashMap::<(Coords, Direction), WireShape>::new();
-        frags.insert(((0, 0).into(), Direction::East), WireShape::Stub);
-        frags.insert(((1, 0).into(), Direction::West), WireShape::TurnRight);
-        frags.insert(((1, 0).into(), Direction::South), WireShape::TurnLeft);
-        frags.insert(((1, 1).into(), Direction::North), WireShape::Stub);
-        frags.insert(((1, 1).into(), Direction::East), WireShape::Stub);
-        frags.insert(((2, 1).into(), Direction::West), WireShape::Stub);
-        let mut wires = group_wires(&ports, &frags);
+        let mut frags =
+            HashMap::<(Coords, Direction), (WireShape, usize)>::new();
+        frags.insert(((0, 0).into(), Direction::East),
+                     (WireShape::Stub, usize::MAX));
+        frags.insert(((1, 0).into(), Direction::West),
+                     (WireShape::TurnRight, usize::MAX));
+        frags.insert(((1, 0).into(), Direction::South),
+                     (WireShape::TurnLeft, usize::MAX));
+        frags.insert(((1, 1).into(), Direction::North),
+                     (WireShape::Stub, usize::MAX));
+        frags.insert(((1, 1).into(), Direction::East),
+                     (WireShape::Stub, usize::MAX));
+        frags.insert(((2, 1).into(), Direction::West),
+                     (WireShape::Stub, usize::MAX));
+        let mut wires = group_wires(&ports, &mut frags);
         assert_eq!(2, wires.len(), "wires: {:?}", wires);
         wires.sort_unstable_by_key(|info| info.fragments.len());
         assert_eq!(2, wires[0].fragments.len());

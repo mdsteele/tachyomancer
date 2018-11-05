@@ -17,7 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::geom::{CoordsDelta, Direction};
+use super::geom::{Coords, CoordsDelta, Direction};
+use super::size::WireSize;
 
 //===========================================================================//
 
@@ -80,6 +81,23 @@ impl PortSpec {
             dir: direction,
         }
     }
+}
+
+//===========================================================================//
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug)]
+pub enum PortConstraint {
+    /// The port must be the given size.
+    Exact((Coords, Direction), WireSize),
+    /// The port must be no bigger than the given size.
+    AtMost((Coords, Direction), WireSize),
+    /// The port must be no smaller than the given size.
+    AtLeast((Coords, Direction), WireSize),
+    /// The two ports must be the same size.
+    Equal((Coords, Direction), (Coords, Direction)),
+    /// The first port must be double the size of the second port.
+    Double((Coords, Direction), (Coords, Direction)),
 }
 
 //===========================================================================//

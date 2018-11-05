@@ -17,8 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::geom::{Direction, Orientation};
-use super::port::PortSpec;
+use super::geom::{Coords, Direction, Orientation};
+use super::port::{PortConstraint, PortSpec};
+use super::size::WireSize;
 
 //===========================================================================//
 
@@ -28,8 +29,10 @@ pub enum ChipType {
     // Bitwise:
     Not,
     And,
+    Pack,
     // Events:
     Delay,
+    Discard,
 }
 
 impl ChipType {
@@ -44,17 +47,61 @@ impl ChipType {
                     PortSpec::brecv(orient * Direction::West),
                 ]
             }
-            ChipType::And => {
+            ChipType::And | ChipType::Pack => {
                 vec![
                     PortSpec::bsend(orient * Direction::East),
                     PortSpec::brecv(orient * Direction::West),
                     PortSpec::brecv(orient * Direction::South),
                 ]
             }
-            ChipType::Delay => {
+            ChipType::Delay | ChipType::Discard => {
                 vec![
                     PortSpec::esend(orient * Direction::East),
                     PortSpec::erecv(orient * Direction::West),
+                ]
+            }
+        }
+    }
+
+    pub(super) fn constraints(self, coords: Coords, orient: Orientation)
+                              -> Vec<PortConstraint> {
+        match self {
+            ChipType::Const(value) => {
+                vec![
+                    PortConstraint::AtLeast((coords, orient * Direction::East),
+                                            WireSize::min_for_value(value)),
+                ]
+            }
+            ChipType::Not | ChipType::Delay => {
+                vec![
+                    PortConstraint::Equal((coords, orient * Direction::East),
+                                          (coords, orient * Direction::West)),
+                ]
+            }
+            ChipType::And => {
+                let east = (coords, orient * Direction::East);
+                let west = (coords, orient * Direction::West);
+                let south = (coords, orient * Direction::South);
+                vec![
+                    PortConstraint::Equal(west, south),
+                    PortConstraint::Equal(west, east),
+                    PortConstraint::Equal(south, east),
+                ]
+            }
+            ChipType::Pack => {
+                let east = (coords, orient * Direction::East);
+                let west = (coords, orient * Direction::West);
+                let south = (coords, orient * Direction::South);
+                vec![
+                    PortConstraint::Equal(west, south),
+                    PortConstraint::Double(east, west),
+                    PortConstraint::Double(east, south),
+                ]
+            }
+            ChipType::Discard => {
+                vec![
+                    PortConstraint::Exact((coords, orient * Direction::East),
+                                          WireSize::Zero),
                 ]
             }
         }

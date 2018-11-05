@@ -20,7 +20,7 @@
 use super::check::{self, WireInfo, WireShape};
 use super::chip::ChipType;
 use super::geom::{Coords, CoordsDelta, Direction, Orientation};
-use super::port::{PortColor, PortFlow};
+use super::port::{PortColor, PortConstraint, PortFlow};
 use std::collections::{HashMap, hash_map};
 
 //===========================================================================//
@@ -74,6 +74,11 @@ impl EditGrid {
         chips.insert((2, 3).into(),
                      ChipCell::Chip(ChipType::Const(7),
                                     Orientation::default()));
+        chips.insert((7, 0).into(),
+                     ChipCell::Chip(ChipType::Discard,
+                                    Orientation::default()));
+        chips.insert((7, 2).into(),
+                     ChipCell::Chip(ChipType::Pack, Orientation::default()));
         let mut grid = EditGrid {
             fragments,
             chips,
@@ -101,6 +106,13 @@ impl EditGrid {
 
         let mut wires = check::group_wires(&all_ports, &self.fragments);
         let _errors = check::recolor_wires(&mut wires);
+        let constraints: Vec<PortConstraint> = self.chips()
+            .flat_map(|(coords, ctype, orient)| {
+                          ctype.constraints(coords, orient)
+                      })
+            .collect();
+        let _more_errors = check::determine_wire_sizes(&mut wires,
+                                                       constraints);
         self.wires = wires;
     }
 }

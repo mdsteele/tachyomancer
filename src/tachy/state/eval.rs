@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::Bounded;
+use super::size::WireSize;
 
 //===========================================================================//
 
@@ -76,38 +76,6 @@ impl CircuitEval {
             }
         }
     }
-}
-
-//===========================================================================//
-
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum WireSize {
-    Zero,
-    One,
-    Two,
-    Four,
-    Eight,
-    Sixteen,
-    ThirtyTwo,
-}
-
-impl WireSize {
-    fn mask(&self) -> u32 {
-        match &self {
-            WireSize::Zero => 0x0,
-            WireSize::One => 0x1,
-            WireSize::Two => 0x3,
-            WireSize::Four => 0xf,
-            WireSize::Eight => 0xff,
-            WireSize::Sixteen => 0xffff,
-            WireSize::ThirtyTwo => 0xffff_ffff,
-        }
-    }
-}
-
-impl Bounded for WireSize {
-    fn min_value() -> WireSize { WireSize::Zero }
-    fn max_value() -> WireSize { WireSize::ThirtyTwo }
 }
 
 //===========================================================================//

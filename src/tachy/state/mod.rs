@@ -25,12 +25,13 @@ mod eval;
 mod game;
 mod geom;
 mod port;
+mod size;
 
 pub use self::check::{WireColor, WireShape};
 pub use self::chip::ChipType;
 pub use self::edit::{ChipsIter, EditGrid, WireFragmentsIter};
-pub use self::eval::WireSize;
 pub use self::game::GameState;
 pub use self::geom::{Coords, CoordsDelta, Direction, Orientation};
+pub use self::size::WireSize;
 
 //===========================================================================//

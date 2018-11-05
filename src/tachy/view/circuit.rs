@@ -141,7 +141,8 @@ impl EditGridView {
         for (coords, dir, shape, size, color) in grid.wire_fragments() {
             match (shape, dir) {
                 (WireShape::Stub, _) => {
-                    // TODO
+                    let matrix = coords_matrix(&matrix, coords, dir);
+                    self.wire_model.draw_stub(resources, &matrix, color, size);
                 }
                 (WireShape::Straight, Direction::East) |
                 (WireShape::Straight, Direction::North) => {
@@ -155,10 +156,13 @@ impl EditGridView {
                         .draw_corner(resources, &matrix, color, size);
                 }
                 (WireShape::SplitTee, _) => {
-                    // TODO
+                    let matrix = coords_matrix(&matrix, coords, dir);
+                    self.wire_model.draw_tee(resources, &matrix, color, size);
                 }
-                (WireShape::SplitFour, Direction::East) => {
-                    // TODO
+                (WireShape::Cross, Direction::East) => {
+                    let matrix = coords_matrix(&matrix, coords, dir);
+                    self.wire_model
+                        .draw_cross(resources, &matrix, color, size);
                 }
                 _ => {}
             }

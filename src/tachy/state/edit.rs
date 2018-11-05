@@ -53,11 +53,17 @@ impl EditGrid {
             ((2, 2), Direction::East, WireShape::Straight),
             ((3, 2), Direction::West, WireShape::TurnLeft),
             ((3, 2), Direction::North, WireShape::TurnRight),
-            ((3, 1), Direction::South, WireShape::TurnRight),
-            ((3, 1), Direction::East, WireShape::TurnLeft),
-            ((4, 1), Direction::West, WireShape::Straight),
-            ((4, 1), Direction::East, WireShape::Straight),
+            ((3, 1), Direction::South, WireShape::SplitTee),
+            ((3, 1), Direction::West, WireShape::SplitRight),
+            ((3, 1), Direction::East, WireShape::SplitLeft),
+            ((2, 1), Direction::East, WireShape::Stub),
+            ((4, 1), Direction::West, WireShape::Cross),
+            ((4, 1), Direction::North, WireShape::Cross),
+            ((4, 1), Direction::South, WireShape::Cross),
+            ((4, 1), Direction::East, WireShape::Cross),
             ((5, 1), Direction::West, WireShape::Stub),
+            ((4, 0), Direction::South, WireShape::Stub),
+            ((4, 2), Direction::North, WireShape::Stub),
         ];
         let fragments = fragments
             .into_iter()

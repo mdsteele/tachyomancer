@@ -39,7 +39,6 @@ pub enum WireColor {
 
 //===========================================================================//
 
-#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum WireShape {
     /// Wire enters from side of cell but stops immediately.
@@ -62,7 +61,7 @@ pub enum WireShape {
     /// Wire enters from side of cell and splits, turning left and right.
     SplitTee,
     /// Wire enters from side of cell and splits in all directions.
-    SplitFour,
+    Cross,
 }
 
 //===========================================================================//
@@ -133,7 +132,7 @@ pub fn group_wires(all_ports: &HashMap<(Coords, Direction),
                     next.push((coords, dir.rotate_cw()));
                     next.push((coords, dir.rotate_ccw()));
                 }
-                WireShape::SplitFour => {
+                WireShape::Cross => {
                     next.push((coords, -dir));
                     next.push((coords, dir.rotate_cw()));
                     next.push((coords, dir.rotate_ccw()));

@@ -36,6 +36,12 @@ const ST_2: f32 = 5.0 / 32.0;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const WIRE_VERTEX_DATA: &[f32] = &[
+    // 2-bit stub (east):
+    1.0,     0.0,           IN_2,
+    1.0,     ST_2,          OUT_2,
+    25./32., 0.5 * ST_2,    OUT_2,
+    25./32., -0.5 * ST_2,   OUT_2,
+    1.0,     -ST_2,         OUT_2,
     // 2-bit straight (horz):
     -1.0, ST_2,    OUT_2,
     1.0,  ST_2,    OUT_2,
@@ -59,7 +65,40 @@ const WIRE_VERTEX_DATA: &[f32] = &[
     ST_2,    25./32. + COS_67_5 * ST_2,  OUT_2,
     0.0,     1.0,      IN_2,
     ST_2,    1.0,      OUT_2,
-    // TODO: add other wire shapes/sizes
+    // 2-bit tee (south/east/north):
+    0.0,   0.0,     IN_2,
+    1.0,   ST_2,    OUT_2,
+    1.0,   0.0,     IN_2,
+    1.0,   -ST_2,   OUT_2,
+    ST_2,  -ST_2,   OUT_2,
+    ST_2,  -1.0,    OUT_2,
+    0.0,   -1.0,    IN_2,
+    -ST_2, -1.0,    OUT_2,
+    -ST_2, 1.0,     OUT_2,
+    0.0,   1.0,     IN_2,
+    ST_2,  1.0,     OUT_2,
+    ST_2,  ST_2,    OUT_2,
+    1.0,   ST_2,    OUT_2,
+    // 2-bit cross:
+    0.0,   0.0,     IN_2,
+    1.0,   ST_2,    OUT_2,
+    1.0,   0.0,     IN_2,
+    1.0,   -ST_2,   OUT_2,
+    ST_2,  -ST_2,   OUT_2,
+    ST_2,  -1.0,    OUT_2,
+    0.0,   -1.0,    IN_2,
+    -ST_2, -1.0,    OUT_2,
+    -ST_2, -ST_2,   OUT_2,
+    -1.0,  -ST_2,   OUT_2,
+    -1.0,  0.0,     IN_2,
+    -1.0,  ST_2,    OUT_2,
+    -ST_2, ST_2,    OUT_2,
+    -ST_2, 1.0,     OUT_2,
+    0.0,   1.0,     IN_2,
+    ST_2,  1.0,     OUT_2,
+    ST_2,  ST_2,    OUT_2,
+    1.0,   ST_2,    OUT_2,
+    // TODO: add other wire sizes
 ];
 
 //===========================================================================//
@@ -82,6 +121,19 @@ impl WireModel {
         }
     }
 
+    /// Draws an east wire stub in the box from (-1, -1) to (1, 1).
+    pub fn draw_stub(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                     color: WireColor, _size: WireSize) {
+        let shader = resources.shaders().wire();
+        shader.bind();
+        shader.set_mvp(matrix);
+        shader.set_wire_color(wire_color(color));
+        resources.textures().wire().bind();
+        self.varray.bind();
+        // TODO use wire size
+        self.varray.draw(Primitive::TriangleFan, 0, 5);
+    }
+
     /// Draws a horizontal straight wire in the box from (-1, -1) to (1, 1).
     pub fn draw_straight(&self, resources: &Resources,
                          matrix: &Matrix4<f32>, color: WireColor,
@@ -93,7 +145,7 @@ impl WireModel {
         resources.textures().wire().bind();
         self.varray.bind();
         // TODO use wire size
-        self.varray.draw(Primitive::TriangleStrip, 0, 6);
+        self.varray.draw(Primitive::TriangleStrip, 5, 6);
     }
 
     /// Draws a south/east wire corner in the box from (-1, -1) to (1, 1).
@@ -106,7 +158,33 @@ impl WireModel {
         resources.textures().wire().bind();
         self.varray.bind();
         // TODO: use wire size
-        self.varray.draw(Primitive::TriangleStrip, 6, 15);
+        self.varray.draw(Primitive::TriangleStrip, 11, 15);
+    }
+
+    /// Draws a south/east/north wire tee in the box from (-1, -1) to (1, 1).
+    pub fn draw_tee(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                    color: WireColor, _size: WireSize) {
+        let shader = resources.shaders().wire();
+        shader.bind();
+        shader.set_mvp(matrix);
+        shader.set_wire_color(wire_color(color));
+        resources.textures().wire().bind();
+        self.varray.bind();
+        // TODO use wire size
+        self.varray.draw(Primitive::TriangleFan, 26, 13);
+    }
+
+    /// Draws a wire cross in the box from (-1, -1) to (1, 1).
+    pub fn draw_cross(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                      color: WireColor, _size: WireSize) {
+        let shader = resources.shaders().wire();
+        shader.bind();
+        shader.set_mvp(matrix);
+        shader.set_wire_color(wire_color(color));
+        resources.textures().wire().bind();
+        self.varray.bind();
+        // TODO use wire size
+        self.varray.draw(Primitive::TriangleFan, 39, 18);
     }
 }
 

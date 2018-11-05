@@ -29,6 +29,7 @@ use std::os::raw::c_void;
 pub enum Primitive {
     Triangles,
     TriangleStrip,
+    TriangleFan,
 }
 
 impl Primitive {
@@ -36,6 +37,7 @@ impl Primitive {
         match self {
             Primitive::Triangles => gl::TRIANGLES,
             Primitive::TriangleStrip => gl::TRIANGLE_STRIP,
+            Primitive::TriangleFan => gl::TRIANGLE_FAN,
         }
     }
 }

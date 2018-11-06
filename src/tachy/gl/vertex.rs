@@ -57,6 +57,7 @@ impl VertexArray {
             for index in 0..size {
                 gl::EnableVertexAttribArray(index);
             }
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         VertexArray { name }
     }
@@ -64,6 +65,7 @@ impl VertexArray {
     pub fn bind(&self) {
         unsafe {
             gl::BindVertexArray(self.name);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 
@@ -72,6 +74,7 @@ impl VertexArray {
             gl::DrawArrays(primitive.to_gl_enum(),
                            first as GLint,
                            count as GLsizei);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
@@ -102,6 +105,7 @@ impl<A: VertexAtom> VertexBuffer<A> {
                            (mem::size_of::<A>() * data.len()) as GLsizeiptr,
                            data.as_ptr() as *const c_void,
                            gl::STATIC_DRAW);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         VertexBuffer {
             phantom: PhantomData,
@@ -120,6 +124,7 @@ impl<A: VertexAtom> VertexBuffer<A> {
                                     (mem::size_of::<A>() * stride) as GLsizei,
                                     (mem::size_of::<A>() * offset) as
                                         *const GLvoid);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
@@ -136,6 +141,7 @@ impl<A: VertexIntAtom> VertexBuffer<A> {
                                          GLsizei,
                                      (mem::size_of::<A>() * offset) as
                                          *const GLvoid);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 
@@ -151,6 +157,7 @@ impl<A: VertexIntAtom> VertexBuffer<A> {
                                     (mem::size_of::<A>() * stride) as GLsizei,
                                     (mem::size_of::<A>() * offset) as
                                         *const GLvoid);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }

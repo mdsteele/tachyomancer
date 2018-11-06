@@ -64,6 +64,10 @@ impl EditGrid {
             ((5, 1), Direction::West, WireShape::Stub),
             ((4, 0), Direction::South, WireShape::Stub),
             ((4, 2), Direction::North, WireShape::Stub),
+            ((5, 1), Direction::East, WireShape::Stub),
+            ((6, 1), Direction::West, WireShape::Straight),
+            ((6, 1), Direction::East, WireShape::Straight),
+            ((7, 1), Direction::West, WireShape::Stub),
         ];
         let fragments = fragments
             .into_iter()
@@ -73,19 +77,19 @@ impl EditGrid {
             .collect();
         let mut chips = HashMap::new();
         chips.insert((1, 2).into(),
-                     ChipCell::Chip(ChipType::Not, Orientation::default()));
+                     ChipCell::Chip(ChipType::Const(3),
+                                    Orientation::default()));
         chips.insert((5, 1).into(),
-                     ChipCell::Chip(ChipType::And, Orientation::default()));
+                     ChipCell::Chip(ChipType::Pack, Orientation::default()));
         chips.insert((5, 2).into(),
                      ChipCell::Chip(ChipType::Delay, Orientation::default()));
         chips.insert((2, 3).into(),
-                     ChipCell::Chip(ChipType::Const(7),
-                                    Orientation::default()));
+                     ChipCell::Chip(ChipType::Not, Orientation::default()));
         chips.insert((7, 0).into(),
                      ChipCell::Chip(ChipType::Discard,
                                     Orientation::default()));
-        chips.insert((7, 2).into(),
-                     ChipCell::Chip(ChipType::Pack, Orientation::default()));
+        chips.insert((7, 1).into(),
+                     ChipCell::Chip(ChipType::And, Orientation::default()));
         let mut grid = EditGrid {
             fragments,
             chips,

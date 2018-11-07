@@ -65,9 +65,17 @@ impl EditGrid {
             ((4, 0), Direction::South, WireShape::Stub),
             ((4, 2), Direction::North, WireShape::Stub),
             ((5, 1), Direction::East, WireShape::Stub),
-            ((6, 1), Direction::West, WireShape::Straight),
-            ((6, 1), Direction::East, WireShape::Straight),
+            ((6, 1), Direction::West, WireShape::SplitRight),
+            ((6, 1), Direction::East, WireShape::SplitLeft),
+            ((6, 1), Direction::South, WireShape::SplitTee),
             ((7, 1), Direction::West, WireShape::Stub),
+            ((6, 2), Direction::North, WireShape::TurnLeft),
+            ((6, 2), Direction::East, WireShape::TurnRight),
+            ((7, 2), Direction::West, WireShape::Stub),
+            ((7, 4), Direction::East, WireShape::Stub),
+            ((8, 4), Direction::West, WireShape::TurnLeft),
+            ((8, 4), Direction::North, WireShape::TurnRight),
+            ((8, 3), Direction::South, WireShape::Stub),
         ];
         let fragments = fragments
             .into_iter()
@@ -81,10 +89,12 @@ impl EditGrid {
                                     Orientation::default()));
         chips.insert((5, 1).into(),
                      ChipCell::Chip(ChipType::Pack, Orientation::default()));
-        chips.insert((5, 2).into(),
+        chips.insert((7, 4).into(),
                      ChipCell::Chip(ChipType::Delay, Orientation::default()));
         chips.insert((2, 3).into(),
                      ChipCell::Chip(ChipType::Not, Orientation::default()));
+        chips.insert((7, 2).into(),
+                     ChipCell::Chip(ChipType::Ram, Orientation::default()));
         chips.insert((7, 0).into(),
                      ChipCell::Chip(ChipType::Discard,
                                     Orientation::default()));
@@ -112,9 +122,9 @@ impl EditGrid {
         let mut all_ports =
             HashMap::<(Coords, Direction), (PortFlow, PortColor)>::new();
         for (coords, ctype, orient) in self.chips() {
-            for port in ctype.ports(orient) {
-                all_ports.insert((coords + port.pos, port.dir),
-                                 (port.flow, port.color));
+            for port in ctype.ports(coords, orient) {
+                all_ports
+                    .insert((port.pos, port.dir), (port.flow, port.color));
             }
         }
 

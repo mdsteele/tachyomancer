@@ -72,11 +72,6 @@ impl CircuitView {
                                        0.0,
                                        -1.0,
                                        1.0);
-        resources.fonts().roman().draw(&projection,
-                                       (16.0, 30.0),
-                                       Align::Left,
-                                       (50.0, 50.0),
-                                       "Hello, world!");
         let model_mtx =
             Matrix4::from_translation(cgmath::vec3(200.0, 350.0, 0.0)) *
                 Matrix4::from_nonuniform_scale(100.0, 50.0, 1.0);
@@ -176,16 +171,17 @@ impl EditGridView {
     }
 
     fn draw_chip(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                 ctype: ChipType, _orient: Orientation) {
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(matrix, (1.0, 0.0, 0.5), (-0.9, -0.9, 1.8, 1.8));
+                 ctype: ChipType, orient: Orientation) {
+        let size = orient * ctype.size();
+        let (width, height) = (size.width as f32, size.height as f32);
+        let rect = (-0.9, -0.9, 2.0 * width - 0.2, 2.0 * height - 0.2);
+        resources.shaders().solid().fill_rect(matrix, (1.0, 0.0, 0.5), rect);
         resources.fonts().roman().draw(matrix,
                                        (0.5, 1.0),
                                        Align::Center,
-                                       (0.0, -0.5),
+                                       (width - 1.0, height - 1.5),
                                        &format!("{:?}", ctype));
+        // TODO: draw ports
     }
 }
 

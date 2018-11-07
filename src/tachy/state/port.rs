@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::geom::{Coords, CoordsDelta, Direction};
+use super::geom::{Coords, Direction};
 use super::size::WireSize;
 
 //===========================================================================//
@@ -41,51 +41,12 @@ pub enum PortColor {
 pub struct PortSpec {
     pub flow: PortFlow,
     pub color: PortColor,
-    pub pos: CoordsDelta, // relative to top-left of chip
+    pub pos: Coords,
     pub dir: Direction,
-}
-
-impl PortSpec {
-    pub fn brecv(direction: Direction) -> PortSpec {
-        PortSpec {
-            flow: PortFlow::Recv,
-            color: PortColor::Behavior,
-            pos: (0, 0).into(),
-            dir: direction,
-        }
-    }
-
-    pub fn bsend(direction: Direction) -> PortSpec {
-        PortSpec {
-            flow: PortFlow::Send,
-            color: PortColor::Behavior,
-            pos: (0, 0).into(),
-            dir: direction,
-        }
-    }
-
-    pub fn erecv(direction: Direction) -> PortSpec {
-        PortSpec {
-            flow: PortFlow::Recv,
-            color: PortColor::Event,
-            pos: (0, 0).into(),
-            dir: direction,
-        }
-    }
-
-    pub fn esend(direction: Direction) -> PortSpec {
-        PortSpec {
-            flow: PortFlow::Send,
-            color: PortColor::Event,
-            pos: (0, 0).into(),
-            dir: direction,
-        }
-    }
 }
 
 //===========================================================================//
 
-#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum PortConstraint {
     /// The port must be the given size.

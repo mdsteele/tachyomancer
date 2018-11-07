@@ -29,6 +29,20 @@ pub type CoordsDelta = Vector2<i32>;
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct RectSize<T> {
+    pub width: T,
+    pub height: T,
+}
+
+impl<T> From<(T, T)> for RectSize<T> {
+    fn from((width, height): (T, T)) -> RectSize<T> {
+        RectSize { width, height }
+    }
+}
+
+//===========================================================================//
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Direction {
     East,
     South,
@@ -108,6 +122,26 @@ pub struct Orientation {
     mirror: bool,
 }
 
+impl Orientation {
+    pub fn transform_in_rect(&self, delta: CoordsDelta, size: RectSize<i32>)
+                             -> CoordsDelta {
+        let x = delta.x;
+        let y = if self.mirror {
+            size.height - delta.y - 1
+        } else {
+            delta.y
+        };
+        let (x, y) = match self.rotate {
+            0 => (x, y),
+            1 => (size.height - y - 1, x),
+            2 => (size.width - x - 1, size.height - y - 1),
+            3 => (y, size.width - x - 1),
+            _ => unreachable!(),
+        };
+        CoordsDelta { x, y }
+    }
+}
+
 impl Default for Orientation {
     fn default() -> Orientation {
         Orientation {
@@ -130,6 +164,21 @@ impl ops::Mul<Direction> for Orientation {
             2 => -dir,
             3 => dir.rotate_ccw(),
             _ => unreachable!(),
+        }
+    }
+}
+
+impl<T> ops::Mul<RectSize<T>> for Orientation {
+    type Output = RectSize<T>;
+
+    fn mul(self, size: RectSize<T>) -> RectSize<T> {
+        if self.rotate % 2 == 0 {
+            size
+        } else {
+            RectSize {
+                width: size.height,
+                height: size.width,
+            }
         }
     }
 }

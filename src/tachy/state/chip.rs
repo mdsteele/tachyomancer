@@ -17,8 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::geom::{Coords, Direction, Orientation};
-use super::port::{PortConstraint, PortSpec};
+use super::geom::{Coords, Orientation, RectSize};
+use super::geom::Direction::{self, East, North, South, West};
+use super::port::{PortColor, PortConstraint, PortFlow, PortSpec};
 use super::size::WireSize;
 
 //===========================================================================//
@@ -33,79 +34,193 @@ pub enum ChipType {
     // Events:
     Delay,
     Discard,
+    // Storage:
+    Ram,
 }
 
 impl ChipType {
-    pub(super) fn ports(self, orient: Orientation) -> Vec<PortSpec> {
+    /// Returns the width and height of the chip in its default orientation.
+    pub fn size(self) -> RectSize<i32> {
+        match self {
+            ChipType::Ram => (2, 2).into(),
+            _ => (1, 1).into(),
+        }
+    }
+
+    fn ports_internal(self) -> &'static [AbstractPort] {
         match self {
             ChipType::Const(_) => {
-                vec![PortSpec::bsend(orient * Direction::East)]
+                &[(PortFlow::Send, PortColor::Behavior, (0, 0), East)]
             }
             ChipType::Not => {
-                vec![
-                    PortSpec::bsend(orient * Direction::East),
-                    PortSpec::brecv(orient * Direction::West),
+                &[
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
+                    (PortFlow::Send, PortColor::Behavior, (0, 0), East),
                 ]
             }
             ChipType::And | ChipType::Pack => {
-                vec![
-                    PortSpec::bsend(orient * Direction::East),
-                    PortSpec::brecv(orient * Direction::West),
-                    PortSpec::brecv(orient * Direction::South),
+                &[
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), South),
+                    (PortFlow::Send, PortColor::Behavior, (0, 0), East),
                 ]
             }
             ChipType::Delay | ChipType::Discard => {
-                vec![
-                    PortSpec::esend(orient * Direction::East),
-                    PortSpec::erecv(orient * Direction::West),
+                &[
+                    (PortFlow::Recv, PortColor::Event, (0, 0), West),
+                    (PortFlow::Send, PortColor::Event, (0, 0), East),
+                ]
+            }
+            ChipType::Ram => {
+                &[
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
+                    (PortFlow::Recv, PortColor::Event, (0, 0), North),
+                    (PortFlow::Send, PortColor::Behavior, (0, 1), West),
+                    (PortFlow::Recv, PortColor::Behavior, (1, 1), East),
+                    (PortFlow::Recv, PortColor::Event, (1, 1), South),
+                    (PortFlow::Send, PortColor::Behavior, (1, 0), East),
                 ]
             }
         }
     }
 
-    pub(super) fn constraints(self, coords: Coords, orient: Orientation)
-                              -> Vec<PortConstraint> {
+    fn constraints_internal(self) -> &'static [AbstractConstraint] {
         match self {
             ChipType::Const(value) => {
-                vec![
-                    PortConstraint::AtLeast((coords, orient * Direction::East),
-                                            WireSize::min_for_value(value)),
-                ]
+                match WireSize::min_for_value(value) {
+                    WireSize::Two => {
+                        &[AbstractConstraint::AtLeast(0, WireSize::Two)]
+                    }
+                    WireSize::Four => {
+                        &[AbstractConstraint::AtLeast(0, WireSize::Four)]
+                    }
+                    WireSize::Eight => {
+                        &[AbstractConstraint::AtLeast(0, WireSize::Eight)]
+                    }
+                    WireSize::Sixteen => {
+                        &[AbstractConstraint::AtLeast(0, WireSize::Sixteen)]
+                    }
+                    WireSize::ThirtyTwo => {
+                        &[AbstractConstraint::AtLeast(0, WireSize::ThirtyTwo)]
+                    }
+                    _ => &[],
+                }
             }
             ChipType::Not | ChipType::Delay => {
-                vec![
-                    PortConstraint::Equal((coords, orient * Direction::East),
-                                          (coords, orient * Direction::West)),
-                ]
+                &[AbstractConstraint::Equal(0, 1)]
             }
             ChipType::And => {
-                let east = (coords, orient * Direction::East);
-                let west = (coords, orient * Direction::West);
-                let south = (coords, orient * Direction::South);
-                vec![
-                    PortConstraint::Equal(west, south),
-                    PortConstraint::Equal(west, east),
-                    PortConstraint::Equal(south, east),
+                &[
+                    AbstractConstraint::Equal(0, 1),
+                    AbstractConstraint::Equal(0, 2),
+                    AbstractConstraint::Equal(1, 2),
                 ]
             }
             ChipType::Pack => {
-                let east = (coords, orient * Direction::East);
-                let west = (coords, orient * Direction::West);
-                let south = (coords, orient * Direction::South);
-                vec![
-                    PortConstraint::Equal(west, south),
-                    PortConstraint::Double(east, west),
-                    PortConstraint::Double(east, south),
+                &[
+                    AbstractConstraint::Equal(0, 1),
+                    AbstractConstraint::Double(2, 0),
+                    AbstractConstraint::Double(2, 1),
                 ]
             }
             ChipType::Discard => {
-                vec![
-                    PortConstraint::Exact((coords, orient * Direction::East),
-                                          WireSize::Zero),
+                &[AbstractConstraint::Exact(0, WireSize::Zero)]
+            }
+            ChipType::Ram => {
+                &[
+                    AbstractConstraint::AtMost(0, WireSize::Eight),
+                    AbstractConstraint::AtMost(3, WireSize::Eight),
+                    AbstractConstraint::AtLeast(1, WireSize::One),
+                    AbstractConstraint::AtLeast(4, WireSize::One),
+                    AbstractConstraint::Equal(0, 3),
+                    AbstractConstraint::Equal(1, 4),
+                    AbstractConstraint::Equal(2, 5),
+                    AbstractConstraint::Equal(1, 2),
+                    AbstractConstraint::Equal(4, 5),
                 ]
             }
         }
     }
+
+    pub fn ports(self, coords: Coords, orient: Orientation) -> Vec<PortSpec> {
+        let size = self.size();
+        self.ports_internal()
+            .iter()
+            .map(|&(flow, color, delta, dir)| {
+                PortSpec {
+                    flow,
+                    color,
+                    pos: coords + orient.transform_in_rect(delta.into(), size),
+                    dir: orient * dir,
+                }
+            })
+            .collect()
+    }
+
+    pub fn constraints(self, coords: Coords, orient: Orientation)
+                       -> Vec<PortConstraint> {
+        let size = self.size();
+        let ports = self.ports_internal();
+        self.constraints_internal()
+            .iter()
+            .map(|constraint| constraint.reify(coords, orient, size, ports))
+            .collect()
+    }
+}
+
+//===========================================================================//
+
+type AbstractPort = (PortFlow, PortColor, (i32, i32), Direction);
+
+enum AbstractConstraint {
+    /// The port must be the given size.
+    Exact(usize, WireSize),
+    /// The port must be no bigger than the given size.
+    AtMost(usize, WireSize),
+    /// The port must be no smaller than the given size.
+    AtLeast(usize, WireSize),
+    /// The two ports must be the same size.
+    Equal(usize, usize),
+    /// The first port must be double the size of the second port.
+    Double(usize, usize),
+}
+
+impl AbstractConstraint {
+    fn reify(&self, coords: Coords, orient: Orientation,
+             size: RectSize<i32>, ports: &[AbstractPort])
+             -> PortConstraint {
+        match *self {
+            AbstractConstraint::Exact(index, wsize) => {
+                let loc = localize(coords, orient, size, &ports[index]);
+                PortConstraint::Exact(loc, wsize)
+            }
+            AbstractConstraint::AtMost(index, wsize) => {
+                let loc = localize(coords, orient, size, &ports[index]);
+                PortConstraint::AtMost(loc, wsize)
+            }
+            AbstractConstraint::AtLeast(index, wsize) => {
+                let loc = localize(coords, orient, size, &ports[index]);
+                PortConstraint::AtLeast(loc, wsize)
+            }
+            AbstractConstraint::Equal(index1, index2) => {
+                let loc1 = localize(coords, orient, size, &ports[index1]);
+                let loc2 = localize(coords, orient, size, &ports[index2]);
+                PortConstraint::Equal(loc1, loc2)
+            }
+            AbstractConstraint::Double(index1, index2) => {
+                let loc1 = localize(coords, orient, size, &ports[index1]);
+                let loc2 = localize(coords, orient, size, &ports[index2]);
+                PortConstraint::Double(loc1, loc2)
+            }
+        }
+    }
+}
+
+fn localize(coords: Coords, orient: Orientation, size: RectSize<i32>,
+            port: &AbstractPort)
+            -> (Coords, Direction) {
+    let &(_, _, delta, dir) = port;
+    (coords + orient.transform_in_rect(delta.into(), size), orient * dir)
 }
 
 //===========================================================================//

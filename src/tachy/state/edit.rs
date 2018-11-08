@@ -27,14 +27,28 @@ use std::usize;
 
 //===========================================================================//
 
-#[allow(dead_code)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy)]
 pub enum ChipCell {
     /// A chip.
     Chip(ChipType, Orientation),
     /// For chips larger than 1x1, cells other than the top-left corner use
     /// ChipRef with the delta to the top-left corner.
     ChipRef(CoordsDelta),
+}
+
+//===========================================================================//
+
+pub enum GridChange {
+    /// Toggles whether there is a wire between two adjacent cells.
+    ToggleStubWire(Coords, Direction),
+    /// Toggles whether two edges of a cell are connected.
+    ToggleCenterWire(Coords, Direction, Direction),
+    /// Toggles whether a wire is connected to the split in the middle of a
+    /// cell.
+    ToggleSplitWire(Coords, Direction),
+    /// Toggles a cell between a four-way split and an overpass/underpass.
+    ToggleCrossWire(Coords),
+    // TODO: other changes (e.g. chip movement)
 }
 
 //===========================================================================//
@@ -95,6 +109,9 @@ impl EditGrid {
                      ChipCell::Chip(ChipType::Not, Orientation::default()));
         chips.insert((7, 2).into(),
                      ChipCell::Chip(ChipType::Ram, Orientation::default()));
+        chips.insert((8, 2).into(), ChipCell::ChipRef((-1, 0).into()));
+        chips.insert((7, 3).into(), ChipCell::ChipRef((0, -1).into()));
+        chips.insert((8, 3).into(), ChipCell::ChipRef((-1, -1).into()));
         chips.insert((7, 0).into(),
                      ChipCell::Chip(ChipType::Discard,
                                     Orientation::default()));
@@ -118,7 +135,179 @@ impl EditGrid {
         }
     }
 
+    pub fn wire_shape_at(&self, coords: Coords, dir: Direction)
+                         -> Option<WireShape> {
+        self.fragments.get(&(coords, dir)).map(|t| t.0)
+    }
+
+    pub fn mutate(&mut self, changes: &[GridChange]) {
+        for change in changes {
+            self.mutate_one(change);
+        }
+        self.typecheck_wires();
+    }
+
+    fn mutate_one(&mut self, change: &GridChange) {
+        match *change {
+            GridChange::ToggleStubWire(coords, dir) => {
+                let loc1 = (coords, dir);
+                let loc2 = (coords + dir, -dir);
+                match self.fragments.get(&loc1) {
+                    Some(&(WireShape::Stub, _)) => {
+                        if let Some(&(WireShape::Stub, _)) =
+                            self.fragments.get(&loc2)
+                        {
+                            self.fragments.remove(&loc1);
+                            self.fragments.remove(&loc2);
+                        }
+                    }
+                    None => {
+                        if self.fragments.get(&loc2).is_none() {
+                            self.fragments
+                                .insert(loc1, (WireShape::Stub, usize::MAX));
+                            self.fragments
+                                .insert(loc2, (WireShape::Stub, usize::MAX));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            GridChange::ToggleCenterWire(coords, dir1, dir2) => {
+                match (self.wire_shape_at(coords, dir1),
+                         self.wire_shape_at(coords, dir2)) {
+                    (Some(WireShape::Stub), Some(WireShape::Stub)) => {
+                        if dir1 == -dir2 {
+                            self.set_frag(coords, dir1, WireShape::Straight);
+                            self.set_frag(coords, dir2, WireShape::Straight);
+                        } else if dir1 == dir2.rotate_cw() {
+                            self.set_frag(coords, dir1, WireShape::TurnRight);
+                            self.set_frag(coords, dir2, WireShape::TurnLeft);
+                        } else if dir1 == dir2.rotate_ccw() {
+                            self.set_frag(coords, dir1, WireShape::TurnLeft);
+                            self.set_frag(coords, dir2, WireShape::TurnRight);
+                        }
+                    }
+                    (Some(WireShape::Straight), Some(WireShape::Straight)) => {
+                        if dir1 == -dir2 {
+                            self.set_frag(coords, dir1, WireShape::Stub);
+                            self.set_frag(coords, dir2, WireShape::Stub);
+                        }
+                    }
+                    (Some(WireShape::TurnRight),
+                     Some(WireShape::TurnLeft)) => {
+                        if dir1 == dir2.rotate_cw() {
+                            self.set_frag(coords, dir1, WireShape::Stub);
+                            self.set_frag(coords, dir2, WireShape::Stub);
+                        }
+                    }
+                    (Some(WireShape::TurnLeft),
+                     Some(WireShape::TurnRight)) => {
+                        if dir1 == dir2.rotate_ccw() {
+                            self.set_frag(coords, dir1, WireShape::Stub);
+                            self.set_frag(coords, dir2, WireShape::Stub);
+                        }
+                    }
+                    (_, _) => {}
+                }
+            }
+            GridChange::ToggleSplitWire(coords, dir) => {
+                match (self.wire_shape_at(coords, dir),
+                         self.wire_shape_at(coords, -dir),
+                         self.wire_shape_at(coords, dir.rotate_cw())) {
+                    (Some(WireShape::Stub), Some(WireShape::SplitTee), _) => {
+                        for &dir in Direction::all() {
+                            self.set_frag(coords, dir, WireShape::Cross);
+                        }
+                    }
+                    (Some(WireShape::Cross), _, _) => {
+                        self.set_frag(coords, dir, WireShape::Stub);
+                        self.set_frag(coords, -dir, WireShape::SplitTee);
+                        self.set_frag(coords,
+                                      dir.rotate_cw(),
+                                      WireShape::SplitLeft);
+                        self.set_frag(coords,
+                                      dir.rotate_ccw(),
+                                      WireShape::SplitRight);
+                    }
+                    (Some(WireShape::Stub), Some(WireShape::TurnLeft), _) => {
+                        self.set_frag(coords, dir, WireShape::SplitRight);
+                        self.set_frag(coords, -dir, WireShape::SplitLeft);
+                        self.set_frag(coords,
+                                      dir.rotate_ccw(),
+                                      WireShape::SplitTee);
+                    }
+                    (Some(WireShape::SplitRight), _, _) => {
+                        self.set_frag(coords, dir, WireShape::Stub);
+                        self.set_frag(coords, -dir, WireShape::TurnLeft);
+                        self.set_frag(coords,
+                                      dir.rotate_ccw(),
+                                      WireShape::TurnRight);
+                    }
+                    (Some(WireShape::Stub), Some(WireShape::TurnRight), _) => {
+                        self.set_frag(coords, dir, WireShape::SplitLeft);
+                        self.set_frag(coords, -dir, WireShape::SplitRight);
+                        self.set_frag(coords,
+                                      dir.rotate_cw(),
+                                      WireShape::SplitTee);
+                    }
+                    (Some(WireShape::SplitLeft), _, _) => {
+                        self.set_frag(coords, dir, WireShape::Stub);
+                        self.set_frag(coords, -dir, WireShape::TurnRight);
+                        self.set_frag(coords,
+                                      dir.rotate_cw(),
+                                      WireShape::TurnLeft);
+                    }
+                    (Some(WireShape::Stub), _, Some(WireShape::Straight)) => {
+                        self.set_frag(coords, dir, WireShape::SplitTee);
+                        self.set_frag(coords,
+                                      dir.rotate_cw(),
+                                      WireShape::SplitRight);
+                        self.set_frag(coords,
+                                      dir.rotate_ccw(),
+                                      WireShape::SplitLeft);
+                    }
+                    (Some(WireShape::SplitTee), _, _) => {
+                        self.set_frag(coords, dir, WireShape::Stub);
+                        self.set_frag(coords,
+                                      dir.rotate_cw(),
+                                      WireShape::Straight);
+                        self.set_frag(coords,
+                                      dir.rotate_ccw(),
+                                      WireShape::Straight);
+                    }
+                    (_, _, _) => {}
+                }
+            }
+            GridChange::ToggleCrossWire(coords) => {
+                match self.wire_shape_at(coords, Direction::East) {
+                    Some(WireShape::Cross) => {
+                        for &dir in Direction::all() {
+                            self.set_frag(coords, dir, WireShape::Straight);
+                        }
+                    }
+                    Some(WireShape::Straight) => {
+                        if self.wire_shape_at(coords, Direction::South) ==
+                            Some(WireShape::Straight)
+                        {
+                            for &dir in Direction::all() {
+                                self.set_frag(coords, dir, WireShape::Cross);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    fn set_frag(&mut self, coords: Coords, dir: Direction, shape: WireShape) {
+        self.fragments.insert((coords, dir), (shape, usize::MAX));
+    }
+
     fn typecheck_wires(&mut self) {
+        if cfg!(debug_assertions) {
+            self.validate_wire_fragments();
+        }
         let mut all_ports =
             HashMap::<(Coords, Direction), (PortFlow, PortColor)>::new();
         for (coords, ctype, orient) in self.chips() {
@@ -137,7 +326,99 @@ impl EditGrid {
             .collect();
         let _more_errors = check::determine_wire_sizes(&mut wires,
                                                        constraints);
+        // TODO: check for loops
         self.wires = wires;
+    }
+
+    #[cfg(debug_assertions)]
+    fn validate_wire_fragments(&self) {
+        for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
+            assert!(self.fragments.get(&(coords + dir, -dir)).is_some(),
+                    "{:?} at ({}, {}) {:?} has nothing in adjacent cell",
+                    shape,
+                    coords.x,
+                    coords.y,
+                    dir);
+            match shape {
+                WireShape::Stub => {}
+                WireShape::Straight => {
+                    assert_eq!(self.wire_shape_at(coords, -dir),
+                               Some(WireShape::Straight),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                }
+                WireShape::TurnLeft => {
+                    assert_eq!(self.wire_shape_at(coords, dir.rotate_cw()),
+                               Some(WireShape::TurnRight),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                }
+                WireShape::TurnRight => {
+                    assert_eq!(self.wire_shape_at(coords, dir.rotate_ccw()),
+                               Some(WireShape::TurnLeft),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                }
+                WireShape::SplitLeft => {
+                    assert_eq!(self.wire_shape_at(coords, -dir),
+                               Some(WireShape::SplitRight),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                    assert_eq!(self.wire_shape_at(coords, dir.rotate_cw()),
+                               Some(WireShape::SplitTee),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                }
+                WireShape::SplitRight => {
+                    assert_eq!(self.wire_shape_at(coords, -dir),
+                               Some(WireShape::SplitLeft),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                    assert_eq!(self.wire_shape_at(coords, dir.rotate_ccw()),
+                               Some(WireShape::SplitTee),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                }
+                WireShape::SplitTee => {
+                    assert_eq!(self.wire_shape_at(coords, dir.rotate_ccw()),
+                               Some(WireShape::SplitLeft),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                    assert_eq!(self.wire_shape_at(coords, dir.rotate_cw()),
+                               Some(WireShape::SplitRight),
+                               "({}, {}) {:?}",
+                               coords.x,
+                               coords.y,
+                               dir);
+                }
+                WireShape::Cross => {
+                    for &dir2 in Direction::all() {
+                        assert_eq!(self.wire_shape_at(coords, dir2),
+                                   Some(WireShape::Cross),
+                                   "({}, {}) {:?}",
+                                   coords.x,
+                                   coords.y,
+                                   dir);
+                    }
+                }
+            }
+        }
     }
 }
 

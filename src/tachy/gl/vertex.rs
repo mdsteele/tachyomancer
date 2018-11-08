@@ -19,6 +19,7 @@
 
 use gl;
 use gl::types::{GLenum, GLint, GLsizei, GLsizeiptr, GLuint, GLvoid};
+use num_integer::Integer;
 use std::marker::PhantomData;
 use std::mem;
 use std::os::raw::c_void;
@@ -129,7 +130,7 @@ impl<A: VertexAtom> VertexBuffer<A> {
     }
 }
 
-impl<A: VertexIntAtom> VertexBuffer<A> {
+impl<A: VertexAtom + Integer> VertexBuffer<A> {
     pub fn attribi(&self, attrib_index: GLuint, atoms_per_vertex: GLint,
                    stride: usize, offset: usize) {
         unsafe {
@@ -186,11 +187,9 @@ impl VertexAtom for f32 {
 impl VertexAtom for i8 {
     fn gl_type() -> GLenum { gl::BYTE }
 }
-impl VertexIntAtom for i8 {}
 
 impl VertexAtom for u8 {
     fn gl_type() -> GLenum { gl::UNSIGNED_BYTE }
 }
-impl VertexIntAtom for u8 {}
 
 //===========================================================================//

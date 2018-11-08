@@ -51,6 +51,15 @@ pub enum Direction {
 }
 
 impl Direction {
+    pub fn all() -> &'static [Direction] {
+        &[
+            Direction::East,
+            Direction::South,
+            Direction::North,
+            Direction::West,
+        ]
+    }
+
     pub fn delta(self) -> CoordsDelta {
         match self {
             Direction::East => vec2(1, 0),
@@ -99,6 +108,12 @@ impl ops::Add<Direction> for Coords {
     type Output = Coords;
 
     fn add(self, other: Direction) -> Coords { self + other.delta() }
+}
+
+impl ops::Sub<Direction> for Coords {
+    type Output = Coords;
+
+    fn sub(self, other: Direction) -> Coords { self - other.delta() }
 }
 
 impl ops::Neg for Direction {
@@ -187,18 +202,22 @@ impl<T> ops::Mul<RectSize<T>> for Orientation {
 
 #[cfg(test)]
 mod tests {
-    use super::{Direction, Orientation};
+    use super::{Coords, Direction, Orientation};
 
-    const ALL_DIRECTIONS: &[Direction] = &[
-        Direction::East,
-        Direction::South,
-        Direction::West,
-        Direction::North,
-    ];
+    #[test]
+    fn direction_add_sub_neg() {
+        let coords = Coords { x: 3, y: -4 };
+        for &dir in Direction::all() {
+            let opp = -dir;
+            assert_eq!(dir, -opp);
+            assert_eq!(coords + dir, coords - opp);
+            assert_eq!(coords - dir, coords + opp);
+        }
+    }
 
     #[test]
     fn default_orient_does_not_change_dir() {
-        for &dir in ALL_DIRECTIONS {
+        for &dir in Direction::all() {
             assert_eq!(Orientation::default() * dir, dir);
         }
     }

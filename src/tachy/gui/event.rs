@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use cgmath::Point2;
 use sdl2;
 pub use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
-use sdl2::rect::Point;
 
 //===========================================================================//
 
@@ -28,6 +28,8 @@ pub enum Event {
     Quit,
     KeyDown(KeyEventData),
     MouseDown(MouseEventData),
+    MouseMove(MouseEventData),
+    MouseUp(MouseEventData),
 }
 
 impl Event {
@@ -54,6 +56,23 @@ impl Event {
                     MouseButton::Left | MouseButton::Right => {
                         let data = MouseEventData::new(x, y, mouse_btn);
                         Some(Event::MouseDown(data))
+                    }
+                    _ => None,
+                }
+            }
+            sdl2::event::Event::MouseMotion { x, y, mousestate, .. } => {
+                let data = MouseEventData {
+                    pt: Point2 { x, y },
+                    left: mousestate.left(),
+                    right: mousestate.right(),
+                };
+                Some(Event::MouseMove(data))
+            }
+            sdl2::event::Event::MouseButtonUp { x, y, mouse_btn, .. } => {
+                match mouse_btn {
+                    MouseButton::Left | MouseButton::Right => {
+                        let data = MouseEventData::new(x, y, mouse_btn);
+                        Some(Event::MouseUp(data))
                     }
                     _ => None,
                 }
@@ -90,7 +109,7 @@ impl KeyEventData {
 //===========================================================================//
 
 pub struct MouseEventData {
-    pub pt: Point,
+    pub pt: Point2<i32>,
     pub left: bool,
     pub right: bool,
 }
@@ -98,7 +117,7 @@ pub struct MouseEventData {
 impl MouseEventData {
     fn new(x: i32, y: i32, button: MouseButton) -> MouseEventData {
         MouseEventData {
-            pt: Point::new(x, y),
+            pt: Point2 { x, y },
             left: button == MouseButton::Left,
             right: button == MouseButton::Right,
         }

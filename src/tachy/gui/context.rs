@@ -30,6 +30,9 @@ pub struct GuiContext {
 impl GuiContext {
     pub fn init() -> Result<GuiContext, String> {
         let sdl_context = sdl2::init()?;
+        if cfg!(any(target_os = "ios", target_os = "macos")) {
+            sdl2::hint::set("SDL_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK", "1");
+        }
         let video_subsystem = sdl_context.video()?;
         let event_pump = sdl_context.event_pump()?;
         Ok(GuiContext {

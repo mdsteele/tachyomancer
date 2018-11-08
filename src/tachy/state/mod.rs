@@ -29,7 +29,7 @@ mod size;
 
 pub use self::check::{WireColor, WireShape};
 pub use self::chip::ChipType;
-pub use self::edit::{ChipsIter, EditGrid, WireFragmentsIter};
+pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
 pub use self::game::GameState;
 pub use self::geom::{Coords, CoordsDelta, Direction, Orientation};
 pub use self::size::WireSize;

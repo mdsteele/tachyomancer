@@ -38,7 +38,9 @@ impl GameState {
 
     pub fn savedir(&self) -> &SaveDir { &self.savedir }
 
-    pub fn edit_grid(&self) -> Option<&EditGrid> { self.edit_grid.as_ref() }
+    pub fn edit_grid_mut(&mut self) -> Option<&mut EditGrid> {
+        self.edit_grid.as_mut()
+    }
 }
 
 //===========================================================================//

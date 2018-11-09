@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Point2, Vector2, vec2};
+use cgmath::{Deg, Point2, Vector2, vec2};
 use std::ops;
 
 //===========================================================================//
@@ -66,6 +66,15 @@ impl Direction {
             Direction::South => vec2(0, 1),
             Direction::West => vec2(-1, 0),
             Direction::North => vec2(0, -1),
+        }
+    }
+
+    pub fn angle_from_east(self) -> Deg<f32> {
+        match self {
+            Direction::East => Deg(0.0),
+            Direction::South => Deg(90.0),
+            Direction::West => Deg(180.0),
+            Direction::North => Deg(-90.0),
         }
     }
 
@@ -154,6 +163,13 @@ impl Orientation {
             _ => unreachable!(),
         };
         CoordsDelta { x, y }
+    }
+
+    pub fn rotate_cw(self) -> Orientation {
+        Orientation {
+            rotate: (self.rotate + 1) % 4,
+            mirror: self.mirror,
+        }
     }
 }
 

@@ -38,6 +38,7 @@ pub enum ChipCell {
 
 //===========================================================================//
 
+#[derive(Debug)]
 pub enum GridChange {
     /// Toggles whether there is a wire between two adjacent cells.
     ToggleStubWire(Coords, Direction),
@@ -106,7 +107,8 @@ impl EditGrid {
         chips.insert((7, 4).into(),
                      ChipCell::Chip(ChipType::Delay, Orientation::default()));
         chips.insert((2, 3).into(),
-                     ChipCell::Chip(ChipType::Not, Orientation::default()));
+                     ChipCell::Chip(ChipType::Not,
+                                    Orientation::default().rotate_cw()));
         chips.insert((7, 2).into(),
                      ChipCell::Chip(ChipType::Ram, Orientation::default()));
         chips.insert((8, 2).into(), ChipCell::ChipRef((-1, 0).into()));
@@ -169,7 +171,7 @@ impl EditGrid {
                                 .insert(loc2, (WireShape::Stub, usize::MAX));
                         }
                     }
-                    _ => {}
+                    _ => debug_log!("{:?} had no effect", change),
                 }
             }
             GridChange::ToggleCenterWire(coords, dir1, dir2) => {
@@ -207,7 +209,7 @@ impl EditGrid {
                             self.set_frag(coords, dir2, WireShape::Stub);
                         }
                     }
-                    (_, _) => {}
+                    (_, _) => debug_log!("{:?} had no effect", change),
                 }
             }
             GridChange::ToggleSplitWire(coords, dir) => {
@@ -275,7 +277,7 @@ impl EditGrid {
                                       dir.rotate_ccw(),
                                       WireShape::Straight);
                     }
-                    (_, _, _) => {}
+                    (_, _, _) => debug_log!("{:?} had no effect", change),
                 }
             }
             GridChange::ToggleCrossWire(coords) => {
@@ -294,7 +296,7 @@ impl EditGrid {
                             }
                         }
                     }
-                    _ => {}
+                    _ => debug_log!("{:?} had no effect", change),
                 }
             }
         }

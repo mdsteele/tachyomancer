@@ -18,14 +18,14 @@
 // +--------------------------------------------------------------------------+
 
 use super::wire::WireModel;
-use cgmath::{self, Deg, Matrix4, Point2, vec3};
+use cgmath::{self, Matrix4, Point2, vec3};
 use gl;
 use num_integer::mod_floor;
 use tachy::font::Align;
 use tachy::gl::{Primitive, VertexArray, VertexBuffer};
 use tachy::gui::{Event, Keycode, Rect, Resources};
 use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
-                   Orientation, WireShape};
+                   Orientation, PortColor, PortFlow, WireShape};
 
 //===========================================================================//
 
@@ -169,10 +169,11 @@ impl EditGridView {
             }
         }
         for (coords, ctype, orient) in grid.chips() {
-            self.draw_chip(resources,
-                           &coords_matrix(&matrix, coords, Direction::East),
-                           ctype,
-                           orient);
+            let x = (coords.x * GRID_CELL_SIZE) as f32;
+            let y = (coords.y * GRID_CELL_SIZE) as f32;
+            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
+                Matrix4::from_scale(GRID_CELL_SIZE as f32);
+            self.draw_chip(resources, &mat, ctype, orient);
         }
     }
 
@@ -180,14 +181,29 @@ impl EditGridView {
                  ctype: ChipType, orient: Orientation) {
         let size = orient * ctype.size();
         let (width, height) = (size.width as f32, size.height as f32);
-        let rect = (-0.9, -0.9, 2.0 * width - 0.2, 2.0 * height - 0.2);
-        resources.shaders().solid().fill_rect(matrix, (1.0, 0.0, 0.5), rect);
+        let margin = 0.1;
+        let rect = (margin, margin, width - 2. * margin, height - 2. * margin);
+        resources.shaders().solid().fill_rect(matrix, (0.3, 0.3, 0.3), rect);
+        for port in ctype.ports((0, 0).into(), orient) {
+            let x = port.pos.x as f32 + 0.5;
+            let y = port.pos.y as f32 + 0.5;
+            let angle = port.dir.angle_from_east();
+            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
+                Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle);
+            let color = match (port.color, port.flow) {
+                (PortColor::Behavior, PortFlow::Send) => (1.0, 0.5, 0.0),
+                (PortColor::Behavior, PortFlow::Recv) => (0.75, 0.0, 0.0),
+                (PortColor::Event, PortFlow::Send) => (0.0, 1.0, 1.0),
+                (PortColor::Event, PortFlow::Recv) => (0.0, 0.0, 1.0),
+            };
+            let rect = (0.5 - margin, -0.3, 0.5 * margin, 0.6);
+            resources.shaders().solid().fill_rect(&mat, color, rect);
+        }
         resources.fonts().roman().draw(matrix,
-                                       (0.5, 1.0),
+                                       (0.15, 0.3),
                                        Align::Center,
-                                       (width - 1.0, height - 1.5),
+                                       (0.5 * width, 0.5 * height - 0.15),
                                        &format!("{:?}", ctype));
-        // TODO: draw ports
     }
 
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid) {
@@ -264,16 +280,10 @@ impl EditGridView {
 
 fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
                  -> Matrix4<f32> {
-    let angle = match dir {
-        Direction::East => Deg(0.0),
-        Direction::South => Deg(90.0),
-        Direction::West => Deg(180.0),
-        Direction::North => Deg(-90.0),
-    };
     let cx = (coords.x * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
     let cy = (coords.y * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
     matrix * Matrix4::from_translation(vec3(cx, cy, 0.0)) *
-        Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle) *
+        Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), dir.angle_from_east()) *
         Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
 }
 

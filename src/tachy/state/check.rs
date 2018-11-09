@@ -168,32 +168,27 @@ pub fn group_wires(all_ports: &HashMap<(Coords, Direction),
 pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
     let mut errors = Vec::<WireError>::new();
     for (index, wire) in wires.iter_mut().enumerate() {
-        let mut has_sender = false;
+        let mut num_senders = 0;
         let mut has_behavior = false;
         let mut has_event = false;
         for &(flow, color) in wire.ports.values() {
             if flow == PortFlow::Send {
-                if has_sender {
-                    errors.push(WireError::MultipleSenders(index));
-                    wire.color = WireColor::Error;
-                    break;
-                }
-                has_sender = true;
+                num_senders += 1;
             }
             match color {
                 PortColor::Behavior => has_behavior = true,
                 PortColor::Event => has_event = true,
             }
         }
-        if has_behavior {
-            if has_event {
-                errors.push(WireError::PortColorMismatch(index));
-                wire.color = WireColor::Error;
-                break;
-            } else {
-                wire.color = WireColor::Behavior;
-                wire.size.make_at_least(WireSize::One);
-            }
+        if num_senders > 1 {
+            errors.push(WireError::MultipleSenders(index));
+            wire.color = WireColor::Error;
+        } else if has_behavior && has_event {
+            errors.push(WireError::PortColorMismatch(index));
+            wire.color = WireColor::Error;
+        } else if has_behavior {
+            wire.color = WireColor::Behavior;
+            wire.size.make_at_least(WireSize::One);
         } else if has_event {
             wire.color = WireColor::Event;
         } else {

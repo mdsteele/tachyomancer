@@ -26,6 +26,6 @@ pub use self::context::GuiContext;
 pub use self::event::{Event, KeyEventData, Keycode};
 pub use self::resource::Resources;
 pub use self::window::{Window, WindowOptions};
-pub use sdl2::rect::{Point, Rect};
+pub use sdl2::rect::Rect;
 
 //===========================================================================//

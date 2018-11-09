@@ -183,16 +183,20 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
         if num_senders > 1 {
             errors.push(WireError::MultipleSenders(index));
             wire.color = WireColor::Error;
+            wire.size = WireSizeInterval::empty();
         } else if has_behavior && has_event {
             errors.push(WireError::PortColorMismatch(index));
             wire.color = WireColor::Error;
+            wire.size = WireSizeInterval::empty();
         } else if has_behavior {
             wire.color = WireColor::Behavior;
-            wire.size.make_at_least(WireSize::One);
+            wire.size = WireSizeInterval::at_least(WireSize::One);
         } else if has_event {
             wire.color = WireColor::Event;
+            wire.size = WireSizeInterval::full();
         } else {
             wire.color = WireColor::Unknown;
+            wire.size = WireSizeInterval::empty();
         }
     }
     errors
@@ -244,12 +248,14 @@ pub fn determine_wire_sizes(wires: &mut Vec<WireInfo>,
                             if index1 != index2 {
                                 let size1 = wires[index1].size;
                                 let size2 = wires[index2].size;
-                                let new_size = size1.intersection(size2);
-                                changed = changed || new_size != size1 ||
-                                    new_size != size2;
-                                wires[index1].size = new_size;
-                                wires[index2].size = new_size;
-                                return new_size.is_ambiguous();
+                                if !size1.is_empty() && !size2.is_empty() {
+                                    let new_size = size1.intersection(size2);
+                                    changed = changed || new_size != size1 ||
+                                        new_size != size2;
+                                    wires[index1].size = new_size;
+                                    wires[index2].size = new_size;
+                                    return new_size.is_ambiguous();
+                                }
                             }
                         }
                     }
@@ -266,16 +272,18 @@ pub fn determine_wire_sizes(wires: &mut Vec<WireInfo>,
                             } else {
                                 let size1 = wires[index1].size;
                                 let size2 = wires[index2].size;
-                                let new_size1 =
-                                    size1.intersection(size2.double());
-                                let new_size2 =
-                                    size2.intersection(size1.half());
-                                changed |= new_size1 != size1 ||
-                                    new_size2 != size2;
-                                wires[index1].size = new_size1;
-                                wires[index2].size = new_size2;
-                                return new_size1.is_ambiguous() ||
-                                    new_size2.is_ambiguous();
+                                if !size1.is_empty() && !size2.is_empty() {
+                                    let new_size1 =
+                                        size1.intersection(size2.double());
+                                    let new_size2 =
+                                        size2.intersection(size1.half());
+                                    changed |= new_size1 != size1 ||
+                                        new_size2 != size2;
+                                    wires[index1].size = new_size1;
+                                    wires[index2].size = new_size2;
+                                    return new_size1.is_ambiguous() ||
+                                        new_size2.is_ambiguous();
+                                }
                             }
                         }
                     } else if let Some(&index2) = wires_for_ports.get(&loc2) {
@@ -296,9 +304,14 @@ pub fn determine_wire_sizes(wires: &mut Vec<WireInfo>,
 
     let mut errors = Vec::<WireError>::new();
     for (index, wire) in wires.iter_mut().enumerate() {
-        if wire.size.is_empty() {
-            wire.color = WireColor::Error;
-            errors.push(WireError::NoValidSize(index));
+        match wire.color {
+            WireColor::Behavior | WireColor::Event => {
+                if wire.size.is_empty() {
+                    wire.color = WireColor::Error;
+                    errors.push(WireError::NoValidSize(index));
+                }
+            }
+            WireColor::Unknown | WireColor::Error => {}
         }
     }
     errors

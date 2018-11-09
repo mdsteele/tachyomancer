@@ -118,6 +118,10 @@ impl WireSizeInterval {
         WireSizeInterval::new(size, size)
     }
 
+    pub fn at_least(size: WireSize) -> WireSizeInterval {
+        WireSizeInterval::new(size, WireSize::max_value())
+    }
+
     pub fn is_empty(&self) -> bool { self.lo > self.hi }
 
     pub fn is_ambiguous(&self) -> bool { self.lo < self.hi }

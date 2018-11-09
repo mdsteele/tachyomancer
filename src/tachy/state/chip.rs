@@ -124,7 +124,10 @@ impl ChipType {
                 ]
             }
             ChipType::Discard => {
-                &[AbstractConstraint::Exact(0, WireSize::Zero)]
+                &[
+                    AbstractConstraint::AtLeast(0, WireSize::One),
+                    AbstractConstraint::Exact(1, WireSize::Zero),
+                ]
             }
             ChipType::Ram => {
                 &[

@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::wire::WireModel;
-use cgmath::{self, Matrix4, Point2, vec3};
+use cgmath::{self, Matrix4, Point2, vec2, vec3};
 use gl;
 use num_integer::mod_floor;
 use tachy::font::Align;
@@ -118,7 +118,8 @@ struct EditGridView {
     width: u32,
     height: u32,
     wire_model: WireModel,
-    drag: Option<WireDrag>,
+    chip_drag: Option<ChipDrag>,
+    wire_drag: Option<WireDrag>,
 }
 
 impl EditGridView {
@@ -127,7 +128,8 @@ impl EditGridView {
             width: width,
             height: height,
             wire_model: WireModel::new(),
-            drag: None,
+            chip_drag: None,
+            wire_drag: None,
         }
     }
 
@@ -139,6 +141,7 @@ impl EditGridView {
                                    -1.0,
                                    1.0);
         // TODO: translate based on current scrolling
+        // Draw wires:
         for (coords, dir, shape, size, color) in grid.wire_fragments() {
             match (shape, dir) {
                 (WireShape::Stub, _) => {
@@ -168,12 +171,27 @@ impl EditGridView {
                 _ => {}
             }
         }
+        // Draw chips (except the one being dragged, if any):
         for (coords, ctype, orient) in grid.chips() {
+            if let Some(ref drag) = self.chip_drag {
+                if coords == drag.old_coords {
+                    continue;
+                }
+            }
             let x = (coords.x * GRID_CELL_SIZE) as f32;
             let y = (coords.y * GRID_CELL_SIZE) as f32;
             let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
             self.draw_chip(resources, &mat, ctype, orient);
+        }
+        // Draw dragged chip, if any:
+        if let Some(ref drag) = self.chip_drag {
+            let pt = drag.chip_topleft();
+            let x = pt.x as f32;
+            let y = pt.y as f32;
+            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
+                Matrix4::from_scale(GRID_CELL_SIZE as f32);
+            self.draw_chip(resources, &mat, drag.chip_type, drag.chip_orient);
         }
     }
 
@@ -207,14 +225,26 @@ impl EditGridView {
     }
 
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid) {
+        // TODO: Allow using keyboard to reorient dragged chip(s).
         match event {
             Event::MouseDown(mouse) => {
                 if mouse.left {
-                    let mut drag = WireDrag::new();
-                    if drag.move_to(self.zone_for_point(mouse.pt), grid) {
-                        self.drag = Some(drag);
+                    if let Some((ctype, orient, coords)) =
+                        grid.chip_at(self.coords_for_point(mouse.pt))
+                    {
+                        // TODO: If mouse is within chip cell but near edge of
+                        //   chip, allow for wire dragging.
+                        self.chip_drag = Some(ChipDrag::new(ctype,
+                                                            orient,
+                                                            coords,
+                                                            mouse.pt));
                     } else {
-                        debug_log!("drag done (down)");
+                        let mut drag = WireDrag::new();
+                        if drag.move_to(self.zone_for_point(mouse.pt), grid) {
+                            self.wire_drag = Some(drag);
+                        } else {
+                            debug_log!("wire drag done (down)");
+                        }
                     }
                 } else if mouse.right {
                     let coords = self.coords_for_point(mouse.pt);
@@ -229,17 +259,23 @@ impl EditGridView {
                 }
             }
             Event::MouseMove(mouse) => {
-                if let Some(mut drag) = self.drag.take() {
+                if let Some(ref mut drag) = self.chip_drag {
+                    drag.move_to(mouse.pt);
+                }
+                if let Some(mut drag) = self.wire_drag.take() {
                     if drag.move_to(self.zone_for_point(mouse.pt), grid) {
-                        self.drag = Some(drag);
+                        self.wire_drag = Some(drag);
                     } else {
-                        debug_log!("drag done (move)");
+                        debug_log!("wire drag done (move)");
                     }
                 }
             }
             Event::MouseUp(mouse) => {
                 if mouse.left {
-                    if let Some(mut drag) = self.drag.take() {
+                    if let Some(drag) = self.chip_drag.take() {
+                        drag.finish(grid);
+                    }
+                    if let Some(drag) = self.wire_drag.take() {
                         drag.finish(grid);
                     }
                 }
@@ -285,6 +321,51 @@ fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
     matrix * Matrix4::from_translation(vec3(cx, cy, 0.0)) *
         Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), dir.angle_from_east()) *
         Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
+}
+
+//===========================================================================//
+
+struct ChipDrag {
+    chip_type: ChipType,
+    chip_orient: Orientation,
+    old_coords: Coords,
+    drag_start: Point2<i32>,
+    drag_current: Point2<i32>,
+}
+
+impl ChipDrag {
+    pub fn new(chip_type: ChipType, chip_orient: Orientation,
+               old_coords: Coords, drag_start: Point2<i32>)
+               -> ChipDrag {
+        ChipDrag {
+            chip_type,
+            chip_orient,
+            old_coords,
+            drag_start,
+            drag_current: drag_start,
+        }
+    }
+
+    pub fn chip_topleft(&self) -> Point2<i32> {
+        self.old_coords * GRID_CELL_SIZE +
+            (self.drag_current - self.drag_start)
+    }
+
+    pub fn move_to(&mut self, mouse_pt: Point2<i32>) {
+        self.drag_current = mouse_pt;
+    }
+
+    pub fn finish(self, grid: &mut EditGrid) {
+        let pt = self.chip_topleft();
+        let new_coords = (pt + vec2(GRID_CELL_SIZE / 2, GRID_CELL_SIZE / 2)) /
+            GRID_CELL_SIZE;
+        let size = self.chip_orient * self.chip_type.size();
+        // TODO: Allow moving a large-size chip onto a position that overlaps
+        //   its old position.
+        if grid.can_place_chip(new_coords, size) {
+            grid.mutate(&[GridChange::MoveChip(self.old_coords, new_coords)]);
+        }
+    }
 }
 
 //===========================================================================//
@@ -359,7 +440,7 @@ impl WireDrag {
         more
     }
 
-    pub fn finish(&mut self, grid: &mut EditGrid) {
+    pub fn finish(mut self, grid: &mut EditGrid) {
         if self.changed {
             return;
         }

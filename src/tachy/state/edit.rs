@@ -19,7 +19,7 @@
 
 use super::check::{self, WireColor, WireInfo, WireShape};
 use super::chip::ChipType;
-use super::geom::{Coords, CoordsDelta, Direction, Orientation};
+use super::geom::{Coords, CoordsDelta, Direction, Orientation, RectSize};
 use super::port::{PortColor, PortConstraint, PortFlow};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
@@ -27,13 +27,13 @@ use std::usize;
 
 //===========================================================================//
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ChipCell {
     /// A chip.
     Chip(ChipType, Orientation),
     /// For chips larger than 1x1, cells other than the top-left corner use
-    /// ChipRef with the delta to the top-left corner.
-    ChipRef(CoordsDelta),
+    /// Ref with the delta to the top-left corner.
+    Ref(CoordsDelta),
 }
 
 //===========================================================================//
@@ -49,7 +49,8 @@ pub enum GridChange {
     ToggleSplitWire(Coords, Direction),
     /// Toggles a cell between a four-way split and an overpass/underpass.
     ToggleCrossWire(Coords),
-    // TODO: other changes (e.g. chip movement)
+    /// Moves a chip from the first coords to the second.
+    MoveChip(Coords, Coords), // TODO: allow reorientation
 }
 
 //===========================================================================//
@@ -111,9 +112,9 @@ impl EditGrid {
                                     Orientation::default().rotate_cw()));
         chips.insert((7, 2).into(),
                      ChipCell::Chip(ChipType::Ram, Orientation::default()));
-        chips.insert((8, 2).into(), ChipCell::ChipRef((-1, 0).into()));
-        chips.insert((7, 3).into(), ChipCell::ChipRef((0, -1).into()));
-        chips.insert((8, 3).into(), ChipCell::ChipRef((-1, -1).into()));
+        chips.insert((8, 2).into(), ChipCell::Ref((-1, 0).into()));
+        chips.insert((7, 3).into(), ChipCell::Ref((0, -1).into()));
+        chips.insert((8, 3).into(), ChipCell::Ref((-1, -1).into()));
         chips.insert((7, 0).into(),
                      ChipCell::Chip(ChipType::Discard,
                                     Orientation::default()));
@@ -137,9 +138,46 @@ impl EditGrid {
         }
     }
 
+    pub fn chip_at(&self, coords: Coords)
+                   -> Option<(ChipType, Orientation, Coords)> {
+        match self.chips.get(&coords) {
+            Some(&ChipCell::Chip(ctype, orient)) => {
+                Some((ctype, orient, coords))
+            }
+            Some(&ChipCell::Ref(delta)) => {
+                let new_coords = coords + delta;
+                match self.chips.get(&new_coords) {
+                    Some(&ChipCell::Chip(ctype, orient)) => {
+                        Some((ctype, orient, new_coords))
+                    }
+                    other => {
+                        panic!("ChipRef({:?}) at {:?} points to {:?} at {:?}",
+                               delta,
+                               coords,
+                               other,
+                               new_coords);
+                    }
+                }
+            }
+            None => None,
+        }
+    }
+
     pub fn wire_shape_at(&self, coords: Coords, dir: Direction)
                          -> Option<WireShape> {
-        self.fragments.get(&(coords, dir)).map(|t| t.0)
+        self.fragments.get(&(coords, dir)).map(|&(shape, _)| shape)
+    }
+
+    pub fn can_place_chip(&self, coords: Coords, size: RectSize<i32>) -> bool {
+        for row in 0..size.height {
+            for col in 0..size.width {
+                let delta = CoordsDelta { x: col, y: row };
+                if self.chips.contains_key(&(coords + delta)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     pub fn mutate(&mut self, changes: &[GridChange]) {
@@ -299,6 +337,35 @@ impl EditGrid {
                     _ => debug_log!("{:?} had no effect", change),
                 }
             }
+            GridChange::MoveChip(old_coords, new_coords) => {
+                match self.chips.get(&old_coords) {
+                    Some(&ChipCell::Chip(ctype, orient)) => {
+                        let size = orient * ctype.size();
+                        // TODO: Allow moving a large-size chip onto a position
+                        //   that overlaps its old position.
+                        if self.can_place_chip(new_coords, size) {
+                            for row in 0..size.height {
+                                for col in 0..size.width {
+                                    let delta = CoordsDelta { x: col, y: row };
+                                    self.chips.remove(&(old_coords + delta));
+                                }
+                            }
+                            for row in 0..size.height {
+                                for col in 0..size.width {
+                                    let delta = CoordsDelta { x: col, y: row };
+                                    self.chips.insert(new_coords + delta,
+                                                      ChipCell::Ref(-delta));
+                                }
+                            }
+                            self.chips.insert(new_coords,
+                                              ChipCell::Chip(ctype, orient));
+                        } else {
+                            debug_log!("{:?} had no effect", change);
+                        }
+                    }
+                    _ => debug_log!("{:?} had no effect", change),
+                }
+            }
         }
     }
 
@@ -439,7 +506,7 @@ impl<'a> Iterator for ChipsIter<'a> {
                 ChipCell::Chip(ctype, orient) => {
                     return Some((coords, ctype, orient));
                 }
-                ChipCell::ChipRef(_) => {}
+                ChipCell::Ref(_) => {}
             }
         }
         return None;

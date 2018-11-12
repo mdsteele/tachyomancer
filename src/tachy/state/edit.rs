@@ -50,7 +50,7 @@ pub enum GridChange {
     /// Toggles a cell between a four-way split and an overpass/underpass.
     ToggleCrossWire(Coords),
     /// Moves a chip from the first coords to the second.
-    MoveChip(Coords, Coords), // TODO: allow reorientation
+    MoveChip(Coords, Orientation, Coords),
 }
 
 //===========================================================================//
@@ -337,28 +337,30 @@ impl EditGrid {
                     _ => debug_log!("{:?} had no effect", change),
                 }
             }
-            GridChange::MoveChip(old_coords, new_coords) => {
+            GridChange::MoveChip(old_coords, reorient, new_coords) => {
                 match self.chips.get(&old_coords) {
-                    Some(&ChipCell::Chip(ctype, orient)) => {
-                        let size = orient * ctype.size();
+                    Some(&ChipCell::Chip(ctype, old_orient)) => {
+                        let old_size = old_orient * ctype.size();
+                        let new_size = reorient * old_size;
                         // TODO: Allow moving a large-size chip onto a position
                         //   that overlaps its old position.
-                        if self.can_place_chip(new_coords, size) {
-                            for row in 0..size.height {
-                                for col in 0..size.width {
+                        if self.can_place_chip(new_coords, new_size) {
+                            for row in 0..old_size.height {
+                                for col in 0..old_size.width {
                                     let delta = CoordsDelta { x: col, y: row };
                                     self.chips.remove(&(old_coords + delta));
                                 }
                             }
-                            for row in 0..size.height {
-                                for col in 0..size.width {
+                            for row in 0..new_size.height {
+                                for col in 0..new_size.width {
                                     let delta = CoordsDelta { x: col, y: row };
                                     self.chips.insert(new_coords + delta,
                                                       ChipCell::Ref(-delta));
                                 }
                             }
-                            self.chips.insert(new_coords,
-                                              ChipCell::Chip(ctype, orient));
+                            let new_orient = reorient * old_orient;
+                            let cell = ChipCell::Chip(ctype, new_orient);
+                            self.chips.insert(new_coords, cell);
                         } else {
                             debug_log!("{:?} had no effect", change);
                         }

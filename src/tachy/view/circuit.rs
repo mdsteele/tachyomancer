@@ -191,7 +191,10 @@ impl EditGridView {
             let y = pt.y as f32;
             let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
-            self.draw_chip(resources, &mat, drag.chip_type, drag.chip_orient);
+            self.draw_chip(resources,
+                           &mat,
+                           drag.chip_type,
+                           drag.reorient * drag.old_orient);
         }
     }
 
@@ -225,8 +228,21 @@ impl EditGridView {
     }
 
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid) {
-        // TODO: Allow using keyboard to reorient dragged chip(s).
         match event {
+            Event::KeyDown(key) => {
+                // TODO: Make these hotkeys customizable by prefs.
+                if let Some(ref mut drag) = self.chip_drag {
+                    if !key.command && !key.shift {
+                        match key.code {
+                            Keycode::A => drag.flip_horz(),
+                            Keycode::E => drag.rotate_cw(),
+                            Keycode::Q => drag.rotate_ccw(),
+                            Keycode::W => drag.flip_vert(),
+                            _ => {}
+                        }
+                    }
+                }
+            }
             Event::MouseDown(mouse) => {
                 if mouse.left {
                     if let Some((ctype, orient, coords)) =
@@ -327,28 +343,40 @@ fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
 
 struct ChipDrag {
     chip_type: ChipType,
-    chip_orient: Orientation,
+    old_orient: Orientation,
     old_coords: Coords,
     drag_start: Point2<i32>,
     drag_current: Point2<i32>,
+    reorient: Orientation,
 }
 
 impl ChipDrag {
-    pub fn new(chip_type: ChipType, chip_orient: Orientation,
+    pub fn new(chip_type: ChipType, old_orient: Orientation,
                old_coords: Coords, drag_start: Point2<i32>)
                -> ChipDrag {
         ChipDrag {
             chip_type,
-            chip_orient,
+            old_orient,
             old_coords,
             drag_start,
             drag_current: drag_start,
+            reorient: Orientation::default(),
         }
     }
 
     pub fn chip_topleft(&self) -> Point2<i32> {
         self.old_coords * GRID_CELL_SIZE +
             (self.drag_current - self.drag_start)
+    }
+
+    pub fn flip_horz(&mut self) { self.reorient = self.reorient.flip_horz(); }
+
+    pub fn flip_vert(&mut self) { self.reorient = self.reorient.flip_vert(); }
+
+    pub fn rotate_cw(&mut self) { self.reorient = self.reorient.rotate_cw(); }
+
+    pub fn rotate_ccw(&mut self) {
+        self.reorient = self.reorient.rotate_ccw();
     }
 
     pub fn move_to(&mut self, mouse_pt: Point2<i32>) {
@@ -359,11 +387,19 @@ impl ChipDrag {
         let pt = self.chip_topleft();
         let new_coords = (pt + vec2(GRID_CELL_SIZE / 2, GRID_CELL_SIZE / 2)) /
             GRID_CELL_SIZE;
-        let size = self.chip_orient * self.chip_type.size();
+        let new_size = self.reorient * self.old_orient * self.chip_type.size();
         // TODO: Allow moving a large-size chip onto a position that overlaps
         //   its old position.
-        if grid.can_place_chip(new_coords, size) {
-            grid.mutate(&[GridChange::MoveChip(self.old_coords, new_coords)]);
+        if grid.can_place_chip(new_coords, new_size) {
+            grid.mutate(
+                &[
+                    GridChange::MoveChip(
+                        self.old_coords,
+                        self.reorient,
+                        new_coords,
+                    ),
+                ],
+            );
         }
     }
 }

@@ -165,9 +165,38 @@ impl Orientation {
         CoordsDelta { x, y }
     }
 
+    pub fn flip_horz(self) -> Orientation {
+        Orientation {
+            rotate: if self.rotate % 2 != 0 {
+                self.rotate
+            } else {
+                (self.rotate + 2) % 4
+            },
+            mirror: !self.mirror,
+        }
+    }
+
+    pub fn flip_vert(self) -> Orientation {
+        Orientation {
+            rotate: if self.rotate % 2 == 0 {
+                self.rotate
+            } else {
+                (self.rotate + 2) % 4
+            },
+            mirror: !self.mirror,
+        }
+    }
+
     pub fn rotate_cw(self) -> Orientation {
         Orientation {
             rotate: (self.rotate + 1) % 4,
+            mirror: self.mirror,
+        }
+    }
+
+    pub fn rotate_ccw(self) -> Orientation {
+        Orientation {
+            rotate: (self.rotate + 3) % 4,
             mirror: self.mirror,
         }
     }
@@ -179,6 +208,18 @@ impl Default for Orientation {
             rotate: 0,
             mirror: false,
         }
+    }
+}
+
+impl ops::Mul<Orientation> for Orientation {
+    type Output = Orientation;
+
+    fn mul(self, mut other: Orientation) -> Orientation {
+        if self.mirror {
+            other = other.flip_vert();
+        }
+        other.rotate = (other.rotate + self.rotate) % 4;
+        other
     }
 }
 
@@ -232,10 +273,35 @@ mod tests {
     }
 
     #[test]
-    fn default_orient_does_not_change_dir() {
+    fn orientation_times_direction() {
+        let orient = Orientation::default();
         for &dir in Direction::all() {
-            assert_eq!(Orientation::default() * dir, dir);
+            assert_eq!(orient * dir, dir);
         }
+
+        let orient = Orientation::default().rotate_cw();
+        for &dir in Direction::all() {
+            assert_eq!(orient * dir, dir.rotate_cw());
+        }
+
+        let orient = Orientation::default().rotate_ccw();
+        for &dir in Direction::all() {
+            assert_eq!(orient * dir, dir.rotate_ccw());
+        }
+
+        let orient = Orientation::default().flip_vert();
+        for &dir in Direction::all() {
+            assert_eq!(orient * dir, dir.flip_vert());
+        }
+    }
+
+    #[test]
+    fn orientation_times_orientation() {
+        let orient = Orientation::default().flip_vert().rotate_cw();
+        assert_eq!(orient * orient, Orientation::default());
+
+        let orient = Orientation::default().rotate_cw().flip_vert();
+        assert_eq!(orient.rotate_ccw(), Orientation::default().flip_horz());
     }
 }
 

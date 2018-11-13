@@ -24,6 +24,7 @@ use sdl2::mouse::MouseButton;
 
 //===========================================================================//
 
+#[derive(Clone)]
 pub enum Event {
     Quit,
     KeyDown(KeyEventData),
@@ -80,10 +81,24 @@ impl Event {
             _ => None,
         }
     }
+
+    pub fn relative_to(&self, origin: Point2<i32>) -> Event {
+        match self {
+            Event::MouseDown(mouse) => {
+                Event::MouseDown(mouse.relative_to(origin))
+            }
+            Event::MouseMove(mouse) => {
+                Event::MouseMove(mouse.relative_to(origin))
+            }
+            Event::MouseUp(mouse) => Event::MouseUp(mouse.relative_to(origin)),
+            _ => self.clone(),
+        }
+    }
 }
 
 //===========================================================================//
 
+#[derive(Clone)]
 pub struct KeyEventData {
     pub code: Keycode,
     pub command: bool,
@@ -108,6 +123,7 @@ impl KeyEventData {
 
 //===========================================================================//
 
+#[derive(Clone)]
 pub struct MouseEventData {
     pub pt: Point2<i32>,
     pub left: bool,
@@ -120,6 +136,17 @@ impl MouseEventData {
             pt: Point2 { x, y },
             left: button == MouseButton::Left,
             right: button == MouseButton::Right,
+        }
+    }
+
+    fn relative_to(&self, origin: Point2<i32>) -> MouseEventData {
+        MouseEventData {
+            pt: Point2 {
+                x: self.pt.x - origin.x,
+                y: self.pt.y - origin.y,
+            },
+            left: self.left,
+            right: self.right,
         }
     }
 }

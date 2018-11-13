@@ -25,7 +25,7 @@ use tachy::view::CircuitView;
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
-    let mut view = CircuitView::new(window.size());
+    let mut view = CircuitView::new(window.size().into());
     let grid = state.edit_grid_mut().unwrap(); // TODO
     loop {
         match window.poll_event() {

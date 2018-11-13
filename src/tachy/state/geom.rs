@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Deg, Point2, Vector2, vec2};
+use cgmath::{BaseNum, Deg, Point2, Vector2, vec2};
 use std::ops;
 
 //===========================================================================//
@@ -37,6 +37,39 @@ pub struct RectSize<T> {
 impl<T> From<(T, T)> for RectSize<T> {
     fn from((width, height): (T, T)) -> RectSize<T> {
         RectSize { width, height }
+    }
+}
+
+//===========================================================================//
+
+#[derive(Clone, Copy)]
+pub struct Rect<T> {
+    top_left: Point2<T>,
+    size: RectSize<T>,
+}
+
+impl<T: BaseNum> Rect<T> {
+    pub fn new(x: T, y: T, width: T, height: T) -> Rect<T> {
+        Rect {
+            top_left: Point2 { x, y },
+            size: RectSize { width, height },
+        }
+    }
+
+    pub fn x(&self) -> T { self.top_left.x }
+
+    pub fn y(&self) -> T { self.top_left.y }
+
+    pub fn width(&self) -> T { self.size.width }
+
+    pub fn height(&self) -> T { self.size.height }
+
+    pub fn top_left(&self) -> Point2<T> { self.top_left }
+
+    pub fn contains_point(&self, pt: Point2<T>) -> bool {
+        pt.x >= self.top_left.x && pt.y >= self.top_left.y &&
+            pt.x < self.top_left.x + self.size.width &&
+            pt.y < self.top_left.y + self.size.height
     }
 }
 

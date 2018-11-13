@@ -17,47 +17,32 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::control::ControlsTray;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, vec2, vec3};
 use gl;
 use num_integer::mod_floor;
 use tachy::font::Align;
-use tachy::gl::{Primitive, VertexArray, VertexBuffer};
-use tachy::gui::{Event, Keycode, Rect, Resources};
+use tachy::gui::{Event, Keycode, Resources};
 use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
-                   Orientation, PortColor, PortFlow, WireShape};
-
-//===========================================================================//
-
-const TEX_START: f32 = 4.0 / 128.0;
-const TEX_END: f32 = 10.0 / 128.0;
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
-const QUAD_VERTEX_DATA: &[f32] = &[
-    0.0, 0.0,  TEX_START,
-    1.0, 0.0,  TEX_START,
-    0.0, 1.0,  TEX_END,
-    1.0, 1.0,  TEX_END,
-];
+                   Orientation, PortColor, PortFlow, RectSize, WireShape};
 
 //===========================================================================//
 
 pub struct CircuitView {
-    width: u32,
-    height: u32,
-    varray: VertexArray,
-    vbuffer: VertexBuffer<f32>,
+    width: f32,
+    height: f32,
     edit_grid: EditGridView,
+    controls_tray: ControlsTray,
 }
 
 impl CircuitView {
-    pub fn new(size: (u32, u32)) -> CircuitView {
+    pub fn new(window_size: RectSize<u32>) -> CircuitView {
         CircuitView {
-            width: size.0,
-            height: size.1,
-            varray: VertexArray::new(2),
-            vbuffer: VertexBuffer::new(QUAD_VERTEX_DATA),
-            edit_grid: EditGridView::new(size.0, size.1),
+            width: window_size.width as f32,
+            height: window_size.height as f32,
+            edit_grid: EditGridView::new(window_size),
+            controls_tray: ControlsTray::new(window_size, true),
         }
     }
 
@@ -67,37 +52,14 @@ impl CircuitView {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
         self.edit_grid.draw(resources, grid);
-        let projection = cgmath::ortho(0.0,
-                                       self.width as f32,
-                                       self.height as f32,
-                                       0.0,
-                                       -1.0,
-                                       1.0);
-        let model_mtx =
-            Matrix4::from_translation(cgmath::vec3(200.0, 350.0, 0.0)) *
-                Matrix4::from_nonuniform_scale(100.0, 50.0, 1.0);
-        let shader = resources.shaders().wire();
-        shader.bind();
-        shader.set_mvp(&(projection * model_mtx));
-        shader.set_wire_color((0.0, 1.0, 1.0));
-        resources.textures().wire().bind();
-        self.varray.bind();
-        self.vbuffer.attribf(0, 3, 3, 0);
-        self.vbuffer.attribf(1, 1, 3, 2);
-        self.varray.draw(Primitive::TriangleStrip, 0, 4);
+        let projection =
+            cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
+        self.controls_tray.draw(resources, &projection);
     }
 
     pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid)
                         -> bool {
-        self.edit_grid.handle_event(event, grid);
         match event {
-            Event::MouseDown(mouse) => {
-                if mouse.left &&
-                    Rect::new(200, 350, 100, 50).contains_point(mouse.pt)
-                {
-                    return true;
-                }
-            }
             Event::KeyDown(key) => {
                 if key.command && key.shift && key.code == Keycode::F {
                     return true;
@@ -105,6 +67,13 @@ impl CircuitView {
             }
             _ => {}
         }
+        if let Some(opt_action) = self.controls_tray.handle_event(event) {
+            if let Some(action) = opt_action {
+                debug_log!("pressed button: {:?}", action);
+            }
+            return false;
+        }
+        self.edit_grid.handle_event(event, grid);
         return false;
     }
 }
@@ -115,18 +84,18 @@ const GRID_CELL_SIZE: i32 = 64;
 const ZONE_CENTER_SEMI_SIZE: i32 = 12;
 
 struct EditGridView {
-    width: u32,
-    height: u32,
+    width: f32,
+    height: f32,
     wire_model: WireModel,
     chip_drag: Option<ChipDrag>,
     wire_drag: Option<WireDrag>,
 }
 
 impl EditGridView {
-    pub fn new(width: u32, height: u32) -> EditGridView {
+    pub fn new(window_size: RectSize<u32>) -> EditGridView {
         EditGridView {
-            width: width,
-            height: height,
+            width: window_size.width as f32,
+            height: window_size.height as f32,
             wire_model: WireModel::new(),
             chip_drag: None,
             wire_drag: None,
@@ -134,12 +103,8 @@ impl EditGridView {
     }
 
     pub fn draw(&self, resources: &Resources, grid: &EditGrid) {
-        let matrix = cgmath::ortho(0.0,
-                                   self.width as f32,
-                                   self.height as f32,
-                                   0.0,
-                                   -1.0,
-                                   1.0);
+        let matrix =
+            cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
         // TODO: translate based on current scrolling
         // Draw wires:
         for (coords, dir, shape, size, color) in grid.wire_fragments() {

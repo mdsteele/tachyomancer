@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::control::ControlsTray;
+use super::parts::{PartsAction, PartsTray};
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, vec2, vec3};
 use gl;
@@ -34,6 +35,7 @@ pub struct CircuitView {
     height: f32,
     edit_grid: EditGridView,
     controls_tray: ControlsTray,
+    parts_tray: PartsTray,
 }
 
 impl CircuitView {
@@ -43,6 +45,7 @@ impl CircuitView {
             height: window_size.height as f32,
             edit_grid: EditGridView::new(window_size),
             controls_tray: ControlsTray::new(window_size, true),
+            parts_tray: PartsTray::new(window_size),
         }
     }
 
@@ -51,10 +54,12 @@ impl CircuitView {
             gl::ClearColor(0.0, 0.0, 0.4, 0.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
-        self.edit_grid.draw(resources, grid);
+        self.edit_grid.draw_board(resources, grid);
         let projection =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
+        self.parts_tray.draw(resources, &projection);
         self.controls_tray.draw(resources, &projection);
+        self.edit_grid.draw_dragged(resources);
     }
 
     pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid)
@@ -67,12 +72,28 @@ impl CircuitView {
             }
             _ => {}
         }
+
         if let Some(opt_action) = self.controls_tray.handle_event(event) {
             if let Some(action) = opt_action {
                 debug_log!("pressed button: {:?}", action);
             }
             return false;
         }
+
+        let (opt_action, stop) = self.parts_tray.handle_event(event);
+        match opt_action {
+            Some(PartsAction::Grab(ctype, pt)) => {
+                self.edit_grid.grab_from_parts_tray(ctype, pt);
+            }
+            Some(PartsAction::Drop) => {
+                self.edit_grid.drop_into_parts_tray(grid);
+            }
+            None => {}
+        }
+        if stop {
+            return false;
+        }
+
         self.edit_grid.handle_event(event, grid);
         return false;
     }
@@ -102,7 +123,7 @@ impl EditGridView {
         }
     }
 
-    pub fn draw(&self, resources: &Resources, grid: &EditGrid) {
+    pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
         let matrix =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
         // TODO: translate based on current scrolling
@@ -139,7 +160,7 @@ impl EditGridView {
         // Draw chips (except the one being dragged, if any):
         for (coords, ctype, orient) in grid.chips() {
             if let Some(ref drag) = self.chip_drag {
-                if coords == drag.old_coords {
+                if Some(coords) == drag.old_coords {
                     continue;
                 }
             }
@@ -149,15 +170,19 @@ impl EditGridView {
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
             self.draw_chip(resources, &mat, ctype, orient);
         }
-        // Draw dragged chip, if any:
+    }
+
+    pub fn draw_dragged(&self, resources: &Resources) {
         if let Some(ref drag) = self.chip_drag {
             let pt = drag.chip_topleft();
             let x = pt.x as f32;
             let y = pt.y as f32;
-            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
-                Matrix4::from_scale(GRID_CELL_SIZE as f32);
+            let matrix =
+                cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0) *
+                    Matrix4::from_translation(vec3(x, y, 0.0)) *
+                    Matrix4::from_scale(GRID_CELL_SIZE as f32);
             self.draw_chip(resources,
-                           &mat,
+                           &matrix,
                            drag.chip_type,
                            drag.reorient * drag.old_orient);
         }
@@ -217,7 +242,7 @@ impl EditGridView {
                         //   chip, allow for wire dragging.
                         self.chip_drag = Some(ChipDrag::new(ctype,
                                                             orient,
-                                                            coords,
+                                                            Some(coords),
                                                             mouse.pt));
                     } else {
                         let mut drag = WireDrag::new();
@@ -254,7 +279,7 @@ impl EditGridView {
             Event::MouseUp(mouse) => {
                 if mouse.left {
                     if let Some(drag) = self.chip_drag.take() {
-                        drag.finish(grid);
+                        drag.drop_onto_board(grid);
                     }
                     if let Some(drag) = self.wire_drag.take() {
                         drag.finish(grid);
@@ -262,6 +287,22 @@ impl EditGridView {
                 }
             }
             _ => {}
+        }
+    }
+
+    pub fn grab_from_parts_tray(&mut self, ctype: ChipType, pt: Point2<i32>) {
+        let size = ctype.size();
+        let start = Point2::new(size.width, size.height) *
+            (GRID_CELL_SIZE / 2);
+        let mut drag =
+            ChipDrag::new(ctype, Orientation::default(), None, start);
+        drag.move_to(pt);
+        self.chip_drag = Some(drag);
+    }
+
+    pub fn drop_into_parts_tray(&mut self, grid: &mut EditGrid) {
+        if let Some(drag) = self.chip_drag.take() {
+            drag.drop_into_parts_tray(grid);
         }
     }
 
@@ -309,7 +350,7 @@ fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
 struct ChipDrag {
     chip_type: ChipType,
     old_orient: Orientation,
-    old_coords: Coords,
+    old_coords: Option<Coords>,
     drag_start: Point2<i32>,
     drag_current: Point2<i32>,
     reorient: Orientation,
@@ -317,7 +358,7 @@ struct ChipDrag {
 
 impl ChipDrag {
     pub fn new(chip_type: ChipType, old_orient: Orientation,
-               old_coords: Coords, drag_start: Point2<i32>)
+               old_coords: Option<Coords>, drag_start: Point2<i32>)
                -> ChipDrag {
         ChipDrag {
             chip_type,
@@ -330,8 +371,12 @@ impl ChipDrag {
     }
 
     pub fn chip_topleft(&self) -> Point2<i32> {
-        self.old_coords * GRID_CELL_SIZE +
-            (self.drag_current - self.drag_start)
+        let coords_topleft = if let Some(coords) = self.old_coords {
+            coords * GRID_CELL_SIZE
+        } else {
+            Point2::new(0, 0)
+        };
+        coords_topleft + (self.drag_current - self.drag_start)
     }
 
     pub fn flip_horz(&mut self) { self.reorient = self.reorient.flip_horz(); }
@@ -348,7 +393,7 @@ impl ChipDrag {
         self.drag_current = mouse_pt;
     }
 
-    pub fn finish(self, grid: &mut EditGrid) {
+    pub fn drop_onto_board(self, grid: &mut EditGrid) {
         let pt = self.chip_topleft();
         let new_coords = (pt + vec2(GRID_CELL_SIZE / 2, GRID_CELL_SIZE / 2)) /
             GRID_CELL_SIZE;
@@ -356,12 +401,28 @@ impl ChipDrag {
         // TODO: Allow moving a large-size chip onto a position that overlaps
         //   its old position.
         if grid.can_place_chip(new_coords, new_size) {
+            let mut changes = Vec::<GridChange>::new();
+            if let Some(old_coords) = self.old_coords {
+                changes.push(GridChange::ToggleChip(old_coords,
+                                                    self.old_orient,
+                                                    self.chip_type));
+            }
+            changes.push(GridChange::ToggleChip(new_coords,
+                                                self.reorient *
+                                                    self.old_orient,
+                                                self.chip_type));
+            grid.mutate(&changes);
+        }
+    }
+
+    pub fn drop_into_parts_tray(self, grid: &mut EditGrid) {
+        if let Some(old_coords) = self.old_coords {
             grid.mutate(
                 &[
-                    GridChange::MoveChip(
-                        self.old_coords,
-                        self.reorient,
-                        new_coords,
+                    GridChange::ToggleChip(
+                        old_coords,
+                        self.old_orient,
+                        self.chip_type,
                     ),
                 ],
             );

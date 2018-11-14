@@ -19,6 +19,7 @@
 
 mod circuit;
 mod control;
+mod parts;
 mod wire;
 
 pub use self::circuit::CircuitView;

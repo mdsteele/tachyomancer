@@ -20,13 +20,17 @@
 use super::control::ControlsTray;
 use super::parts::{PartsAction, PartsTray};
 use super::wire::WireModel;
-use cgmath::{self, Matrix4, Point2, vec2, vec3};
+use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec3};
 use gl;
 use num_integer::mod_floor;
 use tachy::font::Align;
 use tachy::gui::{Event, Keycode, Resources};
 use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
                    Orientation, PortColor, PortFlow, RectSize, WireShape};
+
+//===========================================================================//
+
+const SCROLL_PER_KEYDOWN: i32 = 40;
 
 //===========================================================================//
 
@@ -107,6 +111,7 @@ const ZONE_CENTER_SEMI_SIZE: i32 = 12;
 struct EditGridView {
     width: f32,
     height: f32,
+    scroll: Vector2<i32>,
     wire_model: WireModel,
     chip_drag: Option<ChipDrag>,
     wire_drag: Option<WireDrag>,
@@ -117,6 +122,7 @@ impl EditGridView {
         EditGridView {
             width: window_size.width as f32,
             height: window_size.height as f32,
+            scroll: Vector2::new(0, 0),
             wire_model: WireModel::new(),
             chip_drag: None,
             wire_drag: None,
@@ -124,9 +130,7 @@ impl EditGridView {
     }
 
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
-        let matrix =
-            cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
-        // TODO: translate based on current scrolling
+        let matrix = self.vp_matrix();
         // Draw wires:
         for (coords, dir, shape, size, color) in grid.wire_fragments() {
             match (shape, dir) {
@@ -177,15 +181,21 @@ impl EditGridView {
             let pt = drag.chip_topleft();
             let x = pt.x as f32;
             let y = pt.y as f32;
-            let matrix =
-                cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0) *
-                    Matrix4::from_translation(vec3(x, y, 0.0)) *
-                    Matrix4::from_scale(GRID_CELL_SIZE as f32);
+            let matrix = self.vp_matrix() *
+                Matrix4::from_translation(vec3(x, y, 0.0)) *
+                Matrix4::from_scale(GRID_CELL_SIZE as f32);
             self.draw_chip(resources,
                            &matrix,
                            drag.chip_type,
                            drag.reorient * drag.old_orient);
         }
+    }
+
+    fn vp_matrix(&self) -> Matrix4<f32> {
+        cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0) *
+            Matrix4::from_translation(vec3(-self.scroll.x as f32,
+                                           -self.scroll.y as f32,
+                                           0.0))
     }
 
     fn draw_chip(&self, resources: &Resources, matrix: &Matrix4<f32>,
@@ -220,6 +230,13 @@ impl EditGridView {
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid) {
         match event {
             Event::KeyDown(key) => {
+                match key.code {
+                    Keycode::Up => self.scroll.y -= SCROLL_PER_KEYDOWN,
+                    Keycode::Down => self.scroll.y += SCROLL_PER_KEYDOWN,
+                    Keycode::Left => self.scroll.x -= SCROLL_PER_KEYDOWN,
+                    Keycode::Right => self.scroll.x += SCROLL_PER_KEYDOWN,
+                    _ => {}
+                }
                 // TODO: Make these hotkeys customizable by prefs.
                 if let Some(ref mut drag) = self.chip_drag {
                     if !key.command && !key.shift {
@@ -293,7 +310,7 @@ impl EditGridView {
     pub fn grab_from_parts_tray(&mut self, ctype: ChipType, pt: Point2<i32>) {
         let size = ctype.size();
         let start = Point2::new(size.width, size.height) *
-            (GRID_CELL_SIZE / 2);
+            (GRID_CELL_SIZE / 2) - self.scroll;
         let mut drag =
             ChipDrag::new(ctype, Orientation::default(), None, start);
         drag.move_to(pt);
@@ -307,12 +324,11 @@ impl EditGridView {
     }
 
     fn coords_for_point(&self, pt: Point2<i32>) -> Coords {
-        // TODO: translate based on current scrolling
-        pt / GRID_CELL_SIZE
+        (pt + self.scroll) / GRID_CELL_SIZE
     }
 
     fn zone_for_point(&self, pt: Point2<i32>) -> Zone {
-        // TODO: translate based on current scrolling
+        let pt = pt + self.scroll;
         let coords = pt / GRID_CELL_SIZE;
         let x = mod_floor(pt.x, GRID_CELL_SIZE) - GRID_CELL_SIZE / 2;
         let y = mod_floor(pt.y, GRID_CELL_SIZE) - GRID_CELL_SIZE / 2;

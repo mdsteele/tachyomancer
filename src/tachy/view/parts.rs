@@ -95,7 +95,7 @@ impl PartsTray {
                         -> (Option<PartsAction>, bool) {
         match event {
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
-                let delta = self.rect.top_left() - Point2 { x: 0, y: 0 };
+                let delta = self.rect.top_left() - Point2::new(0, 0);
                 for part in self.parts.iter() {
                     if part.rect.contains_point(mouse.pt - delta) {
                         let action = PartsAction::Grab(part.ctype, mouse.pt);

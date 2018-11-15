@@ -171,7 +171,7 @@ impl EditGrid {
     pub fn can_place_chip(&self, coords: Coords, size: RectSize<i32>) -> bool {
         for row in 0..size.height {
             for col in 0..size.width {
-                let delta = CoordsDelta { x: col, y: row };
+                let delta = CoordsDelta::new(col, row);
                 if self.chips.contains_key(&(coords + delta)) {
                     return false;
                 }
@@ -342,9 +342,9 @@ impl EditGrid {
                     None => {
                         let size = orient * ctype.size();
                         if self.can_place_chip(coords, size) {
-                            for y in 0..size.height {
-                                for x in 0..size.width {
-                                    let delta = CoordsDelta { x, y };
+                            for row in 0..size.height {
+                                for col in 0..size.width {
+                                    let delta = CoordsDelta::new(col, row);
                                     let cell = ChipCell::Ref(-delta);
                                     self.chips.insert(coords + delta, cell);
                                 }
@@ -358,9 +358,9 @@ impl EditGrid {
                     Some(&ChipCell::Chip(ctype2, orient2))
                         if ctype2 == ctype && orient2 == orient => {
                         let size = orient * ctype.size();
-                        for y in 0..size.height {
-                            for x in 0..size.width {
-                                let delta = CoordsDelta { x, y };
+                        for row in 0..size.height {
+                            for col in 0..size.width {
+                                let delta = CoordsDelta::new(col, row);
                                 self.chips.remove(&(coords + delta));
                             }
                         }

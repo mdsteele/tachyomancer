@@ -226,7 +226,7 @@ impl WireModel {
 
 fn wire_color(color: WireColor) -> (f32, f32, f32) {
     match color {
-        WireColor::Unknown => (0.5, 0.5, 0.5),
+        WireColor::Unknown => (0.65, 0.65, 0.65),
         WireColor::Error => (1.0, 0.0, 0.0),
         WireColor::Behavior => (1.0, 0.5, 0.0),
         WireColor::Event => (0.0, 1.0, 1.0),

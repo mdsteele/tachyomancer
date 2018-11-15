@@ -20,8 +20,7 @@
 use super::control::ControlsTray;
 use super::parts::{PartsAction, PartsTray};
 use super::wire::WireModel;
-use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec3};
-use gl;
+use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec3, vec4};
 use num_integer::mod_floor;
 use tachy::font::Align;
 use tachy::gui::{Event, Keycode, Resources};
@@ -54,10 +53,6 @@ impl CircuitView {
     }
 
     pub fn draw(&self, resources: &Resources, grid: &EditGrid) {
-        unsafe {
-            gl::ClearColor(0.0, 0.0, 0.4, 0.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-        }
         self.edit_grid.draw_board(resources, grid);
         let projection =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
@@ -130,8 +125,19 @@ impl EditGridView {
     }
 
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
-        let matrix = self.vp_matrix();
+        // Draw grid:
+        {
+            let matrix = cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
+            let pixel_rect = vec4(self.scroll.x as f32,
+                                  self.scroll.y as f32,
+                                  self.width,
+                                  self.height);
+            let coords_rect = pixel_rect / (GRID_CELL_SIZE as f32);
+            resources.shaders().board().draw(&matrix, coords_rect);
+        }
+
         // Draw wires:
+        let matrix = self.vp_matrix();
         for (coords, dir, shape, size, color) in grid.wire_fragments() {
             match (shape, dir) {
                 (WireShape::Stub, _) => {
@@ -161,6 +167,7 @@ impl EditGridView {
                 _ => {}
             }
         }
+
         // Draw chips (except the one being dragged, if any):
         for (coords, ctype, orient) in grid.chips() {
             if let Some(ref drag) = self.chip_drag {

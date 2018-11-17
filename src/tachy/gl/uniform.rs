@@ -25,15 +25,17 @@ use std::marker::PhantomData;
 //===========================================================================//
 
 pub struct ShaderUniform<T> {
-    phantom: PhantomData<T>,
     loc: GLint,
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut T>,
 }
 
 impl<T: UniformValue> ShaderUniform<T> {
     pub(super) fn new(loc: GLint) -> ShaderUniform<T> {
         ShaderUniform {
-            phantom: PhantomData,
             loc,
+            phantom: PhantomData,
         }
     }
 

@@ -47,6 +47,9 @@ impl Primitive {
 
 pub struct VertexArray {
     name: GLuint,
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut ()>,
 }
 
 impl VertexArray {
@@ -60,7 +63,10 @@ impl VertexArray {
             }
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
-        VertexArray { name }
+        VertexArray {
+            name,
+            phantom: PhantomData,
+        }
     }
 
     pub fn bind(&self) {
@@ -92,8 +98,10 @@ impl Drop for VertexArray {
 //===========================================================================//
 
 pub struct VertexBuffer<A> {
-    phantom: PhantomData<A>,
     name: GLuint,
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut A>,
 }
 
 impl<A: VertexAtom> VertexBuffer<A> {
@@ -109,8 +117,8 @@ impl<A: VertexAtom> VertexBuffer<A> {
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         VertexBuffer {
-            phantom: PhantomData,
             name,
+            phantom: PhantomData,
         }
     }
 

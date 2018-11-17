@@ -20,12 +20,16 @@
 use gl;
 use gl::types::{GLint, GLsizei, GLuint};
 use png;
+use std::marker::PhantomData;
 use std::os::raw::c_void;
 
 //===========================================================================//
 
 pub struct Texture1D {
     name: GLuint,
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut ()>,
 }
 
 impl Texture1D {
@@ -58,7 +62,10 @@ impl Texture1D {
                               gl::LINEAR_MIPMAP_LINEAR as GLint);
             gl::GenerateMipmap(gl::TEXTURE_1D);
         }
-        return Ok(Texture1D { name });
+        return Ok(Texture1D {
+                      name,
+                      phantom: PhantomData,
+                  });
     }
 
     /// Sets this as the current texture.
@@ -82,6 +89,9 @@ impl Drop for Texture1D {
 
 pub struct Texture2D {
     name: GLuint,
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut ()>,
 }
 
 impl Texture2D {
@@ -150,7 +160,10 @@ impl Texture2D {
                               gl::TEXTURE_MIN_FILTER,
                               gl::LINEAR as GLint);
         }
-        return Ok(Texture2D { name });
+        return Ok(Texture2D {
+                      name,
+                      phantom: PhantomData,
+                  });
     }
 
     /// Sets this as the current texture.

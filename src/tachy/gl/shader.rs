@@ -19,6 +19,7 @@
 
 use gl;
 use gl::types::{GLchar, GLenum, GLint, GLsizei, GLuint};
+use std::marker::PhantomData;
 use std::ptr;
 
 //===========================================================================//
@@ -43,14 +44,19 @@ impl ShaderType {
 /// Represents a GL shader.
 pub struct Shader {
     pub(super) id: GLuint,
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut ()>,
 }
 
 impl Shader {
     pub fn new(shader_type: ShaderType, name: &str, code: &[u8])
                -> Result<Shader, String> {
         let shader = unsafe {
-            let shader =
-                Shader { id: gl::CreateShader(shader_type.to_gl_enum()) };
+            let shader = Shader {
+                id: gl::CreateShader(shader_type.to_gl_enum()),
+                phantom: PhantomData,
+            };
             gl::ShaderSource(shader.id,
                              1,
                              &(code.as_ptr() as *const GLchar),
@@ -102,9 +108,5 @@ impl Drop for Shader {
         }
     }
 }
-
-// TODO: impl !Send for Shader {}
-
-// TODO: impl !Sync for Shader {}
 
 //===========================================================================//

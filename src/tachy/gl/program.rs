@@ -22,18 +22,25 @@ use super::uniform::{ShaderUniform, UniformValue};
 use gl;
 use gl::types::{GLchar, GLenum, GLint, GLsizei, GLuint};
 use std::ffi::CString;
+use std::marker::PhantomData;
 use std::ptr;
 
 //===========================================================================//
 
 pub struct ShaderProgram {
     id: GLuint,
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut ()>,
 }
 
 impl ShaderProgram {
     pub fn new(shaders: &[&Shader]) -> Result<ShaderProgram, String> {
         unsafe {
-            let program = ShaderProgram { id: gl::CreateProgram() };
+            let program = ShaderProgram {
+                id: gl::CreateProgram(),
+                phantom: PhantomData,
+            };
             for shader in shaders.iter() {
                 gl::AttachShader(program.id, shader.id);
             }
@@ -134,10 +141,6 @@ impl Drop for ShaderProgram {
         }
     }
 }
-
-// TODO: impl !Send for ShaderProgram {}
-
-// TODO: impl !Sync for ShaderProgram {}
 
 //===========================================================================//
 

@@ -19,7 +19,8 @@
 
 use super::geom::{Coords, Orientation, RectSize};
 use super::geom::Direction::{self, East, North, South, West};
-use super::port::{PortColor, PortConstraint, PortFlow, PortSpec};
+use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
+                  PortSpec};
 use super::size::WireSize;
 
 //===========================================================================//
@@ -145,6 +146,16 @@ impl ChipType {
         }
     }
 
+    pub fn dependencies_internal(self) -> &'static [(usize, usize)] {
+        match self {
+            ChipType::Const(_) |
+            ChipType::Delay => &[],
+            ChipType::Not | ChipType::Discard => &[(0, 1)],
+            ChipType::And | ChipType::Pack => &[(0, 2), (1, 2)],
+            ChipType::Ram => &[(0, 2), (1, 2), (3, 5), (4, 5), (1, 5), (4, 2)],
+        }
+    }
+
     pub fn ports(self, coords: Coords, orient: Orientation) -> Vec<PortSpec> {
         let size = self.size();
         self.ports_internal()
@@ -167,6 +178,25 @@ impl ChipType {
         self.constraints_internal()
             .iter()
             .map(|constraint| constraint.reify(coords, orient, size, ports))
+            .collect()
+    }
+
+    pub fn dependencies(self, coords: Coords, orient: Orientation)
+                        -> Vec<PortDependency> {
+        let size = self.size();
+        let ports = self.ports_internal();
+        self.dependencies_internal()
+            .iter()
+            .map(|&(recv_index, send_index)| {
+                let recv_port = &ports[recv_index];
+                let send_port = &ports[send_index];
+                debug_assert_eq!(recv_port.0, PortFlow::Recv);
+                debug_assert_eq!(send_port.0, PortFlow::Send);
+                PortDependency {
+                    recv: localize(coords, orient, size, recv_port),
+                    send: localize(coords, orient, size, send_port),
+                }
+            })
             .collect()
     }
 }

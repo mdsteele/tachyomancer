@@ -17,6 +17,7 @@ getopts = "0.2"
 gl = "0.10"
 indexmap = "1"
 num-integer = "0.1"
+pathfinding = "1"
 png = "0.13"
 sdl2 = { version = "0.31", features = ["use_mac_framework"] }
 serde = "1"

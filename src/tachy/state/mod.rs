@@ -26,6 +26,7 @@ mod game;
 mod geom;
 mod port;
 mod size;
+mod topsort;
 
 pub use self::check::{WireColor, WireShape};
 pub use self::chip::ChipType;

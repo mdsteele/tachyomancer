@@ -18,9 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::geom::{Coords, Direction};
-use super::port::{PortColor, PortConstraint, PortFlow};
+use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::{WireSize, WireSizeInterval};
+use super::topsort::topological_sort_into_groups;
 use indexmap::IndexMap;
+use pathfinding::prelude::strongly_connected_components;
 use std::collections::{HashMap, HashSet};
 
 //===========================================================================//
@@ -66,7 +68,6 @@ pub enum WireShape {
 
 //===========================================================================//
 
-#[allow(dead_code)]
 #[derive(Debug, Eq, PartialEq)]
 pub enum WireError {
     MultipleSenders(usize),
@@ -83,6 +84,7 @@ pub struct WireInfo {
     pub ports: HashMap<(Coords, Direction), (PortFlow, PortColor)>,
     pub color: WireColor,
     pub size: WireSizeInterval,
+    pub relevant: bool, // true if wire matters for evaluation
 }
 
 //===========================================================================//
@@ -158,6 +160,7 @@ pub fn group_wires(all_ports: &HashMap<(Coords, Direction),
                        ports: wire_ports,
                        color: WireColor::Unknown,
                        size: WireSizeInterval::full(),
+                       relevant: true,
                    });
     }
     wires
@@ -169,11 +172,13 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
     let mut errors = Vec::<WireError>::new();
     for (index, wire) in wires.iter_mut().enumerate() {
         let mut num_senders = 0;
+        let mut num_receivers = 0;
         let mut has_behavior = false;
         let mut has_event = false;
         for &(flow, color) in wire.ports.values() {
-            if flow == PortFlow::Send {
-                num_senders += 1;
+            match flow {
+                PortFlow::Send => num_senders += 1,
+                PortFlow::Recv => num_receivers += 1,
             }
             match color {
                 PortColor::Behavior => has_behavior = true,
@@ -198,6 +203,8 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
             wire.color = WireColor::Unknown;
             wire.size = WireSizeInterval::empty();
         }
+        wire.relevant = wire.color != WireColor::Error && num_senders > 0 &&
+            num_receivers > 0;
     }
     errors
 }
@@ -319,6 +326,65 @@ pub fn determine_wire_sizes(wires: &mut Vec<WireInfo>,
 
 //===========================================================================//
 
+pub fn detect_loops(wires: &mut Vec<WireInfo>,
+                    dependencies: Vec<PortDependency>)
+                    -> Result<Vec<Vec<usize>>, Vec<WireError>> {
+    let mut relevant_wires = Vec::<usize>::new();
+    let mut wires_for_ports = HashMap::<(Coords, Direction), usize>::new();
+    for (index, wire) in wires.iter().enumerate() {
+        if wire.relevant {
+            relevant_wires.push(index);
+            for &loc in wire.ports.keys() {
+                wires_for_ports.insert(loc, index);
+            }
+        }
+    }
+
+    let mut wire_successors =
+        HashMap::<usize, Vec<usize>>::with_capacity(relevant_wires.len());
+    for &index in relevant_wires.iter() {
+        wire_successors.insert(index, Vec::new());
+    }
+    for dependency in dependencies.into_iter() {
+        if let Some(&recv) = wires_for_ports.get(&dependency.recv) {
+            if let Some(&send) = wires_for_ports.get(&dependency.send) {
+                wire_successors.get_mut(&recv).unwrap().push(send);
+            }
+        }
+    }
+
+    match topological_sort_into_groups(&relevant_wires, |index| {
+        wire_successors.get(index).unwrap().iter().cloned()
+    }) {
+        Ok(groups) => return Ok(groups),
+        Err((_, remaining)) => {
+            let mut errors = Vec::<WireError>::new();
+            let comps = strongly_connected_components(&remaining, |index| {
+                wire_successors.get(index).unwrap().iter().cloned()
+            });
+            for comp in comps.into_iter() {
+                // By definition, a wire that isn't part of any cycle forms a
+                // strongly-connected component of size 1.  A wire that forms a
+                // self-loop can also be a component of size 1.  We want to
+                // issue errors only for the latter case.
+                if comp.len() == 1 {
+                    let wire = &comp[0];
+                    if !wire_successors.get(wire).unwrap().contains(wire) {
+                        continue; // This wire doesn't have a self-loop.
+                    }
+                }
+                for &index in comp.iter() {
+                    wires[index].color = WireColor::Error;
+                }
+                errors.push(WireError::UnbrokenLoop(comp))
+            }
+            Err(errors)
+        }
+    }
+}
+
+//===========================================================================//
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -384,6 +450,7 @@ mod tests {
                 ports,
                 color: WireColor::Event,
                 size: WireSizeInterval::full(),
+                relevant: true,
             },
         ];
         let constraints = vec![
@@ -408,6 +475,7 @@ mod tests {
                 ports,
                 color: WireColor::Event,
                 size: WireSizeInterval::full(),
+                relevant: true,
             },
         ];
         let constraints = vec![
@@ -435,12 +503,14 @@ mod tests {
                 ports: ports0,
                 color: WireColor::Event,
                 size: WireSizeInterval::full(),
+                relevant: true,
             },
             WireInfo {
                 fragments: HashSet::new(),
                 ports: ports1,
                 color: WireColor::Event,
                 size: WireSizeInterval::full(),
+                relevant: false,
             },
         ];
         let constraints = vec![

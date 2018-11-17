@@ -23,6 +23,7 @@ extern crate getopts;
 extern crate gl;
 extern crate indexmap;
 extern crate num_integer;
+extern crate pathfinding;
 extern crate png;
 extern crate sdl2;
 #[macro_use]

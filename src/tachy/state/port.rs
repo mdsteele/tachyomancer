@@ -62,3 +62,10 @@ pub enum PortConstraint {
 }
 
 //===========================================================================//
+
+pub struct PortDependency {
+    pub recv: (Coords, Direction),
+    pub send: (Coords, Direction),
+}
+
+//===========================================================================//

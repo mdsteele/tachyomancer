@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::check::{self, WireColor, WireInfo, WireShape};
+use super::check::{self, WireColor, WireError, WireInfo, WireShape};
 use super::chip::ChipType;
 use super::geom::{Coords, CoordsDelta, Direction, Orientation, RectSize};
-use super::port::{PortColor, PortConstraint, PortFlow};
+use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
 use std::usize;
@@ -59,6 +59,7 @@ pub struct EditGrid {
     fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
     chips: HashMap<Coords, ChipCell>,
     wires: Vec<WireInfo>,
+    errors: Vec<WireError>,
 }
 
 impl EditGrid {
@@ -124,6 +125,7 @@ impl EditGrid {
             fragments,
             chips,
             wires: Vec::new(),
+            errors: Vec::new(),
         };
         grid.typecheck_wires();
         grid
@@ -389,15 +391,26 @@ impl EditGrid {
         }
 
         let mut wires = check::group_wires(&all_ports, &mut self.fragments);
-        let _errors = check::recolor_wires(&mut wires);
+        self.errors = check::recolor_wires(&mut wires);
+
         let constraints: Vec<PortConstraint> = self.chips()
             .flat_map(|(coords, ctype, orient)| {
                           ctype.constraints(coords, orient)
                       })
             .collect();
-        let _more_errors = check::determine_wire_sizes(&mut wires,
-                                                       constraints);
-        // TODO: check for loops
+        self.errors
+            .extend(check::determine_wire_sizes(&mut wires, constraints));
+
+        let dependencies: Vec<PortDependency> = self.chips()
+            .flat_map(|(coords, ctype, orient)| {
+                          ctype.dependencies(coords, orient)
+                      })
+            .collect();
+        match check::detect_loops(&mut wires, dependencies) {
+            Ok(_groups) => {} // TODO: save groups for evaluation
+            Err(errors) => self.errors.extend(errors),
+        }
+
         self.wires = wires;
     }
 

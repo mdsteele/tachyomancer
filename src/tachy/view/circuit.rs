@@ -20,8 +20,8 @@
 use super::control::{ControlsAction, ControlsTray};
 use super::parts::{PartsAction, PartsTray};
 use super::wire::WireModel;
-use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec3, vec4};
-use num_integer::mod_floor;
+use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
+use num_integer::{div_floor, mod_floor};
 use tachy::font::Align;
 use tachy::gui::{Event, Keycode, Resources};
 use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
@@ -392,14 +392,17 @@ impl EditGridView {
     }
 
     fn coords_for_point(&self, pt: Point2<i32>) -> Coords {
-        (pt + self.scroll) / GRID_CELL_SIZE
+        let scrolled = pt + self.scroll;
+        Coords::new(div_floor(scrolled.x, GRID_CELL_SIZE),
+                    div_floor(scrolled.y, GRID_CELL_SIZE))
     }
 
     fn zone_for_point(&self, pt: Point2<i32>) -> Zone {
-        let pt = pt + self.scroll;
-        let coords = pt / GRID_CELL_SIZE;
-        let x = mod_floor(pt.x, GRID_CELL_SIZE) - GRID_CELL_SIZE / 2;
-        let y = mod_floor(pt.y, GRID_CELL_SIZE) - GRID_CELL_SIZE / 2;
+        let scrolled = pt + self.scroll;
+        let coords = Coords::new(div_floor(scrolled.x, GRID_CELL_SIZE),
+                                 div_floor(scrolled.y, GRID_CELL_SIZE));
+        let x = mod_floor(scrolled.x, GRID_CELL_SIZE) - GRID_CELL_SIZE / 2;
+        let y = mod_floor(scrolled.y, GRID_CELL_SIZE) - GRID_CELL_SIZE / 2;
         if x.abs() <= ZONE_CENTER_SEMI_SIZE &&
             y.abs() <= ZONE_CENTER_SEMI_SIZE
         {
@@ -479,8 +482,9 @@ impl ChipDrag {
 
     pub fn drop_onto_board(self, grid: &mut EditGrid) {
         let pt = self.chip_topleft();
-        let new_coords = (pt + vec2(GRID_CELL_SIZE / 2, GRID_CELL_SIZE / 2)) /
-            GRID_CELL_SIZE;
+        let new_coords =
+            Coords::new(div_floor(pt.x + GRID_CELL_SIZE / 2, GRID_CELL_SIZE),
+                        div_floor(pt.y + GRID_CELL_SIZE / 2, GRID_CELL_SIZE));
         let new_size = self.reorient * self.old_orient * self.chip_type.size();
         // TODO: Allow moving a large-size chip onto a position that overlaps
         //   its old position.

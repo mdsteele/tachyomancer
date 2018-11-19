@@ -75,6 +75,18 @@ impl WireSize {
         }
     }
 
+    pub fn num_bits(self) -> u32 {
+        match self {
+            WireSize::Zero => 0,
+            WireSize::One => 1,
+            WireSize::Two => 2,
+            WireSize::Four => 4,
+            WireSize::Eight => 8,
+            WireSize::Sixteen => 16,
+            WireSize::ThirtyTwo => 32,
+        }
+    }
+
     pub fn mask(self) -> u32 {
         match self {
             WireSize::Zero => 0x0,

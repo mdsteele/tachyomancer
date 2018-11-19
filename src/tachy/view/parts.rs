@@ -59,9 +59,12 @@ impl PartsTray {
             ChipType::Not,
             ChipType::And,
             ChipType::Pack,
+            ChipType::Clock,
             ChipType::Delay,
             ChipType::Discard,
+            ChipType::Sample,
             ChipType::Ram,
+            ChipType::Display,
         ];
         let parts = ctypes
             .into_iter()

@@ -17,11 +17,14 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::eval::{self, ChipEval};
 use super::geom::{Coords, Orientation, RectSize};
 use super::geom::Direction::{self, East, North, South, West};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
                   PortSpec};
 use super::size::WireSize;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 //===========================================================================//
 
@@ -33,10 +36,13 @@ pub enum ChipType {
     And,
     Pack,
     // Events:
+    Clock,
     Delay,
     Discard,
-    // Storage:
+    Sample,
+    // Special:
     Ram,
+    Display,
 }
 
 impl ChipType {
@@ -44,6 +50,7 @@ impl ChipType {
     pub fn size(self) -> RectSize<i32> {
         match self {
             ChipType::Ram => (2, 2).into(),
+            ChipType::Display => (2, 1).into(),
             _ => (1, 1).into(),
         }
     }
@@ -66,9 +73,16 @@ impl ChipType {
                     (PortFlow::Send, PortColor::Behavior, (0, 0), East),
                 ]
             }
-            ChipType::Delay | ChipType::Discard => {
+            ChipType::Clock | ChipType::Delay | ChipType::Discard => {
                 &[
                     (PortFlow::Recv, PortColor::Event, (0, 0), West),
+                    (PortFlow::Send, PortColor::Event, (0, 0), East),
+                ]
+            }
+            ChipType::Sample => {
+                &[
+                    (PortFlow::Recv, PortColor::Event, (0, 0), West),
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), South),
                     (PortFlow::Send, PortColor::Event, (0, 0), East),
                 ]
             }
@@ -81,6 +95,9 @@ impl ChipType {
                     (PortFlow::Recv, PortColor::Event, (1, 1), South),
                     (PortFlow::Send, PortColor::Behavior, (1, 0), East),
                 ]
+            }
+            ChipType::Display => {
+                &[(PortFlow::Recv, PortColor::Behavior, (0, 0), West)]
             }
         }
     }
@@ -124,10 +141,22 @@ impl ChipType {
                     AbstractConstraint::Double(2, 1),
                 ]
             }
+            ChipType::Clock => {
+                &[
+                    AbstractConstraint::Exact(0, WireSize::Zero),
+                    AbstractConstraint::Exact(1, WireSize::Zero),
+                ]
+            }
             ChipType::Discard => {
                 &[
                     AbstractConstraint::AtLeast(0, WireSize::One),
                     AbstractConstraint::Exact(1, WireSize::Zero),
+                ]
+            }
+            ChipType::Sample => {
+                &[
+                    AbstractConstraint::Exact(0, WireSize::Zero),
+                    AbstractConstraint::Equal(1, 2),
                 ]
             }
             ChipType::Ram => {
@@ -143,16 +172,80 @@ impl ChipType {
                     AbstractConstraint::Equal(4, 5),
                 ]
             }
+            ChipType::Display => &[],
         }
     }
 
     pub fn dependencies_internal(self) -> &'static [(usize, usize)] {
         match self {
             ChipType::Const(_) |
-            ChipType::Delay => &[],
-            ChipType::Not | ChipType::Discard => &[(0, 1)],
-            ChipType::And | ChipType::Pack => &[(0, 2), (1, 2)],
+            ChipType::Delay |
+            ChipType::Display => &[],
+            ChipType::Not | ChipType::Clock | ChipType::Discard => &[(0, 1)],
+            ChipType::And | ChipType::Pack | ChipType::Sample => {
+                &[(0, 2), (1, 2)]
+            }
             ChipType::Ram => &[(0, 2), (1, 2), (3, 5), (4, 5), (1, 5), (4, 2)],
+        }
+    }
+
+    pub(super) fn chip_evals(self, slots: &[(usize, WireSize)])
+                             -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), self.ports_internal().len());
+        match self {
+            ChipType::And => {
+                let chip_eval =
+                    eval::AndChipEval::new(slots[0].0, slots[1].0, slots[2].0);
+                vec![(2, chip_eval)]
+            }
+            ChipType::Clock => {
+                vec![(1, eval::ClockChipEval::new(slots[0].0, slots[1].0))]
+            }
+            ChipType::Const(value) => {
+                vec![(0, eval::ConstChipEval::new(value, slots[0].0))]
+            }
+            ChipType::Delay => {
+                vec![(1, eval::DelayChipEval::new(slots[0].0, slots[1].0))]
+            }
+            ChipType::Discard => {
+                vec![(1, eval::DiscardChipEval::new(slots[0].0, slots[1].0))]
+            }
+            ChipType::Display => vec![],
+            ChipType::Not => {
+                let chip_eval =
+                    eval::NotChipEval::new(slots[1].1, slots[0].0, slots[1].0);
+                vec![(1, chip_eval)]
+            }
+            ChipType::Pack => {
+                let chip_eval = eval::PackChipEval::new(slots[2].1,
+                                                        slots[0].0,
+                                                        slots[1].0,
+                                                        slots[2].0);
+                vec![(2, chip_eval)]
+            }
+            ChipType::Ram => {
+                let addr_size = slots[0].1;
+                let num_addrs = 1usize << addr_size.num_bits();
+                let storage = Rc::new(RefCell::new(vec![0u32; num_addrs]));
+                vec![
+                    (2,
+                     eval::RamChipEval::new(slots[0].0,
+                                            slots[1].0,
+                                            slots[2].0,
+                                            storage.clone())),
+                    (5,
+                     eval::RamChipEval::new(slots[3].0,
+                                            slots[4].0,
+                                            slots[5].0,
+                                            storage.clone())),
+                ]
+            }
+            ChipType::Sample => {
+                let chip_eval = eval::SampleChipEval::new(slots[0].0,
+                                                          slots[1].0,
+                                                          slots[2].0);
+                vec![(2, chip_eval)]
+            }
         }
     }
 

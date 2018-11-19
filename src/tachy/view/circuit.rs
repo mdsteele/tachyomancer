@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::control::ControlsTray;
+use super::control::{ControlsAction, ControlsTray};
 use super::parts::{PartsAction, PartsTray};
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec3, vec4};
@@ -73,8 +73,26 @@ impl CircuitView {
         }
 
         if let Some(opt_action) = self.controls_tray.handle_event(event) {
-            if let Some(action) = opt_action {
-                debug_log!("pressed button: {:?}", action);
+            match opt_action {
+                None => {}
+                Some(ControlsAction::Reset) => {
+                    grid.stop_eval();
+                }
+                Some(ControlsAction::RunOrPause) => {
+                    if grid.eval().is_none() {
+                        grid.start_eval();
+                    } else {
+                        // TODO: pause
+                    }
+                }
+                Some(ControlsAction::StepTime) => {
+                    if let Some(eval) = grid.eval_mut() {
+                        eval.eval_time_step();
+                    }
+                }
+                Some(action) => {
+                    debug_log!("pressed button: {:?}", action);
+                }
             }
             return false;
         }
@@ -179,7 +197,11 @@ impl EditGridView {
             let y = (coords.y * GRID_CELL_SIZE) as f32;
             let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
-            self.draw_chip(resources, &mat, ctype, orient);
+            self.draw_chip(resources,
+                           &mat,
+                           ctype,
+                           orient,
+                           Some((coords, grid)));
         }
     }
 
@@ -194,7 +216,8 @@ impl EditGridView {
             self.draw_chip(resources,
                            &matrix,
                            drag.chip_type,
-                           drag.reorient * drag.old_orient);
+                           drag.reorient * drag.old_orient,
+                           None);
         }
     }
 
@@ -206,7 +229,8 @@ impl EditGridView {
     }
 
     fn draw_chip(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                 ctype: ChipType, orient: Orientation) {
+                 ctype: ChipType, orient: Orientation,
+                 coords_and_grid: Option<(Coords, &EditGrid)>) {
         let size = orient * ctype.size();
         let (width, height) = (size.width as f32, size.height as f32);
         let margin = 0.1;
@@ -226,6 +250,28 @@ impl EditGridView {
             };
             let rect = (0.5 - margin, -0.3, 0.5 * margin, 0.6);
             resources.shaders().solid().fill_rect(&mat, color, rect);
+        }
+        match ctype {
+            ChipType::Display => {
+                if let Some((coords, grid)) = coords_and_grid {
+                    if grid.eval().is_some() {
+                        let ports = ctype.ports(coords, orient);
+                        debug_assert_eq!(ports.len(), 1);
+                        if let Some(value) = grid.port_value(ports[0].loc()) {
+                            resources.fonts().roman().draw(matrix,
+                                                           (0.15, 0.3),
+                                                           Align::Center,
+                                                           (0.5 * width,
+                                                            0.5 * height -
+                                                                0.15),
+                                                           &format!("{}",
+                                                                    value));
+                            return;
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
         resources.fonts().roman().draw(matrix,
                                        (0.15, 0.3),

@@ -19,6 +19,7 @@
 
 use super::check::{self, WireColor, WireError, WireInfo, WireShape};
 use super::chip::ChipType;
+use super::eval::{ChipEval, CircuitEval};
 use super::geom::{Coords, CoordsDelta, Direction, Orientation, RectSize};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::WireSize;
@@ -59,7 +60,10 @@ pub struct EditGrid {
     fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
     chips: HashMap<Coords, ChipCell>,
     wires: Vec<WireInfo>,
+    wires_for_ports: HashMap<(Coords, Direction), usize>,
+    wire_groups: Vec<Vec<usize>>,
     errors: Vec<WireError>,
+    eval: Option<CircuitEval>,
 }
 
 impl EditGrid {
@@ -125,7 +129,10 @@ impl EditGrid {
             fragments,
             chips,
             wires: Vec::new(),
+            wires_for_ports: HashMap::new(),
+            wire_groups: Vec::new(),
             errors: Vec::new(),
+            eval: None,
         };
         grid.typecheck_wires();
         grid
@@ -378,40 +385,117 @@ impl EditGrid {
     }
 
     fn typecheck_wires(&mut self) {
+        self.wires_for_ports = HashMap::new();
+        self.wire_groups = Vec::new();
+        self.eval = None;
         if cfg!(debug_assertions) {
             self.validate_wire_fragments();
         }
+
         let mut all_ports =
             HashMap::<(Coords, Direction), (PortFlow, PortColor)>::new();
         for (coords, ctype, orient) in self.chips() {
             for port in ctype.ports(coords, orient) {
-                all_ports
-                    .insert((port.pos, port.dir), (port.flow, port.color));
+                all_ports.insert(port.loc(), (port.flow, port.color));
             }
         }
 
-        let mut wires = check::group_wires(&all_ports, &mut self.fragments);
-        self.errors = check::recolor_wires(&mut wires);
+        self.wires = check::group_wires(&all_ports, &mut self.fragments);
+        self.errors = check::recolor_wires(&mut self.wires);
+        self.wires_for_ports = check::map_ports_to_wires(&self.wires);
 
         let constraints: Vec<PortConstraint> = self.chips()
             .flat_map(|(coords, ctype, orient)| {
                           ctype.constraints(coords, orient)
                       })
             .collect();
-        self.errors
-            .extend(check::determine_wire_sizes(&mut wires, constraints));
+        self.errors.extend(check::determine_wire_sizes(&mut self.wires,
+                                                       &self.wires_for_ports,
+                                                       constraints));
 
         let dependencies: Vec<PortDependency> = self.chips()
             .flat_map(|(coords, ctype, orient)| {
                           ctype.dependencies(coords, orient)
                       })
             .collect();
-        match check::detect_loops(&mut wires, dependencies) {
-            Ok(_groups) => {} // TODO: save groups for evaluation
+        match check::detect_loops(&mut self.wires,
+                                    &self.wires_for_ports,
+                                    dependencies) {
+            Ok(groups) => {
+                if self.errors.is_empty() {
+                    self.wire_groups = groups;
+                }
+            }
             Err(errors) => self.errors.extend(errors),
         }
+    }
 
-        self.wires = wires;
+    pub fn eval(&self) -> Option<&CircuitEval> { self.eval.as_ref() }
+
+    pub fn eval_mut(&mut self) -> Option<&mut CircuitEval> {
+        self.eval.as_mut()
+    }
+
+    pub fn start_eval(&mut self) -> bool {
+        if !self.errors.is_empty() {
+            return false;
+        }
+
+        let mut wires_for_ports = HashMap::<(Coords, Direction), usize>::new();
+        let mut groups_for_ports =
+            HashMap::<(Coords, Direction), usize>::new();
+        for (group_index, group) in self.wire_groups.iter().enumerate() {
+            for &wire_index in group.iter() {
+                let wire = &self.wires[wire_index];
+                for (&loc, &(flow, _)) in wire.ports.iter() {
+                    debug_assert!(!wires_for_ports.contains_key(&loc));
+                    wires_for_ports.insert(loc, wire_index);
+                    debug_assert!(!groups_for_ports.contains_key(&loc));
+                    if flow == PortFlow::Send {
+                        groups_for_ports.insert(loc, group_index);
+                    }
+                }
+            }
+        }
+
+        let mut chip_evals: Vec<Vec<Box<ChipEval>>> =
+            (0..self.wire_groups.len()).map(|_| vec![]).collect();
+        for (coords, ctype, orient) in self.chips() {
+            let ports = ctype.ports(coords, orient);
+            let wires: Vec<(usize, WireSize)> = ports
+                .iter()
+                .map(|port| {
+                         let wire_index = wires_for_ports[&port.loc()];
+                         let wire = &self.wires[wire_index];
+                         debug_assert!(wire.color != WireColor::Error);
+                         debug_assert!(!wire.size.is_empty());
+                         (wire_index, wire.size.lower_bound().unwrap())
+                     })
+                .collect();
+            for (port_index, chip_eval) in ctype.chip_evals(&wires) {
+                let port = &ports[port_index];
+                let group_index = groups_for_ports[&port.loc()];
+                chip_evals[group_index].push(chip_eval);
+            }
+        }
+
+        self.eval = Some(CircuitEval::new(self.wires.len(), chip_evals));
+        debug_log!("Starting evaluation");
+        return true;
+    }
+
+    pub fn stop_eval(&mut self) {
+        debug_log!("Stopping evaluation");
+        self.eval = None;
+    }
+
+    pub fn port_value(&self, loc: (Coords, Direction)) -> Option<u32> {
+        if let Some(ref eval) = self.eval {
+            if let Some(&wire_index) = self.wires_for_ports.get(&loc) {
+                return Some(eval.wire_value(wire_index));
+            }
+        }
+        return None;
     }
 
     #[cfg(debug_assertions)]

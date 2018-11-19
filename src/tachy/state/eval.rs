@@ -18,10 +18,12 @@
 // +--------------------------------------------------------------------------+
 
 use super::size::WireSize;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 //===========================================================================//
 
-struct CircuitEval {
+pub struct CircuitEval {
     time_step: u32, // which time step we're on
     cycle: u32, // which cycle of the time step we're on
     subcycle: usize, // index into `chips` of next chip group to eval
@@ -40,6 +42,10 @@ impl CircuitEval {
             chips: chip_groups,
             state: CircuitState::new(num_wires),
         }
+    }
+
+    pub fn wire_value(&self, wire_index: usize) -> u32 {
+        self.state.values[wire_index].0
     }
 
     fn eval_subcycle(&mut self) {
@@ -80,9 +86,9 @@ impl CircuitEval {
 
 //===========================================================================//
 
-struct CircuitState {
-    values: Vec<(u32, bool)>,
-    needs_another_cycle: bool,
+pub struct CircuitState {
+    pub values: Vec<(u32, bool)>,
+    pub needs_another_cycle: bool,
 }
 
 impl CircuitState {
@@ -103,7 +109,7 @@ impl CircuitState {
 
 //===========================================================================//
 
-trait ChipEval {
+pub trait ChipEval {
     /// If any chip inputs have changed/fired, updates outputs and/or internal
     /// state; returns true if any outputs were updated.
     fn eval(&mut self, state: &mut CircuitState) -> bool;
@@ -113,10 +119,20 @@ trait ChipEval {
     fn on_time_step(&mut self) {}
 }
 
-struct AndChipEval {
+pub struct AndChipEval {
     input1: usize,
     input2: usize,
     output: usize,
+}
+
+impl AndChipEval {
+    pub fn new(input1: usize, input2: usize, output: usize) -> Box<ChipEval> {
+        Box::new(AndChipEval {
+                     input1,
+                     input2,
+                     output,
+                 })
+    }
 }
 
 impl ChipEval for AndChipEval {
@@ -132,11 +148,22 @@ impl ChipEval for AndChipEval {
     }
 }
 
-struct ClockChipEval {
+pub struct ClockChipEval {
     input: usize,
     output: usize,
     received: bool,
     should_send: bool,
+}
+
+impl ClockChipEval {
+    pub fn new(input: usize, output: usize) -> Box<ChipEval> {
+        Box::new(ClockChipEval {
+                     input,
+                     output,
+                     received: false,
+                     should_send: false,
+                 })
+    }
 }
 
 impl ChipEval for ClockChipEval {
@@ -159,10 +186,20 @@ impl ChipEval for ClockChipEval {
     }
 }
 
-struct ConstChipEval {
+pub struct ConstChipEval {
     output: usize,
     value: u32,
     should_send: bool,
+}
+
+impl ConstChipEval {
+    pub fn new(value: u32, output: usize) -> Box<ChipEval> {
+        Box::new(ConstChipEval {
+                     output,
+                     value,
+                     should_send: true,
+                 })
+    }
 }
 
 impl ChipEval for ConstChipEval {
@@ -177,10 +214,20 @@ impl ChipEval for ConstChipEval {
     }
 }
 
-struct DelayChipEval {
+pub struct DelayChipEval {
     input: usize,
     output: usize,
     value: Option<u32>,
+}
+
+impl DelayChipEval {
+    pub fn new(input: usize, output: usize) -> Box<ChipEval> {
+        Box::new(DelayChipEval {
+                     input,
+                     output,
+                     value: None,
+                 })
+    }
 }
 
 impl ChipEval for DelayChipEval {
@@ -200,10 +247,41 @@ impl ChipEval for DelayChipEval {
     }
 }
 
-struct NotChipEval {
+pub struct DiscardChipEval {
+    input: usize,
+    output: usize,
+}
+
+impl DiscardChipEval {
+    pub fn new(input: usize, output: usize) -> Box<ChipEval> {
+        Box::new(DiscardChipEval { input, output })
+    }
+}
+
+impl ChipEval for DiscardChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        let has_event = state.values[self.input].1;
+        if has_event {
+            state.values[self.output] = (0, true);
+        }
+        has_event
+    }
+}
+
+pub struct NotChipEval {
     size: WireSize,
     input: usize,
     output: usize,
+}
+
+impl NotChipEval {
+    pub fn new(size: WireSize, input: usize, output: usize) -> Box<ChipEval> {
+        Box::new(NotChipEval {
+                     size,
+                     input,
+                     output,
+                 })
+    }
 }
 
 impl ChipEval for NotChipEval {
@@ -214,6 +292,105 @@ impl ChipEval for NotChipEval {
             state.values[self.output] = (output, true);
         }
         changed
+    }
+}
+
+pub struct PackChipEval {
+    output_size: WireSize,
+    input1: usize,
+    input2: usize,
+    output: usize,
+}
+
+impl PackChipEval {
+    pub fn new(output_size: WireSize, input1: usize, input2: usize,
+               output: usize)
+               -> Box<ChipEval> {
+        Box::new(PackChipEval {
+                     output_size,
+                     input1,
+                     input2,
+                     output,
+                 })
+    }
+}
+
+impl ChipEval for PackChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        let (input1, changed1) = state.values[self.input1];
+        let (input2, changed2) = state.values[self.input2];
+        if changed1 || changed2 {
+            let num_bits = self.output_size.num_bits();
+            let output = input1 | (input2 << (num_bits / 2));
+            state.values[self.output] = (output, true);
+            true
+        } else {
+            false
+        }
+    }
+}
+
+pub struct RamChipEval {
+    input_b: usize,
+    input_e: usize,
+    output: usize,
+    storage: Rc<RefCell<Vec<u32>>>,
+}
+
+impl RamChipEval {
+    pub fn new(input_b: usize, input_e: usize, output: usize,
+               storage: Rc<RefCell<Vec<u32>>>)
+               -> Box<ChipEval> {
+        Box::new(RamChipEval {
+                     input_b,
+                     input_e,
+                     output,
+                     storage,
+                 })
+    }
+}
+
+impl ChipEval for RamChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        let (addr, addr_changed) = state.values[self.input_b];
+        let (value, has_event) = state.values[self.input_e];
+        let mut storage = self.storage.borrow_mut();
+        if has_event {
+            storage[addr as usize] = value;
+        }
+        if has_event || addr_changed {
+            state.values[self.output] = (storage[addr as usize], true);
+            true
+        } else {
+            false
+        }
+    }
+}
+
+pub struct SampleChipEval {
+    input_e: usize,
+    input_b: usize,
+    output: usize,
+}
+
+impl SampleChipEval {
+    pub fn new(input_e: usize, input_b: usize, output: usize)
+               -> Box<ChipEval> {
+        Box::new(SampleChipEval {
+                     input_e,
+                     input_b,
+                     output,
+                 })
+    }
+}
+
+impl ChipEval for SampleChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        let has_event = state.values[self.input_e].1;
+        if has_event {
+            state.values[self.output] = (state.values[self.input_b].0, true);
+        }
+        has_event
     }
 }
 

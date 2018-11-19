@@ -20,7 +20,6 @@
 mod check;
 mod chip;
 mod edit;
-#[allow(dead_code)]
 mod eval;
 mod game;
 mod geom;

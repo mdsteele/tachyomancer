@@ -45,6 +45,10 @@ pub struct PortSpec {
     pub dir: Direction,
 }
 
+impl PortSpec {
+    pub fn loc(&self) -> (Coords, Direction) { (self.pos, self.dir) }
+}
+
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug)]

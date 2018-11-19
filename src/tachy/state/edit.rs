@@ -19,7 +19,7 @@
 
 use super::check::{self, WireColor, WireError, WireInfo, WireShape};
 use super::chip::ChipType;
-use super::eval::{ChipEval, CircuitEval};
+use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
 use super::geom::{Coords, CoordsDelta, Direction, Orientation, RectSize};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::WireSize;
@@ -458,6 +458,7 @@ impl EditGrid {
             }
         }
 
+        let interact = CircuitInteraction::new();
         let mut chip_evals: Vec<Vec<Box<ChipEval>>> =
             (0..self.wire_groups.len()).map(|_| vec![]).collect();
         for (coords, ctype, orient) in self.chips() {
@@ -472,14 +473,17 @@ impl EditGrid {
                          (wire_index, wire.size.lower_bound().unwrap())
                      })
                 .collect();
-            for (port_index, chip_eval) in ctype.chip_evals(&wires) {
+            for (port_index, chip_eval) in
+                ctype.chip_evals(coords, &wires, &interact)
+            {
                 let port = &ports[port_index];
                 let group_index = groups_for_ports[&port.loc()];
                 chip_evals[group_index].push(chip_eval);
             }
         }
 
-        self.eval = Some(CircuitEval::new(self.wires.len(), chip_evals));
+        self.eval =
+            Some(CircuitEval::new(self.wires.len(), chip_evals, interact));
         debug_log!("Starting evaluation");
         return true;
     }

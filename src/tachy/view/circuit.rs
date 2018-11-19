@@ -304,6 +304,21 @@ impl EditGridView {
                 }
             }
             Event::MouseDown(mouse) => {
+                if grid.eval().is_some() {
+                    if mouse.left {
+                        if let Some((ctype, _, coords)) =
+                            grid.chip_at(self.coords_for_point(mouse.pt))
+                        {
+                            if ctype == ChipType::Button {
+                                grid.eval_mut()
+                                    .unwrap()
+                                    .interaction()
+                                    .press_button(coords);
+                            }
+                        }
+                    }
+                    return;
+                }
                 if mouse.left {
                     if let Some((ctype, orient, coords)) =
                         grid.chip_at(self.coords_for_point(mouse.pt))

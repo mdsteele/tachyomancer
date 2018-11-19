@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::eval::{self, ChipEval};
+use super::eval::{self, ChipEval, CircuitInteraction};
 use super::geom::{Coords, Orientation, RectSize};
 use super::geom::Direction::{self, East, North, South, West};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
@@ -35,14 +35,18 @@ pub enum ChipType {
     Not,
     And,
     Pack,
+    // Arithmetic:
+    Add,
     // Events:
     Clock,
     Delay,
     Discard,
+    Latest,
     Sample,
     // Special:
     Ram,
     Display,
+    Button,
 }
 
 impl ChipType {
@@ -73,10 +77,24 @@ impl ChipType {
                     (PortFlow::Send, PortColor::Behavior, (0, 0), East),
                 ]
             }
+            ChipType::Add => {
+                &[
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), South),
+                    (PortFlow::Send, PortColor::Behavior, (0, 0), East),
+                    (PortFlow::Send, PortColor::Behavior, (0, 0), North),
+                ]
+            }
             ChipType::Clock | ChipType::Delay | ChipType::Discard => {
                 &[
                     (PortFlow::Recv, PortColor::Event, (0, 0), West),
                     (PortFlow::Send, PortColor::Event, (0, 0), East),
+                ]
+            }
+            ChipType::Latest => {
+                &[
+                    (PortFlow::Recv, PortColor::Event, (0, 0), West),
+                    (PortFlow::Send, PortColor::Behavior, (0, 0), East),
                 ]
             }
             ChipType::Sample => {
@@ -98,6 +116,9 @@ impl ChipType {
             }
             ChipType::Display => {
                 &[(PortFlow::Recv, PortColor::Behavior, (0, 0), West)]
+            }
+            ChipType::Button => {
+                &[(PortFlow::Send, PortColor::Event, (0, 0), East)]
             }
         }
     }
@@ -124,7 +145,7 @@ impl ChipType {
                     _ => &[],
                 }
             }
-            ChipType::Not | ChipType::Delay => {
+            ChipType::Not | ChipType::Delay | ChipType::Latest => {
                 &[AbstractConstraint::Equal(0, 1)]
             }
             ChipType::And => {
@@ -132,6 +153,16 @@ impl ChipType {
                     AbstractConstraint::Equal(0, 1),
                     AbstractConstraint::Equal(0, 2),
                     AbstractConstraint::Equal(1, 2),
+                ]
+            }
+            ChipType::Add => {
+                &[
+                    AbstractConstraint::Equal(0, 1),
+                    AbstractConstraint::Equal(0, 2),
+                    AbstractConstraint::Equal(0, 3),
+                    AbstractConstraint::Equal(1, 2),
+                    AbstractConstraint::Equal(1, 3),
+                    AbstractConstraint::Equal(2, 3),
                 ]
             }
             ChipType::Pack => {
@@ -173,30 +204,52 @@ impl ChipType {
                 ]
             }
             ChipType::Display => &[],
+            ChipType::Button => {
+                &[AbstractConstraint::Exact(0, WireSize::Zero)]
+            }
         }
     }
 
     pub fn dependencies_internal(self) -> &'static [(usize, usize)] {
         match self {
             ChipType::Const(_) |
+            ChipType::Clock |
             ChipType::Delay |
-            ChipType::Display => &[],
-            ChipType::Not | ChipType::Clock | ChipType::Discard => &[(0, 1)],
+            ChipType::Display |
+            ChipType::Button => &[],
+            ChipType::Not | ChipType::Discard | ChipType::Latest => &[(0, 1)],
             ChipType::And | ChipType::Pack | ChipType::Sample => {
                 &[(0, 2), (1, 2)]
             }
+            ChipType::Add => &[(0, 2), (1, 2), (0, 3), (1, 3)],
             ChipType::Ram => &[(0, 2), (1, 2), (3, 5), (4, 5), (1, 5), (4, 2)],
         }
     }
 
-    pub(super) fn chip_evals(self, slots: &[(usize, WireSize)])
+    pub(super) fn chip_evals(self, coords: Coords,
+                             slots: &[(usize, WireSize)],
+                             interact: &Rc<RefCell<CircuitInteraction>>)
                              -> Vec<(usize, Box<ChipEval>)> {
         debug_assert_eq!(slots.len(), self.ports_internal().len());
         match self {
+            ChipType::Add => {
+                let chip_eval = eval::AddChipEval::new(slots[2].1,
+                                                       slots[0].0,
+                                                       slots[1].0,
+                                                       slots[2].0,
+                                                       slots[3].0);
+                vec![(2, chip_eval)]
+            }
             ChipType::And => {
                 let chip_eval =
                     eval::AndChipEval::new(slots[0].0, slots[1].0, slots[2].0);
                 vec![(2, chip_eval)]
+            }
+            ChipType::Button => {
+                let chip_eval = eval::ButtonChipEval::new(slots[0].0,
+                                                          coords,
+                                                          interact.clone());
+                vec![(0, chip_eval)]
             }
             ChipType::Clock => {
                 vec![(1, eval::ClockChipEval::new(slots[0].0, slots[1].0))]
@@ -211,6 +264,9 @@ impl ChipType {
                 vec![(1, eval::DiscardChipEval::new(slots[0].0, slots[1].0))]
             }
             ChipType::Display => vec![],
+            ChipType::Latest => {
+                vec![(1, eval::LatestChipEval::new(slots[0].0, slots[1].0))]
+            }
             ChipType::Not => {
                 let chip_eval =
                     eval::NotChipEval::new(slots[1].1, slots[0].0, slots[1].0);

@@ -17,8 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::geom::Coords;
 use super::size::WireSize;
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
+use std::collections::HashSet;
 use std::rc::Rc;
 
 //===========================================================================//
@@ -30,10 +32,12 @@ pub struct CircuitEval {
     // Topologically-sorted list of chips, divided into parallel groups:
     chips: Vec<Vec<Box<ChipEval>>>,
     state: CircuitState,
+    interact: Rc<RefCell<CircuitInteraction>>,
 }
 
 impl CircuitEval {
-    pub fn new(num_wires: usize, chip_groups: Vec<Vec<Box<ChipEval>>>)
+    pub fn new(num_wires: usize, chip_groups: Vec<Vec<Box<ChipEval>>>,
+               interact: Rc<RefCell<CircuitInteraction>>)
                -> CircuitEval {
         CircuitEval {
             time_step: 0,
@@ -41,7 +45,12 @@ impl CircuitEval {
             subcycle: 0,
             chips: chip_groups,
             state: CircuitState::new(num_wires),
+            interact,
         }
+    }
+
+    pub fn interaction(&mut self) -> RefMut<CircuitInteraction> {
+        self.interact.borrow_mut()
     }
 
     pub fn wire_value(&self, wire_index: usize) -> u32 {
@@ -109,6 +118,25 @@ impl CircuitState {
 
 //===========================================================================//
 
+/// Stores player interations with the circuit that take place during
+/// evaluation (such as pressing button parts on the board).
+pub struct CircuitInteraction {
+    buttons: HashSet<Coords>,
+}
+
+impl CircuitInteraction {
+    pub fn new() -> Rc<RefCell<CircuitInteraction>> {
+        let interact = CircuitInteraction { buttons: HashSet::new() };
+        Rc::new(RefCell::new(interact))
+    }
+
+    pub fn press_button(&mut self, coords: Coords) {
+        self.buttons.insert(coords);
+    }
+}
+
+//===========================================================================//
+
 pub trait ChipEval {
     /// If any chip inputs have changed/fired, updates outputs and/or internal
     /// state; returns true if any outputs were updated.
@@ -117,6 +145,45 @@ pub trait ChipEval {
     /// Updates internal chip state for the next time step.  The default
     /// implementation is a no-op.
     fn on_time_step(&mut self) {}
+}
+
+pub struct AddChipEval {
+    size: WireSize,
+    input1: usize,
+    input2: usize,
+    output1: usize,
+    output2: usize,
+}
+
+impl AddChipEval {
+    pub fn new(size: WireSize, input1: usize, input2: usize, output1: usize,
+               output2: usize)
+               -> Box<ChipEval> {
+        Box::new(AddChipEval {
+                     size,
+                     input1,
+                     input2,
+                     output1,
+                     output2,
+                 })
+    }
+}
+
+impl ChipEval for AddChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        let (input1, changed1) = state.values[self.input1];
+        let (input2, changed2) = state.values[self.input2];
+        if changed1 || changed2 {
+            let sum = (input1 as u64) + (input2 as u64);
+            let lo = (sum & (self.size.mask() as u64)) as u32;
+            let hi = (sum >> self.size.num_bits()) as u32;
+            state.values[self.output1] = (lo, true);
+            state.values[self.output2] = (hi, true);
+            true
+        } else {
+            false
+        }
+    }
 }
 
 pub struct AndChipEval {
@@ -141,6 +208,35 @@ impl ChipEval for AndChipEval {
         let (input2, changed2) = state.values[self.input2];
         if changed1 || changed2 {
             state.values[self.output] = (input1 & input2, true);
+            true
+        } else {
+            false
+        }
+    }
+}
+
+pub struct ButtonChipEval {
+    output: usize,
+    coords: Coords,
+    interact: Rc<RefCell<CircuitInteraction>>,
+}
+
+impl ButtonChipEval {
+    pub fn new(output: usize, coords: Coords,
+               interact: Rc<RefCell<CircuitInteraction>>)
+               -> Box<ChipEval> {
+        Box::new(ButtonChipEval {
+                     output,
+                     coords,
+                     interact,
+                 })
+    }
+}
+
+impl ChipEval for ButtonChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        if self.interact.borrow_mut().buttons.remove(&self.coords) {
+            state.values[self.output] = (0, true);
             true
         } else {
             false
@@ -263,6 +359,27 @@ impl ChipEval for DiscardChipEval {
         let has_event = state.values[self.input].1;
         if has_event {
             state.values[self.output] = (0, true);
+        }
+        has_event
+    }
+}
+
+pub struct LatestChipEval {
+    input: usize,
+    output: usize,
+}
+
+impl LatestChipEval {
+    pub fn new(input: usize, output: usize) -> Box<ChipEval> {
+        Box::new(LatestChipEval { input, output })
+    }
+}
+
+impl ChipEval for LatestChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        let (value, has_event) = state.values[self.input];
+        if has_event {
+            state.values[self.output] = (value, true);
         }
         has_event
     }
@@ -398,7 +515,8 @@ impl ChipEval for SampleChipEval {
 
 #[cfg(test)]
 mod tests {
-    use super::{AndChipEval, ChipEval, CircuitEval, NotChipEval, WireSize};
+    use super::{AndChipEval, ChipEval, CircuitEval, CircuitInteraction,
+                NotChipEval, WireSize};
 
     #[test]
     fn evaluate_boolean_or_circuit() {
@@ -430,7 +548,7 @@ mod tests {
                          }),
             ],
         ];
-        let mut eval = CircuitEval::new(6, chips);
+        let mut eval = CircuitEval::new(6, chips, CircuitInteraction::new());
         for &inputs in &[(0, 0), (0, 1), (1, 0), (1, 1)] {
             eval.state.values[0] = (inputs.0, true);
             eval.state.values[1] = (inputs.1, true);

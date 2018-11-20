@@ -30,6 +30,7 @@ use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
 //===========================================================================//
 
 const SCROLL_PER_KEYDOWN: i32 = 40;
+const SECONDS_PER_TIME_STEP: f64 = 1.0;
 
 //===========================================================================//
 
@@ -39,6 +40,7 @@ pub struct CircuitView {
     edit_grid: EditGridView,
     controls_tray: ControlsTray,
     parts_tray: PartsTray,
+    seconds_since_time_step: f64,
 }
 
 impl CircuitView {
@@ -49,6 +51,7 @@ impl CircuitView {
             edit_grid: EditGridView::new(window_size),
             controls_tray: ControlsTray::new(window_size, true),
             parts_tray: PartsTray::new(window_size),
+            seconds_since_time_step: 0.0,
         }
     }
 
@@ -64,6 +67,18 @@ impl CircuitView {
     pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid)
                         -> bool {
         match event {
+            Event::ClockTick(tick) => {
+                if let Some(eval) = grid.eval_mut() {
+                    // TODO: only if not paused
+                    self.seconds_since_time_step += tick.elapsed;
+                    while self.seconds_since_time_step >=
+                        SECONDS_PER_TIME_STEP
+                    {
+                        self.seconds_since_time_step -= SECONDS_PER_TIME_STEP;
+                        eval.eval_time_step();
+                    }
+                }
+            }
             Event::KeyDown(key) => {
                 if key.command && key.shift && key.code == Keycode::F {
                     return true;
@@ -76,10 +91,12 @@ impl CircuitView {
             match opt_action {
                 None => {}
                 Some(ControlsAction::Reset) => {
+                    self.seconds_since_time_step = 0.0;
                     grid.stop_eval();
                 }
                 Some(ControlsAction::RunOrPause) => {
                     if grid.eval().is_none() {
+                        self.seconds_since_time_step = 0.0;
                         grid.start_eval();
                     } else {
                         // TODO: pause

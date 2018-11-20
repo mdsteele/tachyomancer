@@ -21,12 +21,18 @@ use cgmath::Point2;
 use sdl2;
 pub use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
+use std::time::Duration;
+
+//===========================================================================//
+
+const MAX_CLOCK_TICK_SECONDS: f64 = 1.0 / 30.0;
 
 //===========================================================================//
 
 #[derive(Clone)]
 pub enum Event {
     Quit,
+    ClockTick(ClockEventData),
     KeyDown(KeyEventData),
     MouseDown(MouseEventData),
     MouseMove(MouseEventData),
@@ -34,6 +40,14 @@ pub enum Event {
 }
 
 impl Event {
+    pub fn new_clock_tick(elapsed: Duration) -> Event {
+        let seconds = (elapsed.as_secs() as f64) +
+            1e-9 * (elapsed.subsec_nanos() as f64);
+        let data =
+            ClockEventData { elapsed: seconds.min(MAX_CLOCK_TICK_SECONDS) };
+        Event::ClockTick(data)
+    }
+
     pub(super) fn from_sdl_event(sdl_event: sdl2::event::Event)
                                  -> Option<Event> {
         match sdl_event {
@@ -94,6 +108,14 @@ impl Event {
             _ => self.clone(),
         }
     }
+}
+
+//===========================================================================//
+
+#[derive(Clone)]
+pub struct ClockEventData {
+    /// The time elapsed since the last clock tick, in seconds.
+    pub elapsed: f64,
 }
 
 //===========================================================================//

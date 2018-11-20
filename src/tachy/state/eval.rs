@@ -83,6 +83,7 @@ impl CircuitEval {
             }
             self.state.reset_for_cycle();
         }
+        debug_log!("Time step {} complete", self.time_step);
         self.time_step += 1;
         self.cycle = 0;
         for group in self.chips.iter_mut() {
@@ -361,6 +362,38 @@ impl ChipEval for DiscardChipEval {
             state.values[self.output] = (0, true);
         }
         has_event
+    }
+}
+
+pub struct JoinChipEval {
+    input1: usize,
+    input2: usize,
+    output: usize,
+}
+
+impl JoinChipEval {
+    pub fn new(input1: usize, input2: usize, output: usize) -> Box<ChipEval> {
+        Box::new(JoinChipEval {
+                     input1,
+                     input2,
+                     output,
+                 })
+    }
+}
+
+impl ChipEval for JoinChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        let (input1, has_event1) = state.values[self.input1];
+        if has_event1 {
+            state.values[self.output] = (input1, true);
+            return true;
+        }
+        let (input2, has_event2) = state.values[self.input2];
+        if has_event2 {
+            state.values[self.output] = (input2, true);
+            return true;
+        }
+        return false;
     }
 }
 

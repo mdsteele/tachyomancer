@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::common::ModeChange;
+use std::time::Instant;
 use tachy::gui::{Event, Window};
 use tachy::state::GameState;
 use tachy::view::CircuitView;
@@ -27,6 +28,7 @@ use tachy::view::CircuitView;
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     let mut view = CircuitView::new(window.size().into());
     let grid = state.edit_grid_mut().unwrap(); // TODO
+    let mut last_tick = Instant::now();
     loop {
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
@@ -39,6 +41,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 }
             }
             None => {
+                let now = Instant::now();
+                let elapsed = now.duration_since(last_tick);
+                view.handle_event(&Event::new_clock_tick(elapsed), grid);
+                last_tick = now;
                 view.draw(window.resources(), grid);
                 window.swap();
             }

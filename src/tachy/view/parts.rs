@@ -63,6 +63,7 @@ impl PartsTray {
             ChipType::Clock,
             ChipType::Delay,
             ChipType::Discard,
+            ChipType::Join,
             ChipType::Latest,
             ChipType::Sample,
             ChipType::Ram,

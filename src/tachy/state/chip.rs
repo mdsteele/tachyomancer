@@ -41,6 +41,7 @@ pub enum ChipType {
     Clock,
     Delay,
     Discard,
+    Join,
     Latest,
     Sample,
     // Special:
@@ -88,6 +89,13 @@ impl ChipType {
             ChipType::Clock | ChipType::Delay | ChipType::Discard => {
                 &[
                     (PortFlow::Recv, PortColor::Event, (0, 0), West),
+                    (PortFlow::Send, PortColor::Event, (0, 0), East),
+                ]
+            }
+            ChipType::Join => {
+                &[
+                    (PortFlow::Recv, PortColor::Event, (0, 0), West),
+                    (PortFlow::Recv, PortColor::Event, (0, 0), South),
                     (PortFlow::Send, PortColor::Event, (0, 0), East),
                 ]
             }
@@ -148,7 +156,7 @@ impl ChipType {
             ChipType::Not | ChipType::Delay | ChipType::Latest => {
                 &[AbstractConstraint::Equal(0, 1)]
             }
-            ChipType::And => {
+            ChipType::And | ChipType::Join => {
                 &[
                     AbstractConstraint::Equal(0, 1),
                     AbstractConstraint::Equal(0, 2),
@@ -218,9 +226,8 @@ impl ChipType {
             ChipType::Display |
             ChipType::Button => &[],
             ChipType::Not | ChipType::Discard | ChipType::Latest => &[(0, 1)],
-            ChipType::And | ChipType::Pack | ChipType::Sample => {
-                &[(0, 2), (1, 2)]
-            }
+            ChipType::And | ChipType::Pack | ChipType::Join |
+            ChipType::Sample => &[(0, 2), (1, 2)],
             ChipType::Add => &[(0, 2), (1, 2), (0, 3), (1, 3)],
             ChipType::Ram => &[(0, 2), (1, 2), (3, 5), (4, 5), (1, 5), (4, 2)],
         }
@@ -264,6 +271,12 @@ impl ChipType {
                 vec![(1, eval::DiscardChipEval::new(slots[0].0, slots[1].0))]
             }
             ChipType::Display => vec![],
+            ChipType::Join => {
+                let chip_eval = eval::JoinChipEval::new(slots[0].0,
+                                                        slots[1].0,
+                                                        slots[2].0);
+                vec![(2, chip_eval)]
+            }
             ChipType::Latest => {
                 vec![(1, eval::LatestChipEval::new(slots[0].0, slots[1].0))]
             }

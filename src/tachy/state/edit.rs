@@ -67,67 +67,10 @@ pub struct EditGrid {
 }
 
 impl EditGrid {
-    pub fn example() -> EditGrid {
-        let fragments = vec![
-            ((1, 2), Direction::East, WireShape::Stub),
-            ((2, 2), Direction::West, WireShape::Straight),
-            ((2, 2), Direction::East, WireShape::Straight),
-            ((3, 2), Direction::West, WireShape::TurnLeft),
-            ((3, 2), Direction::North, WireShape::TurnRight),
-            ((3, 1), Direction::South, WireShape::SplitTee),
-            ((3, 1), Direction::West, WireShape::SplitRight),
-            ((3, 1), Direction::East, WireShape::SplitLeft),
-            ((2, 1), Direction::East, WireShape::Stub),
-            ((4, 1), Direction::West, WireShape::Cross),
-            ((4, 1), Direction::North, WireShape::Cross),
-            ((4, 1), Direction::South, WireShape::Cross),
-            ((4, 1), Direction::East, WireShape::Cross),
-            ((5, 1), Direction::West, WireShape::Stub),
-            ((4, 0), Direction::South, WireShape::Stub),
-            ((4, 2), Direction::North, WireShape::Stub),
-            ((5, 1), Direction::East, WireShape::Stub),
-            ((6, 1), Direction::West, WireShape::SplitRight),
-            ((6, 1), Direction::East, WireShape::SplitLeft),
-            ((6, 1), Direction::South, WireShape::SplitTee),
-            ((7, 1), Direction::West, WireShape::Stub),
-            ((6, 2), Direction::North, WireShape::TurnLeft),
-            ((6, 2), Direction::East, WireShape::TurnRight),
-            ((7, 2), Direction::West, WireShape::Stub),
-            ((7, 4), Direction::East, WireShape::Stub),
-            ((8, 4), Direction::West, WireShape::TurnLeft),
-            ((8, 4), Direction::North, WireShape::TurnRight),
-            ((8, 3), Direction::South, WireShape::Stub),
-        ];
-        let fragments = fragments
-            .into_iter()
-            .map(|(coords, dir, shape)| {
-                     ((coords.into(), dir), (shape, usize::MAX))
-                 })
-            .collect();
-        let mut chips = HashMap::new();
-        chips.insert((1, 2).into(),
-                     ChipCell::Chip(ChipType::Const(3),
-                                    Orientation::default()));
-        chips.insert((5, 1).into(),
-                     ChipCell::Chip(ChipType::Pack, Orientation::default()));
-        chips.insert((7, 4).into(),
-                     ChipCell::Chip(ChipType::Delay, Orientation::default()));
-        chips.insert((2, 3).into(),
-                     ChipCell::Chip(ChipType::Not,
-                                    Orientation::default().rotate_cw()));
-        chips.insert((7, 2).into(),
-                     ChipCell::Chip(ChipType::Ram, Orientation::default()));
-        chips.insert((8, 2).into(), ChipCell::Ref((-1, 0).into()));
-        chips.insert((7, 3).into(), ChipCell::Ref((0, -1).into()));
-        chips.insert((8, 3).into(), ChipCell::Ref((-1, -1).into()));
-        chips.insert((7, 0).into(),
-                     ChipCell::Chip(ChipType::Discard,
-                                    Orientation::default()));
-        chips.insert((7, 1).into(),
-                     ChipCell::Chip(ChipType::And, Orientation::default()));
+    pub fn new() -> EditGrid {
         let mut grid = EditGrid {
-            fragments,
-            chips,
+            fragments: HashMap::new(),
+            chips: HashMap::new(),
             wires: Vec::new(),
             wires_for_ports: HashMap::new(),
             wire_groups: Vec::new(),

@@ -35,6 +35,7 @@ pub enum ChipType {
     Not,
     And,
     Pack,
+    Unpack,
     // Arithmetic:
     Add,
     // Events:
@@ -76,6 +77,13 @@ impl ChipType {
                     (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
                     (PortFlow::Recv, PortColor::Behavior, (0, 0), South),
                     (PortFlow::Send, PortColor::Behavior, (0, 0), East),
+                ]
+            }
+            ChipType::Unpack => {
+                &[
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
+                    (PortFlow::Send, PortColor::Behavior, (0, 0), East),
+                    (PortFlow::Send, PortColor::Behavior, (0, 0), North),
                 ]
             }
             ChipType::Add => {
@@ -180,6 +188,13 @@ impl ChipType {
                     AbstractConstraint::Double(2, 1),
                 ]
             }
+            ChipType::Unpack => {
+                &[
+                    AbstractConstraint::Equal(1, 2),
+                    AbstractConstraint::Double(0, 1),
+                    AbstractConstraint::Double(0, 2),
+                ]
+            }
             ChipType::Clock => {
                 &[
                     AbstractConstraint::Exact(0, WireSize::Zero),
@@ -228,6 +243,7 @@ impl ChipType {
             ChipType::Not | ChipType::Discard | ChipType::Latest => &[(0, 1)],
             ChipType::And | ChipType::Pack | ChipType::Join |
             ChipType::Sample => &[(0, 2), (1, 2)],
+            ChipType::Unpack => &[(0, 1), (0, 2)],
             ChipType::Add => &[(0, 2), (1, 2), (0, 3), (1, 3)],
             ChipType::Ram => &[(0, 2), (1, 2), (3, 5), (4, 5), (1, 5), (4, 2)],
         }
@@ -286,7 +302,7 @@ impl ChipType {
                 vec![(1, chip_eval)]
             }
             ChipType::Pack => {
-                let chip_eval = eval::PackChipEval::new(slots[2].1,
+                let chip_eval = eval::PackChipEval::new(slots[0].1,
                                                         slots[0].0,
                                                         slots[1].0,
                                                         slots[2].0);
@@ -311,6 +327,13 @@ impl ChipType {
             }
             ChipType::Sample => {
                 let chip_eval = eval::SampleChipEval::new(slots[0].0,
+                                                          slots[1].0,
+                                                          slots[2].0);
+                vec![(2, chip_eval)]
+            }
+            ChipType::Unpack => {
+                let chip_eval = eval::UnpackChipEval::new(slots[2].1,
+                                                          slots[0].0,
                                                           slots[1].0,
                                                           slots[2].0);
                 vec![(2, chip_eval)]

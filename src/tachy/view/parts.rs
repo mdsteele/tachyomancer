@@ -59,6 +59,7 @@ impl PartsTray {
             ChipType::Not,
             ChipType::And,
             ChipType::Pack,
+            ChipType::Unpack,
             ChipType::Add,
             ChipType::Clock,
             ChipType::Delay,

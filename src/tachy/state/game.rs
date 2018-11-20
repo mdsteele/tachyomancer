@@ -32,7 +32,7 @@ impl GameState {
         // TODO: Load current profile.
         Ok(GameState {
                savedir,
-               edit_grid: Some(EditGrid::example()),
+               edit_grid: Some(EditGrid::new()),
            })
     }
 

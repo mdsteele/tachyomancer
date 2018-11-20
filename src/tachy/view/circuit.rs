@@ -599,6 +599,40 @@ impl WireDrag {
                     true
                 }
             }
+            (_, Some(Zone::East(coords1)), Zone::South(coords2)) => {
+                if coords1 == coords2 {
+                    self.try_turn_left(coords1, Direction::East, grid)
+                } else if coords1 + Direction::North == coords2 {
+                    self.try_turn_left(coords1, Direction::North, grid)
+                } else if coords1 + Direction::East == coords2 {
+                    self.try_turn_left(coords2, Direction::South, grid)
+                } else if coords1 + Direction::East ==
+                           coords2 + Direction::South
+                {
+                    self.try_turn_left(coords1 + Direction::East,
+                                       Direction::West,
+                                       grid)
+                } else {
+                    true
+                }
+            }
+            (_, Some(Zone::South(coords1)), Zone::East(coords2)) => {
+                if coords1 == coords2 {
+                    self.try_turn_left(coords1, Direction::East, grid)
+                } else if coords1 + Direction::South == coords2 {
+                    self.try_turn_left(coords2, Direction::North, grid)
+                } else if coords1 + Direction::West == coords2 {
+                    self.try_turn_left(coords1, Direction::South, grid)
+                } else if coords1 + Direction::South ==
+                           coords2 + Direction::East
+                {
+                    self.try_turn_left(coords1 + Direction::South,
+                                       Direction::West,
+                                       grid)
+                } else {
+                    true
+                }
+            }
             // TODO: other cases
             (_, _, _) => true,
         };
@@ -608,20 +642,31 @@ impl WireDrag {
     }
 
     pub fn finish(mut self, grid: &mut EditGrid) {
-        if self.changed {
-            return;
-        }
-        match self.curr {
-            Some(Zone::Center(coords)) => {
+        match (self.changed, self.prev, self.curr) {
+            (_, Some(Zone::East(coords1)), Some(Zone::Center(coords2))) => {
+                if coords1 == coords2 {
+                    self.try_split(coords1, Direction::East, grid);
+                } else if coords1 + Direction::East == coords2 {
+                    self.try_split(coords2, Direction::West, grid);
+                }
+            }
+            (_, Some(Zone::South(coords1)), Some(Zone::Center(coords2))) => {
+                if coords1 == coords2 {
+                    self.try_split(coords1, Direction::South, grid);
+                } else if coords1 + Direction::South == coords2 {
+                    self.try_split(coords2, Direction::North, grid);
+                }
+            }
+            (false, None, Some(Zone::Center(coords))) => {
                 self.try_toggle_cross(coords, grid);
             }
-            Some(Zone::East(coords)) => {
+            (false, None, Some(Zone::East(coords))) => {
                 self.try_remove_stub(coords, Direction::East, grid);
             }
-            Some(Zone::South(coords)) => {
+            (false, None, Some(Zone::South(coords))) => {
                 self.try_remove_stub(coords, Direction::South, grid);
             }
-            None => {}
+            (_, _, _) => {}
         }
     }
 
@@ -702,6 +747,50 @@ impl WireDrag {
                         &[GridChange::ToggleCenterWire(coords, dir, -dir)],
                     );
                 }
+                self.changed = true;
+                true
+            }
+            (_, _) => false,
+        }
+    }
+
+    fn try_turn_left(&mut self, coords: Coords, dir: Direction,
+                     grid: &mut EditGrid)
+                     -> bool {
+        let dir2 = dir.rotate_cw();
+        match (grid.wire_shape_at(coords, dir),
+                 grid.wire_shape_at(coords, dir2)) {
+            (Some(WireShape::Stub), Some(WireShape::Stub)) => {
+                grid.mutate(
+                    &[GridChange::ToggleCenterWire(coords, dir, dir2)],
+                );
+                self.changed = true;
+                true
+            }
+            (Some(WireShape::Stub), None) => {
+                grid.mutate(
+                    &[
+                        GridChange::ToggleStubWire(coords, dir2),
+                        GridChange::ToggleCenterWire(coords, dir, dir2),
+                    ],
+                );
+                self.changed = true;
+                true
+            }
+            (None, Some(WireShape::Stub)) => {
+                grid.mutate(
+                    &[
+                        GridChange::ToggleStubWire(coords, dir),
+                        GridChange::ToggleCenterWire(coords, dir, dir2),
+                    ],
+                );
+                self.changed = true;
+                true
+            }
+            (Some(WireShape::TurnLeft), Some(WireShape::TurnRight)) => {
+                grid.mutate(
+                    &[GridChange::ToggleCenterWire(coords, dir, dir2)],
+                );
                 self.changed = true;
                 true
             }

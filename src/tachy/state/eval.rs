@@ -446,18 +446,18 @@ impl ChipEval for NotChipEval {
 }
 
 pub struct PackChipEval {
-    output_size: WireSize,
+    input_size: WireSize,
     input1: usize,
     input2: usize,
     output: usize,
 }
 
 impl PackChipEval {
-    pub fn new(output_size: WireSize, input1: usize, input2: usize,
+    pub fn new(input_size: WireSize, input1: usize, input2: usize,
                output: usize)
                -> Box<ChipEval> {
         Box::new(PackChipEval {
-                     output_size,
+                     input_size,
                      input1,
                      input2,
                      output,
@@ -470,8 +470,7 @@ impl ChipEval for PackChipEval {
         let (input1, changed1) = state.values[self.input1];
         let (input2, changed2) = state.values[self.input2];
         if changed1 || changed2 {
-            let num_bits = self.output_size.num_bits();
-            let output = input1 | (input2 << (num_bits / 2));
+            let output = input1 | (input2 << self.input_size.num_bits());
             state.values[self.output] = (output, true);
             true
         } else {
@@ -541,6 +540,39 @@ impl ChipEval for SampleChipEval {
             state.values[self.output] = (state.values[self.input_b].0, true);
         }
         has_event
+    }
+}
+
+pub struct UnpackChipEval {
+    output_size: WireSize,
+    input: usize,
+    output1: usize,
+    output2: usize,
+}
+
+impl UnpackChipEval {
+    pub fn new(output_size: WireSize, input: usize, output1: usize,
+               output2: usize)
+               -> Box<ChipEval> {
+        Box::new(UnpackChipEval {
+                     output_size,
+                     input,
+                     output1,
+                     output2,
+                 })
+    }
+}
+
+impl ChipEval for UnpackChipEval {
+    fn eval(&mut self, state: &mut CircuitState) -> bool {
+        let (input, changed) = state.values[self.input];
+        if changed {
+            let output1 = input & self.output_size.mask();
+            let output2 = input >> self.output_size.num_bits();
+            state.values[self.output1] = (output1, true);
+            state.values[self.output2] = (output2, true);
+        }
+        changed
     }
 }
 

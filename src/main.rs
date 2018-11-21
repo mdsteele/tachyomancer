@@ -43,8 +43,23 @@ use std::path::PathBuf;
 fn main() {
     match start_game(&parse_flags()) {
         Ok(()) => {}
-        Err(err) => {
-            eprintln!("ERROR: {}", err);
+        Err(error) => {
+            eprintln!("ERROR: {}", error);
+            let message =
+                format!("Please file a bug with the below information at\n\
+                         https://github.com/mdsteele/tachyomancer/issues\n\
+                         \n{}\n\n\
+                         OS={}, ARCH={}",
+                        error,
+                        std::env::consts::OS,
+                        std::env::consts::ARCH);
+            let result = sdl2::messagebox::show_simple_message_box(
+                sdl2::messagebox::MESSAGEBOX_ERROR,
+                "Tachyomancer Error", &message, None);
+            if let Err(message_box_error) = result {
+                eprintln!("ERROR: Failed to show message box: {:?}",
+                          message_box_error);
+            }
             std::process::exit(1);
         }
     }

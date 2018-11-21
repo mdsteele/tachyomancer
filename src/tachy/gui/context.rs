@@ -17,7 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::audio::{AudioMixer, AudioQueue};
 use sdl2;
+use std::sync::{Arc, Mutex};
 
 //===========================================================================//
 
@@ -25,6 +27,9 @@ pub struct GuiContext {
     _sdl_context: sdl2::Sdl,
     pub(super) video_subsystem: sdl2::VideoSubsystem,
     pub(super) event_pump: sdl2::EventPump,
+    _audio_subsystem: sdl2::AudioSubsystem,
+    _audio_device: sdl2::audio::AudioDevice<AudioMixer>,
+    pub(super) audio_queue: Arc<Mutex<AudioQueue>>,
 }
 
 impl GuiContext {
@@ -35,10 +40,20 @@ impl GuiContext {
         }
         let video_subsystem = sdl_context.video()?;
         let event_pump = sdl_context.event_pump()?;
+
+        let audio_subsystem = sdl_context.audio()?;
+        let audio_queue = Arc::new(Mutex::new(AudioQueue::new()));
+        let audio_device = AudioMixer::audio_device(&audio_subsystem,
+                                                    audio_queue.clone())?;
+        audio_device.resume();
+
         Ok(GuiContext {
                _sdl_context: sdl_context,
                video_subsystem,
                event_pump,
+               _audio_subsystem: audio_subsystem,
+               _audio_device: audio_device,
+               audio_queue,
            })
     }
 

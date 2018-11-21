@@ -17,11 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod audio;
 mod context;
 mod event;
 mod resource;
 mod window;
 
+pub use self::audio::{AudioQueue, Sound};
 pub use self::context::GuiContext;
 pub use self::event::{Event, KeyEventData, Keycode};
 pub use self::resource::Resources;

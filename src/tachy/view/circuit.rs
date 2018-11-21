@@ -23,7 +23,7 @@ use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
 use num_integer::{div_floor, mod_floor};
 use tachy::font::Align;
-use tachy::gui::{Event, Keycode, Resources};
+use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
                    Orientation, PortColor, PortFlow, RectSize, WireShape};
 
@@ -64,7 +64,8 @@ impl CircuitView {
         self.edit_grid.draw_dragged(resources);
     }
 
-    pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid)
+    pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
+                        audio: &mut AudioQueue)
                         -> bool {
         match event {
             Event::ClockTick(tick) => {
@@ -91,11 +92,15 @@ impl CircuitView {
             match opt_action {
                 None => {}
                 Some(ControlsAction::Reset) => {
-                    self.seconds_since_time_step = 0.0;
-                    grid.stop_eval();
+                    if grid.eval().is_some() {
+                        audio.play_sound(Sound::Beep);
+                        self.seconds_since_time_step = 0.0;
+                        grid.stop_eval();
+                    }
                 }
                 Some(ControlsAction::RunOrPause) => {
                     if grid.eval().is_none() {
+                        audio.play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         grid.start_eval();
                     } else {

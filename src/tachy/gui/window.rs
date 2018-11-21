@@ -17,11 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::audio::AudioQueue;
 use super::context::GuiContext;
 use super::event::Event;
 use super::resource::Resources;
 use gl;
 use sdl2;
+use std::mem;
 use std::os::raw::c_void;
 
 //===========================================================================//
@@ -124,6 +126,11 @@ impl<'a> Window<'a> {
     }
 
     pub fn swap(&mut self) { self.sdl_window.gl_swap_window(); }
+
+    pub fn pump_audio(&mut self, audio: &mut AudioQueue) {
+        let mut audio_queue = self.gui_context.audio_queue.lock().unwrap();
+        audio_queue.merge(mem::replace(audio, AudioQueue::new()));
+    }
 }
 
 //===========================================================================//

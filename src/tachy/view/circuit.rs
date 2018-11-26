@@ -24,6 +24,7 @@ use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
 use num_integer::{div_floor, mod_floor};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
+use tachy::save::Puzzle;
 use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
                    Orientation, RectSize, WireShape};
 
@@ -44,13 +45,14 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window_size: RectSize<u32>) -> CircuitView {
+    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle)
+               -> CircuitView {
         CircuitView {
             width: window_size.width as f32,
             height: window_size.height as f32,
             edit_grid: EditGridView::new(window_size),
-            controls_tray: ControlsTray::new(window_size, true),
-            parts_tray: PartsTray::new(window_size),
+            controls_tray: ControlsTray::new(window_size, current_puzzle),
+            parts_tray: PartsTray::new(window_size, current_puzzle),
             seconds_since_time_step: 0.0,
         }
     }

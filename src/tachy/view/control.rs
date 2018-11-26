@@ -19,6 +19,7 @@
 
 use cgmath::{Matrix4, vec3};
 use tachy::gui::{Event, Resources};
+use tachy::save::Puzzle;
 use tachy::state::{Rect, RectSize};
 
 //===========================================================================//
@@ -48,14 +49,14 @@ pub struct ControlsTray {
 }
 
 impl ControlsTray {
-    pub fn new(window_size: RectSize<u32>, allow_step_cycle: bool)
+    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle)
                -> ControlsTray {
         let mut actions = vec![
             ControlsAction::Reset,
             ControlsAction::RunOrPause,
             ControlsAction::StepSubcycle,
         ];
-        if allow_step_cycle {
+        if current_puzzle.allows_events() {
             actions.push(ControlsAction::StepCycle);
         }
         actions.push(ControlsAction::StepTime);

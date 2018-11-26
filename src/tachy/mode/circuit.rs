@@ -26,7 +26,8 @@ use tachy::view::CircuitView;
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
-    let mut view = CircuitView::new(window.size().into());
+    let mut view = CircuitView::new(window.size().into(),
+                                    state.current_puzzle());
     let grid = state.edit_grid_mut().unwrap(); // TODO
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();

@@ -19,8 +19,10 @@
 
 mod dir;
 mod prefs;
+mod puzzle;
 
 pub use self::dir::SaveDir;
 pub use self::prefs::Prefs;
+pub use self::puzzle::{Puzzle, PuzzleKind};
 
 //===========================================================================//

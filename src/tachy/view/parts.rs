@@ -21,6 +21,7 @@ use cgmath::{Matrix4, Point2, vec3};
 use num_integer::div_mod_floor;
 use tachy::font::Align;
 use tachy::gui::{Event, Resources};
+use tachy::save::Puzzle;
 use tachy::state::{ChipType, Rect, RectSize};
 
 //===========================================================================//
@@ -34,6 +35,24 @@ const TRAY_OUTER_MARGIN: i32 = 32;
 const TRAY_WIDTH: i32 = 2 * TRAY_INNER_MARGIN +
     PART_COLUMNS * (PART_WIDTH + PART_SPACING) -
     PART_SPACING;
+
+const ALL_CHIP_TYPES: &[ChipType] = &[
+    ChipType::Const(1),
+    ChipType::Not,
+    ChipType::And,
+    ChipType::Pack,
+    ChipType::Unpack,
+    ChipType::Add,
+    ChipType::Clock,
+    ChipType::Delay,
+    ChipType::Discard,
+    ChipType::Join,
+    ChipType::Latest,
+    ChipType::Sample,
+    ChipType::Ram,
+    ChipType::Display,
+    ChipType::Button,
+];
 
 //===========================================================================//
 
@@ -51,26 +70,14 @@ pub struct PartsTray {
 }
 
 impl PartsTray {
-    pub fn new(window_size: RectSize<u32>) -> PartsTray {
-        // TODO: Change list of chip types based on puzzle type and game
-        //   progress.
-        let ctypes = vec![
-            ChipType::Const(1),
-            ChipType::Not,
-            ChipType::And,
-            ChipType::Pack,
-            ChipType::Unpack,
-            ChipType::Add,
-            ChipType::Clock,
-            ChipType::Delay,
-            ChipType::Discard,
-            ChipType::Join,
-            ChipType::Latest,
-            ChipType::Sample,
-            ChipType::Ram,
-            ChipType::Display,
-            ChipType::Button,
-        ];
+    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle)
+               -> PartsTray {
+        let mut ctypes = Vec::<ChipType>::new();
+        for &ctype in ALL_CHIP_TYPES.iter() {
+            if ctype.is_allowed_in(current_puzzle) {
+                ctypes.push(ctype);
+            }
+        }
         let parts = ctypes
             .into_iter()
             .enumerate()

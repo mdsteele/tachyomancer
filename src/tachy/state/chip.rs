@@ -25,6 +25,7 @@ use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
 use super::size::WireSize;
 use std::cell::RefCell;
 use std::rc::Rc;
+use tachy::save::{Puzzle, PuzzleKind};
 
 //===========================================================================//
 
@@ -52,6 +53,23 @@ pub enum ChipType {
 }
 
 impl ChipType {
+    pub fn is_allowed_in(self, puzzle: Puzzle) -> bool {
+        match self {
+            ChipType::Clock | ChipType::Delay | ChipType::Discard |
+            ChipType::Join | ChipType::Latest | ChipType::Sample |
+            ChipType::Ram => puzzle.allows_events(),
+            ChipType::Button => {
+                match puzzle.kind() {
+                    PuzzleKind::Command | PuzzleKind::Sandbox => {
+                        puzzle.allows_events()
+                    }
+                    _ => false,
+                }
+            }
+            _ => true,
+        }
+    }
+
     /// Returns the width and height of the chip in its default orientation.
     pub fn size(self) -> RectSize<i32> {
         match self {

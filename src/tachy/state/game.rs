@@ -18,12 +18,13 @@
 // +--------------------------------------------------------------------------+
 
 use super::edit::EditGrid;
-use tachy::save::SaveDir;
+use tachy::save::{Puzzle, SaveDir};
 
 //===========================================================================//
 
 pub struct GameState {
     savedir: SaveDir,
+    current_puzzle: Puzzle,
     edit_grid: Option<EditGrid>,
 }
 
@@ -32,11 +33,14 @@ impl GameState {
         // TODO: Load current profile.
         Ok(GameState {
                savedir,
+               current_puzzle: Puzzle::SandboxEvent,
                edit_grid: Some(EditGrid::new()),
            })
     }
 
     pub fn savedir(&self) -> &SaveDir { &self.savedir }
+
+    pub fn current_puzzle(&self) -> Puzzle { self.current_puzzle }
 
     pub fn edit_grid_mut(&mut self) -> Option<&mut EditGrid> {
         self.edit_grid.as_mut()

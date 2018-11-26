@@ -59,7 +59,7 @@ impl Fonts {
     pub fn new() -> Result<Fonts, String> {
         let shader = Rc::new(TextShader::new()?);
         let roman =
-            Font::new("font/inconsolata.png", INCONSOLATA_PNG_DATA, &shader)?;
+            Font::new("font/inconsolata", INCONSOLATA_PNG_DATA, &shader)?;
         Ok(Fonts { roman })
     }
 

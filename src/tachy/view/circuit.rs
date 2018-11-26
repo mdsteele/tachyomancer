@@ -17,15 +17,15 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::chip::ChipModel;
 use super::control::{ControlsAction, ControlsTray};
 use super::parts::{PartsAction, PartsTray};
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
 use num_integer::{div_floor, mod_floor};
-use tachy::font::Align;
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
-                   Orientation, PortColor, PortFlow, RectSize, WireShape};
+                   Orientation, RectSize, WireShape};
 
 //===========================================================================//
 
@@ -147,6 +147,7 @@ struct EditGridView {
     width: f32,
     height: f32,
     scroll: Vector2<i32>,
+    chip_model: ChipModel,
     wire_model: WireModel,
     chip_drag: Option<ChipDrag>,
     wire_drag: Option<WireDrag>,
@@ -158,6 +159,7 @@ impl EditGridView {
             width: window_size.width as f32,
             height: window_size.height as f32,
             scroll: Vector2::new(0, 0),
+            chip_model: ChipModel::new(),
             wire_model: WireModel::new(),
             chip_drag: None,
             wire_drag: None,
@@ -219,11 +221,11 @@ impl EditGridView {
             let y = (coords.y * GRID_CELL_SIZE) as f32;
             let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
-            self.draw_chip(resources,
-                           &mat,
-                           ctype,
-                           orient,
-                           Some((coords, grid)));
+            self.chip_model.draw_chip(resources,
+                                      &mat,
+                                      ctype,
+                                      orient,
+                                      Some((coords, grid)));
         }
     }
 
@@ -235,11 +237,11 @@ impl EditGridView {
             let matrix = self.vp_matrix() *
                 Matrix4::from_translation(vec3(x, y, 0.0)) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
-            self.draw_chip(resources,
-                           &matrix,
-                           drag.chip_type,
-                           drag.reorient * drag.old_orient,
-                           None);
+            self.chip_model.draw_chip(resources,
+                                      &matrix,
+                                      drag.chip_type,
+                                      drag.reorient * drag.old_orient,
+                                      None);
         }
     }
 
@@ -248,58 +250,6 @@ impl EditGridView {
             Matrix4::from_translation(vec3(-self.scroll.x as f32,
                                            -self.scroll.y as f32,
                                            0.0))
-    }
-
-    fn draw_chip(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                 ctype: ChipType, orient: Orientation,
-                 coords_and_grid: Option<(Coords, &EditGrid)>) {
-        let size = orient * ctype.size();
-        let (width, height) = (size.width as f32, size.height as f32);
-        let margin = 0.1;
-        let rect = (margin, margin, width - 2. * margin, height - 2. * margin);
-        resources.shaders().solid().fill_rect(matrix, (0.3, 0.3, 0.3), rect);
-        for port in ctype.ports((0, 0).into(), orient) {
-            let x = port.pos.x as f32 + 0.5;
-            let y = port.pos.y as f32 + 0.5;
-            let angle = port.dir.angle_from_east();
-            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
-                Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle);
-            let color = match (port.color, port.flow) {
-                (PortColor::Behavior, PortFlow::Send) => (1.0, 0.5, 0.0),
-                (PortColor::Behavior, PortFlow::Recv) => (0.75, 0.0, 0.0),
-                (PortColor::Event, PortFlow::Send) => (0.0, 1.0, 1.0),
-                (PortColor::Event, PortFlow::Recv) => (0.0, 0.0, 1.0),
-            };
-            let rect = (0.5 - margin, -0.3, 0.5 * margin, 0.6);
-            resources.shaders().solid().fill_rect(&mat, color, rect);
-        }
-        match ctype {
-            ChipType::Display => {
-                if let Some((coords, grid)) = coords_and_grid {
-                    if grid.eval().is_some() {
-                        let ports = ctype.ports(coords, orient);
-                        debug_assert_eq!(ports.len(), 1);
-                        if let Some(value) = grid.port_value(ports[0].loc()) {
-                            resources.fonts().roman().draw(matrix,
-                                                           (0.15, 0.3),
-                                                           Align::Center,
-                                                           (0.5 * width,
-                                                            0.5 * height -
-                                                                0.15),
-                                                           &format!("{}",
-                                                                    value));
-                            return;
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
-        resources.fonts().roman().draw(matrix,
-                                       (0.15, 0.3),
-                                       Align::Center,
-                                       (0.5 * width, 0.5 * height - 0.15),
-                                       &format!("{:?}", ctype));
     }
 
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid) {

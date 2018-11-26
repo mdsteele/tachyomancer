@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, Vector3, Vector4, vec3};
+use cgmath::{Matrix4, Vector2, Vector3, Vector4, vec3};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 VertexArray, VertexBuffer};
 
@@ -25,6 +25,9 @@ use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
 
 const BOARD_VERT_CODE: &[u8] = include_bytes!("board.vert");
 const BOARD_FRAG_CODE: &[u8] = include_bytes!("board.frag");
+
+const CHIP_VERT_CODE: &[u8] = include_bytes!("chip.vert");
+const CHIP_FRAG_CODE: &[u8] = include_bytes!("chip.frag");
 
 const SOLID_VERT_CODE: &[u8] = include_bytes!("solid.vert");
 const SOLID_FRAG_CODE: &[u8] = include_bytes!("solid.frag");
@@ -36,6 +39,7 @@ const WIRE_FRAG_CODE: &[u8] = include_bytes!("wire.frag");
 
 pub struct Shaders {
     board: BoardShader,
+    chip: ChipShader,
     solid: SolidShader,
     wire: WireShader,
 }
@@ -48,6 +52,13 @@ impl Shaders {
             Shader::new(ShaderType::Fragment, "board.frag", BOARD_FRAG_CODE)?;
         let board_prog = ShaderProgram::new(&[&board_vert, &board_frag])?;
         let board = BoardShader::new(board_prog)?;
+
+        let chip_vert =
+            Shader::new(ShaderType::Vertex, "chip.vert", CHIP_VERT_CODE)?;
+        let chip_frag =
+            Shader::new(ShaderType::Fragment, "chip.frag", CHIP_FRAG_CODE)?;
+        let chip_prog = ShaderProgram::new(&[&chip_vert, &chip_frag])?;
+        let chip = ChipShader::new(chip_prog)?;
 
         let solid_vert =
             Shader::new(ShaderType::Vertex, "solid.vert", SOLID_VERT_CODE)?;
@@ -63,10 +74,17 @@ impl Shaders {
         let wire_prog = ShaderProgram::new(&[&wire_vert, &wire_frag])?;
         let wire = WireShader::new(wire_prog)?;
 
-        Ok(Shaders { board, solid, wire })
+        Ok(Shaders {
+               board,
+               chip,
+               solid,
+               wire,
+           })
     }
 
     pub fn board(&self) -> &BoardShader { &self.board }
+
+    pub fn chip(&self) -> &ChipShader { &self.chip }
 
     pub fn solid(&self) -> &SolidShader { &self.solid }
 
@@ -104,6 +122,42 @@ impl BoardShader {
         self.program.bind();
         self.mvp.set(matrix);
         self.coords_rect.set(&coords_rect);
+        self.varray.bind();
+        self.varray.draw(Primitive::TriangleStrip, 0, 4);
+    }
+}
+
+//===========================================================================//
+
+pub struct ChipShader {
+    program: ShaderProgram,
+    mvp: ShaderUniform<Matrix4<f32>>,
+    icon_coords: ShaderUniform<Vector2<u32>>,
+    varray: VertexArray,
+    _vbuffer: VertexBuffer<u8>,
+}
+
+impl ChipShader {
+    fn new(program: ShaderProgram) -> Result<ChipShader, String> {
+        let mvp = program.get_uniform("MVP")?;
+        let icon_coords = program.get_uniform("IconCoords")?;
+        let varray = VertexArray::new(1);
+        let vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
+        varray.bind();
+        vbuffer.attribi(0, 2, 0, 0);
+        Ok(ChipShader {
+               program,
+               mvp,
+               icon_coords,
+               varray,
+               _vbuffer: vbuffer,
+           })
+    }
+
+    pub fn draw(&self, matrix: &Matrix4<f32>, icon_coords: Vector2<u32>) {
+        self.program.bind();
+        self.mvp.set(matrix);
+        self.icon_coords.set(&icon_coords);
         self.varray.bind();
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
     }

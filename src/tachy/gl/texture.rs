@@ -123,8 +123,8 @@ impl Texture2D {
             }
 
         };
-        let width = info.width;
-        let height = info.height;
+        let width = info.width as usize;
+        let height = info.height as usize;
         if !width.is_power_of_two() || !height.is_power_of_two() {
             return Err(format!("Texture PNG {} has size of {}x{}, \
                                 which are not both powers of 2",
@@ -132,7 +132,7 @@ impl Texture2D {
                                width,
                                height));
         }
-        let mut data = vec![0u8; (width as usize) * (height as usize)];
+        let mut data = vec![0u8; info.color_type.samples() * width * height];
         reader
             .next_frame(&mut data)
             .map_err(|err| {

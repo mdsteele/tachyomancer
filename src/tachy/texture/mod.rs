@@ -17,9 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use tachy::gl::Texture1D;
+use tachy::gl::{Texture1D, Texture2D};
 
 //===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const CHIP_ICONS_PNG_DATA: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/texture/chip_icons.png"));
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const WIRE_TEXTURE1D_DATA: &[u8; 128] = &[
@@ -47,14 +51,19 @@ const WIRE_TEXTURE1D_DATA: &[u8; 128] = &[
 //===========================================================================//
 
 pub struct Textures {
+    chip_icons: Texture2D,
     wire: Texture1D,
 }
 
 impl Textures {
     pub fn new() -> Result<Textures, String> {
+        let chip_icons = Texture2D::from_png("texture/chip_icons",
+                                             CHIP_ICONS_PNG_DATA)?;
         let wire = Texture1D::new_red(WIRE_TEXTURE1D_DATA)?;
-        Ok(Textures { wire })
+        Ok(Textures { chip_icons, wire })
     }
+
+    pub fn chip_icons(&self) -> &Texture2D { &self.chip_icons }
 
     pub fn wire(&self) -> &Texture1D { &self.wire }
 }

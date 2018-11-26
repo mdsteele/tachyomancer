@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{BaseNum, Deg, Point2, Vector2, vec2};
+use cgmath::{BaseNum, Deg, Matrix4, Point2, Vector2, vec2};
 use std::ops;
 
 //===========================================================================//
@@ -180,6 +180,17 @@ pub struct Orientation {
 }
 
 impl Orientation {
+    pub fn is_mirrored(&self) -> bool { self.mirror }
+
+    pub fn matrix(&self) -> Matrix4<f32> {
+        let matrix = Matrix4::from_angle_z(Deg(90.0 * (self.rotate as f32)));
+        if self.mirror {
+            matrix * Matrix4::from_nonuniform_scale(1.0, -1.0, 1.0)
+        } else {
+            matrix
+        }
+    }
+
     pub fn transform_in_rect(&self, delta: CoordsDelta, size: RectSize<i32>)
                              -> CoordsDelta {
         let x = delta.x;

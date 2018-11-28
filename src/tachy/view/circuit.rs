@@ -25,11 +25,12 @@ use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
 use num_integer::{div_floor, mod_floor};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::Puzzle;
-use tachy::state::{ChipType, Coords, Direction, EditGrid, GridChange,
-                   Orientation, RectSize, WireShape};
+use tachy::state::{ChipType, Coords, CoordsRect, Direction, EditGrid,
+                   GridChange, Orientation, Rect, RectSize, WireShape};
 
 //===========================================================================//
 
+const BOUNDS_MARGIN: i32 = 30;
 const SCROLL_PER_KEYDOWN: i32 = 40;
 const SECONDS_PER_TIME_STEP: f64 = 1.0;
 
@@ -151,6 +152,7 @@ struct EditGridView {
     scroll: Vector2<i32>,
     chip_model: ChipModel,
     wire_model: WireModel,
+    bounds_drag: Option<BoundsDrag>,
     chip_drag: Option<ChipDrag>,
     wire_drag: Option<WireDrag>,
 }
@@ -160,25 +162,56 @@ impl EditGridView {
         EditGridView {
             width: window_size.width as f32,
             height: window_size.height as f32,
-            scroll: Vector2::new(0, 0),
+            scroll: Vector2::new(-(window_size.width as i32) / 2,
+                                 -(window_size.height as i32) / 2),
             chip_model: ChipModel::new(),
             wire_model: WireModel::new(),
+            bounds_drag: None,
             chip_drag: None,
             wire_drag: None,
         }
     }
 
+    fn draw_background_grid(&self, resources: &Resources) {
+        let matrix = cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
+        let pixel_rect = vec4(self.scroll.x as f32,
+                              self.scroll.y as f32,
+                              self.width,
+                              self.height);
+        let coords_rect = pixel_rect / (GRID_CELL_SIZE as f32);
+        resources.shaders().board().draw(&matrix, coords_rect);
+    }
+
+    fn draw_bounds(&self, resources: &Resources, grid: &EditGrid) {
+        let matrix = self.vp_matrix();
+        let (bounds, acceptable) = if let Some(ref drag) = self.bounds_drag {
+            (drag.bounds, drag.acceptable)
+        } else {
+            (grid.bounds(), true)
+        };
+        let x = (bounds.x * GRID_CELL_SIZE) as f32;
+        let y = (bounds.y * GRID_CELL_SIZE) as f32;
+        let width = (bounds.width * GRID_CELL_SIZE) as f32;
+        let height = (bounds.height * GRID_CELL_SIZE) as f32;
+        let thick = BOUNDS_MARGIN as f32;
+        let color = if acceptable {
+            (0.0, 1.0, 0.0)
+        } else {
+            (1.0, 0.0, 0.0)
+        };
+        let rect = (x - thick, y, thick, height);
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        let rect = (x, y - thick, width, thick);
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        let rect = (x + width, y, thick, height);
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        let rect = (x, y + height, width, thick);
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+    }
+
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
-        // Draw grid:
-        {
-            let matrix = cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
-            let pixel_rect = vec4(self.scroll.x as f32,
-                                  self.scroll.y as f32,
-                                  self.width,
-                                  self.height);
-            let coords_rect = pixel_rect / (GRID_CELL_SIZE as f32);
-            resources.shaders().board().draw(&matrix, coords_rect);
-        }
+        self.draw_background_grid(resources);
+        self.draw_bounds(resources, grid);
 
         // Draw wires:
         let matrix = self.vp_matrix();
@@ -294,8 +327,16 @@ impl EditGridView {
                     return;
                 }
                 if mouse.left {
-                    if let Some((ctype, orient, coords)) =
-                        grid.chip_at(self.coords_for_point(mouse.pt))
+                    let mouse_coords = self.coords_for_point(mouse.pt);
+                    if !grid.bounds().contains_point(mouse_coords) {
+                        if let Some(octant) =
+                            self.octant_for_point(mouse.pt, grid)
+                        {
+                            self.bounds_drag =
+                                Some(BoundsDrag::new(octant, mouse.pt, grid));
+                        }
+                    } else if let Some((ctype, orient, coords)) =
+                        grid.chip_at(mouse_coords)
                     {
                         // TODO: If mouse is within chip cell but near edge of
                         //   chip, allow for wire dragging.
@@ -324,6 +365,9 @@ impl EditGridView {
                 }
             }
             Event::MouseMove(mouse) => {
+                if let Some(ref mut drag) = self.bounds_drag {
+                    drag.move_to(mouse.pt, grid);
+                }
                 if let Some(ref mut drag) = self.chip_drag {
                     drag.move_to(mouse.pt);
                 }
@@ -337,6 +381,9 @@ impl EditGridView {
             }
             Event::MouseUp(mouse) => {
                 if mouse.left {
+                    if let Some(drag) = self.bounds_drag.take() {
+                        drag.finish(grid);
+                    }
                     if let Some(drag) = self.chip_drag.take() {
                         drag.drop_onto_board(grid);
                     }
@@ -362,6 +409,48 @@ impl EditGridView {
     pub fn drop_into_parts_tray(&mut self, grid: &mut EditGrid) {
         if let Some(drag) = self.chip_drag.take() {
             drag.drop_into_parts_tray(grid);
+        }
+    }
+
+    fn octant_for_point(&self, pt: Point2<i32>, grid: &EditGrid)
+                        -> Option<Octant> {
+        let scrolled = pt + self.scroll;
+        let bounds = grid.bounds();
+        let inner = bounds * GRID_CELL_SIZE;
+        if inner.contains_point(scrolled) {
+            return None;
+        }
+        let outer = Rect::new(inner.x - BOUNDS_MARGIN,
+                              inner.y - BOUNDS_MARGIN,
+                              inner.width + 2 * BOUNDS_MARGIN,
+                              inner.height + 2 * BOUNDS_MARGIN);
+        if !outer.contains_point(scrolled) {
+            return None;
+        }
+        let at_top = scrolled.y < inner.y;
+        let at_bottom = scrolled.y >= inner.bottom();
+        if scrolled.x < inner.x {
+            if at_top {
+                Some(Octant::TopLeft)
+            } else if at_bottom {
+                Some(Octant::BottomLeft)
+            } else {
+                Some(Octant::Left)
+            }
+        } else if scrolled.x >= inner.right() {
+            if at_top {
+                Some(Octant::TopRight)
+            } else if at_bottom {
+                Some(Octant::BottomRight)
+            } else {
+                Some(Octant::Right)
+            }
+        } else if at_top {
+            Some(Octant::Top)
+        } else if at_bottom {
+            Some(Octant::Bottom)
+        } else {
+            None
         }
     }
 
@@ -404,6 +493,81 @@ fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
     matrix * Matrix4::from_translation(vec3(cx, cy, 0.0)) *
         Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), dir.angle_from_east()) *
         Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
+}
+
+//===========================================================================//
+
+#[derive(Clone, Copy)]
+enum Octant {
+    Right,
+    BottomRight,
+    Bottom,
+    BottomLeft,
+    Left,
+    TopLeft,
+    Top,
+    TopRight,
+}
+
+//===========================================================================//
+
+struct BoundsDrag {
+    octant: Octant,
+    drag_start: Point2<i32>,
+    drag_current: Point2<i32>,
+    bounds: CoordsRect,
+    acceptable: bool,
+}
+
+impl BoundsDrag {
+    pub fn new(octant: Octant, mouse_pt: Point2<i32>, grid: &mut EditGrid)
+               -> BoundsDrag {
+        BoundsDrag {
+            octant,
+            drag_start: mouse_pt,
+            drag_current: mouse_pt,
+            bounds: grid.bounds(),
+            acceptable: true,
+        }
+    }
+
+    pub fn move_to(&mut self, mouse_pt: Point2<i32>, grid: &EditGrid) {
+        self.drag_current = mouse_pt;
+        let delta = (self.drag_current - self.drag_start) / GRID_CELL_SIZE;
+        let old_bounds = grid.bounds();
+        let mut left = old_bounds.x;
+        let mut right = old_bounds.x + old_bounds.width;
+        match self.octant {
+            Octant::TopLeft | Octant::Left | Octant::BottomLeft => {
+                left = (left + delta.x).min(right - 1);
+            }
+            Octant::TopRight | Octant::Right | Octant::BottomRight => {
+                right = (right + delta.x).max(left + 1);
+            }
+            Octant::Top | Octant::Bottom => {}
+        }
+        let mut top = old_bounds.y;
+        let mut bottom = old_bounds.y + old_bounds.height;
+        match self.octant {
+            Octant::TopLeft | Octant::Top | Octant::TopRight => {
+                top = (top + delta.y).min(bottom - 1);
+            }
+            Octant::BottomLeft | Octant::Bottom | Octant::BottomRight => {
+                bottom = (bottom + delta.y).max(top + 1);
+            }
+            Octant::Left | Octant::Right => {}
+        }
+        self.bounds = Rect::new(left, top, right - left, bottom - top);
+        self.acceptable = grid.can_have_bounds(self.bounds);
+    }
+
+    pub fn finish(self, grid: &mut EditGrid) {
+        debug_assert_eq!(self.acceptable, grid.can_have_bounds(self.bounds));
+        if self.acceptable {
+            let old_bounds = grid.bounds();
+            grid.mutate(&[GridChange::SwapBounds(old_bounds, self.bounds)]);
+        }
+    }
 }
 
 //===========================================================================//
@@ -500,6 +664,7 @@ struct WireDrag {
     changed: bool,
 }
 
+// TODO: enforce wires must be in bounds
 impl WireDrag {
     pub fn new() -> WireDrag {
         WireDrag {

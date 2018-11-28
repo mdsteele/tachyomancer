@@ -31,8 +31,8 @@ pub use self::check::{WireColor, WireShape};
 pub use self::chip::ChipType;
 pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
 pub use self::game::GameState;
-pub use self::geom::{Coords, CoordsDelta, Direction, Orientation, Rect,
-                     RectSize};
+pub use self::geom::{Coords, CoordsDelta, CoordsRect, Direction, Orientation,
+                     Rect, RectSize};
 pub use self::port::{PortColor, PortFlow};
 pub use self::size::WireSize;
 

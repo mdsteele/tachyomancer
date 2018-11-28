@@ -20,10 +20,12 @@
 use super::check::{self, WireColor, WireError, WireInfo, WireShape};
 use super::chip::ChipType;
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
-use super::geom::{Coords, CoordsDelta, Direction, Orientation, RectSize};
+use super::geom::{Coords, CoordsDelta, CoordsRect, Direction, Orientation,
+                  Rect, RectSize};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
+use std::mem;
 use std::usize;
 
 //===========================================================================//
@@ -52,11 +54,14 @@ pub enum GridChange {
     ToggleCrossWire(Coords),
     /// Places or removes a chip on the board.
     ToggleChip(Coords, Orientation, ChipType),
+    /// Change the bounds rect from one rect to the other.
+    SwapBounds(CoordsRect, CoordsRect),
 }
 
 //===========================================================================//
 
 pub struct EditGrid {
+    bounds: CoordsRect,
     fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
     chips: HashMap<Coords, ChipCell>,
     wires: Vec<WireInfo>,
@@ -69,6 +74,7 @@ pub struct EditGrid {
 impl EditGrid {
     pub fn new() -> EditGrid {
         let mut grid = EditGrid {
+            bounds: Rect::new(-4, -3, 8, 6),
             fragments: HashMap::new(),
             chips: HashMap::new(),
             wires: Vec::new(),
@@ -79,6 +85,18 @@ impl EditGrid {
         };
         grid.typecheck_wires();
         grid
+    }
+
+    pub fn bounds(&self) -> CoordsRect { self.bounds }
+
+    pub fn can_have_bounds(&self, bounds: CoordsRect) -> bool {
+        for &coords in self.chips.keys() {
+            if !bounds.contains_point(coords) {
+                return false;
+            }
+        }
+        // TODO: Also check wires.
+        return true;
     }
 
     pub fn chips(&self) -> ChipsIter { ChipsIter { inner: self.chips.iter() } }
@@ -121,6 +139,9 @@ impl EditGrid {
     }
 
     pub fn can_place_chip(&self, coords: Coords, size: RectSize<i32>) -> bool {
+        if !self.bounds.contains_rect(Rect::with_size(coords, size)) {
+            return false;
+        }
         for row in 0..size.height {
             for col in 0..size.width {
                 let delta = CoordsDelta::new(col, row);
@@ -141,6 +162,7 @@ impl EditGrid {
 
     fn mutate_one(&mut self, change: &GridChange) {
         match *change {
+            // TODO: enforce wires must be in bounds
             GridChange::ToggleStubWire(coords, dir) => {
                 let loc1 = (coords, dir);
                 let loc2 = (coords + dir, -dir);
@@ -318,6 +340,18 @@ impl EditGrid {
                         }
                     }
                     _ => debug_log!("{:?} had no effect", change),
+                }
+            }
+            GridChange::SwapBounds(mut old_bounds, mut new_bounds) => {
+                if self.bounds != old_bounds {
+                    mem::swap(&mut old_bounds, &mut new_bounds);
+                }
+                if self.bounds == old_bounds &&
+                    self.can_have_bounds(new_bounds)
+                {
+                    self.bounds = new_bounds;
+                } else {
+                    debug_log!("{:?} had no effect", change);
                 }
             }
         }

@@ -26,6 +26,8 @@ pub type Coords = Point2<i32>;
 
 pub type CoordsDelta = Vector2<i32>;
 
+pub type CoordsRect = Rect<i32>;
+
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -42,34 +44,65 @@ impl<T> From<(T, T)> for RectSize<T> {
 
 //===========================================================================//
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Rect<T> {
-    top_left: Point2<T>,
-    size: RectSize<T>,
+    pub x: T,
+    pub y: T,
+    pub width: T,
+    pub height: T,
 }
 
 impl<T: BaseNum> Rect<T> {
     pub fn new(x: T, y: T, width: T, height: T) -> Rect<T> {
         Rect {
-            top_left: Point2 { x, y },
-            size: RectSize { width, height },
+            x,
+            y,
+            width,
+            height,
         }
     }
 
-    pub fn x(&self) -> T { self.top_left.x }
+    pub fn with_size(top_left: Point2<T>, size: RectSize<T>) -> Rect<T> {
+        Rect {
+            x: top_left.x,
+            y: top_left.y,
+            width: size.width,
+            height: size.height,
+        }
+    }
 
-    pub fn y(&self) -> T { self.top_left.y }
+    // TODO: get rid of these
+    pub fn x(&self) -> T { self.x }
+    pub fn y(&self) -> T { self.y }
+    pub fn width(&self) -> T { self.width }
+    pub fn height(&self) -> T { self.height }
 
-    pub fn width(&self) -> T { self.size.width }
+    pub fn top_left(&self) -> Point2<T> { Point2::new(self.x, self.y) }
 
-    pub fn height(&self) -> T { self.size.height }
+    pub fn right(&self) -> T { self.x + self.width }
 
-    pub fn top_left(&self) -> Point2<T> { self.top_left }
+    pub fn bottom(&self) -> T { self.y + self.height }
 
     pub fn contains_point(&self, pt: Point2<T>) -> bool {
-        pt.x >= self.top_left.x && pt.y >= self.top_left.y &&
-            pt.x < self.top_left.x + self.size.width &&
-            pt.y < self.top_left.y + self.size.height
+        pt.x >= self.x && pt.y >= self.y && pt.x < self.x + self.width &&
+            pt.y < self.y + self.height
+    }
+
+    pub fn contains_rect(&self, rect: Rect<T>) -> bool {
+        rect.x >= self.x && rect.y >= self.y &&
+            rect.x + rect.width <= self.x + self.width &&
+            rect.y + rect.height <= self.y + self.height
+    }
+}
+
+impl<T: BaseNum> ops::Mul<T> for Rect<T> {
+    type Output = Rect<T>;
+
+    fn mul(self, other: T) -> Rect<T> {
+        Rect::new(self.x * other,
+                  self.y * other,
+                  self.width * other,
+                  self.height * other)
     }
 }
 
@@ -303,7 +336,30 @@ impl<T> ops::Mul<RectSize<T>> for Orientation {
 
 #[cfg(test)]
 mod tests {
-    use super::{Coords, Direction, Orientation};
+    use super::{Coords, Direction, Orientation, Rect};
+    use cgmath::Point2;
+
+    #[test]
+    fn rect_contains_point() {
+        let rect = Rect::new(1, 2, 3, 4);
+        assert!(rect.contains_point(Point2::new(1, 2)));
+        assert!(!rect.contains_point(Point2::new(0, 2)));
+        assert!(rect.contains_point(Point2::new(3, 5)));
+        assert!(!rect.contains_point(Point2::new(4, 5)));
+        assert!(!rect.contains_point(Point2::new(3, 6)));
+    }
+
+    #[test]
+    fn rect_contains_rect() {
+        let rect = Rect::new(1, 2, 3, 4);
+        assert!(rect.contains_rect(rect));
+        assert!(rect.contains_rect(Rect::new(1, 2, 2, 2)));
+        assert!(rect.contains_rect(Rect::new(2, 4, 2, 2)));
+        assert!(!rect.contains_rect(Rect::new(0, 2, 2, 2)));
+        assert!(!rect.contains_rect(Rect::new(1, 1, 2, 2)));
+        assert!(!rect.contains_rect(Rect::new(3, 2, 2, 2)));
+        assert!(!rect.contains_rect(Rect::new(1, 5, 2, 2)));
+    }
 
     #[test]
     fn direction_add_sub_neg() {

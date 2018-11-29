@@ -22,12 +22,13 @@ use super::chip::ChipType;
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
 use super::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
                   Orientation, Rect};
-use super::iface::Interface;
+use super::iface::{Interface, puzzle_interfaces};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
 use std::mem;
 use std::usize;
+use tachy::save::Puzzle;
 
 //===========================================================================//
 
@@ -63,7 +64,7 @@ pub enum GridChange {
 
 pub struct EditGrid {
     bounds: CoordsRect,
-    interfaces: Vec<Interface>,
+    interfaces: &'static [Interface],
     fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
     chips: HashMap<Coords, ChipCell>,
     wires: Vec<WireInfo>,
@@ -74,10 +75,10 @@ pub struct EditGrid {
 }
 
 impl EditGrid {
-    pub fn new() -> EditGrid {
+    pub fn new(puzzle: Puzzle) -> EditGrid {
         let mut grid = EditGrid {
             bounds: Rect::new(-4, -3, 8, 6),
-            interfaces: vec![Interface::example()],
+            interfaces: puzzle_interfaces(puzzle),
             fragments: HashMap::new(),
             chips: HashMap::new(),
             wires: Vec::new(),

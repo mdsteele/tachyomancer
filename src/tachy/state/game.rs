@@ -31,10 +31,11 @@ pub struct GameState {
 impl GameState {
     pub fn new(savedir: SaveDir) -> Result<GameState, String> {
         // TODO: Load current profile.
+        let current_puzzle = Puzzle::AutomateHeliostat;
         Ok(GameState {
                savedir,
-               current_puzzle: Puzzle::SandboxEvent,
-               edit_grid: Some(EditGrid::new()),
+               current_puzzle,
+               edit_grid: Some(EditGrid::new(current_puzzle)),
            })
     }
 

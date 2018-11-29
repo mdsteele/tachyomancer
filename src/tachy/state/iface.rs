@@ -20,12 +20,13 @@
 use super::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction};
 use super::port::{PortColor, PortConstraint, PortFlow, PortSpec};
 use super::size::WireSize;
+use tachy::save::Puzzle;
 
 //===========================================================================//
 
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
-pub enum InterfacePosition {
+enum InterfacePosition {
     Left(i32),
     Center,
     Right(i32),
@@ -33,11 +34,11 @@ pub enum InterfacePosition {
 
 //===========================================================================//
 
-pub struct InterfacePort {
+struct InterfacePort {
     // TODO name and description for help box
-    pub flow: PortFlow,
-    pub color: PortColor,
-    pub size: WireSize,
+    flow: PortFlow,
+    color: PortColor,
+    size: WireSize,
 }
 
 //===========================================================================//
@@ -46,29 +47,10 @@ pub struct Interface {
     // TODO: name and description for help box
     side: Direction,
     pos: InterfacePosition,
-    ports: Vec<InterfacePort>,
+    ports: &'static [InterfacePort],
 }
 
 impl Interface {
-    pub fn example() -> Interface {
-        Interface {
-            side: Direction::East,
-            pos: InterfacePosition::Right(1),
-            ports: vec![
-                InterfacePort {
-                    flow: PortFlow::Send,
-                    color: PortColor::Event,
-                    size: WireSize::Four,
-                },
-                InterfacePort {
-                    flow: PortFlow::Recv,
-                    color: PortColor::Behavior,
-                    size: WireSize::Eight,
-                },
-            ],
-        }
-    }
-
     pub fn top_left(&self, bounds: CoordsRect) -> Coords {
         let span = match self.side {
             Direction::East | Direction::West => bounds.height(),
@@ -135,6 +117,126 @@ impl Interface {
                      PortConstraint::Exact(port.loc(), self.ports[index].size)
                  })
             .collect()
+    }
+}
+
+//===========================================================================//
+
+pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
+    match puzzle {
+        Puzzle::TutorialOr => {
+            &[
+                Interface {
+                    side: Direction::West,
+                    pos: InterfacePosition::Center,
+                    ports: &[
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Behavior,
+                            size: WireSize::One,
+                        },
+                    ],
+                },
+                Interface {
+                    side: Direction::South,
+                    pos: InterfacePosition::Center,
+                    ports: &[
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Behavior,
+                            size: WireSize::One,
+                        },
+                    ],
+                },
+                Interface {
+                    side: Direction::East,
+                    pos: InterfacePosition::Center,
+                    ports: &[
+                        InterfacePort {
+                            flow: PortFlow::Recv,
+                            color: PortColor::Behavior,
+                            size: WireSize::One,
+                        },
+                    ],
+                },
+            ]
+        }
+        Puzzle::AutomateHeliostat => {
+            &[
+                Interface {
+                    side: Direction::South,
+                    pos: InterfacePosition::Left(0),
+                    ports: &[
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Behavior,
+                            size: WireSize::Four,
+                        },
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Behavior,
+                            size: WireSize::Four,
+                        },
+                    ],
+                },
+                Interface {
+                    side: Direction::South,
+                    pos: InterfacePosition::Right(0),
+                    ports: &[
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Behavior,
+                            size: WireSize::Four,
+                        },
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Behavior,
+                            size: WireSize::Four,
+                        },
+                        InterfacePort {
+                            flow: PortFlow::Recv,
+                            color: PortColor::Behavior,
+                            size: WireSize::Four,
+                        },
+                    ],
+                },
+            ]
+        }
+        Puzzle::SandboxBehavior => {
+            &[
+                Interface {
+                    side: Direction::West,
+                    pos: InterfacePosition::Right(0),
+                    ports: &[
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Behavior,
+                            size: WireSize::Eight,
+                        },
+                    ],
+                },
+            ]
+        }
+        Puzzle::SandboxEvent => {
+            &[
+                Interface {
+                    side: Direction::West,
+                    pos: InterfacePosition::Right(0),
+                    ports: &[
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Event,
+                            size: WireSize::Zero,
+                        },
+                        InterfacePort {
+                            flow: PortFlow::Send,
+                            color: PortColor::Behavior,
+                            size: WireSize::Eight,
+                        },
+                    ],
+                },
+            ]
+        }
     }
 }
 

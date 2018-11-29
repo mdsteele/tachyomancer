@@ -20,8 +20,8 @@
 use cgmath::{Matrix4, vec2, vec3};
 use tachy::font::Align;
 use tachy::gui::Resources;
-use tachy::state::{ChipType, Coords, EditGrid, Orientation, PortColor,
-                   PortFlow, RectSize};
+use tachy::state::{ChipType, Coords, CoordsSize, EditGrid, Interface,
+                   Orientation, PortColor, PortFlow, PortSpec};
 
 //===========================================================================//
 
@@ -51,25 +51,26 @@ pub struct ChipModel {}
 impl ChipModel {
     pub fn new() -> ChipModel { ChipModel {} }
 
+    pub fn draw_interface(&self, resources: &Resources,
+                          matrix: &Matrix4<f32>, interface: &Interface) {
+        let size = interface.size();
+        for port in interface.ports_with_top_left(Coords::new(0, 0)) {
+            self.draw_port(resources, matrix, &port);
+        }
+        let width = size.width as f32 - 2.0 * MARGIN;
+        let height = size.height as f32 - 2.0 * MARGIN;
+        let color = (0.3, 0.3, 0.3);
+        let rect = (MARGIN, MARGIN, width, height);
+        resources.shaders().solid().fill_rect(matrix, color, rect);
+    }
+
     pub fn draw_chip(&self, resources: &Resources, matrix: &Matrix4<f32>,
                      ctype: ChipType, orient: Orientation,
                      coords_and_grid: Option<(Coords, &EditGrid)>) {
         let size = orient * ctype.size();
 
-        for port in ctype.ports((0, 0).into(), orient) {
-            let x = port.pos.x as f32 + 0.5;
-            let y = port.pos.y as f32 + 0.5;
-            let angle = port.dir.angle_from_east();
-            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
-                Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle);
-            let color = match (port.color, port.flow) {
-                (PortColor::Behavior, PortFlow::Send) => (1.0, 0.5, 0.0),
-                (PortColor::Behavior, PortFlow::Recv) => (0.75, 0.0, 0.0),
-                (PortColor::Event, PortFlow::Send) => (0.0, 1.0, 1.0),
-                (PortColor::Event, PortFlow::Recv) => (0.0, 0.0, 1.0),
-            };
-            let rect = (0.5 - MARGIN, -0.3, 0.5 * MARGIN, 0.6);
-            resources.shaders().solid().fill_rect(&mat, color, rect);
+        for port in ctype.ports(Coords::new(0, 0), orient) {
+            self.draw_port(resources, matrix, &port);
         }
 
         let icon = self.chip_icon(ctype, orient);
@@ -129,8 +130,7 @@ impl ChipModel {
     }
 
     fn draw_chip_icon(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                      orient: Orientation, size: RectSize<i32>,
-                      icon: ChipIcon) {
+                      orient: Orientation, size: CoordsSize, icon: ChipIcon) {
         let width = size.width as f32 - 2.0 * MARGIN;
         let height = size.height as f32 - 2.0 * MARGIN;
         let matrix = matrix *
@@ -146,13 +146,30 @@ impl ChipModel {
     }
 
     fn draw_chip_string(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                        size: RectSize<i32>, string: &str) {
+                        size: CoordsSize, string: &str) {
         let (width, height) = (size.width as f32, size.height as f32);
         resources.fonts().roman().draw(matrix,
                                        (0.15, 0.3),
                                        Align::Center,
                                        (0.5 * width, 0.5 * height - 0.15),
                                        string);
+    }
+
+    fn draw_port(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                 port: &PortSpec) {
+        let x = port.pos.x as f32 + 0.5;
+        let y = port.pos.y as f32 + 0.5;
+        let angle = port.dir.angle_from_east();
+        let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
+            Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle);
+        let color = match (port.color, port.flow) {
+            (PortColor::Behavior, PortFlow::Send) => (1.0, 0.5, 0.0),
+            (PortColor::Behavior, PortFlow::Recv) => (0.75, 0.0, 0.0),
+            (PortColor::Event, PortFlow::Send) => (0.0, 1.0, 1.0),
+            (PortColor::Event, PortFlow::Recv) => (0.0, 0.0, 1.0),
+        };
+        let rect = (0.5 - MARGIN, -0.3, 0.5 * MARGIN, 0.6);
+        resources.shaders().solid().fill_rect(&mat, color, rect);
     }
 }
 

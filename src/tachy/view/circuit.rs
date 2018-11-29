@@ -209,6 +209,23 @@ impl EditGridView {
         resources.shaders().solid().fill_rect(&matrix, color, rect);
     }
 
+    fn draw_interfaces(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                       grid: &EditGrid) {
+        let bounds = if let Some(ref drag) = self.bounds_drag {
+            drag.bounds
+        } else {
+            grid.bounds()
+        };
+        for interface in grid.interfaces() {
+            let coords = interface.top_left(bounds);
+            let x = (coords.x * GRID_CELL_SIZE) as f32;
+            let y = (coords.y * GRID_CELL_SIZE) as f32;
+            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
+                Matrix4::from_scale(GRID_CELL_SIZE as f32);
+            self.chip_model.draw_interface(resources, &mat, interface);
+        }
+    }
+
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
         self.draw_background_grid(resources);
         self.draw_bounds(resources, grid);
@@ -244,6 +261,8 @@ impl EditGridView {
                 _ => {}
             }
         }
+
+        self.draw_interfaces(resources, &matrix, grid);
 
         // Draw chips (except the one being dragged, if any):
         for (coords, ctype, orient) in grid.chips() {

@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::eval::{self, ChipEval, CircuitInteraction};
-use super::geom::{Coords, Orientation, RectSize};
+use super::geom::{Coords, CoordsSize, Orientation};
 use super::geom::Direction::{self, East, North, South, West};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
                   PortSpec};
@@ -71,7 +71,7 @@ impl ChipType {
     }
 
     /// Returns the width and height of the chip in its default orientation.
-    pub fn size(self) -> RectSize<i32> {
+    pub fn size(self) -> CoordsSize {
         match self {
             ChipType::Ram => (2, 2).into(),
             ChipType::Display => (2, 1).into(),
@@ -422,8 +422,8 @@ enum AbstractConstraint {
 }
 
 impl AbstractConstraint {
-    fn reify(&self, coords: Coords, orient: Orientation,
-             size: RectSize<i32>, ports: &[AbstractPort])
+    fn reify(&self, coords: Coords, orient: Orientation, size: CoordsSize,
+             ports: &[AbstractPort])
              -> PortConstraint {
         match *self {
             AbstractConstraint::Exact(index, wsize) => {
@@ -452,7 +452,7 @@ impl AbstractConstraint {
     }
 }
 
-fn localize(coords: Coords, orient: Orientation, size: RectSize<i32>,
+fn localize(coords: Coords, orient: Orientation, size: CoordsSize,
             port: &AbstractPort)
             -> (Coords, Direction) {
     let &(_, _, delta, dir) = port;

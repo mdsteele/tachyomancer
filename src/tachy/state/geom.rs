@@ -28,6 +28,8 @@ pub type CoordsDelta = Vector2<i32>;
 
 pub type CoordsRect = Rect<i32>;
 
+pub type CoordsSize = RectSize<i32>;
+
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -224,7 +226,7 @@ impl Orientation {
         }
     }
 
-    pub fn transform_in_rect(&self, delta: CoordsDelta, size: RectSize<i32>)
+    pub fn transform_in_rect(&self, delta: CoordsDelta, size: CoordsSize)
                              -> CoordsDelta {
         let x = delta.x;
         let y = if self.mirror {

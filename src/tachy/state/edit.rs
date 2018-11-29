@@ -20,8 +20,9 @@
 use super::check::{self, WireColor, WireError, WireInfo, WireShape};
 use super::chip::ChipType;
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
-use super::geom::{Coords, CoordsDelta, CoordsRect, Direction, Orientation,
-                  Rect, RectSize};
+use super::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
+                  Orientation, Rect};
+use super::iface::Interface;
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
@@ -62,6 +63,7 @@ pub enum GridChange {
 
 pub struct EditGrid {
     bounds: CoordsRect,
+    interfaces: Vec<Interface>,
     fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
     chips: HashMap<Coords, ChipCell>,
     wires: Vec<WireInfo>,
@@ -75,6 +77,7 @@ impl EditGrid {
     pub fn new() -> EditGrid {
         let mut grid = EditGrid {
             bounds: Rect::new(-4, -3, 8, 6),
+            interfaces: vec![Interface::example()],
             fragments: HashMap::new(),
             chips: HashMap::new(),
             wires: Vec::new(),
@@ -98,6 +101,8 @@ impl EditGrid {
         // TODO: Also check wires.
         return true;
     }
+
+    pub fn interfaces(&self) -> &[Interface] { &self.interfaces }
 
     pub fn chips(&self) -> ChipsIter { ChipsIter { inner: self.chips.iter() } }
 
@@ -138,7 +143,7 @@ impl EditGrid {
         self.fragments.get(&(coords, dir)).map(|&(shape, _)| shape)
     }
 
-    pub fn can_place_chip(&self, coords: Coords, size: RectSize<i32>) -> bool {
+    pub fn can_place_chip(&self, coords: Coords, size: CoordsSize) -> bool {
         if !self.bounds.contains_rect(Rect::with_size(coords, size)) {
             return false;
         }
@@ -371,6 +376,11 @@ impl EditGrid {
 
         let mut all_ports =
             HashMap::<(Coords, Direction), (PortFlow, PortColor)>::new();
+        for interface in self.interfaces.iter() {
+            for port in interface.ports(self.bounds) {
+                all_ports.insert(port.loc(), (port.flow, port.color));
+            }
+        }
         for (coords, ctype, orient) in self.chips() {
             for port in ctype.ports(coords, orient) {
                 all_ports.insert(port.loc(), (port.flow, port.color));
@@ -381,10 +391,12 @@ impl EditGrid {
         self.errors = check::recolor_wires(&mut self.wires);
         self.wires_for_ports = check::map_ports_to_wires(&self.wires);
 
-        let constraints: Vec<PortConstraint> = self.chips()
-            .flat_map(|(coords, ctype, orient)| {
-                          ctype.constraints(coords, orient)
-                      })
+        let constraints: Vec<PortConstraint> = self.interfaces
+            .iter()
+            .flat_map(|interface| interface.constraints(self.bounds))
+            .chain(self.chips().flat_map(|(coords, ctype, orient)| {
+                                             ctype.constraints(coords, orient)
+                                         }))
             .collect();
         self.errors.extend(check::determine_wire_sizes(&mut self.wires,
                                                        &self.wires_for_ports,

@@ -20,9 +20,9 @@
 use super::geom::{Coords, Direction};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::{WireSize, WireSizeInterval};
-use super::topsort::topological_sort_into_groups;
 use indexmap::IndexMap;
-use pathfinding::prelude::strongly_connected_components;
+use pathfinding::prelude::{strongly_connected_components,
+                           topological_sort_into_groups};
 use std::collections::{HashMap, HashSet};
 
 //===========================================================================//

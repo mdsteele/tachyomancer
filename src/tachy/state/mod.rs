@@ -26,7 +26,6 @@ mod geom;
 mod iface;
 mod port;
 mod size;
-mod topsort;
 
 pub use self::check::{WireColor, WireShape};
 pub use self::chip::ChipType;

@@ -31,7 +31,7 @@ pub struct GameState {
 impl GameState {
     pub fn new(savedir: SaveDir) -> Result<GameState, String> {
         // TODO: Load current profile.
-        let current_puzzle = Puzzle::AutomateHeliostat;
+        let current_puzzle = Puzzle::SandboxEvent;
         Ok(GameState {
                savedir,
                current_puzzle,

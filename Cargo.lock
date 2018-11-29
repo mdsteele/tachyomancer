@@ -254,7 +254,7 @@ dependencies = [
 
 [[package]]
 name = "pathfinding"
-version = "1.0.4"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "fixedbitset 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -396,7 +396,7 @@ dependencies = [
  "indexmap 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "nsvg 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.39 (registry+https://github.com/rust-lang/crates.io-index)",
- "pathfinding 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pathfinding 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "png 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rusttype 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.31.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -502,7 +502,7 @@ dependencies = [
 "checksum num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0b3a5d7cc97d6d30d8b9bc8fa19bf45349ffe46241e8816f50f62f6d6aaabee1"
 "checksum ole32-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5d2c49021782e5233cd243168edfa8037574afed4eba4bbaf538b3d8d1789d8c"
 "checksum ordered-float 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2f0015e9e8e28ee20c581cfbfe47c650cedeb9ed0721090e0b7ebb10b9cdbcc2"
-"checksum pathfinding 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "dccd51d4c6130408dc7522d743e7e9db75090428014904666db4d6bc55cf5e2b"
+"checksum pathfinding 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "16a97184fd7ebca02ac05dc13b52f283cd9165772a5ef44520db755a998d8632"
 "checksum png 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)" = "68520b9b13fa26b97b6f994a7a74d21b24202302d3af3c22323c979e8a4d32c0"
 "checksum proc-macro2 0.4.20 (registry+https://github.com/rust-lang/crates.io-index)" = "3d7b7eaaa90b4a90a932a9ea6666c95a389e424eff347f0f793979289429feee"
 "checksum quote 0.6.8 (registry+https://github.com/rust-lang/crates.io-index)" = "dd636425967c33af890042c483632d33fa7a18f19ad1d7ea72e8998c6ef8dea5"

@@ -24,6 +24,7 @@ use super::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
                   Orientation, Rect};
 use super::iface::{Interface, puzzle_interfaces};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
+use super::puzzle::new_puzzle_eval;
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
 use std::mem;
@@ -63,6 +64,7 @@ pub enum GridChange {
 //===========================================================================//
 
 pub struct EditGrid {
+    puzzle: Puzzle,
     bounds: CoordsRect,
     interfaces: &'static [Interface],
     fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
@@ -77,6 +79,7 @@ pub struct EditGrid {
 impl EditGrid {
     pub fn new(puzzle: Puzzle) -> EditGrid {
         let mut grid = EditGrid {
+            puzzle,
             bounds: Rect::new(-4, -3, 8, 6),
             interfaces: puzzle_interfaces(puzzle),
             fragments: HashMap::new(),
@@ -472,8 +475,24 @@ impl EditGrid {
             }
         }
 
-        self.eval =
-            Some(CircuitEval::new(self.wires.len(), chip_evals, interact));
+        let puzzle_eval = {
+            let wires: Vec<Vec<usize>> = self.interfaces
+                .iter()
+                .map(|interface| {
+                         interface
+                             .ports(self.bounds)
+                             .into_iter()
+                             .map(|port| wires_for_ports[&port.loc()])
+                             .collect()
+                     })
+                .collect();
+            new_puzzle_eval(self.puzzle, wires)
+        };
+
+        self.eval = Some(CircuitEval::new(self.wires.len(),
+                                          chip_evals,
+                                          puzzle_eval,
+                                          interact));
         debug_log!("Starting evaluation");
         return true;
     }

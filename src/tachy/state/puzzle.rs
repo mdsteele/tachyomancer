@@ -17,25 +17,46 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod check;
-mod chip;
-mod edit;
-mod eval;
-mod game;
-mod geom;
-mod iface;
-mod port;
-mod puzzle;
-mod size;
+use super::eval::{CircuitState, NullPuzzleEval, PuzzleEval};
+use tachy::save::Puzzle;
 
-pub use self::check::{WireColor, WireShape};
-pub use self::chip::ChipType;
-pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
-pub use self::game::GameState;
-pub use self::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
-                     Orientation, Rect, RectSize};
-pub use self::iface::Interface;
-pub use self::port::{PortColor, PortFlow, PortSpec};
-pub use self::size::WireSize;
+//===========================================================================//
+
+pub fn new_puzzle_eval(puzzle: Puzzle, slots: Vec<Vec<usize>>)
+                       -> Box<PuzzleEval> {
+    match puzzle {
+        Puzzle::SandboxEvent => Box::new(SandboxEventEval::new(slots)),
+        _ => Box::new(NullPuzzleEval()), // TODO other puzzles
+    }
+}
+
+//===========================================================================//
+
+struct SandboxEventEval {
+    metronome_esend: usize,
+    timer_bsend: usize,
+}
+
+impl SandboxEventEval {
+    fn new(slots: Vec<Vec<usize>>) -> SandboxEventEval {
+        debug_assert_eq!(slots.len(), 1);
+        debug_assert_eq!(slots[0].len(), 2);
+        SandboxEventEval {
+            metronome_esend: slots[0][0],
+            timer_bsend: slots[0][1],
+        }
+    }
+}
+
+impl PuzzleEval for SandboxEventEval {
+    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
+                       -> bool {
+        state.values[self.metronome_esend] = (0, true);
+        state.values[self.timer_bsend] = (time_step % 0xff, true);
+        true
+    }
+
+    fn end_time_step(&mut self, _state: &CircuitState) -> Option<i32> { None }
+}
 
 //===========================================================================//

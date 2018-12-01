@@ -43,6 +43,7 @@ pub struct CircuitView {
     controls_tray: ControlsTray,
     parts_tray: PartsTray,
     seconds_since_time_step: f64,
+    paused: bool,
 }
 
 impl CircuitView {
@@ -55,6 +56,7 @@ impl CircuitView {
             controls_tray: ControlsTray::new(window_size, current_puzzle),
             parts_tray: PartsTray::new(window_size, current_puzzle),
             seconds_since_time_step: 0.0,
+            paused: true,
         }
     }
 
@@ -73,13 +75,15 @@ impl CircuitView {
         match event {
             Event::ClockTick(tick) => {
                 if let Some(eval) = grid.eval_mut() {
-                    // TODO: only if not paused
-                    self.seconds_since_time_step += tick.elapsed;
-                    while self.seconds_since_time_step >=
-                        SECONDS_PER_TIME_STEP
-                    {
-                        self.seconds_since_time_step -= SECONDS_PER_TIME_STEP;
-                        eval.eval_time_step();
+                    if !self.paused {
+                        self.seconds_since_time_step += tick.elapsed;
+                        while self.seconds_since_time_step >=
+                            SECONDS_PER_TIME_STEP
+                        {
+                            self.seconds_since_time_step -=
+                                SECONDS_PER_TIME_STEP;
+                            let _ = eval.step_time(); // TODO
+                        }
                     }
                 }
             }
@@ -98,6 +102,7 @@ impl CircuitView {
                     if grid.eval().is_some() {
                         audio.play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
+                        self.paused = true;
                         grid.stop_eval();
                     }
                 }
@@ -105,18 +110,45 @@ impl CircuitView {
                     if grid.eval().is_none() {
                         audio.play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
+                        self.paused = false;
                         grid.start_eval();
                     } else {
-                        // TODO: pause
+                        self.seconds_since_time_step = 0.0;
+                        self.paused = !self.paused;
                     }
                 }
                 Some(ControlsAction::StepTime) => {
+                    if grid.eval().is_none() {
+                        audio.play_sound(Sound::Beep);
+                        self.seconds_since_time_step = 0.0;
+                        self.paused = true;
+                        grid.start_eval();
+                    }
                     if let Some(eval) = grid.eval_mut() {
-                        eval.eval_time_step();
+                        let _ = eval.step_time(); // TODO
                     }
                 }
-                Some(action) => {
-                    debug_log!("pressed button: {:?}", action);
+                Some(ControlsAction::StepCycle) => {
+                    if grid.eval().is_none() {
+                        audio.play_sound(Sound::Beep);
+                        self.seconds_since_time_step = 0.0;
+                        self.paused = true;
+                        grid.start_eval();
+                    }
+                    if let Some(eval) = grid.eval_mut() {
+                        let _ = eval.step_cycle(); // TODO
+                    }
+                }
+                Some(ControlsAction::StepSubcycle) => {
+                    if grid.eval().is_none() {
+                        audio.play_sound(Sound::Beep);
+                        self.seconds_since_time_step = 0.0;
+                        self.paused = true;
+                        grid.start_eval();
+                    }
+                    if let Some(eval) = grid.eval_mut() {
+                        let _ = eval.step_subcycle(); // TODO
+                    }
                 }
             }
             return false;

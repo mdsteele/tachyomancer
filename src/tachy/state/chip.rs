@@ -47,6 +47,7 @@ pub enum ChipType {
     Latest,
     Sample,
     // Special:
+    Break,
     Ram,
     Display,
     Button,
@@ -57,7 +58,7 @@ impl ChipType {
         match self {
             ChipType::Clock | ChipType::Delay | ChipType::Discard |
             ChipType::Join | ChipType::Latest | ChipType::Sample |
-            ChipType::Ram => puzzle.allows_events(),
+            ChipType::Break | ChipType::Ram => puzzle.allows_events(),
             ChipType::Button => {
                 match puzzle.kind() {
                     PuzzleKind::Command | PuzzleKind::Sandbox => {
@@ -73,9 +74,9 @@ impl ChipType {
     /// Returns the width and height of the chip in its default orientation.
     pub fn size(self) -> CoordsSize {
         match self {
-            ChipType::Ram => (2, 2).into(),
-            ChipType::Display => (2, 1).into(),
-            _ => (1, 1).into(),
+            ChipType::Ram => CoordsSize::new(2, 2),
+            ChipType::Display => CoordsSize::new(2, 1),
+            _ => CoordsSize::new(1, 1),
         }
     }
 
@@ -112,7 +113,8 @@ impl ChipType {
                     (PortFlow::Send, PortColor::Behavior, (0, 0), North),
                 ]
             }
-            ChipType::Clock | ChipType::Delay | ChipType::Discard => {
+            ChipType::Clock | ChipType::Delay | ChipType::Discard |
+            ChipType::Break => {
                 &[
                     (PortFlow::Recv, PortColor::Event, (0, 0), West),
                     (PortFlow::Send, PortColor::Event, (0, 0), East),
@@ -179,9 +181,8 @@ impl ChipType {
                     _ => &[],
                 }
             }
-            ChipType::Not | ChipType::Delay | ChipType::Latest => {
-                &[AbstractConstraint::Equal(0, 1)]
-            }
+            ChipType::Not | ChipType::Delay | ChipType::Latest |
+            ChipType::Break => &[AbstractConstraint::Equal(0, 1)],
             ChipType::And | ChipType::Join => {
                 &[
                     AbstractConstraint::Equal(0, 1),
@@ -258,7 +259,8 @@ impl ChipType {
             ChipType::Delay |
             ChipType::Display |
             ChipType::Button => &[],
-            ChipType::Not | ChipType::Discard | ChipType::Latest => &[(0, 1)],
+            ChipType::Not | ChipType::Discard | ChipType::Latest |
+            ChipType::Break => &[(0, 1)],
             ChipType::And | ChipType::Pack | ChipType::Join |
             ChipType::Sample => &[(0, 2), (1, 2)],
             ChipType::Unpack => &[(0, 1), (0, 2)],
@@ -285,6 +287,11 @@ impl ChipType {
                 let chip_eval =
                     eval::AndChipEval::new(slots[0].0, slots[1].0, slots[2].0);
                 vec![(2, chip_eval)]
+            }
+            ChipType::Break => {
+                let chip_eval =
+                    eval::BreakChipEval::new(slots[0].0, slots[1].0, coords);
+                vec![(1, chip_eval)]
             }
             ChipType::Button => {
                 let chip_eval = eval::ButtonChipEval::new(slots[0].0,

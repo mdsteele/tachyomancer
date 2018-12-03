@@ -38,6 +38,12 @@ pub struct RectSize<T> {
     pub height: T,
 }
 
+impl<T> RectSize<T> {
+    pub fn new(width: T, height: T) -> RectSize<T> {
+        RectSize { width, height }
+    }
+}
+
 impl<T> From<(T, T)> for RectSize<T> {
     fn from((width, height): (T, T)) -> RectSize<T> {
         RectSize { width, height }

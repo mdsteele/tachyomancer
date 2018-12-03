@@ -26,7 +26,8 @@ use num_integer::{div_floor, mod_floor};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::Puzzle;
 use tachy::state::{ChipType, Coords, CoordsRect, Direction, EditGrid,
-                   GridChange, Orientation, Rect, RectSize, WireShape};
+                   EvalResult, GridChange, Orientation, Rect, RectSize,
+                   WireShape};
 
 //===========================================================================//
 
@@ -82,7 +83,7 @@ impl CircuitView {
                         {
                             self.seconds_since_time_step -=
                                 SECONDS_PER_TIME_STEP;
-                            let _ = eval.step_time(); // TODO
+                            self.handle_eval_result(eval.step_time());
                         }
                     }
                 }
@@ -125,7 +126,7 @@ impl CircuitView {
                         grid.start_eval();
                     }
                     if let Some(eval) = grid.eval_mut() {
-                        let _ = eval.step_time(); // TODO
+                        self.handle_eval_result(eval.step_time());
                     }
                 }
                 Some(ControlsAction::StepCycle) => {
@@ -136,7 +137,7 @@ impl CircuitView {
                         grid.start_eval();
                     }
                     if let Some(eval) = grid.eval_mut() {
-                        let _ = eval.step_cycle(); // TODO
+                        self.handle_eval_result(eval.step_cycle());
                     }
                 }
                 Some(ControlsAction::StepSubcycle) => {
@@ -147,7 +148,7 @@ impl CircuitView {
                         grid.start_eval();
                     }
                     if let Some(eval) = grid.eval_mut() {
-                        let _ = eval.step_subcycle(); // TODO
+                        self.handle_eval_result(eval.step_subcycle());
                     }
                 }
             }
@@ -170,6 +171,18 @@ impl CircuitView {
 
         self.edit_grid.handle_event(event, grid);
         return false;
+    }
+
+    fn handle_eval_result(&mut self, result: EvalResult) {
+        match result {
+            EvalResult::Continue => {}
+            EvalResult::Breakpoint(coords_vec) => {
+                debug_log!("Breakpoint: {:?}", coords_vec);
+                self.seconds_since_time_step = 0.0;
+                self.paused = true;
+            }
+            _ => {} // TODO: handle victory/failure
+        }
     }
 }
 

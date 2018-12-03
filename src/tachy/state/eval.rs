@@ -21,6 +21,7 @@ use super::geom::{Coords, Direction};
 use super::size::WireSize;
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
+use std::mem;
 use std::rc::Rc;
 
 //===========================================================================//
@@ -28,6 +29,7 @@ use std::rc::Rc;
 #[must_use = "non-`Continue` values must be handled"]
 pub enum EvalResult {
     Continue,
+    Breakpoint(Vec<Coords>),
     Victory(i32),
     Failure(Vec<EvalError>),
 }
@@ -79,7 +81,7 @@ impl CircuitEval {
         if !errors.is_empty() {
             return EvalResult::Failure(errors);
         }
-        self.state.changed = false;
+        self.state.reset_for_subcycle();
         while !self.state.changed {
             if self.subcycle >= self.chips.len() {
                 let mut needs_another_cycle = false;
@@ -118,6 +120,13 @@ impl CircuitEval {
                        self.subcycle,
                        self.state.changed);
             self.subcycle += 1;
+            if !self.state.breakpoints.is_empty() {
+                debug_log!("Triggered {} breakpoint(s)",
+                           self.state.breakpoints.len());
+                let coords_vec = mem::replace(&mut self.state.breakpoints,
+                                              Vec::new());
+                return EvalResult::Breakpoint(coords_vec);
+            }
         }
         return EvalResult::Continue;
     }
@@ -152,6 +161,7 @@ impl CircuitEval {
 
 pub struct CircuitState {
     values: Vec<(u32, bool)>,
+    breakpoints: Vec<Coords>,
     changed: bool,
 }
 
@@ -159,6 +169,7 @@ impl CircuitState {
     fn new(num_values: usize) -> CircuitState {
         CircuitState {
             values: vec![(0, false); num_values],
+            breakpoints: vec![],
             changed: false,
         }
     }
@@ -186,10 +197,19 @@ impl CircuitState {
         self.changed = true; // TODO: don't marked changed for null wires
     }
 
+    pub fn breakpoint(&mut self, coords: Coords) {
+        self.breakpoints.push(coords);
+    }
+
     fn reset_for_cycle(&mut self) {
         for &mut (_, ref mut changed) in self.values.iter_mut() {
             *changed = false;
         }
+    }
+
+    fn reset_for_subcycle(&mut self) {
+        debug_assert!(self.breakpoints.is_empty());
+        self.changed = false;
     }
 }
 
@@ -321,6 +341,31 @@ impl ChipEval for AndChipEval {
         let (input2, changed2) = state.recv_behavior(self.input2);
         if changed1 || changed2 {
             state.send_behavior(self.output, input1 & input2);
+        }
+    }
+}
+
+pub struct BreakChipEval {
+    input: usize,
+    output: usize,
+    coords: Coords,
+}
+
+impl BreakChipEval {
+    pub fn new(input: usize, output: usize, coords: Coords) -> Box<ChipEval> {
+        Box::new(BreakChipEval {
+                     input,
+                     output,
+                     coords,
+                 })
+    }
+}
+
+impl ChipEval for BreakChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(value) = state.recv_event(self.input) {
+            state.send_event(self.output, value);
+            state.breakpoint(self.coords);
         }
     }
 }

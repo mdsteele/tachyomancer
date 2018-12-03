@@ -49,6 +49,7 @@ const ALL_CHIP_TYPES: &[ChipType] = &[
     ChipType::Join,
     ChipType::Latest,
     ChipType::Sample,
+    ChipType::Break,
     ChipType::Ram,
     ChipType::Display,
     ChipType::Button,

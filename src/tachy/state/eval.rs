@@ -79,8 +79,8 @@ impl CircuitEval {
         if !errors.is_empty() {
             return EvalResult::Failure(errors);
         }
-        let mut changed = false;
-        while !changed {
+        self.state.changed = false;
+        while !self.state.changed {
             if self.subcycle >= self.chips.len() {
                 let mut needs_another_cycle = false;
                 for group in self.chips.iter_mut() {
@@ -109,16 +109,14 @@ impl CircuitEval {
                 return EvalResult::Continue;
             }
             if self.cycle == 0 && self.subcycle == 0 {
-                changed |=
-                    self.puzzle
-                        .begin_time_step(self.time_step, &mut self.state);
+                self.puzzle.begin_time_step(self.time_step, &mut self.state);
             }
             for chip in self.chips[self.subcycle].iter_mut() {
-                changed |= chip.eval(&mut self.state);
+                chip.eval(&mut self.state);
             }
             debug_log!("    Subcycle {} complete, changed={}",
                        self.subcycle,
-                       changed);
+                       self.state.changed);
             self.subcycle += 1;
         }
         return EvalResult::Continue;
@@ -153,12 +151,39 @@ impl CircuitEval {
 //===========================================================================//
 
 pub struct CircuitState {
-    pub values: Vec<(u32, bool)>,
+    values: Vec<(u32, bool)>,
+    changed: bool,
 }
 
 impl CircuitState {
     fn new(num_values: usize) -> CircuitState {
-        CircuitState { values: vec![(0, false); num_values] }
+        CircuitState {
+            values: vec![(0, false); num_values],
+            changed: false,
+        }
+    }
+
+    pub fn recv_behavior(&self, slot: usize) -> (u32, bool) {
+        self.values[slot]
+    }
+
+    pub fn recv_event(&self, slot: usize) -> Option<u32> {
+        let (value, has_event) = self.values[slot];
+        if has_event { Some(value) } else { None }
+    }
+
+    pub fn has_event(&self, slot: usize) -> bool { self.values[slot].1 }
+
+    pub fn send_behavior(&mut self, slot: usize, value: u32) {
+        if self.values[slot].0 != value {
+            self.values[slot] = (value, true);
+            self.changed = true; // TODO: don't marked changed for null wires
+        }
+    }
+
+    pub fn send_event(&mut self, slot: usize, value: u32) {
+        self.values[slot] = (value, true);
+        self.changed = true; // TODO: don't marked changed for null wires
     }
 
     fn reset_for_cycle(&mut self) {
@@ -191,9 +216,8 @@ impl CircuitInteraction {
 
 pub trait PuzzleEval {
     /// Called at the beginning of each time step; sets up input values for the
-    /// circuit.  Returns true if any outputs were updated.
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> bool;
+    /// circuit.
+    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState);
 
     /// Called at the beginning of each cycle; optionally sends additional
     /// events for that time step.  The default implementation is a no-op.
@@ -215,10 +239,7 @@ pub trait PuzzleEval {
 pub struct NullPuzzleEval();
 
 impl PuzzleEval for NullPuzzleEval {
-    fn begin_time_step(&mut self, _time_step: u32, _state: &mut CircuitState)
-                       -> bool {
-        false
-    }
+    fn begin_time_step(&mut self, _step: u32, _state: &mut CircuitState) {}
 
     fn end_time_step(&mut self, _state: &CircuitState) -> Option<i32> { None }
 }
@@ -226,9 +247,9 @@ impl PuzzleEval for NullPuzzleEval {
 //===========================================================================//
 
 pub trait ChipEval {
-    /// If any chip inputs have changed/fired, updates outputs and/or internal
-    /// state; returns true if any outputs were updated.
-    fn eval(&mut self, state: &mut CircuitState) -> bool;
+    /// Called once per cycle, sometime during this chip's subcycle; updates
+    /// outputs and/or internal state based on inputs.
+    fn eval(&mut self, state: &mut CircuitState);
 
     /// Called at the end of each cycle; returns true if another cycle is
     /// needed.  The default implementation always returns false.
@@ -238,6 +259,9 @@ pub trait ChipEval {
     /// implementation is a no-op.
     fn on_time_step(&mut self) {}
 }
+
+//===========================================================================//
+// TODO: Move these to a separate module.
 
 pub struct AddChipEval {
     size: WireSize,
@@ -262,18 +286,15 @@ impl AddChipEval {
 }
 
 impl ChipEval for AddChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let (input1, changed1) = state.values[self.input1];
-        let (input2, changed2) = state.values[self.input2];
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input1, changed1) = state.recv_behavior(self.input1);
+        let (input2, changed2) = state.recv_behavior(self.input2);
         if changed1 || changed2 {
             let sum = (input1 as u64) + (input2 as u64);
             let lo = (sum & (self.size.mask() as u64)) as u32;
             let hi = (sum >> self.size.num_bits()) as u32;
-            state.values[self.output1] = (lo, true);
-            state.values[self.output2] = (hi, true);
-            true
-        } else {
-            false
+            state.send_behavior(self.output1, lo);
+            state.send_behavior(self.output2, hi);
         }
     }
 }
@@ -295,14 +316,11 @@ impl AndChipEval {
 }
 
 impl ChipEval for AndChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let (input1, changed1) = state.values[self.input1];
-        let (input2, changed2) = state.values[self.input2];
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input1, changed1) = state.recv_behavior(self.input1);
+        let (input2, changed2) = state.recv_behavior(self.input2);
         if changed1 || changed2 {
-            state.values[self.output] = (input1 & input2, true);
-            true
-        } else {
-            false
+            state.send_behavior(self.output, input1 & input2);
         }
     }
 }
@@ -328,7 +346,7 @@ impl ButtonChipEval {
 }
 
 impl ChipEval for ButtonChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
+    fn eval(&mut self, state: &mut CircuitState) {
         if let Some(count) = self.interact
             .borrow_mut()
             .buttons
@@ -342,10 +360,7 @@ impl ChipEval for ButtonChipEval {
         }
         if self.press_count > 0 {
             self.press_count -= 1;
-            state.values[self.output] = (0, true);
-            true
-        } else {
-            false
+            state.send_event(self.output, 0);
         }
     }
 
@@ -373,16 +388,13 @@ impl ClockChipEval {
 }
 
 impl ChipEval for ClockChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        if state.values[self.input].1 {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if state.has_event(self.input) {
             self.received = true;
         }
         if self.should_send {
-            state.values[self.output] = (0, true);
+            state.send_event(self.output, 0);
             self.should_send = false;
-            true
-        } else {
-            false
         }
     }
 
@@ -395,28 +407,17 @@ impl ChipEval for ClockChipEval {
 pub struct ConstChipEval {
     output: usize,
     value: u32,
-    should_send: bool,
 }
 
 impl ConstChipEval {
     pub fn new(value: u32, output: usize) -> Box<ChipEval> {
-        Box::new(ConstChipEval {
-                     output,
-                     value,
-                     should_send: true,
-                 })
+        Box::new(ConstChipEval { output, value })
     }
 }
 
 impl ChipEval for ConstChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        if self.should_send {
-            state.values[self.output] = (self.value, true);
-            self.should_send = false;
-            true
-        } else {
-            false
-        }
+    fn eval(&mut self, state: &mut CircuitState) {
+        state.send_behavior(self.output, self.value);
     }
 }
 
@@ -437,23 +438,21 @@ impl DelayChipEval {
 }
 
 impl ChipEval for DelayChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
+    fn eval(&mut self, state: &mut CircuitState) {
         if let Some(value) = self.value.take() {
             debug_log!("Delay chip is sending value {}", value);
-            state.values[self.output] = (value, true);
-            true
-        } else {
-            false
+            state.send_event(self.output, value);
         }
     }
 
     fn needs_another_cycle(&mut self, state: &CircuitState) -> bool {
-        let (value, has_event) = state.values[self.input];
-        if has_event {
+        if let Some(value) = state.recv_event(self.input) {
             debug_log!("Delay chip is storing value {}", value);
             self.value = Some(value);
+            true
+        } else {
+            false
         }
-        has_event
     }
 }
 
@@ -469,12 +468,10 @@ impl DiscardChipEval {
 }
 
 impl ChipEval for DiscardChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let has_event = state.values[self.input].1;
-        if has_event {
-            state.values[self.output] = (0, true);
+    fn eval(&mut self, state: &mut CircuitState) {
+        if state.has_event(self.input) {
+            state.send_event(self.output, 0);
         }
-        has_event
     }
 }
 
@@ -495,18 +492,12 @@ impl JoinChipEval {
 }
 
 impl ChipEval for JoinChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let (input1, has_event1) = state.values[self.input1];
-        if has_event1 {
-            state.values[self.output] = (input1, true);
-            return true;
+    fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(value) = state.recv_event(self.input1) {
+            state.send_event(self.output, value);
+        } else if let Some(value) = state.recv_event(self.input2) {
+            state.send_event(self.output, value);
         }
-        let (input2, has_event2) = state.values[self.input2];
-        if has_event2 {
-            state.values[self.output] = (input2, true);
-            return true;
-        }
-        return false;
     }
 }
 
@@ -522,12 +513,10 @@ impl LatestChipEval {
 }
 
 impl ChipEval for LatestChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let (value, has_event) = state.values[self.input];
-        if has_event {
-            state.values[self.output] = (value, true);
+    fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(value) = state.recv_event(self.input) {
+            state.send_behavior(self.output, value);
         }
-        has_event
     }
 }
 
@@ -548,13 +537,9 @@ impl NotChipEval {
 }
 
 impl ChipEval for NotChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let (input, changed) = state.values[self.input];
-        if changed {
-            let output = (!input) & self.size.mask();
-            state.values[self.output] = (output, true);
-        }
-        changed
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input, _) = state.recv_behavior(self.input);
+        state.send_behavior(self.output, (!input) & self.size.mask());
     }
 }
 
@@ -579,15 +564,12 @@ impl PackChipEval {
 }
 
 impl ChipEval for PackChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let (input1, changed1) = state.values[self.input1];
-        let (input2, changed2) = state.values[self.input2];
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input1, changed1) = state.recv_behavior(self.input1);
+        let (input2, changed2) = state.recv_behavior(self.input2);
         if changed1 || changed2 {
             let output = input1 | (input2 << self.input_size.num_bits());
-            state.values[self.output] = (output, true);
-            true
-        } else {
-            false
+            state.send_behavior(self.output, output);
         }
     }
 }
@@ -613,19 +595,13 @@ impl RamChipEval {
 }
 
 impl ChipEval for RamChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let (addr, addr_changed) = state.values[self.input_b];
-        let (value, has_event) = state.values[self.input_e];
+    fn eval(&mut self, state: &mut CircuitState) {
         let mut storage = self.storage.borrow_mut();
-        if has_event {
+        let (addr, _) = state.recv_behavior(self.input_b);
+        if let Some(value) = state.recv_event(self.input_e) {
             storage[addr as usize] = value;
         }
-        if has_event || addr_changed {
-            state.values[self.output] = (storage[addr as usize], true);
-            true
-        } else {
-            false
-        }
+        state.send_behavior(self.output, storage[addr as usize]);
     }
 }
 
@@ -647,12 +623,11 @@ impl SampleChipEval {
 }
 
 impl ChipEval for SampleChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let has_event = state.values[self.input_e].1;
-        if has_event {
-            state.values[self.output] = (state.values[self.input_b].0, true);
+    fn eval(&mut self, state: &mut CircuitState) {
+        if state.has_event(self.input_e) {
+            let (value, _) = state.recv_behavior(self.input_b);
+            state.send_event(self.output, value);
         }
-        has_event
     }
 }
 
@@ -677,15 +652,14 @@ impl UnpackChipEval {
 }
 
 impl ChipEval for UnpackChipEval {
-    fn eval(&mut self, state: &mut CircuitState) -> bool {
-        let (input, changed) = state.values[self.input];
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input, changed) = state.recv_behavior(self.input);
         if changed {
             let output1 = input & self.output_size.mask();
             let output2 = input >> self.output_size.num_bits();
-            state.values[self.output1] = (output1, true);
-            state.values[self.output2] = (output2, true);
+            state.send_behavior(self.output1, output1);
+            state.send_behavior(self.output2, output2);
         }
-        changed
     }
 }
 

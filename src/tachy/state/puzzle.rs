@@ -33,8 +33,8 @@ pub fn new_puzzle_eval(puzzle: Puzzle, slots: Vec<Vec<usize>>)
 //===========================================================================//
 
 struct SandboxEventEval {
-    metronome_esend: usize,
-    timer_bsend: usize,
+    metronome: usize,
+    timer: usize,
 }
 
 impl SandboxEventEval {
@@ -42,18 +42,16 @@ impl SandboxEventEval {
         debug_assert_eq!(slots.len(), 1);
         debug_assert_eq!(slots[0].len(), 2);
         SandboxEventEval {
-            metronome_esend: slots[0][0],
-            timer_bsend: slots[0][1],
+            metronome: slots[0][0],
+            timer: slots[0][1],
         }
     }
 }
 
 impl PuzzleEval for SandboxEventEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> bool {
-        state.values[self.metronome_esend] = (0, true);
-        state.values[self.timer_bsend] = (time_step % 0xff, true);
-        true
+    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState) {
+        state.send_event(self.metronome, 0);
+        state.send_behavior(self.timer, time_step & 0xff);
     }
 
     fn end_time_step(&mut self, _state: &CircuitState) -> Option<i32> { None }

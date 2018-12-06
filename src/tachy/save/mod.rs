@@ -20,11 +20,13 @@
 mod dir;
 mod menu;
 mod prefs;
+mod profile;
 mod puzzle;
 
 pub use self::dir::SaveDir;
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
+pub use self::profile::Profile;
 pub use self::puzzle::{Puzzle, PuzzleKind};
 
 //===========================================================================//

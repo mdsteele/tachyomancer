@@ -23,6 +23,7 @@ mod control;
 mod list;
 mod menu;
 mod parts;
+mod prefs;
 mod puzzle;
 mod wire;
 

@@ -26,6 +26,7 @@ use tachy::view::{MenuAction, MenuView};
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
+    debug_assert!(state.profile().is_some());
     let mut view = MenuView::new(window.size().into(), state);
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
@@ -37,6 +38,16 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     Some(MenuAction::EditPuzzle) => {
                         state.new_edit_grid();
                         return ModeChange::Next;
+                    }
+                    Some(MenuAction::SwitchProfile(name)) => {
+                        debug_log!("Switching to profile {:?}", name);
+                        match state.create_or_load_profile(name) {
+                            Ok(()) => {}
+                            Err(err) => {
+                                // TODO: display error to user; don't panic
+                                panic!("SwitchProfile failed: {:?}", err);
+                            }
+                        }
                     }
                     None => {}
                 }

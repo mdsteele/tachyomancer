@@ -24,7 +24,7 @@ pub enum MenuSection {
     Navigation,
     Messages,
     Puzzles,
-    Settings,
+    Prefs,
 }
 
 //===========================================================================//

@@ -17,21 +17,38 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::common::ModeChange;
-use tachy::gui::Window;
-use tachy::state::GameState;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 //===========================================================================//
 
-pub fn run_mode(state: &mut GameState, window: &mut Window) -> ModeChange {
-    if state.profile().is_none() {
-        // TODO: run mode for starting a new profile
-        panic!("no profile!");
-    } else if state.edit_grid_mut().is_some() {
-        super::circuit::run(state, window)
-    } else {
-        super::menu::run(state, window)
+#[allow(dead_code)]
+pub struct Profile {
+    name: String,
+    path: PathBuf,
+    // TODO: puzzle progress
+}
+
+impl Profile {
+    pub fn create_or_load(name: String, path: &Path)
+                          -> Result<Profile, String> {
+        if !path.exists() {
+            debug_log!("Creating profile {:?} at {:?}", name, path);
+            fs::create_dir_all(&path)
+                .map_err(|err| {
+                    format!("Could not create profile directory: {:?}", err)
+                })?;
+        } else {
+            debug_log!("Loading profile {:?} from {:?}", name, path);
+        }
+
+        Ok(Profile {
+               name,
+               path: path.to_path_buf(),
+           })
     }
+
+    pub fn name(&self) -> &str { &self.name }
 }
 
 //===========================================================================//

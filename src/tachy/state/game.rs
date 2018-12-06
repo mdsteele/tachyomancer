@@ -18,32 +18,43 @@
 // +--------------------------------------------------------------------------+
 
 use super::edit::EditGrid;
-use tachy::save::{MenuSection, Puzzle, SaveDir};
+use tachy::save::{MenuSection, Profile, Puzzle, SaveDir};
 
 //===========================================================================//
 
 pub struct GameState {
     savedir: SaveDir,
     menu_section: MenuSection,
-    current_puzzle: Puzzle,
+    current_puzzle: Puzzle, // TODO: move this to profile
+    profile: Option<Profile>,
     edit_grid: Option<EditGrid>,
 }
 
 impl GameState {
     pub fn new(savedir: SaveDir) -> Result<GameState, String> {
-        // TODO: Load current profile.
+        let profile = savedir.load_current_profile_if_any()?;
+        // TODO: Get current puzzle from profile.
         let menu_section = MenuSection::Puzzles;
         let current_puzzle = Puzzle::SandboxEvent;
         let state = GameState {
             savedir,
             menu_section,
             current_puzzle,
+            profile,
             edit_grid: None,
         };
         Ok(state)
     }
 
     pub fn savedir(&self) -> &SaveDir { &self.savedir }
+
+    pub fn profile(&self) -> Option<&Profile> { self.profile.as_ref() }
+
+    pub fn create_or_load_profile(&mut self, name: String)
+                                  -> Result<(), String> {
+        self.profile = Some(self.savedir.create_or_load_profile(name)?);
+        Ok(())
+    }
 
     pub fn menu_section(&self) -> MenuSection { self.menu_section }
 

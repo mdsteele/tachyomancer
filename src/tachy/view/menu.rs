@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::prefs::{PrefsAction, PrefsView};
 use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
 use tachy::gui::{AudioQueue, Event, Resources, Sound};
@@ -40,6 +41,7 @@ const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
 
 pub enum MenuAction {
     EditPuzzle,
+    SwitchProfile(String),
 }
 
 //===========================================================================//
@@ -48,6 +50,7 @@ pub struct MenuView {
     width: f32,
     height: f32,
     section_buttons: Vec<SectionButton>,
+    prefs_view: PrefsView,
     puzzles_view: PuzzlesView,
 }
 
@@ -58,7 +61,7 @@ impl MenuView {
                 SectionButton::new(window_size, 0, MenuSection::Navigation),
                 SectionButton::new(window_size, 1, MenuSection::Messages),
                 SectionButton::new(window_size, 2, MenuSection::Puzzles),
-                SectionButton::new(window_size, 3, MenuSection::Settings),
+                SectionButton::new(window_size, 3, MenuSection::Prefs),
             ];
         let section_rect =
             Rect::new(SECTION_MARGIN_HORZ,
@@ -70,6 +73,7 @@ impl MenuView {
             width: window_size.width as f32,
             height: window_size.height as f32,
             section_buttons,
+            prefs_view: PrefsView::new(section_rect, state),
             puzzles_view: PuzzlesView::new(section_rect, state),
         }
     }
@@ -86,27 +90,45 @@ impl MenuView {
         for button in self.section_buttons.iter() {
             button.draw(resources, &projection, state.menu_section());
         }
-        if state.menu_section() == MenuSection::Puzzles {
-            self.puzzles_view.draw(resources, &projection, state);
+        match state.menu_section() {
+            MenuSection::Puzzles => {
+                self.puzzles_view.draw(resources, &projection, state);
+            }
+            MenuSection::Prefs => {
+                self.prefs_view.draw(resources, &projection, state);
+            }
+            _ => {} // TODO
         }
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
                         audio: &mut AudioQueue)
                         -> Option<MenuAction> {
-        if state.menu_section() == MenuSection::Puzzles {
-            match self.puzzles_view.handle_event(event, state) {
-                Some(PuzzlesAction::Edit) => {
-                    return Some(MenuAction::EditPuzzle);
+        match state.menu_section() {
+            MenuSection::Puzzles => {
+                match self.puzzles_view.handle_event(event, state) {
+                    Some(PuzzlesAction::Edit) => {
+                        return Some(MenuAction::EditPuzzle);
+                    }
+                    None => {}
                 }
-                None => {}
             }
+            MenuSection::Prefs => {
+                match self.prefs_view.handle_event(event, state) {
+                    Some(PrefsAction::SwitchProfile(name)) => {
+                        return Some(MenuAction::SwitchProfile(name));
+                    }
+                    None => {}
+                }
+            }
+            _ => {} // TODO
         }
         for button in self.section_buttons.iter_mut() {
             if let Some(section) =
                 button.handle_event(event, state.menu_section(), audio)
             {
                 state.set_menu_section(section);
+                self.prefs_view.unfocus();
                 self.puzzles_view.unfocus();
             }
         }

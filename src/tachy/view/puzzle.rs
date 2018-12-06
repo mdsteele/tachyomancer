@@ -58,7 +58,7 @@ impl PuzzlesView {
                                                  rect.y,
                                                  PUZZLE_LIST_WIDTH,
                                                  rect.height),
-                                       state.current_puzzle(),
+                                       &state.current_puzzle(),
                                        list_items),
             edit_button: EditButton::new(Rect::new(rect.right() - 80,
                                                    rect.bottom() - 40,
@@ -69,14 +69,14 @@ impl PuzzlesView {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 state: &GameState) {
-        self.puzzle_list.draw(resources, matrix, state.current_puzzle());
+        self.puzzle_list.draw(resources, matrix, &state.current_puzzle());
         self.edit_button.draw(resources, matrix);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
                         -> Option<PuzzlesAction> {
         if let Some(puzzle) =
-            self.puzzle_list.handle_event(event, state.current_puzzle())
+            self.puzzle_list.handle_event(event, &state.current_puzzle())
         {
             state.set_current_puzzle(puzzle);
         }

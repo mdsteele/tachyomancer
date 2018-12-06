@@ -28,7 +28,7 @@ use toml;
 pub struct Prefs {
     fullscreen: Option<bool>,
     resolution: Option<(u32, u32)>,
-    // TODO: profile: Option<String>,
+    current_profile: Option<String>,
 }
 
 impl Prefs {
@@ -55,6 +55,7 @@ impl Prefs {
     }
 
     pub fn save(&self, path: &Path) -> Result<(), String> {
+        debug_log!("Saving prefs to {:?}", path);
         let data =
             toml::to_vec(self)
                 .map_err(|err| format!("Could not serialize prefs: {}", err))?;
@@ -66,6 +67,14 @@ impl Prefs {
     pub fn fullscreen(&self) -> bool { self.fullscreen.unwrap_or(true) }
 
     pub fn resolution(&self) -> Option<(u32, u32)> { self.resolution }
+
+    pub fn current_profile(&self) -> Option<&str> {
+        self.current_profile.as_ref().map(String::as_str)
+    }
+
+    pub fn set_current_profile(&mut self, profile: Option<String>) {
+        self.current_profile = profile;
+    }
 }
 
 //===========================================================================//

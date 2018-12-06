@@ -45,15 +45,15 @@ pub struct ListView<T> {
     drag: Option<i32>,
 }
 
-impl<T: Copy + Eq> ListView<T> {
-    pub fn new(rect: Rect<i32>, current: T, items: Vec<(T, String)>)
+impl<T: Clone + Eq> ListView<T> {
+    pub fn new(rect: Rect<i32>, current: &T, items: Vec<(T, String)>)
                -> ListView<T> {
         let num_items = items.len() as i32;
         let total_height = num_items * (ITEM_HEIGHT + ITEM_SPACING) -
             ITEM_SPACING;
         let scroll_max = (total_height - rect.height).max(0);
         let current_index =
-            items.iter().position(|(value, _)| value == &current).unwrap_or(0);
+            items.iter().position(|(value, _)| value == current).unwrap_or(0);
         let mid_current = (current_index as i32) *
             (ITEM_HEIGHT + ITEM_SPACING) +
             ITEM_HEIGHT / 2;
@@ -69,7 +69,7 @@ impl<T: Copy + Eq> ListView<T> {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                current: T) {
+                current: &T) {
         // Draw background and define clipping area:
         let stencil = Stencil::new();
         {
@@ -84,7 +84,7 @@ impl<T: Copy + Eq> ListView<T> {
 
         // Draw list items:
         let item_width = self.item_width();
-        for (index, &(value, ref label)) in self.items.iter().enumerate() {
+        for (index, &(ref value, ref label)) in self.items.iter().enumerate() {
             let top = self.rect.y +
                 (index as i32) * (ITEM_HEIGHT + ITEM_SPACING) -
                 self.scroll_top;
@@ -133,7 +133,7 @@ impl<T: Copy + Eq> ListView<T> {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event, current: T) -> Option<T> {
+    pub fn handle_event(&mut self, event: &Event, current: &T) -> Option<T> {
         match event {
             Event::MouseDown(mouse)
                 if mouse.left && self.rect.contains_point(mouse.pt) => {
@@ -151,10 +151,10 @@ impl<T: Copy + Eq> ListView<T> {
                     if rel_y < ITEM_HEIGHT && index >= 0 &&
                         (index as usize) < self.items.len()
                     {
-                        let value = self.items[index as usize].0;
+                        let value = &self.items[index as usize].0;
                         if value != current {
                             // TODO: Play sound
-                            return Some(value);
+                            return Some(value.clone());
                         }
                     }
                 }

@@ -51,14 +51,20 @@ impl<'a> Window<'a> {
         debug_log!("Creating window: {:?}", options);
         {
             let gl_attr = gui_context.video_subsystem.gl_attr();
+
             // According to https://stackoverflow.com/a/20932820, for MacOS at
             // least we need to explicitly select the Core Profile, because
             // otherwise we will default to the Legacy Profile and our
             // "#version 330 core" shaders won't work.
             gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
             gl_attr.set_context_version(3, 3); // OpenGL 3.3
+
             // Disable deprecated functionality.
             gl_attr.set_context_flags().forward_compatible().set();
+
+            // Make sure we have a stencil buffer (1 bit is all we need).
+            gl_attr.set_stencil_size(1);
+
             // TODO: enable anti-aliasing?
         }
         let (width, height) = options.resolution;

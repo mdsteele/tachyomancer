@@ -17,18 +17,57 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod program;
-mod shader;
-mod stencil;
-mod texture;
-mod uniform;
-mod vertex;
+use gl;
+use std::marker::PhantomData;
 
-pub use self::program::ShaderProgram;
-pub use self::shader::{Shader, ShaderType};
-pub use self::stencil::Stencil;
-pub use self::texture::{Texture1D, Texture2D};
-pub use self::uniform::ShaderUniform;
-pub use self::vertex::{Primitive, VertexArray, VertexBuffer};
+//===========================================================================//
+
+pub struct Stencil {
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut ()>,
+}
+
+impl Stencil {
+    /// Clears the stencil buffer, and enables the stencil test until the
+    /// returned object is dropped.  At most one `Stencil` object should exist
+    /// at once.
+    pub fn new() -> Stencil {
+        unsafe {
+            gl::Clear(gl::STENCIL_BUFFER_BIT);
+            gl::Enable(gl::STENCIL_TEST);
+        }
+        let stencil = Stencil { phantom: PhantomData };
+        stencil.enable_updates();
+        stencil
+    }
+
+    /// After calling this, future draw calls will expand the stencil area.
+    /// The `Stencil` starts in update mode.
+    pub fn enable_updates(&self) {
+        unsafe {
+            gl::StencilFunc(gl::ALWAYS, 1, 0x1);
+            gl::StencilOp(gl::KEEP, gl::KEEP, gl::REPLACE);
+        }
+    }
+
+    /// After calling this, future draw calls will be clipped by the stencil
+    /// area.
+    pub fn enable_clipping(&self) {
+        unsafe {
+            gl::StencilFunc(gl::EQUAL, 1, 0x1);
+            gl::StencilOp(gl::KEEP, gl::KEEP, gl::KEEP);
+        }
+    }
+}
+
+/// Disables the stencil test when dropped.
+impl Drop for Stencil {
+    fn drop(&mut self) {
+        unsafe {
+            gl::Disable(gl::STENCIL_TEST);
+        }
+    }
+}
 
 //===========================================================================//

@@ -20,6 +20,7 @@
 use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use tachy::font::Align;
+use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 use tachy::state::Rect;
 
@@ -69,7 +70,8 @@ impl<T: Copy + Eq> ListView<T> {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 current: T) {
-        // Draw background:
+        // Draw background and define clipping area:
+        let stencil = Stencil::new();
         {
             let color = (0.1, 0.1, 0.1);
             let rect = (self.rect.x as f32,
@@ -78,6 +80,7 @@ impl<T: Copy + Eq> ListView<T> {
                         self.rect.height as f32);
             resources.shaders().solid().fill_rect(&matrix, color, rect);
         }
+        stencil.enable_clipping();
 
         // Draw list items:
         let item_width = self.item_width();

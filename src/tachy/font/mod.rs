@@ -59,7 +59,7 @@ impl Fonts {
     pub fn new() -> Result<Fonts, String> {
         let shader = Rc::new(TextShader::new()?);
         let roman =
-            Font::new("font/inconsolata", INCONSOLATA_PNG_DATA, &shader)?;
+            Font::new("font/inconsolata", INCONSOLATA_PNG_DATA, 0.5, &shader)?;
         Ok(Fonts { roman })
     }
 
@@ -71,21 +71,25 @@ impl Fonts {
 pub struct Font {
     shader: Rc<TextShader>,
     texture: Texture2D,
+    ratio: f32,
 }
 
 impl Font {
-    fn new(png_name: &str, png_data: &[u8], shader: &Rc<TextShader>)
+    fn new(png_name: &str, png_data: &[u8], ratio: f32,
+           shader: &Rc<TextShader>)
            -> Result<Font, String> {
         let texture = Texture2D::from_png(png_name, png_data)?;
         Ok(Font {
                shader: shader.clone(),
                texture,
+               ratio,
            })
     }
 
-    pub fn draw(&self, matrix: &Matrix4<f32>, size: (f32, f32),
-                alignment: Align, start: (f32, f32), text: &str) {
+    pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, alignment: Align,
+                start: (f32, f32), text: &str) {
         self.texture.bind();
+        let size = (self.ratio * height, height);
         self.shader.draw(matrix, size, alignment, start, text);
     }
 }

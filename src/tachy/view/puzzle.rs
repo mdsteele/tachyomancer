@@ -106,7 +106,7 @@ impl EditButton {
                     self.rect.height as f32);
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         resources.fonts().roman().draw(&matrix,
-                                       (10.0, 20.0),
+                                       20.0,
                                        Align::Center,
                                        ((self.rect.x as f32) +
                                             0.5 * (self.rect.width as f32),

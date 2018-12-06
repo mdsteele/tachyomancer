@@ -102,7 +102,7 @@ impl<T: Copy + Eq> ListView<T> {
                         ITEM_HEIGHT as f32);
             resources.shaders().solid().fill_rect(&matrix, color, rect);
             resources.fonts().roman().draw(&matrix,
-                                           (0.5 * FONT_SIZE, FONT_SIZE),
+                                           FONT_SIZE,
                                            Align::Left,
                                            ((self.rect.x +
                                                 ITEM_INNER_MARGIN) as

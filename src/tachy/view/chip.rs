@@ -149,7 +149,7 @@ impl ChipModel {
                         size: CoordsSize, string: &str) {
         let (width, height) = (size.width as f32, size.height as f32);
         resources.fonts().roman().draw(matrix,
-                                       (0.15, 0.3),
+                                       0.3,
                                        Align::Center,
                                        (0.5 * width, 0.5 * height - 0.15),
                                        string);

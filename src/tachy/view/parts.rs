@@ -160,7 +160,7 @@ impl Part {
             .solid()
             .fill_rect(matrix, (0.75, 0.0, 0.0), (x, y, w, h));
         resources.fonts().roman().draw(matrix,
-                                       (10.0, 20.0),
+                                       20.0,
                                        Align::Center,
                                        (x + 0.5 * w, y + 0.5 * h - 10.0),
                                        &format!("{:?}", self.ctype));

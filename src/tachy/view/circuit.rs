@@ -37,6 +37,13 @@ const SECONDS_PER_TIME_STEP: f64 = 1.0;
 
 //===========================================================================//
 
+pub enum CircuitAction {
+    BackToMenu,
+    ToggleFullscreen,
+}
+
+//===========================================================================//
+
 pub struct CircuitView {
     width: f32,
     height: f32,
@@ -72,7 +79,7 @@ impl CircuitView {
 
     pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
                         audio: &mut AudioQueue)
-                        -> bool {
+                        -> Option<CircuitAction> {
         match event {
             Event::ClockTick(tick) => {
                 if let Some(eval) = grid.eval_mut() {
@@ -90,7 +97,10 @@ impl CircuitView {
             }
             Event::KeyDown(key) => {
                 if key.command && key.shift && key.code == Keycode::F {
-                    return true;
+                    return Some(CircuitAction::ToggleFullscreen);
+                }
+                if key.code == Keycode::Escape {
+                    return Some(CircuitAction::BackToMenu);
                 }
             }
             _ => {}
@@ -152,7 +162,7 @@ impl CircuitView {
                     }
                 }
             }
-            return false;
+            return None;
         }
 
         let (opt_action, stop) = self.parts_tray.handle_event(event);
@@ -166,11 +176,11 @@ impl CircuitView {
             None => {}
         }
         if stop {
-            return false;
+            return None;
         }
 
         self.edit_grid.handle_event(event, grid);
-        return false;
+        return None;
     }
 
     fn handle_eval_result(&mut self, result: EvalResult) {

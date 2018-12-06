@@ -17,14 +17,14 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod dir;
-mod menu;
-mod prefs;
-mod puzzle;
+//===========================================================================//
 
-pub use self::dir::SaveDir;
-pub use self::menu::MenuSection;
-pub use self::prefs::Prefs;
-pub use self::puzzle::{Puzzle, PuzzleKind};
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum MenuSection {
+    Navigation,
+    Messages,
+    Puzzles,
+    Settings,
+}
 
 //===========================================================================//

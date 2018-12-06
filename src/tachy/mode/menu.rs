@@ -17,14 +17,43 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod dir;
-mod menu;
-mod prefs;
-mod puzzle;
+use super::common::ModeChange;
+use std::time::Instant;
+use tachy::gui::{AudioQueue, Event, Window};
+use tachy::state::GameState;
+use tachy::view::{MenuAction, MenuView};
 
-pub use self::dir::SaveDir;
-pub use self::menu::MenuSection;
-pub use self::prefs::Prefs;
-pub use self::puzzle::{Puzzle, PuzzleKind};
+//===========================================================================//
+
+pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
+    let mut view = MenuView::new(window.size().into(), state);
+    let mut last_tick = Instant::now();
+    let mut audio = AudioQueue::new();
+    loop {
+        match window.poll_event() {
+            Some(Event::Quit) => return ModeChange::Quit,
+            Some(event) => {
+                match view.handle_event(&event, state, &mut audio) {
+                    Some(MenuAction::EditPuzzle) => {
+                        state.new_edit_grid();
+                        return ModeChange::Next;
+                    }
+                    None => {}
+                }
+            }
+            None => {
+                let now = Instant::now();
+                let elapsed = now.duration_since(last_tick);
+                view.handle_event(&Event::new_clock_tick(elapsed),
+                                  state,
+                                  &mut audio);
+                last_tick = now;
+                window.pump_audio(&mut audio);
+                view.draw(window.resources(), state);
+                window.swap();
+            }
+        }
+    }
+}
 
 //===========================================================================//

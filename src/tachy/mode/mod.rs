@@ -19,6 +19,7 @@
 
 mod circuit;
 mod common;
+mod menu;
 mod run;
 
 pub use self::common::ModeChange;

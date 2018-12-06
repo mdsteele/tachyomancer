@@ -20,9 +20,13 @@
 mod chip;
 mod circuit;
 mod control;
+mod list;
+mod menu;
 mod parts;
+mod puzzle;
 mod wire;
 
-pub use self::circuit::CircuitView;
+pub use self::circuit::{CircuitAction, CircuitView};
+pub use self::menu::{MenuAction, MenuView};
 
 //===========================================================================//

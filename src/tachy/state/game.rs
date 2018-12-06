@@ -18,12 +18,13 @@
 // +--------------------------------------------------------------------------+
 
 use super::edit::EditGrid;
-use tachy::save::{Puzzle, SaveDir};
+use tachy::save::{MenuSection, Puzzle, SaveDir};
 
 //===========================================================================//
 
 pub struct GameState {
     savedir: SaveDir,
+    menu_section: MenuSection,
     current_puzzle: Puzzle,
     edit_grid: Option<EditGrid>,
 }
@@ -31,20 +32,39 @@ pub struct GameState {
 impl GameState {
     pub fn new(savedir: SaveDir) -> Result<GameState, String> {
         // TODO: Load current profile.
+        let menu_section = MenuSection::Puzzles;
         let current_puzzle = Puzzle::SandboxEvent;
-        Ok(GameState {
-               savedir,
-               current_puzzle,
-               edit_grid: Some(EditGrid::new(current_puzzle)),
-           })
+        let state = GameState {
+            savedir,
+            menu_section,
+            current_puzzle,
+            edit_grid: None,
+        };
+        Ok(state)
     }
 
     pub fn savedir(&self) -> &SaveDir { &self.savedir }
 
+    pub fn menu_section(&self) -> MenuSection { self.menu_section }
+
+    pub fn set_menu_section(&mut self, section: MenuSection) {
+        self.menu_section = section;
+    }
+
     pub fn current_puzzle(&self) -> Puzzle { self.current_puzzle }
+
+    pub fn set_current_puzzle(&mut self, puzzle: Puzzle) {
+        self.current_puzzle = puzzle;
+    }
 
     pub fn edit_grid_mut(&mut self) -> Option<&mut EditGrid> {
         self.edit_grid.as_mut()
+    }
+
+    pub fn clear_edit_grid(&mut self) { self.edit_grid = None; }
+
+    pub fn new_edit_grid(&mut self) {
+        self.edit_grid = Some(EditGrid::new(self.current_puzzle));
     }
 }
 

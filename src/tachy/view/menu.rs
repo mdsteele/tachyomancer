@@ -1,0 +1,171 @@
+// +--------------------------------------------------------------------------+
+// | Copyright 2018 Matthew D. Steele <mdsteele@alum.mit.edu>                 |
+// |                                                                          |
+// | This file is part of Tachyomancer.                                       |
+// |                                                                          |
+// | Tachyomancer is free software: you can redistribute it and/or modify it  |
+// | under the terms of the GNU General Public License as published by the    |
+// | Free Software Foundation, either version 3 of the License, or (at your   |
+// | option) any later version.                                               |
+// |                                                                          |
+// | Tachyomancer is distributed in the hope that it will be useful, but      |
+// | WITHOUT ANY WARRANTY; without even the implied warranty of               |
+// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU        |
+// | General Public License for details.                                      |
+// |                                                                          |
+// | You should have received a copy of the GNU General Public License along  |
+// | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
+// +--------------------------------------------------------------------------+
+
+use super::puzzle::{PuzzlesAction, PuzzlesView};
+use cgmath::{self, Matrix4};
+use tachy::gui::{AudioQueue, Event, Resources, Sound};
+use tachy::save::MenuSection;
+use tachy::state::{GameState, Rect, RectSize};
+
+//===========================================================================//
+
+const SECTION_BUTTON_HEIGHT: i32 = 50;
+const SECTION_BUTTON_MARGIN_TOP: i32 = 40;
+const SECTION_BUTTON_MARGIN_HORZ: i32 = 40;
+const SECTION_BUTTON_SPACING: i32 = 20;
+
+const SECTION_MARGIN_TOP: i32 = 30;
+const SECTION_MARGIN_BOTTOM: i32 = 40;
+const SECTION_MARGIN_HORZ: i32 = SECTION_BUTTON_MARGIN_HORZ;
+const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
+    SECTION_MARGIN_TOP;
+
+//===========================================================================//
+
+pub enum MenuAction {
+    EditPuzzle,
+}
+
+//===========================================================================//
+
+pub struct MenuView {
+    width: f32,
+    height: f32,
+    section_buttons: Vec<SectionButton>,
+    puzzles_view: PuzzlesView,
+}
+
+impl MenuView {
+    pub fn new(window_size: RectSize<u32>, state: &GameState) -> MenuView {
+        let section_buttons =
+            vec![
+                SectionButton::new(window_size, 0, MenuSection::Navigation),
+                SectionButton::new(window_size, 1, MenuSection::Messages),
+                SectionButton::new(window_size, 2, MenuSection::Puzzles),
+                SectionButton::new(window_size, 3, MenuSection::Settings),
+            ];
+        let section_rect =
+            Rect::new(SECTION_MARGIN_HORZ,
+                      SECTION_TOP,
+                      (window_size.width as i32) - 2 * SECTION_MARGIN_HORZ,
+                      (window_size.height as i32) - SECTION_TOP -
+                          SECTION_MARGIN_BOTTOM);
+        MenuView {
+            width: window_size.width as f32,
+            height: window_size.height as f32,
+            section_buttons,
+            puzzles_view: PuzzlesView::new(section_rect, state),
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, state: &GameState) {
+        let projection =
+            cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
+        resources.shaders().solid().fill_rect(&projection,
+                                              (0.2, 0.1, 0.2),
+                                              (0.0,
+                                               0.0,
+                                               self.width,
+                                               self.height));
+        for button in self.section_buttons.iter() {
+            button.draw(resources, &projection, state.menu_section());
+        }
+        if state.menu_section() == MenuSection::Puzzles {
+            self.puzzles_view.draw(resources, &projection, state);
+        }
+    }
+
+    pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
+                        audio: &mut AudioQueue)
+                        -> Option<MenuAction> {
+        if state.menu_section() == MenuSection::Puzzles {
+            match self.puzzles_view.handle_event(event, state) {
+                Some(PuzzlesAction::Edit) => {
+                    return Some(MenuAction::EditPuzzle);
+                }
+                None => {}
+            }
+        }
+        for button in self.section_buttons.iter_mut() {
+            if let Some(section) =
+                button.handle_event(event, state.menu_section(), audio)
+            {
+                state.set_menu_section(section);
+                self.puzzles_view.unfocus();
+            }
+        }
+        return None;
+    }
+}
+
+//===========================================================================//
+
+struct SectionButton {
+    rect: Rect<i32>,
+    section: MenuSection,
+}
+
+impl SectionButton {
+    fn new(window_size: RectSize<u32>, index: i32, section: MenuSection)
+           -> SectionButton {
+        let width = ((window_size.width as i32) -
+                         2 * SECTION_BUTTON_MARGIN_HORZ -
+                         3 * SECTION_BUTTON_SPACING) / 4;
+        let left = SECTION_BUTTON_MARGIN_HORZ +
+            index * (width + SECTION_BUTTON_SPACING);
+        let rect = Rect::new(left,
+                             SECTION_BUTTON_MARGIN_TOP,
+                             width,
+                             SECTION_BUTTON_HEIGHT);
+        SectionButton { rect, section }
+    }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+            current_section: MenuSection) {
+        let color = if self.section == current_section {
+            (0.75, 0.0, 0.0)
+        } else {
+            (0.0, 0.25, 0.0)
+        };
+        let rect = (self.rect.x as f32,
+                    self.rect.y as f32,
+                    self.rect.width as f32,
+                    self.rect.height as f32);
+        resources.shaders().solid().fill_rect(matrix, color, rect);
+    }
+
+    fn handle_event(&mut self, event: &Event, current_section: MenuSection,
+                    audio: &mut AudioQueue)
+                    -> Option<MenuSection> {
+        match event {
+            Event::MouseDown(mouse) => {
+                if self.section != current_section &&
+                    self.rect.contains_point(mouse.pt)
+                {
+                    audio.play_sound(Sound::Beep);
+                    return Some(self.section);
+                }
+            }
+            _ => {}
+        }
+        return None;
+    }
+}
+
+//===========================================================================//

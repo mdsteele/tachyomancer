@@ -21,7 +21,6 @@ use tachy::gui::WindowOptions;
 
 //===========================================================================//
 
-#[allow(dead_code)]
 pub enum ModeChange {
     Next,
     RebootWindow(WindowOptions),

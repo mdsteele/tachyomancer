@@ -24,8 +24,11 @@ use tachy::state::GameState;
 //===========================================================================//
 
 pub fn run_mode(state: &mut GameState, window: &mut Window) -> ModeChange {
-    // TODO: Choose mode based on state.
-    super::circuit::run(state, window)
+    if state.edit_grid_mut().is_some() {
+        super::circuit::run(state, window)
+    } else {
+        super::menu::run(state, window)
+    }
 }
 
 //===========================================================================//

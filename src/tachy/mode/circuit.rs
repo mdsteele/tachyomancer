@@ -21,28 +21,36 @@ use super::common::ModeChange;
 use std::time::Instant;
 use tachy::gui::{AudioQueue, Event, Window};
 use tachy::state::GameState;
-use tachy::view::CircuitView;
+use tachy::view::{CircuitAction, CircuitView};
 
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     let mut view = CircuitView::new(window.size().into(),
                                     state.current_puzzle());
-    let grid = state.edit_grid_mut().unwrap(); // TODO
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
     loop {
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
-                let toggle = view.handle_event(&event, grid, &mut audio);
-                if toggle {
-                    let mut window_options = window.options();
-                    window_options.fullscreen = !window_options.fullscreen;
-                    return ModeChange::RebootWindow(window_options);
+                match view.handle_event(&event,
+                                          state.edit_grid_mut().unwrap(),
+                                          &mut audio) {
+                    Some(CircuitAction::BackToMenu) => {
+                        state.clear_edit_grid();
+                        return ModeChange::Next;
+                    }
+                    Some(CircuitAction::ToggleFullscreen) => {
+                        let mut window_options = window.options();
+                        window_options.fullscreen = !window_options.fullscreen;
+                        return ModeChange::RebootWindow(window_options);
+                    }
+                    None => {}
                 }
             }
             None => {
+                let grid = state.edit_grid_mut().unwrap();
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
                 view.handle_event(&Event::new_clock_tick(elapsed),

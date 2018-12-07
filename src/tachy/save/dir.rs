@@ -105,7 +105,7 @@ impl SaveDir {
                 debug_log!("Defaulting current profile to {:?}", name);
                 prefs.set_current_profile(Some(name));
             }
-            prefs.save(&prefs_path)?;
+            prefs.save()?;
         }
 
         Ok(SaveDir {
@@ -143,7 +143,7 @@ impl SaveDir {
         let profile = Profile::create_or_load(name, &path)?;
         if !is_current_profile {
             self.prefs.set_current_profile(Some(profile.name().to_string()));
-            self.prefs.save(&self.base_path.join(PREFS_FILE_NAME))?;
+            self.prefs.save()?;
         }
         self.profile_names.insert(profile.name().to_string());
         Ok(profile)

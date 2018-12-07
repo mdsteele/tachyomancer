@@ -21,13 +21,12 @@ use super::common::ModeChange;
 use std::time::Instant;
 use tachy::gui::{AudioQueue, Event, Window};
 use tachy::state::GameState;
-use tachy::view::{MenuAction, MenuView};
+use tachy::view::{BeginAction, BeginView};
 
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
-    debug_assert!(state.profile().is_some());
-    let mut view = MenuView::new(window.size().into(), state);
+    let mut view = BeginView::new(window.size().into(), state);
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
     loop {
@@ -35,21 +34,13 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
                 match view.handle_event(&event, state, &mut audio) {
-                    Some(MenuAction::EditPuzzle) => {
-                        state.new_edit_grid();
-                        return ModeChange::Next;
-                    }
-                    Some(MenuAction::NewProfile) => {
-                        state.clear_profile();
-                        return ModeChange::Next;
-                    }
-                    Some(MenuAction::SwitchProfile(name)) => {
-                        debug_log!("Switching to profile {:?}", name);
+                    Some(BeginAction::CreateProfile(name)) => {
+                        debug_log!("Creating profile {:?}", name);
                         match state.create_or_load_profile(name) {
-                            Ok(()) => {}
+                            Ok(()) => return ModeChange::Next,
                             Err(err) => {
                                 // TODO: display error to user; don't panic
-                                panic!("SwitchProfile failed: {:?}", err);
+                                panic!("CreateProfile failed: {:?}", err);
                             }
                         }
                     }

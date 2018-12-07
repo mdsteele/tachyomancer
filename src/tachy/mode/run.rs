@@ -25,8 +25,7 @@ use tachy::state::GameState;
 
 pub fn run_mode(state: &mut GameState, window: &mut Window) -> ModeChange {
     if state.profile().is_none() {
-        // TODO: run mode for starting a new profile
-        panic!("no profile!");
+        super::begin::run(state, window)
     } else if state.edit_grid_mut().is_some() {
         super::circuit::run(state, window)
     } else {

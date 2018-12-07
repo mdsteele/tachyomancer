@@ -41,6 +41,7 @@ const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
 
 pub enum MenuAction {
     EditPuzzle,
+    NewProfile,
     SwitchProfile(String),
 }
 
@@ -115,6 +116,9 @@ impl MenuView {
             }
             MenuSection::Prefs => {
                 match self.prefs_view.handle_event(event, state) {
+                    Some(PrefsAction::NewProfile) => {
+                        return Some(MenuAction::NewProfile);
+                    }
                     Some(PrefsAction::SwitchProfile(name)) => {
                         return Some(MenuAction::SwitchProfile(name));
                     }

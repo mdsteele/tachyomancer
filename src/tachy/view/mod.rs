@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod begin;
 mod chip;
 mod circuit;
 mod control;
@@ -27,6 +28,7 @@ mod prefs;
 mod puzzle;
 mod wire;
 
+pub use self::begin::{BeginAction, BeginView};
 pub use self::circuit::{CircuitAction, CircuitView};
 pub use self::menu::{MenuAction, MenuView};
 

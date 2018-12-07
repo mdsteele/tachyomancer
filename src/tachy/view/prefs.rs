@@ -19,12 +19,14 @@
 
 use super::list::ListView;
 use cgmath::Matrix4;
+use tachy::font::Align;
 use tachy::gui::{Event, Resources};
 use tachy::state::{GameState, Rect};
 
 //===========================================================================//
 
 pub enum PrefsAction {
+    NewProfile,
     SwitchProfile(String),
 }
 
@@ -32,6 +34,7 @@ pub enum PrefsAction {
 
 pub struct PrefsView {
     profiles_list: ListView<String>,
+    new_button: NewButton,
 }
 
 impl PrefsView {
@@ -41,8 +44,7 @@ impl PrefsView {
         let list_items = state
             .savedir()
             .profile_names()
-            .iter()
-            .map(|name| (name.clone(), name.clone()))
+            .map(|name| (name.to_string(), name.to_string()))
             .collect();
         PrefsView {
             profiles_list: ListView::new(Rect::new(rect.x,
@@ -51,6 +53,10 @@ impl PrefsView {
                                                    rect.height),
                                          &current_profile_name,
                                          list_items),
+            new_button: NewButton::new(Rect::new(rect.right() - 150,
+                                                 rect.bottom() - 40,
+                                                 150,
+                                                 40)),
         }
     }
 
@@ -59,6 +65,7 @@ impl PrefsView {
         debug_assert!(state.profile().is_some());
         let current_profile_name = state.profile().unwrap().name().to_string();
         self.profiles_list.draw(resources, matrix, &current_profile_name);
+        self.new_button.draw(resources, matrix);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
@@ -70,10 +77,53 @@ impl PrefsView {
         {
             return Some(PrefsAction::SwitchProfile(profile_name));
         }
+        if let Some(action) = self.new_button.handle_event(event) {
+            return Some(action);
+        }
         return None;
     }
 
     pub fn unfocus(&mut self) { self.profiles_list.unfocus(); }
+}
+
+//===========================================================================//
+
+struct NewButton {
+    rect: Rect<i32>,
+}
+
+impl NewButton {
+    pub fn new(rect: Rect<i32>) -> NewButton { NewButton { rect } }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let color = (0.7, 0.1, 0.1);
+        let rect = (self.rect.x as f32,
+                    self.rect.y as f32,
+                    self.rect.width as f32,
+                    self.rect.height as f32);
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.fonts().roman().draw(&matrix,
+                                       20.0,
+                                       Align::Center,
+                                       ((self.rect.x as f32) +
+                                            0.5 * (self.rect.width as f32),
+                                        (self.rect.y as f32) +
+                                            0.5 * (self.rect.height as f32) -
+                                            10.0),
+                                       "New Profile");
+    }
+
+    pub fn handle_event(&mut self, event: &Event) -> Option<PrefsAction> {
+        match event {
+            Event::MouseDown(mouse) => {
+                if mouse.left && self.rect.contains_point(mouse.pt) {
+                    return Some(PrefsAction::NewProfile);
+                }
+            }
+            _ => {}
+        }
+        return None;
+    }
 }
 
 //===========================================================================//

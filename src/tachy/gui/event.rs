@@ -37,6 +37,7 @@ pub enum Event {
     MouseDown(MouseEventData),
     MouseMove(MouseEventData),
     MouseUp(MouseEventData),
+    TextInput(String),
 }
 
 impl Event {
@@ -91,6 +92,9 @@ impl Event {
                     }
                     _ => None,
                 }
+            }
+            sdl2::event::Event::TextInput { text, .. } => {
+                Some(Event::TextInput(text))
             }
             _ => None,
         }

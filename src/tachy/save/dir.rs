@@ -21,6 +21,7 @@ use super::prefs::Prefs;
 use super::profile::Profile;
 use app_dirs::{self, AppDataType, AppDirsError, AppInfo};
 use std::char;
+use std::collections::{BTreeSet, btree_set};
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::path::PathBuf;
@@ -36,7 +37,7 @@ const PREFS_FILE_NAME: &str = "prefs.toml";
 pub struct SaveDir {
     base_path: PathBuf,
     prefs: Prefs,
-    profile_names: Vec<String>,
+    profile_names: BTreeSet<String>,
 }
 
 impl SaveDir {
@@ -65,7 +66,7 @@ impl SaveDir {
         let mut prefs = Prefs::create_or_load(&prefs_path)?;
 
         // Load list of profiles.
-        let mut profile_names = Vec::<String>::new();
+        let mut profile_names = BTreeSet::<String>::new();
         let entries = base_path
             .read_dir()
             .map_err(|err| {
@@ -82,9 +83,8 @@ impl SaveDir {
             if !entry.path().is_dir() {
                 continue;
             }
-            profile_names.push(decode_profile_name(&entry.file_name()));
+            profile_names.insert(decode_profile_name(&entry.file_name()));
         }
-        profile_names.sort();
 
         // Repair prefs.current_profile if necessary.
         let has_current_profile;
@@ -101,9 +101,9 @@ impl SaveDir {
                 debug_log!("Setting current profile to None");
                 prefs.set_current_profile(None);
             } else {
-                let profile_name = profile_names[0].clone();
-                debug_log!("Defaulting current profile to {:?}", profile_name);
-                prefs.set_current_profile(Some(profile_name));
+                let name = profile_names.iter().next().unwrap().clone();
+                debug_log!("Defaulting current profile to {:?}", name);
+                prefs.set_current_profile(Some(name));
             }
             prefs.save(&prefs_path)?;
         }
@@ -117,7 +117,13 @@ impl SaveDir {
 
     pub fn prefs(&self) -> &Prefs { &self.prefs }
 
-    pub fn profile_names(&self) -> &[String] { &self.profile_names }
+    pub fn profile_names(&self) -> ProfileNames {
+        ProfileNames { inner: self.profile_names.iter() }
+    }
+
+    pub fn has_profile(&self, name: &str) -> bool {
+        self.profile_names.contains(name)
+    }
 
     pub fn load_current_profile_if_any(&self)
                                        -> Result<Option<Profile>, String> {
@@ -139,7 +145,22 @@ impl SaveDir {
             self.prefs.set_current_profile(Some(profile.name().to_string()));
             self.prefs.save(&self.base_path.join(PREFS_FILE_NAME))?;
         }
+        self.profile_names.insert(profile.name().to_string());
         Ok(profile)
+    }
+}
+
+//===========================================================================//
+
+pub struct ProfileNames<'a> {
+    inner: btree_set::Iter<'a, String>,
+}
+
+impl<'a> Iterator for ProfileNames<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<&'a str> {
+        self.inner.next().map(String::as_str)
     }
 }
 

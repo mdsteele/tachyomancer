@@ -56,6 +56,8 @@ impl GameState {
         Ok(())
     }
 
+    pub fn clear_profile(&mut self) { self.profile = None; }
+
     pub fn menu_section(&self) -> MenuSection { self.menu_section }
 
     pub fn set_menu_section(&mut self, section: MenuSection) {

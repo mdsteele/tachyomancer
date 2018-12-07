@@ -25,7 +25,6 @@ use tachy::save::{MenuSection, Profile, Puzzle, SaveDir};
 pub struct GameState {
     savedir: SaveDir,
     menu_section: MenuSection,
-    current_puzzle: Puzzle, // TODO: move this to profile
     profile: Option<Profile>,
     edit_grid: Option<EditGrid>,
 }
@@ -33,17 +32,22 @@ pub struct GameState {
 impl GameState {
     pub fn new(savedir: SaveDir) -> Result<GameState, String> {
         let profile = savedir.load_current_profile_if_any()?;
-        // TODO: Get current puzzle from profile.
-        let menu_section = MenuSection::Puzzles;
-        let current_puzzle = Puzzle::SandboxEvent;
+        let menu_section = MenuSection::Navigation;
         let state = GameState {
             savedir,
             menu_section,
-            current_puzzle,
             profile,
             edit_grid: None,
         };
         Ok(state)
+    }
+
+    pub fn save(&mut self) -> Result<(), String> {
+        if let Some(ref mut profile) = self.profile {
+            profile.save()?;
+        }
+        // TODO: save prefs if necessary
+        Ok(())
     }
 
     pub fn savedir(&self) -> &SaveDir { &self.savedir }
@@ -52,11 +56,20 @@ impl GameState {
 
     pub fn create_or_load_profile(&mut self, name: String)
                                   -> Result<(), String> {
+        if let Some(ref mut profile) = self.profile {
+            profile.save()?;
+        }
         self.profile = Some(self.savedir.create_or_load_profile(name)?);
         Ok(())
     }
 
-    pub fn clear_profile(&mut self) { self.profile = None; }
+    pub fn clear_profile(&mut self) -> Result<(), String> {
+        if let Some(ref mut profile) = self.profile {
+            profile.save()?;
+        }
+        self.profile = None;
+        Ok(())
+    }
 
     pub fn menu_section(&self) -> MenuSection { self.menu_section }
 
@@ -64,10 +77,18 @@ impl GameState {
         self.menu_section = section;
     }
 
-    pub fn current_puzzle(&self) -> Puzzle { self.current_puzzle }
+    pub fn current_puzzle(&self) -> Puzzle {
+        if let Some(ref profile) = self.profile {
+            profile.current_puzzle()
+        } else {
+            Puzzle::first()
+        }
+    }
 
     pub fn set_current_puzzle(&mut self, puzzle: Puzzle) {
-        self.current_puzzle = puzzle;
+        if let Some(ref mut profile) = self.profile {
+            profile.set_current_puzzle(puzzle);
+        }
     }
 
     pub fn edit_grid_mut(&mut self) -> Option<&mut EditGrid> {
@@ -77,7 +98,7 @@ impl GameState {
     pub fn clear_edit_grid(&mut self) { self.edit_grid = None; }
 
     pub fn new_edit_grid(&mut self) {
-        self.edit_grid = Some(EditGrid::new(self.current_puzzle));
+        self.edit_grid = Some(EditGrid::new(self.current_puzzle()));
     }
 }
 

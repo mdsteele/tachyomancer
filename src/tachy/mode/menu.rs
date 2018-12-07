@@ -40,8 +40,14 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         return ModeChange::Next;
                     }
                     Some(MenuAction::NewProfile) => {
-                        state.clear_profile();
-                        return ModeChange::Next;
+                        debug_log!("Starting a new profile");
+                        match state.clear_profile() {
+                            Ok(()) => return ModeChange::Next,
+                            Err(err) => {
+                                // TODO: display error to user; don't panic
+                                panic!("NewProfile failed: {:?}", err);
+                            }
+                        }
                     }
                     Some(MenuAction::SwitchProfile(name)) => {
                         debug_log!("Switching to profile {:?}", name);

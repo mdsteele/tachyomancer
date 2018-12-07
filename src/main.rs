@@ -41,7 +41,7 @@ use std::path::PathBuf;
 // ========================================================================= //
 
 fn main() {
-    match start_game(&parse_flags()) {
+    match run_game(&parse_flags()) {
         Ok(()) => {}
         Err(error) => {
             eprintln!("ERROR: {}", error);
@@ -117,7 +117,7 @@ fn parse_flags() -> StartupFlags {
 
 //===========================================================================//
 
-fn start_game(flags: &StartupFlags) -> Result<(), String> {
+fn run_game(flags: &StartupFlags) -> Result<(), String> {
     let savedir = SaveDir::create_or_load(&flags.save_dir)?;
     let mut state = GameState::new(savedir)?;
     let mut gui_context = GuiContext::init()?;
@@ -126,6 +126,7 @@ fn start_game(flags: &StartupFlags) -> Result<(), String> {
     while let Some(options) = window_options {
         window_options = boot_window(&mut state, &mut gui_context, &options)?;
     }
+    state.save()?;
     Ok(())
 }
 

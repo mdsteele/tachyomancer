@@ -31,8 +31,7 @@ pub enum PuzzleKind {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Puzzle {
     TutorialOr,
     AutomateHeliostat,
@@ -41,6 +40,9 @@ pub enum Puzzle {
 }
 
 impl Puzzle {
+    /// Returns the first puzzle in the game, which is always unlocked.
+    pub fn first() -> Puzzle { Puzzle::TutorialOr }
+
     #[allow(dead_code)]
     pub fn title(self) -> &'static str { self.data().title }
 

@@ -17,38 +17,122 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::puzzle::Puzzle;
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
+
+//===========================================================================//
+
+const DATA_FILE_NAME: &str = "profile.toml";
+
+//===========================================================================//
+
+#[derive(Default, Deserialize, Serialize)]
+struct ProfileData {
+    current_puzzle: Option<Puzzle>,
+}
+
+impl ProfileData {
+    fn try_load(path: &Path) -> io::Result<ProfileData> {
+        toml::from_slice(&fs::read(path)?).map_err(|err| {
+            io::Error::new(io::ErrorKind::InvalidData, format!("{}", err))
+        })
+    }
+}
 
 //===========================================================================//
 
 #[allow(dead_code)]
 pub struct Profile {
     name: String,
-    path: PathBuf,
+    base_path: PathBuf,
+    data: ProfileData,
+    needs_save: bool,
     // TODO: puzzle progress
 }
 
 impl Profile {
-    pub fn create_or_load(name: String, path: &Path)
+    pub fn create_or_load(name: String, base_path: &Path)
                           -> Result<Profile, String> {
-        if !path.exists() {
-            debug_log!("Creating profile {:?} at {:?}", name, path);
-            fs::create_dir_all(&path)
+        if !base_path.exists() {
+            debug_log!("Creating profile {:?} at {:?}", name, base_path);
+            fs::create_dir_all(&base_path)
                 .map_err(|err| {
-                    format!("Could not create profile directory: {:?}", err)
+                    format!("Could not create profile {:?} \
+                             directory at {:?}: {:?}",
+                            name,
+                            base_path,
+                            err)
                 })?;
         } else {
-            debug_log!("Loading profile {:?} from {:?}", name, path);
+            debug_log!("Loading profile {:?} from {:?}", name, base_path);
         }
 
-        Ok(Profile {
-               name,
-               path: path.to_path_buf(),
-           })
+        let mut needs_save = false;
+        let data_path = base_path.join(DATA_FILE_NAME);
+        let data = if data_path.exists() {
+            match ProfileData::try_load(&data_path) {
+                Ok(data) => data,
+                Err(err) => {
+                    debug_log!("Could not read profile {:?} \
+                                data file from {:?}: {}",
+                               name,
+                               data_path,
+                               err);
+                    ProfileData::default()
+                }
+            }
+        } else {
+            needs_save = true;
+            ProfileData::default()
+        };
+
+        let mut profile = Profile {
+            name,
+            base_path: base_path.to_path_buf(),
+            data,
+            needs_save,
+        };
+        profile.save()?;
+        Ok(profile)
+    }
+
+    pub fn save(&mut self) -> Result<(), String> {
+        if self.needs_save {
+            let data_path = self.base_path.join(DATA_FILE_NAME);
+            debug_log!("Saving profile {:?} data to {:?}",
+                       self.name,
+                       data_path);
+            let data = toml::to_vec(&self.data)
+                .map_err(|err| {
+                    format!("Could not serialize profile {:?} data: {}",
+                            self.name,
+                            err)
+                })?;
+            fs::write(&data_path, data)
+                .map_err(|err| {
+                             format!("Could not write profile {:?} \
+                                      data file to {:?}: {}",
+                                     self.name,
+                                     data_path,
+                                     err)
+                         })?;
+            self.needs_save = false;
+        }
+        Ok(())
     }
 
     pub fn name(&self) -> &str { &self.name }
+
+    pub fn current_puzzle(&self) -> Puzzle {
+        self.data.current_puzzle.unwrap_or(Puzzle::first())
+    }
+
+    pub fn set_current_puzzle(&mut self, puzzle: Puzzle) {
+        self.data.current_puzzle = Some(puzzle);
+        self.needs_save = true;
+    }
 }
 
 //===========================================================================//

@@ -26,8 +26,10 @@ use tachy::view::{CircuitAction, CircuitView};
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
-    let mut view = CircuitView::new(window.size().into(),
-                                    state.current_puzzle());
+    debug_assert!(state.profile().is_some());
+    debug_assert!(state.edit_grid().is_some());
+    let puzzle = state.current_puzzle();
+    let mut view = CircuitView::new(window.size().into(), puzzle);
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
     loop {
@@ -38,8 +40,16 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                           state.edit_grid_mut().unwrap(),
                                           &mut audio) {
                     Some(CircuitAction::BackToMenu) => {
-                        state.clear_edit_grid();
-                        return ModeChange::Next;
+                        match state.save_circuit() {
+                            Ok(()) => {
+                                state.clear_edit_grid();
+                                return ModeChange::Next;
+                            }
+                            Err(err) => {
+                                // TODO: display error to user; don't panic
+                                panic!("NewProfile failed: {:?}", err);
+                            }
+                        }
                     }
                     Some(CircuitAction::ToggleFullscreen) => {
                         let mut window_options = window.options();

@@ -29,7 +29,7 @@ use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
 use std::mem;
 use std::usize;
-use tachy::save::Puzzle;
+use tachy::save::{CircuitData, Puzzle};
 
 //===========================================================================//
 
@@ -94,6 +94,36 @@ impl EditGrid {
         grid
     }
 
+    pub fn to_circuit_data(&self) -> CircuitData {
+        let mut data = CircuitData::new(self.bounds.x,
+                                        self.bounds.y,
+                                        self.bounds.width,
+                                        self.bounds.height);
+        for (coords, ctype, orient) in self.chips() {
+            data.chips.insert(coords_key_string(coords),
+                              format!("{}-{:?}", orient, ctype));
+        }
+        for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
+            match (shape, dir) {
+                (WireShape::Stub, _) |
+                (WireShape::Straight, Direction::East) |
+                (WireShape::Straight, Direction::South) |
+                (WireShape::TurnLeft, _) |
+                (WireShape::SplitTee, _) |
+                (WireShape::Cross, Direction::East) => {}
+                (WireShape::Straight, Direction::West) |
+                (WireShape::Straight, Direction::North) |
+                (WireShape::TurnRight, _) |
+                (WireShape::SplitLeft, _) |
+                (WireShape::SplitRight, _) |
+                (WireShape::Cross, _) => continue,
+            }
+            data.wires.insert(format!("{}{}", coords_key_string(coords), dir),
+                              format!("{:?}", shape));
+        }
+        data
+    }
+
     pub fn bounds(&self) -> CoordsRect { self.bounds }
 
     pub fn can_have_bounds(&self, bounds: CoordsRect) -> bool {
@@ -108,8 +138,11 @@ impl EditGrid {
 
     pub fn interfaces(&self) -> &[Interface] { &self.interfaces }
 
+    /// Returns an interator over `(Coords, ChipType, Orientation)` tuples.
     pub fn chips(&self) -> ChipsIter { ChipsIter { inner: self.chips.iter() } }
 
+    /// Returns an interator over `(Coords, Direction, WireShape, WireSize,
+    /// WireColor)` tuples.
     pub fn wire_fragments(&self) -> WireFragmentsIter {
         WireFragmentsIter {
             inner: self.fragments.iter(),
@@ -645,6 +678,14 @@ impl<'a> Iterator for WireFragmentsIter<'a> {
             None
         }
     }
+}
+
+//===========================================================================//
+
+fn coords_key_string(coords: Coords) -> String {
+    let xsign = if coords.x < 0 { 'm' } else { 'p' };
+    let ysign = if coords.y < 0 { 'm' } else { 'p' };
+    format!("{}{}{}{}", xsign, coords.x.abs(), ysign, coords.y.abs())
 }
 
 //===========================================================================//

@@ -40,7 +40,7 @@ pub struct PrefsView {
 impl PrefsView {
     pub fn new(rect: Rect<i32>, state: &GameState) -> PrefsView {
         debug_assert!(state.profile().is_some());
-        let current_profile_name = state.profile().unwrap().name().to_string();
+        let current_profile_name = state.profile().unwrap().name();
         let list_items = state
             .savedir()
             .profile_names()
@@ -51,7 +51,7 @@ impl PrefsView {
                                                    rect.y,
                                                    300,
                                                    rect.height),
-                                         &current_profile_name,
+                                         current_profile_name,
                                          list_items),
             new_button: NewButton::new(Rect::new(rect.right() - 150,
                                                  rect.bottom() - 40,
@@ -63,17 +63,17 @@ impl PrefsView {
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 state: &GameState) {
         debug_assert!(state.profile().is_some());
-        let current_profile_name = state.profile().unwrap().name().to_string();
-        self.profiles_list.draw(resources, matrix, &current_profile_name);
+        let current_profile_name = state.profile().unwrap().name();
+        self.profiles_list.draw(resources, matrix, current_profile_name);
         self.new_button.draw(resources, matrix);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
                         -> Option<PrefsAction> {
         debug_assert!(state.profile().is_some());
-        let current_profile_name = state.profile().unwrap().name().to_string();
+        let current_profile_name = state.profile().unwrap().name();
         if let Some(profile_name) =
-            self.profiles_list.handle_event(event, &current_profile_name)
+            self.profiles_list.handle_event(event, current_profile_name)
         {
             return Some(PrefsAction::SwitchProfile(profile_name));
         }

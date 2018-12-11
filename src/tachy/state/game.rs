@@ -26,6 +26,7 @@ pub struct GameState {
     savedir: SaveDir,
     menu_section: MenuSection,
     profile: Option<Profile>,
+    circuit_name: String,
     edit_grid: Option<EditGrid>,
 }
 
@@ -37,6 +38,7 @@ impl GameState {
             savedir,
             menu_section,
             profile,
+            circuit_name: String::new(),
             edit_grid: None,
         };
         Ok(state)
@@ -59,7 +61,13 @@ impl GameState {
         if let Some(ref mut profile) = self.profile {
             profile.save()?;
         }
-        self.profile = Some(self.savedir.create_or_load_profile(name)?);
+        let profile = self.savedir.create_or_load_profile(name)?;
+        self.circuit_name =
+            match profile.circuit_names(profile.current_puzzle()).next() {
+                Some(name) => name.to_string(),
+                None => String::new(),
+            };
+        self.profile = Some(profile);
         Ok(())
     }
 
@@ -87,9 +95,24 @@ impl GameState {
 
     pub fn set_current_puzzle(&mut self, puzzle: Puzzle) {
         if let Some(ref mut profile) = self.profile {
-            profile.set_current_puzzle(puzzle);
+            if profile.current_puzzle() != puzzle {
+                profile.set_current_puzzle(puzzle);
+                self.circuit_name =
+                    match profile.circuit_names(puzzle).next() {
+                        Some(name) => name.to_string(),
+                        None => String::new(),
+                    }
+            }
         }
     }
+
+    pub fn circuit_name(&self) -> &str { &self.circuit_name }
+
+    pub fn set_circuit_name(&mut self, name: String) {
+        self.circuit_name = name;
+    }
+
+    pub fn edit_grid(&self) -> Option<&EditGrid> { self.edit_grid.as_ref() }
 
     pub fn edit_grid_mut(&mut self) -> Option<&mut EditGrid> {
         self.edit_grid.as_mut()
@@ -98,7 +121,34 @@ impl GameState {
     pub fn clear_edit_grid(&mut self) { self.edit_grid = None; }
 
     pub fn new_edit_grid(&mut self) {
-        self.edit_grid = Some(EditGrid::new(self.current_puzzle()));
+        let puzzle = self.current_puzzle();
+        if let Some(ref profile) = self.profile {
+            let mut num: u64 = 1;
+            loop {
+                self.circuit_name = format!("Version {}", num);
+                if !profile.has_circuit_name(puzzle, &self.circuit_name) {
+                    break;
+                }
+                num += 1;
+            }
+        }
+        debug_log!("Creating new circuit {:?}", self.circuit_name);
+        self.edit_grid = Some(EditGrid::new(puzzle));
+    }
+
+    pub fn save_circuit(&mut self) -> Result<(), String> {
+        if let Some(ref mut profile) = self.profile {
+            if let Some(ref grid) = self.edit_grid {
+                let puzzle = profile.current_puzzle();
+                let circuit_data = grid.to_circuit_data();
+                profile.save_circuit(puzzle, &self.circuit_name, &circuit_data)
+            } else {
+                Err(format!("No current circuit for profile {:?}",
+                            profile.name()))
+            }
+        } else {
+            Err("No current profile".to_string())
+        }
     }
 }
 

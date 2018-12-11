@@ -19,6 +19,7 @@
 
 use cgmath::Matrix4;
 use num_integer::div_mod_floor;
+use std::borrow::Borrow;
 use tachy::font::Align;
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
@@ -46,30 +47,29 @@ pub struct ListView<T> {
 }
 
 impl<T: Clone + Eq> ListView<T> {
-    pub fn new(rect: Rect<i32>, current: &T, items: Vec<(T, String)>)
-               -> ListView<T> {
-        let num_items = items.len() as i32;
-        let total_height = num_items * (ITEM_HEIGHT + ITEM_SPACING) -
-            ITEM_SPACING;
-        let scroll_max = (total_height - rect.height).max(0);
-        let current_index =
-            items.iter().position(|(value, _)| value == current).unwrap_or(0);
-        let mid_current = (current_index as i32) *
-            (ITEM_HEIGHT + ITEM_SPACING) +
-            ITEM_HEIGHT / 2;
-        let scroll_top =
-            (mid_current - rect.height / 2).max(0).min(scroll_max);
-        ListView {
+    pub fn new<Q>(rect: Rect<i32>, current: &Q, items: Vec<(T, String)>)
+                  -> ListView<T>
+    where
+        Q: PartialEq + ?Sized,
+        T: Borrow<Q>,
+    {
+        let mut list = ListView {
             rect,
-            items,
-            scroll_top,
-            scroll_max,
+            items: Vec::new(),
+            scroll_top: 0,
+            scroll_max: 0,
             drag: None,
-        }
+        };
+        list.set_items(current, items);
+        list
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                current: &T) {
+    pub fn draw<Q>(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                   current: &Q)
+    where
+        Q: PartialEq + ?Sized,
+        T: Borrow<Q>,
+    {
         // Draw background and define clipping area:
         let stencil = Stencil::new();
         {
@@ -91,7 +91,7 @@ impl<T: Clone + Eq> ListView<T> {
             if top >= self.rect.bottom() || top + ITEM_HEIGHT <= self.rect.y {
                 continue;
             }
-            let color = if value == current {
+            let color = if value.borrow() == current {
                 (0.6, 0.1, 0.1)
             } else {
                 (0.1, 0.1, 0.6)
@@ -133,7 +133,11 @@ impl<T: Clone + Eq> ListView<T> {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event, current: &T) -> Option<T> {
+    pub fn handle_event<Q>(&mut self, event: &Event, current: &Q) -> Option<T>
+    where
+        Q: PartialEq + ?Sized,
+        T: Borrow<Q>,
+    {
         match event {
             Event::MouseDown(mouse)
                 if mouse.left && self.rect.contains_point(mouse.pt) => {
@@ -152,7 +156,7 @@ impl<T: Clone + Eq> ListView<T> {
                         (index as usize) < self.items.len()
                     {
                         let value = &self.items[index as usize].0;
-                        if value != current {
+                        if value.borrow() != current {
                             // TODO: Play sound
                             return Some(value.clone());
                         }
@@ -177,6 +181,27 @@ impl<T: Clone + Eq> ListView<T> {
             _ => {}
         }
         return None;
+    }
+
+    pub fn set_items<Q>(&mut self, current: &Q, items: Vec<(T, String)>)
+    where
+        Q: PartialEq + ?Sized,
+        T: Borrow<Q>,
+    {
+        let num_items = items.len() as i32;
+        let total_height = num_items * (ITEM_HEIGHT + ITEM_SPACING) -
+            ITEM_SPACING;
+        self.scroll_max = (total_height - self.rect.height).max(0);
+        let current_index = items
+            .iter()
+            .position(|(value, _)| value.borrow() == current)
+            .unwrap_or(0);
+        let mid_current = (current_index as i32) *
+            (ITEM_HEIGHT + ITEM_SPACING) +
+            ITEM_HEIGHT / 2;
+        self.scroll_top =
+            (mid_current - self.rect.height / 2).max(0).min(self.scroll_max);
+        self.items = items;
     }
 
     pub fn unfocus(&mut self) { self.drag = None; }

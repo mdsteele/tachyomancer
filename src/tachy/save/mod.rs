@@ -17,16 +17,19 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod circuit;
 mod dir;
+mod encode;
 mod menu;
 mod prefs;
 mod profile;
 mod puzzle;
 
-pub use self::dir::{ProfileNames, SaveDir};
+pub use self::circuit::CircuitData;
+pub use self::dir::{ProfileNamesIter, SaveDir};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
-pub use self::profile::Profile;
-pub use self::puzzle::{Puzzle, PuzzleKind};
+pub use self::profile::{CircuitNamesIter, Profile};
+pub use self::puzzle::{AllPuzzlesIter, Puzzle, PuzzleKind};
 
 //===========================================================================//

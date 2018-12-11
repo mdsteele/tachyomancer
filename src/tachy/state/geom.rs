@@ -18,7 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{BaseNum, Deg, Matrix4, Point2, Vector2, vec2};
+use std::fmt;
 use std::ops;
+use std::str;
 
 //===========================================================================//
 
@@ -187,6 +189,32 @@ impl Direction {
     }
 }
 
+impl fmt::Display for Direction {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let string = match self {
+            Direction::East => "e",
+            Direction::South => "s",
+            Direction::West => "w",
+            Direction::North => "n",
+        };
+        formatter.write_str(string)
+    }
+}
+
+impl str::FromStr for Direction {
+    type Err = String;
+
+    fn from_str(string: &str) -> Result<Direction, String> {
+        match string {
+            "e" => Ok(Direction::East),
+            "s" => Ok(Direction::South),
+            "w" => Ok(Direction::West),
+            "n" => Ok(Direction::North),
+            _ => Err(string.to_string()),
+        }
+    }
+}
+
 impl ops::Add<Direction> for Coords {
     type Output = Coords;
 
@@ -296,6 +324,32 @@ impl Default for Orientation {
     }
 }
 
+impl fmt::Display for Orientation {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let mirror = if self.mirror { 't' } else { 'f' };
+        formatter.write_fmt(format_args!("{}{}", mirror, self.rotate))
+    }
+}
+
+impl str::FromStr for Orientation {
+    type Err = String;
+
+    fn from_str(string: &str) -> Result<Orientation, String> {
+        let (mirror, rotate) = match string {
+            "f0" => (false, 0),
+            "f1" => (false, 1),
+            "f2" => (false, 2),
+            "f3" => (false, 3),
+            "t0" => (true, 0),
+            "t1" => (true, 1),
+            "t2" => (true, 2),
+            "t3" => (true, 3),
+            _ => return Err(string.to_string()),
+        };
+        Ok(Orientation { rotate, mirror })
+    }
+}
+
 impl ops::Mul<Orientation> for Orientation {
     type Output = Orientation;
 
@@ -370,6 +424,12 @@ mod tests {
     }
 
     #[test]
+    fn direction_to_and_from_string() {
+        assert_eq!(Direction::South.to_string(), "s".to_string());
+        assert_eq!("s".parse(), Ok(Direction::South));
+    }
+
+    #[test]
     fn direction_add_sub_neg() {
         let coords = Coords { x: 3, y: -4 };
         for &dir in Direction::all() {
@@ -378,6 +438,21 @@ mod tests {
             assert_eq!(coords + dir, coords - opp);
             assert_eq!(coords - dir, coords + opp);
         }
+    }
+
+    #[test]
+    fn orientation_to_and_from_string() {
+        let orient = Orientation::default();
+        assert_eq!(orient.to_string(), "f0".to_string());
+        assert_eq!("f0".parse(), Ok(orient));
+
+        let orient = Orientation::default().rotate_ccw();
+        assert_eq!(orient.to_string(), "f3".to_string());
+        assert_eq!("f3".parse(), Ok(orient));
+
+        let orient = Orientation::default().flip_horz();
+        assert_eq!(orient.to_string(), "t2".to_string());
+        assert_eq!("t2".parse(), Ok(orient));
     }
 
     #[test]

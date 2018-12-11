@@ -26,6 +26,8 @@ use tachy::state::{GameState, Rect};
 
 //===========================================================================//
 
+const CIRCUIT_LIST_WIDTH: i32 = 200;
+const ELEMENT_SPACING: i32 = 18;
 const PUZZLE_LIST_WIDTH: i32 = 250;
 
 //===========================================================================//
@@ -38,28 +40,32 @@ pub enum PuzzlesAction {
 
 pub struct PuzzlesView {
     puzzle_list: ListView<Puzzle>,
+    circuit_list: ListView<String>,
     edit_button: EditButton,
 }
 
 impl PuzzlesView {
     pub fn new(rect: Rect<i32>, state: &GameState) -> PuzzlesView {
-        let puzzles = vec![
-            Puzzle::TutorialOr,
-            Puzzle::AutomateHeliostat,
-            Puzzle::SandboxBehavior,
-            Puzzle::SandboxEvent,
-        ];
-        let list_items = puzzles
-            .into_iter()
+        // TODO: Filter puzzles based on what's unlocked
+        let puzzle_list_items = Puzzle::all()
             .map(|puzzle| (puzzle, puzzle.title().to_string()))
             .collect();
+        let circuit_list_height = (rect.height - ELEMENT_SPACING) / 2;
         PuzzlesView {
             puzzle_list: ListView::new(Rect::new(rect.x,
                                                  rect.y,
                                                  PUZZLE_LIST_WIDTH,
                                                  rect.height),
                                        &state.current_puzzle(),
-                                       list_items),
+                                       puzzle_list_items),
+            circuit_list: ListView::new(Rect::new(rect.x + PUZZLE_LIST_WIDTH +
+                                                      ELEMENT_SPACING,
+                                                  rect.bottom() -
+                                                      circuit_list_height,
+                                                  CIRCUIT_LIST_WIDTH,
+                                                  circuit_list_height),
+                                        state.circuit_name(),
+                                        circuit_list_items(state)),
             edit_button: EditButton::new(Rect::new(rect.right() - 80,
                                                    rect.bottom() - 40,
                                                    80,
@@ -70,6 +76,7 @@ impl PuzzlesView {
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 state: &GameState) {
         self.puzzle_list.draw(resources, matrix, &state.current_puzzle());
+        self.circuit_list.draw(resources, matrix, state.circuit_name());
         self.edit_button.draw(resources, matrix);
     }
 
@@ -79,6 +86,13 @@ impl PuzzlesView {
             self.puzzle_list.handle_event(event, &state.current_puzzle())
         {
             state.set_current_puzzle(puzzle);
+            self.circuit_list
+                .set_items(state.circuit_name(), circuit_list_items(state));
+        }
+        if let Some(circuit_name) =
+            self.circuit_list.handle_event(event, state.circuit_name())
+        {
+            state.set_circuit_name(circuit_name);
         }
         if let Some(action) = self.edit_button.handle_event(event) {
             return Some(action);
@@ -86,7 +100,21 @@ impl PuzzlesView {
         return None;
     }
 
-    pub fn unfocus(&mut self) { self.puzzle_list.unfocus(); }
+    pub fn unfocus(&mut self) {
+        self.puzzle_list.unfocus();
+        self.circuit_list.unfocus();
+    }
+}
+
+fn circuit_list_items(state: &GameState) -> Vec<(String, String)> {
+    if let Some(profile) = state.profile() {
+        profile
+            .circuit_names(profile.current_puzzle())
+            .map(|name| (name.to_string(), name.to_string()))
+            .collect()
+    } else {
+        Vec::new()
+    }
 }
 
 //===========================================================================//

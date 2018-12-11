@@ -31,7 +31,7 @@ pub enum PuzzleKind {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum Puzzle {
     TutorialOr,
     AutomateHeliostat,
@@ -39,9 +39,19 @@ pub enum Puzzle {
     SandboxEvent,
 }
 
+const ALL_PUZZLES: &[Puzzle] = &[
+    Puzzle::TutorialOr,
+    Puzzle::AutomateHeliostat,
+    Puzzle::SandboxBehavior,
+    Puzzle::SandboxEvent,
+];
+
 impl Puzzle {
     /// Returns the first puzzle in the game, which is always unlocked.
     pub fn first() -> Puzzle { Puzzle::TutorialOr }
+
+    /// Returns an iterator over all puzzles.
+    pub fn all() -> AllPuzzlesIter { AllPuzzlesIter { index: 0 } }
 
     #[allow(dead_code)]
     pub fn title(self) -> &'static str { self.data().title }
@@ -101,6 +111,26 @@ struct PuzzleData {
     kind: PuzzleKind,
     instructions: &'static str,
     allow_events: bool,
+}
+
+//===========================================================================//
+
+pub struct AllPuzzlesIter {
+    index: usize,
+}
+
+impl<'a> Iterator for AllPuzzlesIter {
+    type Item = Puzzle;
+
+    fn next(&mut self) -> Option<Puzzle> {
+        if self.index < ALL_PUZZLES.len() {
+            let puzzle = ALL_PUZZLES[self.index];
+            self.index += 1;
+            Some(puzzle)
+        } else {
+            None
+        }
+    }
 }
 
 //===========================================================================//

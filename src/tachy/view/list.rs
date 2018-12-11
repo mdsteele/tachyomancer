@@ -21,9 +21,9 @@ use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use std::borrow::Borrow;
 use tachy::font::Align;
+use tachy::geom::Rect;
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
-use tachy::state::Rect;
 
 //===========================================================================//
 

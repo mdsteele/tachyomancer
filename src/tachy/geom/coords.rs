@@ -17,18 +17,17 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-#[macro_use]
-mod macros;
+use super::rect::{Rect, RectSize};
+use cgmath::{Point2, Vector2};
 
-pub mod font;
-pub mod geom;
-pub mod gl;
-pub mod gui;
-pub mod mode;
-pub mod save;
-pub mod shader;
-pub mod state;
-pub mod texture;
-pub mod view;
+//===========================================================================//
+
+pub type Coords = Point2<i32>;
+
+pub type CoordsDelta = Vector2<i32>;
+
+pub type CoordsRect = Rect<i32>;
+
+pub type CoordsSize = RectSize<i32>;
 
 //===========================================================================//

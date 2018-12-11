@@ -19,8 +19,9 @@
 
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
+use tachy::geom::RectSize;
 use tachy::gui::{AudioQueue, Event, Keycode, Resources};
-use tachy::state::{GameState, RectSize};
+use tachy::state::GameState;
 
 //===========================================================================//
 

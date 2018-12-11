@@ -17,8 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::geom::{Coords, Direction};
 use super::size::WireSize;
+use tachy::geom::{Coords, Direction};
 
 //===========================================================================//
 

@@ -20,9 +20,10 @@
 use super::prefs::{PrefsAction, PrefsView};
 use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
+use tachy::geom::{Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Resources, Sound};
 use tachy::save::MenuSection;
-use tachy::state::{GameState, Rect, RectSize};
+use tachy::state::GameState;
 
 //===========================================================================//
 

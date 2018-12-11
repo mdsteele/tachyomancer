@@ -23,10 +23,10 @@ use super::parts::{PartsAction, PartsTray};
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
 use num_integer::{div_floor, mod_floor};
+use tachy::geom::{Coords, CoordsRect, Direction, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::{Puzzle, WireShape};
-use tachy::state::{ChipType, Coords, CoordsRect, Direction, EditGrid,
-                   EvalResult, GridChange, Orientation, Rect, RectSize};
+use tachy::state::{ChipType, EditGrid, EvalResult, GridChange};
 
 //===========================================================================//
 

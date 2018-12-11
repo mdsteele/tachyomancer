@@ -17,18 +17,14 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-#[macro_use]
-mod macros;
+mod coords;
+mod dir;
+mod orient;
+mod rect;
 
-pub mod font;
-pub mod geom;
-pub mod gl;
-pub mod gui;
-pub mod mode;
-pub mod save;
-pub mod shader;
-pub mod state;
-pub mod texture;
-pub mod view;
+pub use self::coords::{Coords, CoordsDelta, CoordsRect, CoordsSize};
+pub use self::dir::{AllDirectionsIter, Direction};
+pub use self::orient::Orientation;
+pub use self::rect::{Rect, RectSize};
 
 //===========================================================================//

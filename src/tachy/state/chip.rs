@@ -18,14 +18,14 @@
 // +--------------------------------------------------------------------------+
 
 use super::eval::{self, ChipEval, CircuitInteraction};
-use super::geom::{Coords, CoordsSize, Orientation};
-use super::geom::Direction::{self, East, North, South, West};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
                   PortSpec};
 use super::size::WireSize;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::str;
+use tachy::geom::{Coords, CoordsSize, Orientation};
+use tachy::geom::Direction::{self, East, North, South, West};
 use tachy::save::{Puzzle, PuzzleKind};
 
 //===========================================================================//

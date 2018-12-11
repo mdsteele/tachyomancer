@@ -20,9 +20,10 @@
 use super::list::ListView;
 use cgmath::Matrix4;
 use tachy::font::Align;
+use tachy::geom::Rect;
 use tachy::gui::{Event, Resources};
 use tachy::save::Puzzle;
-use tachy::state::{GameState, Rect};
+use tachy::state::GameState;
 
 //===========================================================================//
 

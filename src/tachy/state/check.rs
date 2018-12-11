@@ -17,13 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::geom::{Coords, Direction};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::size::{WireSize, WireSizeInterval};
 use indexmap::IndexMap;
 use pathfinding::prelude::{strongly_connected_components,
                            topological_sort_into_groups};
 use std::collections::{HashMap, HashSet};
+use tachy::geom::{Coords, Direction};
 use tachy::save::WireShape;
 
 //===========================================================================//

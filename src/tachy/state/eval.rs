@@ -17,12 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::geom::{Coords, Direction};
 use super::size::WireSize;
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
+use tachy::geom::{Coords, Direction};
 
 //===========================================================================//
 

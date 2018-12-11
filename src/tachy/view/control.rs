@@ -18,9 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{Matrix4, vec3};
+use tachy::geom::{Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::Puzzle;
-use tachy::state::{Rect, RectSize};
 
 //===========================================================================//
 

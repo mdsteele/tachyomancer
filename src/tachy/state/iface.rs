@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction};
 use super::port::{PortColor, PortConstraint, PortFlow, PortSpec};
 use super::size::WireSize;
+use tachy::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction};
 use tachy::save::Puzzle;
 
 //===========================================================================//

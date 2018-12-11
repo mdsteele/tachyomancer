@@ -19,9 +19,10 @@
 
 use cgmath::{Matrix4, vec2, vec3};
 use tachy::font::Align;
+use tachy::geom::{Coords, CoordsSize, Orientation};
 use tachy::gui::Resources;
-use tachy::state::{ChipType, Coords, CoordsSize, EditGrid, Interface,
-                   Orientation, PortColor, PortFlow, PortSpec};
+use tachy::state::{ChipType, EditGrid, Interface, PortColor, PortFlow,
+                   PortSpec};
 
 //===========================================================================//
 

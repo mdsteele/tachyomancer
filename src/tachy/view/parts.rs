@@ -20,9 +20,10 @@
 use cgmath::{Matrix4, Point2, vec3};
 use num_integer::div_mod_floor;
 use tachy::font::Align;
+use tachy::geom::{Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::Puzzle;
-use tachy::state::{ChipType, Rect, RectSize};
+use tachy::state::ChipType;
 
 //===========================================================================//
 

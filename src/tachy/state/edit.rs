@@ -20,8 +20,6 @@
 use super::check::{self, WireColor, WireError, WireInfo};
 use super::chip::ChipType;
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
-use super::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
-                  Orientation, Rect};
 use super::iface::{Interface, puzzle_interfaces};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::new_puzzle_eval;
@@ -30,6 +28,8 @@ use std::collections::{HashMap, hash_map};
 use std::i32;
 use std::mem;
 use std::usize;
+use tachy::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
+                  Orientation, Rect};
 use tachy::save::{CircuitData, Puzzle, WireShape};
 
 //===========================================================================//

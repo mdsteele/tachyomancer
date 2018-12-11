@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{Matrix4, Vector2, Vector3, Vector4, vec3};
+use tachy::geom::Rect;
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 VertexArray, VertexBuffer};
 
@@ -190,11 +191,12 @@ impl SolidShader {
     }
 
     pub fn fill_rect(&self, matrix: &Matrix4<f32>, color: (f32, f32, f32),
-                     (left, top, width, height): (f32, f32, f32, f32)) {
+                     rect: Rect<f32>) {
         self.program.bind();
         self.color.set(&color.into());
-        let mvp = matrix * Matrix4::from_translation(vec3(left, top, 0.0)) *
-            Matrix4::from_nonuniform_scale(width, height, 1.0);
+        let mvp = matrix *
+            Matrix4::from_translation(vec3(rect.x, rect.y, 0.0)) *
+            Matrix4::from_nonuniform_scale(rect.width, rect.height, 1.0);
         self.mvp.set(&mvp);
         self.varray.bind();
         self.rect_vbuffer.attribf(0, 3, 0, 0);

@@ -19,7 +19,7 @@
 
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
-use tachy::geom::RectSize;
+use tachy::geom::{Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources};
 use tachy::state::GameState;
 
@@ -49,12 +49,11 @@ impl BeginView {
     pub fn draw(&self, resources: &Resources, _state: &GameState) {
         let projection =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
-        resources.shaders().solid().fill_rect(&projection,
-                                              (0.1, 0.1, 0.1),
-                                              (0.0,
-                                               0.0,
-                                               self.width,
-                                               self.height));
+        let rect = Rect::new(0.0, 0.0, self.width, self.height);
+        resources
+            .shaders()
+            .solid()
+            .fill_rect(&projection, (0.1, 0.1, 0.1), rect);
         resources.fonts().roman().draw(&projection,
                                        40.0,
                                        Align::Center,

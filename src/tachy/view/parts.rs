@@ -94,15 +94,10 @@ impl PartsTray {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let x = self.rect.x as f32;
-        let y = self.rect.y as f32;
-        let w = self.rect.width as f32;
-        let h = self.rect.height as f32;
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(matrix, (0.0, 0.5, 0.0), (x, y, w, h));
-        let matrix = matrix * Matrix4::from_translation(vec3(x, y, 0.0));
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(matrix, (0.0, 0.5, 0.0), rect);
+        let matrix = matrix *
+            Matrix4::from_translation(vec3(rect.x, rect.y, 0.0));
         for part in self.parts.iter() {
             part.draw(resources, &matrix);
         }
@@ -152,18 +147,13 @@ impl Part {
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let x = self.rect.x as f32;
-        let y = self.rect.y as f32;
-        let w = self.rect.width as f32;
-        let h = self.rect.height as f32;
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(matrix, (0.75, 0.0, 0.0), (x, y, w, h));
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(matrix, (0.75, 0.0, 0.0), rect);
         resources.fonts().roman().draw(matrix,
                                        20.0,
                                        Align::Center,
-                                       (x + 0.5 * w, y + 0.5 * h - 10.0),
+                                       (rect.x + 0.5 * rect.width,
+                                        rect.y + 0.5 * rect.height - 10.0),
                                        &format!("{:?}", self.ctype));
     }
 }

@@ -98,19 +98,13 @@ impl NewButton {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let color = (0.7, 0.1, 0.1);
-        let rect = (self.rect.x as f32,
-                    self.rect.y as f32,
-                    self.rect.width as f32,
-                    self.rect.height as f32);
+        let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         resources.fonts().roman().draw(&matrix,
                                        20.0,
                                        Align::Center,
-                                       ((self.rect.x as f32) +
-                                            0.5 * (self.rect.width as f32),
-                                        (self.rect.y as f32) +
-                                            0.5 * (self.rect.height as f32) -
-                                            10.0),
+                                       (rect.x + 0.5 * rect.width,
+                                        rect.y + 0.5 * rect.height - 10.0),
                                        "New Profile");
     }
 

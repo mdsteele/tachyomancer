@@ -84,12 +84,11 @@ impl MenuView {
     pub fn draw(&self, resources: &Resources, state: &GameState) {
         let projection =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
-        resources.shaders().solid().fill_rect(&projection,
-                                              (0.2, 0.1, 0.2),
-                                              (0.0,
-                                               0.0,
-                                               self.width,
-                                               self.height));
+        let rect = Rect::new(0.0, 0.0, self.width, self.height);
+        resources
+            .shaders()
+            .solid()
+            .fill_rect(&projection, (0.2, 0.1, 0.2), rect);
         for button in self.section_buttons.iter() {
             button.draw(resources, &projection, state.menu_section());
         }
@@ -174,11 +173,10 @@ impl SectionButton {
         } else {
             (0.0, 0.25, 0.0)
         };
-        let rect = (self.rect.x as f32,
-                    self.rect.y as f32,
-                    self.rect.width as f32,
-                    self.rect.height as f32);
-        resources.shaders().solid().fill_rect(matrix, color, rect);
+        resources
+            .shaders()
+            .solid()
+            .fill_rect(matrix, color, self.rect.as_f32());
     }
 
     fn handle_event(&mut self, event: &Event, current_section: MenuSection,

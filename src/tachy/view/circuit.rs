@@ -253,13 +253,13 @@ impl EditGridView {
         } else {
             (1.0, 0.0, 0.0)
         };
-        let rect = (x - thick, y, thick, height);
+        let rect = Rect::new(x - thick, y, thick, height);
         resources.shaders().solid().fill_rect(&matrix, color, rect);
-        let rect = (x, y - thick, width, thick);
+        let rect = Rect::new(x, y - thick, width, thick);
         resources.shaders().solid().fill_rect(&matrix, color, rect);
-        let rect = (x + width, y, thick, height);
+        let rect = Rect::new(x + width, y, thick, height);
         resources.shaders().solid().fill_rect(&matrix, color, rect);
-        let rect = (x, y + height, width, thick);
+        let rect = Rect::new(x, y + height, width, thick);
         resources.shaders().solid().fill_rect(&matrix, color, rect);
     }
 

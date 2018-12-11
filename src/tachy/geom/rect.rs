@@ -87,6 +87,15 @@ impl<T: BaseNum> Rect<T> {
     }
 }
 
+impl Rect<i32> {
+    pub fn as_f32(&self) -> Rect<f32> {
+        Rect::new(self.x as f32,
+                  self.y as f32,
+                  self.width as f32,
+                  self.height as f32)
+    }
+}
+
 impl<T: BaseNum> ops::Mul<T> for Rect<T> {
     type Output = Rect<T>;
 

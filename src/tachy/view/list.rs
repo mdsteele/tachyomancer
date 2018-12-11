@@ -74,11 +74,10 @@ impl<T: Clone + Eq> ListView<T> {
         let stencil = Stencil::new();
         {
             let color = (0.1, 0.1, 0.1);
-            let rect = (self.rect.x as f32,
-                        self.rect.y as f32,
-                        self.rect.width as f32,
-                        self.rect.height as f32);
-            resources.shaders().solid().fill_rect(&matrix, color, rect);
+            resources
+                .shaders()
+                .solid()
+                .fill_rect(&matrix, color, self.rect.as_f32());
         }
         stencil.enable_clipping();
 
@@ -96,10 +95,10 @@ impl<T: Clone + Eq> ListView<T> {
             } else {
                 (0.1, 0.1, 0.6)
             };
-            let rect = (self.rect.x as f32,
-                        top as f32,
-                        item_width as f32,
-                        ITEM_HEIGHT as f32);
+            let rect = Rect::new(self.rect.x as f32,
+                                 top as f32,
+                                 item_width as f32,
+                                 ITEM_HEIGHT as f32);
             resources.shaders().solid().fill_rect(&matrix, color, rect);
             resources.fonts().roman().draw(&matrix,
                                            FONT_SIZE,
@@ -115,21 +114,20 @@ impl<T: Clone + Eq> ListView<T> {
         // Draw scrollbar:
         if let Some(handle_rect) = self.scroll_handle_rect() {
             let color = (0.3, 0.1, 0.3);
-            let rect = ((self.rect.right() - SCROLLBAR_WIDTH) as f32,
-                        self.rect.y as f32,
-                        SCROLLBAR_WIDTH as f32,
-                        self.rect.height as f32);
+            let rect = Rect::new((self.rect.right() - SCROLLBAR_WIDTH) as f32,
+                                 self.rect.y as f32,
+                                 SCROLLBAR_WIDTH as f32,
+                                 self.rect.height as f32);
             resources.shaders().solid().fill_rect(&matrix, color, rect);
             let color = if self.drag.is_some() {
                 (0.9, 0.6, 0.9)
             } else {
                 (0.9, 0.1, 0.9)
             };
-            let rect = (handle_rect.x as f32,
-                        handle_rect.y as f32,
-                        handle_rect.width as f32,
-                        handle_rect.height as f32);
-            resources.shaders().solid().fill_rect(&matrix, color, rect);
+            resources
+                .shaders()
+                .solid()
+                .fill_rect(&matrix, color, handle_rect.as_f32());
         }
     }
 

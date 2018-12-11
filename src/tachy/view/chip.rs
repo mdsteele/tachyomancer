@@ -19,7 +19,7 @@
 
 use cgmath::{Matrix4, vec2, vec3};
 use tachy::font::Align;
-use tachy::geom::{Coords, CoordsSize, Orientation};
+use tachy::geom::{Coords, CoordsSize, Orientation, Rect};
 use tachy::gui::Resources;
 use tachy::state::{ChipType, EditGrid, Interface, PortColor, PortFlow,
                    PortSpec};
@@ -61,7 +61,7 @@ impl ChipModel {
         let width = size.width as f32 - 2.0 * MARGIN;
         let height = size.height as f32 - 2.0 * MARGIN;
         let color = (0.3, 0.3, 0.3);
-        let rect = (MARGIN, MARGIN, width, height);
+        let rect = Rect::new(MARGIN, MARGIN, width, height);
         resources.shaders().solid().fill_rect(matrix, color, rect);
     }
 
@@ -169,7 +169,7 @@ impl ChipModel {
             (PortColor::Event, PortFlow::Send) => (0.0, 1.0, 1.0),
             (PortColor::Event, PortFlow::Recv) => (0.0, 0.0, 1.0),
         };
-        let rect = (0.5 - MARGIN, -0.3, 0.5 * MARGIN, 0.6);
+        let rect = Rect::new(0.5 - MARGIN, -0.3, 0.5 * MARGIN, 0.6);
         resources.shaders().solid().fill_rect(&mat, color, rect);
     }
 }

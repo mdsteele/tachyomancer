@@ -219,6 +219,20 @@ impl Profile {
         }
     }
 
+    pub fn load_circuit(&self, puzzle: Puzzle, circuit_name: &str)
+                        -> Result<CircuitData, String> {
+        if !self.has_circuit_name(puzzle, circuit_name) {
+            return Err(format!("No such circuit: {:?}", circuit_name));
+        }
+        let puzzle_path = self.base_path.join(format!("{:?}", puzzle));
+        let circuit_path =
+            puzzle_path.join(encode_name(circuit_name)).with_extension("toml");
+        debug_log!("Loading circuit {:?} from {:?}",
+                   circuit_name,
+                   circuit_path);
+        CircuitData::load(&circuit_path)
+    }
+
     pub fn save_circuit(&mut self, puzzle: Puzzle, circuit_name: &str,
                         data: &CircuitData)
                         -> Result<(), String> {

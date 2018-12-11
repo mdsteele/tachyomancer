@@ -32,13 +32,20 @@ pub struct GameState {
 
 impl GameState {
     pub fn new(savedir: SaveDir) -> Result<GameState, String> {
-        let profile = savedir.load_current_profile_if_any()?;
+        let opt_profile = savedir.load_current_profile_if_any()?;
         let menu_section = MenuSection::Navigation;
+        let mut circuit_name = String::new();
+        if let Some(ref profile) = opt_profile {
+            let puzzle = profile.current_puzzle();
+            if let Some(name) = profile.circuit_names(puzzle).next() {
+                circuit_name = name.to_string();
+            }
+        }
         let state = GameState {
             savedir,
             menu_section,
-            profile,
-            circuit_name: String::new(),
+            profile: opt_profile,
+            circuit_name,
             edit_grid: None,
         };
         Ok(state)
@@ -46,6 +53,13 @@ impl GameState {
 
     pub fn save(&mut self) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
+            if let Some(ref grid) = self.edit_grid {
+                // TODO: Only save circuit if there have been changes
+                let puzzle = profile.current_puzzle();
+                let circuit_data = grid.to_circuit_data();
+                profile
+                    .save_circuit(puzzle, &self.circuit_name, &circuit_data)?;
+            }
             profile.save()?;
         }
         // TODO: save prefs if necessary
@@ -136,18 +150,14 @@ impl GameState {
         self.edit_grid = Some(EditGrid::new(puzzle));
     }
 
-    pub fn save_circuit(&mut self) -> Result<(), String> {
-        if let Some(ref mut profile) = self.profile {
-            if let Some(ref grid) = self.edit_grid {
-                let puzzle = profile.current_puzzle();
-                let circuit_data = grid.to_circuit_data();
-                profile.save_circuit(puzzle, &self.circuit_name, &circuit_data)
-            } else {
-                Err(format!("No current circuit for profile {:?}",
-                            profile.name()))
-            }
+    pub fn load_edit_grid(&mut self) -> Result<(), String> {
+        if let Some(ref profile) = self.profile {
+            let puzzle = profile.current_puzzle();
+            let data = profile.load_circuit(puzzle, &self.circuit_name)?;
+            self.edit_grid = Some(EditGrid::from_circuit_data(puzzle, &data));
+            Ok(())
         } else {
-            Err("No current profile".to_string())
+            Err("No profile loaded".to_string())
         }
     }
 }

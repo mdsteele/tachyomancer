@@ -35,7 +35,16 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
                 match view.handle_event(&event, state, &mut audio) {
-                    Some(MenuAction::EditPuzzle) => {
+                    Some(MenuAction::EditCircuit) => {
+                        match state.load_edit_grid() {
+                            Ok(()) => return ModeChange::Next,
+                            Err(err) => {
+                                // TODO: display error to user; don't panic
+                                panic!("EditCircuit failed: {:?}", err);
+                            }
+                        }
+                    }
+                    Some(MenuAction::NewCircuit) => {
                         state.new_edit_grid();
                         return ModeChange::Next;
                     }

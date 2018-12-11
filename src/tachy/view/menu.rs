@@ -40,7 +40,8 @@ const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
 //===========================================================================//
 
 pub enum MenuAction {
-    EditPuzzle,
+    EditCircuit,
+    NewCircuit,
     NewProfile,
     SwitchProfile(String),
 }
@@ -109,7 +110,10 @@ impl MenuView {
             MenuSection::Puzzles => {
                 match self.puzzles_view.handle_event(event, state) {
                     Some(PuzzlesAction::Edit) => {
-                        return Some(MenuAction::EditPuzzle);
+                        return Some(MenuAction::EditCircuit);
+                    }
+                    Some(PuzzlesAction::New) => {
+                        return Some(MenuAction::NewCircuit);
                     }
                     None => {}
                 }

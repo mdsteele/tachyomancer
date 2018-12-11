@@ -27,6 +27,7 @@ use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::new_puzzle_eval;
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
+use std::i32;
 use std::mem;
 use std::usize;
 use tachy::save::{CircuitData, Puzzle, WireShape};
@@ -94,6 +95,135 @@ impl EditGrid {
         grid
     }
 
+    pub fn from_circuit_data(puzzle: Puzzle, data: &CircuitData) -> EditGrid {
+        let mut grid = EditGrid {
+            puzzle,
+            bounds: Rect::new(data.bounds.0,
+                              data.bounds.1,
+                              data.bounds.2,
+                              data.bounds.3),
+            interfaces: puzzle_interfaces(puzzle),
+            fragments: HashMap::new(),
+            chips: HashMap::new(),
+            wires: Vec::new(),
+            wires_for_ports: HashMap::new(),
+            wire_groups: Vec::new(),
+            errors: Vec::new(),
+            eval: None,
+        };
+
+        // Chips:
+        for (coords_str, chip_str) in data.chips.iter() {
+            if let Some(coords) = key_string_coords(coords_str) {
+                let mut items = chip_str.splitn(2, '-');
+                if let Some(orient_str) = items.next() {
+                    if let Ok(orient) = orient_str.parse::<Orientation>() {
+                        if let Some(ctype_str) = items.next() {
+                            if let Ok(ctype) = ctype_str.parse::<ChipType>() {
+                                let change = GridChange::ToggleChip(coords,
+                                                                    orient,
+                                                                    ctype);
+                                grid.mutate_one(&change);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Wires:
+        for (loc_str, &shape) in data.wires.iter() {
+            if let Some((coords, dir)) = key_string_location(loc_str) {
+                if grid.has_frag(coords, dir) {
+                    continue;
+                }
+                match shape {
+                    WireShape::Stub => {
+                        grid.set_frag(coords, dir, WireShape::Stub);
+                    }
+                    WireShape::Straight => {
+                        if !grid.has_frag(coords, -dir) {
+                            grid.set_frag(coords, dir, WireShape::Straight);
+                            grid.set_frag(coords, -dir, WireShape::Straight);
+                        }
+                    }
+                    WireShape::TurnLeft => {
+                        let dir2 = dir.rotate_cw();
+                        if !grid.has_frag(coords, dir2) {
+                            grid.set_frag(coords, dir, WireShape::TurnLeft);
+                            grid.set_frag(coords, dir2, WireShape::TurnRight);
+                        }
+                    }
+                    WireShape::TurnRight => {
+                        let dir2 = dir.rotate_ccw();
+                        if !grid.has_frag(coords, dir2) {
+                            grid.set_frag(coords, dir, WireShape::TurnRight);
+                            grid.set_frag(coords, dir2, WireShape::TurnLeft);
+                        }
+                    }
+                    WireShape::SplitTee => {
+                        let dir2 = dir.rotate_cw();
+                        let dir3 = dir.rotate_ccw();
+                        if !grid.has_frag(coords, dir2) &&
+                            !grid.has_frag(coords, dir3)
+                        {
+                            grid.set_frag(coords, dir, WireShape::SplitTee);
+                            grid.set_frag(coords, dir2, WireShape::SplitRight);
+                            grid.set_frag(coords, dir3, WireShape::SplitLeft);
+                        }
+                    }
+                    WireShape::SplitLeft => {
+                        let dir2 = dir.rotate_cw();
+                        let dir3 = -dir;
+                        if !grid.has_frag(coords, dir2) &&
+                            !grid.has_frag(coords, dir3)
+                        {
+                            grid.set_frag(coords, dir, WireShape::SplitLeft);
+                            grid.set_frag(coords, dir2, WireShape::SplitTee);
+                            grid.set_frag(coords, dir3, WireShape::SplitRight);
+                        }
+                    }
+                    WireShape::SplitRight => {
+                        let dir2 = dir.rotate_ccw();
+                        let dir3 = -dir;
+                        if !grid.has_frag(coords, dir2) &&
+                            !grid.has_frag(coords, dir3)
+                        {
+                            grid.set_frag(coords, dir, WireShape::SplitRight);
+                            grid.set_frag(coords, dir2, WireShape::SplitTee);
+                            grid.set_frag(coords, dir3, WireShape::SplitLeft);
+                        }
+                    }
+                    WireShape::Cross => {
+                        if !grid.has_frag(coords, -dir) &&
+                            !grid.has_frag(coords, dir.rotate_cw()) &&
+                            !grid.has_frag(coords, dir.rotate_ccw())
+                        {
+                            for d in Direction::all() {
+                                grid.set_frag(coords, d, WireShape::Cross);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Repair broken fragments:
+        let mut missing = Vec::new();
+        for (&(coords, dir), _) in grid.fragments.iter() {
+            let loc = (coords + dir, -dir);
+            if !grid.fragments.contains_key(&loc) {
+                missing.push(loc);
+            }
+        }
+        for loc in missing {
+            grid.fragments.insert(loc, (WireShape::Stub, usize::MAX));
+        }
+
+        grid.typecheck_wires();
+        grid
+    }
+
     pub fn to_circuit_data(&self) -> CircuitData {
         let mut data = CircuitData::new(self.bounds.x,
                                         self.bounds.y,
@@ -105,7 +235,19 @@ impl EditGrid {
         }
         for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
             match (shape, dir) {
-                (WireShape::Stub, _) |
+                (WireShape::Stub, _) => {
+                    // Exclude stubs that can be inferred in from_circuit_data.
+                    match self.fragments.get(&(coords + dir, -dir)) {
+                        Some(&(WireShape::Stub, _)) => {
+                            match dir {
+                                Direction::East | Direction::South => {}
+                                Direction::West | Direction::North => continue,
+                            }
+                        }
+                        Some(&(_, _)) => continue,
+                        None => unreachable!(),
+                    }
+                }
                 (WireShape::Straight, Direction::East) |
                 (WireShape::Straight, Direction::South) |
                 (WireShape::TurnLeft, _) |
@@ -118,8 +260,7 @@ impl EditGrid {
                 (WireShape::SplitRight, _) |
                 (WireShape::Cross, _) => continue,
             }
-            data.wires.insert(format!("{}{}", coords_key_string(coords), dir),
-                              shape);
+            data.wires.insert(location_key_string(coords, dir), shape);
         }
         data
     }
@@ -271,7 +412,7 @@ impl EditGrid {
                          self.wire_shape_at(coords, -dir),
                          self.wire_shape_at(coords, dir.rotate_cw())) {
                     (Some(WireShape::Stub), Some(WireShape::SplitTee), _) => {
-                        for &dir in Direction::all() {
+                        for dir in Direction::all() {
                             self.set_frag(coords, dir, WireShape::Cross);
                         }
                     }
@@ -337,7 +478,7 @@ impl EditGrid {
             GridChange::ToggleCrossWire(coords) => {
                 match self.wire_shape_at(coords, Direction::East) {
                     Some(WireShape::Cross) => {
-                        for &dir in Direction::all() {
+                        for dir in Direction::all() {
                             self.set_frag(coords, dir, WireShape::Straight);
                         }
                     }
@@ -345,7 +486,7 @@ impl EditGrid {
                         if self.wire_shape_at(coords, Direction::South) ==
                             Some(WireShape::Straight)
                         {
-                            for &dir in Direction::all() {
+                            for dir in Direction::all() {
                                 self.set_frag(coords, dir, WireShape::Cross);
                             }
                         }
@@ -397,6 +538,10 @@ impl EditGrid {
                 }
             }
         }
+    }
+
+    fn has_frag(&self, coords: Coords, dir: Direction) -> bool {
+        self.fragments.contains_key(&(coords, dir))
     }
 
     fn set_frag(&mut self, coords: Coords, dir: Direction, shape: WireShape) {
@@ -622,7 +767,7 @@ impl EditGrid {
                                dir);
                 }
                 WireShape::Cross => {
-                    for &dir2 in Direction::all() {
+                    for dir2 in Direction::all() {
                         assert_eq!(self.wire_shape_at(coords, dir2),
                                    Some(WireShape::Cross),
                                    "({}, {}) {:?}",
@@ -686,6 +831,72 @@ fn coords_key_string(coords: Coords) -> String {
     let xsign = if coords.x < 0 { 'm' } else { 'p' };
     let ysign = if coords.y < 0 { 'm' } else { 'p' };
     format!("{}{}{}{}", xsign, coords.x.abs(), ysign, coords.y.abs())
+}
+
+fn key_string_coords(key: &str) -> Option<Coords> {
+    let mut chars = key.chars();
+    let xsign_chr = chars.next();
+    let xsign: i32 = match xsign_chr {
+        Some('m') => -1,
+        Some('p') => 1,
+        _ => return None,
+    };
+    let mut ysign_chr = None;
+    let mut x: u64 = 0;
+    while let Some(chr) = chars.next() {
+        if let Some(digit) = chr.to_digit(10) {
+            x = 10 * x + (digit as u64);
+            if x > (i32::MAX as u64) {
+                return None;
+            }
+        } else {
+            ysign_chr = Some(chr);
+            break;
+        }
+    }
+    let ysign: i32 = match ysign_chr {
+        Some('m') => -1,
+        Some('p') => 1,
+        _ => return None,
+    };
+    let mut y: u64 = 0;
+    while let Some(chr) = chars.next() {
+        if let Some(digit) = chr.to_digit(10) {
+            y = 10 * y + (digit as u64);
+            if y > (i32::MAX as u64) {
+                return None;
+            }
+        } else {
+            return None;
+        }
+    }
+    return Some(Coords::new(xsign * (x as i32), ysign * (y as i32)));
+}
+
+fn location_key_string(coords: Coords, dir: Direction) -> String {
+    let dir_chr = match dir {
+        Direction::East => 'e',
+        Direction::South => 's',
+        Direction::West => 'w',
+        Direction::North => 'n',
+    };
+    format!("{}{}", coords_key_string(coords), dir_chr)
+}
+
+fn key_string_location(key: &str) -> Option<(Coords, Direction)> {
+    let mut string = key.to_string();
+    let dir = match string.pop() {
+        Some('e') => Direction::East,
+        Some('s') => Direction::South,
+        Some('w') => Direction::West,
+        Some('n') => Direction::North,
+        _ => return None,
+    };
+    if let Some(coords) = key_string_coords(&string) {
+        Some((coords, dir))
+    } else {
+        None
+    }
 }
 
 //===========================================================================//

@@ -32,8 +32,10 @@ const PUZZLE_LIST_WIDTH: i32 = 250;
 
 //===========================================================================//
 
+#[derive(Clone, Copy)]
 pub enum PuzzlesAction {
     Edit,
+    New,
 }
 
 //===========================================================================//
@@ -41,7 +43,8 @@ pub enum PuzzlesAction {
 pub struct PuzzlesView {
     puzzle_list: ListView<Puzzle>,
     circuit_list: ListView<String>,
-    edit_button: EditButton,
+    edit_button: Button,
+    new_button: Button,
 }
 
 impl PuzzlesView {
@@ -66,10 +69,19 @@ impl PuzzlesView {
                                                   circuit_list_height),
                                         state.circuit_name(),
                                         circuit_list_items(state)),
-            edit_button: EditButton::new(Rect::new(rect.right() - 80,
-                                                   rect.bottom() - 40,
-                                                   80,
-                                                   40)),
+            edit_button: Button::new(Rect::new(rect.right() - 80,
+                                               rect.bottom() - 40,
+                                               80,
+                                               40),
+                                     "Edit",
+                                     PuzzlesAction::Edit),
+            new_button: Button::new(Rect::new(rect.right() - 80,
+                                              rect.bottom() - 80 -
+                                                  ELEMENT_SPACING,
+                                              80,
+                                              40),
+                                    "New",
+                                    PuzzlesAction::New),
         }
     }
 
@@ -78,6 +90,7 @@ impl PuzzlesView {
         self.puzzle_list.draw(resources, matrix, &state.current_puzzle());
         self.circuit_list.draw(resources, matrix, state.circuit_name());
         self.edit_button.draw(resources, matrix);
+        self.new_button.draw(resources, matrix);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
@@ -95,6 +108,9 @@ impl PuzzlesView {
             state.set_circuit_name(circuit_name);
         }
         if let Some(action) = self.edit_button.handle_event(event) {
+            return Some(action);
+        }
+        if let Some(action) = self.new_button.handle_event(event) {
             return Some(action);
         }
         return None;
@@ -119,12 +135,21 @@ fn circuit_list_items(state: &GameState) -> Vec<(String, String)> {
 
 //===========================================================================//
 
-struct EditButton {
+struct Button {
     rect: Rect<i32>,
+    label: &'static str,
+    action: PuzzlesAction,
 }
 
-impl EditButton {
-    pub fn new(rect: Rect<i32>) -> EditButton { EditButton { rect } }
+impl Button {
+    pub fn new(rect: Rect<i32>, label: &'static str, action: PuzzlesAction)
+               -> Button {
+        Button {
+            rect,
+            label,
+            action,
+        }
+    }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let color = (0.7, 0.1, 0.1);
@@ -141,14 +166,14 @@ impl EditButton {
                                         (self.rect.y as f32) +
                                             0.5 * (self.rect.height as f32) -
                                             10.0),
-                                       "Edit");
+                                       self.label);
     }
 
     pub fn handle_event(&mut self, event: &Event) -> Option<PuzzlesAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if mouse.left && self.rect.contains_point(mouse.pt) {
-                    return Some(PuzzlesAction::Edit);
+                    return Some(self.action);
                 }
             }
             _ => {}

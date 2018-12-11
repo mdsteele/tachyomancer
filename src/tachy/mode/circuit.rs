@@ -40,7 +40,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                           state.edit_grid_mut().unwrap(),
                                           &mut audio) {
                     Some(CircuitAction::BackToMenu) => {
-                        match state.save_circuit() {
+                        match state.save() {
                             Ok(()) => {
                                 state.clear_edit_grid();
                                 return ModeChange::Next;

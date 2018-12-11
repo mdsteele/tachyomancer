@@ -25,6 +25,7 @@ use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
 use super::size::WireSize;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::str;
 use tachy::save::{Puzzle, PuzzleKind};
 
 //===========================================================================//
@@ -51,6 +52,39 @@ pub enum ChipType {
     Ram,
     Display,
     Button,
+}
+
+impl str::FromStr for ChipType {
+    type Err = String;
+
+    fn from_str(string: &str) -> Result<ChipType, String> {
+        match string {
+            "Add" => Ok(ChipType::Add),
+            "And" => Ok(ChipType::And),
+            "Break" => Ok(ChipType::Break),
+            "Button" => Ok(ChipType::Button),
+            "Clock" => Ok(ChipType::Clock),
+            "Delay" => Ok(ChipType::Delay),
+            "Discard" => Ok(ChipType::Discard),
+            "Display" => Ok(ChipType::Display),
+            "Join" => Ok(ChipType::Join),
+            "Latest" => Ok(ChipType::Latest),
+            "Not" => Ok(ChipType::Not),
+            "Pack" => Ok(ChipType::Pack),
+            "Ram" => Ok(ChipType::Ram),
+            "Sample" => Ok(ChipType::Sample),
+            "Unpack" => Ok(ChipType::Unpack),
+            _ => {
+                if string.starts_with("Const(") && string.ends_with(')') {
+                    let inner = &string[6..(string.len() - 1)];
+                    if let Ok(value) = inner.parse() {
+                        return Ok(ChipType::Const(value));
+                    }
+                }
+                Err(string.to_string())
+            }
+        }
+    }
 }
 
 impl ChipType {
@@ -464,6 +498,40 @@ fn localize(coords: Coords, orient: Orientation, size: CoordsSize,
             -> (Coords, Direction) {
     let &(_, _, delta, dir) = port;
     (coords + orient.transform_in_rect(delta.into(), size), orient * dir)
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::ChipType;
+
+    #[test]
+    fn chip_type_to_and_from_string() {
+        let chip_types = &[
+            ChipType::Add,
+            ChipType::And,
+            ChipType::Break,
+            ChipType::Button,
+            ChipType::Clock,
+            ChipType::Const(0),
+            ChipType::Const(13),
+            ChipType::Const(0xffffffff),
+            ChipType::Delay,
+            ChipType::Discard,
+            ChipType::Display,
+            ChipType::Join,
+            ChipType::Latest,
+            ChipType::Not,
+            ChipType::Pack,
+            ChipType::Ram,
+            ChipType::Sample,
+            ChipType::Unpack,
+        ];
+        for &ctype in chip_types.iter() {
+            assert_eq!(format!("{:?}", ctype).parse(), Ok(ctype));
+        }
+    }
 }
 
 //===========================================================================//

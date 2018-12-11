@@ -33,8 +33,8 @@ pub use self::chip::ChipType;
 pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
 pub use self::eval::{CircuitEval, EvalResult};
 pub use self::game::GameState;
-pub use self::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
-                     Orientation, Rect, RectSize};
+pub use self::geom::{AllDirectionsIter, Coords, CoordsDelta, CoordsRect,
+                     CoordsSize, Direction, Orientation, Rect, RectSize};
 pub use self::iface::Interface;
 pub use self::port::{PortColor, PortFlow, PortSpec};
 pub use self::size::WireSize;

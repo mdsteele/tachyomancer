@@ -41,6 +41,17 @@ impl CircuitData {
         }
     }
 
+    pub fn load(path: &Path) -> Result<CircuitData, String> {
+        let bytes = fs::read(path)
+            .map_err(|err| {
+                         format!("Could not read circuit file from {:?}: {}",
+                                 path,
+                                 err)
+                     })?;
+        toml::from_slice(&bytes)
+            .map_err(|err| format!("Could not deserialize circuit: {}", err))
+    }
+
     fn serialize(&self) -> Result<Vec<u8>, String> {
         toml::to_vec(self)
             .map_err(|err| format!("Could not serialize circuit: {}", err))

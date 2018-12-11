@@ -126,15 +126,15 @@ pub enum Direction {
     North,
 }
 
+const ALL_DIRECTIONS: &[Direction] = &[
+    Direction::East,
+    Direction::South,
+    Direction::North,
+    Direction::West,
+];
+
 impl Direction {
-    pub fn all() -> &'static [Direction] {
-        &[
-            Direction::East,
-            Direction::South,
-            Direction::North,
-            Direction::West,
-        ]
-    }
+    pub fn all() -> AllDirectionsIter { AllDirectionsIter { index: 0 } }
 
     pub fn delta(self) -> CoordsDelta {
         match self {
@@ -189,32 +189,6 @@ impl Direction {
     }
 }
 
-impl fmt::Display for Direction {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let string = match self {
-            Direction::East => "e",
-            Direction::South => "s",
-            Direction::West => "w",
-            Direction::North => "n",
-        };
-        formatter.write_str(string)
-    }
-}
-
-impl str::FromStr for Direction {
-    type Err = String;
-
-    fn from_str(string: &str) -> Result<Direction, String> {
-        match string {
-            "e" => Ok(Direction::East),
-            "s" => Ok(Direction::South),
-            "w" => Ok(Direction::West),
-            "n" => Ok(Direction::North),
-            _ => Err(string.to_string()),
-        }
-    }
-}
-
 impl ops::Add<Direction> for Coords {
     type Output = Coords;
 
@@ -236,6 +210,26 @@ impl ops::Neg for Direction {
             Direction::South => Direction::North,
             Direction::West => Direction::East,
             Direction::North => Direction::South,
+        }
+    }
+}
+
+//===========================================================================//
+
+pub struct AllDirectionsIter {
+    index: usize,
+}
+
+impl<'a> Iterator for AllDirectionsIter {
+    type Item = Direction;
+
+    fn next(&mut self) -> Option<Direction> {
+        if self.index < ALL_DIRECTIONS.len() {
+            let direction = ALL_DIRECTIONS[self.index];
+            self.index += 1;
+            Some(direction)
+        } else {
+            None
         }
     }
 }
@@ -424,15 +418,9 @@ mod tests {
     }
 
     #[test]
-    fn direction_to_and_from_string() {
-        assert_eq!(Direction::South.to_string(), "s".to_string());
-        assert_eq!("s".parse(), Ok(Direction::South));
-    }
-
-    #[test]
     fn direction_add_sub_neg() {
         let coords = Coords { x: 3, y: -4 };
-        for &dir in Direction::all() {
+        for dir in Direction::all() {
             let opp = -dir;
             assert_eq!(dir, -opp);
             assert_eq!(coords + dir, coords - opp);
@@ -458,22 +446,22 @@ mod tests {
     #[test]
     fn orientation_times_direction() {
         let orient = Orientation::default();
-        for &dir in Direction::all() {
+        for dir in Direction::all() {
             assert_eq!(orient * dir, dir);
         }
 
         let orient = Orientation::default().rotate_cw();
-        for &dir in Direction::all() {
+        for dir in Direction::all() {
             assert_eq!(orient * dir, dir.rotate_cw());
         }
 
         let orient = Orientation::default().rotate_ccw();
-        for &dir in Direction::all() {
+        for dir in Direction::all() {
             assert_eq!(orient * dir, dir.rotate_ccw());
         }
 
         let orient = Orientation::default().flip_vert();
-        for &dir in Direction::all() {
+        for dir in Direction::all() {
             assert_eq!(orient * dir, dir.flip_vert());
         }
     }

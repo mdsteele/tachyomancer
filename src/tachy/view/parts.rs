@@ -93,10 +93,10 @@ impl PartsTray {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let x = self.rect.x() as f32;
-        let y = self.rect.y() as f32;
-        let w = self.rect.width() as f32;
-        let h = self.rect.height() as f32;
+        let x = self.rect.x as f32;
+        let y = self.rect.y as f32;
+        let w = self.rect.width as f32;
+        let h = self.rect.height as f32;
         resources
             .shaders()
             .solid()
@@ -151,10 +151,10 @@ impl Part {
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let x = self.rect.x() as f32;
-        let y = self.rect.y() as f32;
-        let w = self.rect.width() as f32;
-        let h = self.rect.height() as f32;
+        let x = self.rect.x as f32;
+        let y = self.rect.y as f32;
+        let w = self.rect.width as f32;
+        let h = self.rect.height as f32;
         resources
             .shaders()
             .solid()

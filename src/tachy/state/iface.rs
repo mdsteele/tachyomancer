@@ -53,8 +53,8 @@ pub struct Interface {
 impl Interface {
     pub fn top_left(&self, bounds: CoordsRect) -> Coords {
         let span = match self.side {
-            Direction::East | Direction::West => bounds.height(),
-            Direction::South | Direction::North => bounds.width(),
+            Direction::East | Direction::West => bounds.height,
+            Direction::South | Direction::North => bounds.width,
         };
         let len = self.ports.len() as i32;
         let dist = match self.pos {

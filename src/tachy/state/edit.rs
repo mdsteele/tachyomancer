@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::check::{self, WireColor, WireError, WireInfo, WireShape};
+use super::check::{self, WireColor, WireError, WireInfo};
 use super::chip::ChipType;
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
 use super::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
@@ -29,7 +29,7 @@ use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
 use std::mem;
 use std::usize;
-use tachy::save::{CircuitData, Puzzle};
+use tachy::save::{CircuitData, Puzzle, WireShape};
 
 //===========================================================================//
 
@@ -119,7 +119,7 @@ impl EditGrid {
                 (WireShape::Cross, _) => continue,
             }
             data.wires.insert(format!("{}{}", coords_key_string(coords), dir),
-                              format!("{:?}", shape));
+                              shape);
         }
         data
     }

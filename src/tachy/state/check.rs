@@ -24,6 +24,7 @@ use indexmap::IndexMap;
 use pathfinding::prelude::{strongly_connected_components,
                            topological_sort_into_groups};
 use std::collections::{HashMap, HashSet};
+use tachy::save::WireShape;
 
 //===========================================================================//
 
@@ -37,33 +38,6 @@ pub enum WireColor {
     Behavior,
     /// An event wire.
     Event,
-}
-
-//===========================================================================//
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum WireShape {
-    /// Wire enters from side of cell but stops immediately.
-    Stub,
-    /// Wire enters from side of cell and goes straight to the other side.  The
-    /// opposite side will also be `Straight`.
-    Straight,
-    /// Wire enters from side of cell and turns 90 degrees left.  The adjacent
-    /// side will be `TurnRight`.
-    TurnLeft,
-    /// Wire enters from side of cell and turns 90 degrees right.  The adjacent
-    /// side will be `TurnLeft`.
-    TurnRight,
-    /// Wire enters from side of cell and splits, going straight and turning
-    /// left.
-    SplitLeft,
-    /// Wire enters from side of cell and splits, going straight and turning
-    /// right.
-    SplitRight,
-    /// Wire enters from side of cell and splits, turning left and right.
-    SplitTee,
-    /// Wire enters from side of cell and splits in all directions.
-    Cross,
 }
 
 //===========================================================================//

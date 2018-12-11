@@ -17,26 +17,31 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod check;
-mod chip;
-mod edit;
-mod eval;
-mod game;
-mod geom;
-mod iface;
-mod port;
-mod puzzle;
-mod size;
+//===========================================================================//
 
-pub use self::check::WireColor;
-pub use self::chip::ChipType;
-pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
-pub use self::eval::{CircuitEval, EvalResult};
-pub use self::game::GameState;
-pub use self::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
-                     Orientation, Rect, RectSize};
-pub use self::iface::Interface;
-pub use self::port::{PortColor, PortFlow, PortSpec};
-pub use self::size::WireSize;
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub enum WireShape {
+    /// Wire enters from side of cell but stops immediately.
+    Stub,
+    /// Wire enters from side of cell and goes straight to the other side.  The
+    /// opposite side will also be `Straight`.
+    Straight,
+    /// Wire enters from side of cell and turns 90 degrees left.  The adjacent
+    /// side will be `TurnRight`.
+    TurnLeft,
+    /// Wire enters from side of cell and turns 90 degrees right.  The adjacent
+    /// side will be `TurnLeft`.
+    TurnRight,
+    /// Wire enters from side of cell and splits, going straight and turning
+    /// left.
+    SplitLeft,
+    /// Wire enters from side of cell and splits, going straight and turning
+    /// right.
+    SplitRight,
+    /// Wire enters from side of cell and splits, turning left and right.
+    SplitTee,
+    /// Wire enters from side of cell and splits in all directions.
+    Cross,
+}
 
 //===========================================================================//

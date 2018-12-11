@@ -24,10 +24,9 @@ use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
 use num_integer::{div_floor, mod_floor};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
-use tachy::save::Puzzle;
+use tachy::save::{Puzzle, WireShape};
 use tachy::state::{ChipType, Coords, CoordsRect, Direction, EditGrid,
-                   EvalResult, GridChange, Orientation, Rect, RectSize,
-                   WireShape};
+                   EvalResult, GridChange, Orientation, Rect, RectSize};
 
 //===========================================================================//
 

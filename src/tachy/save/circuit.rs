@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::wire::WireShape;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
@@ -28,7 +29,7 @@ use toml;
 pub struct CircuitData {
     pub bounds: (i32, i32, i32, i32),
     pub chips: BTreeMap<String, String>,
-    pub wires: BTreeMap<String, String>, // TODO: <String, WireShape>
+    pub wires: BTreeMap<String, WireShape>,
 }
 
 impl CircuitData {
@@ -61,15 +62,15 @@ impl CircuitData {
 
 #[cfg(test)]
 mod tests {
-    use super::CircuitData;
+    use super::{CircuitData, WireShape};
 
     #[test]
     fn serialize_circuit_data() {
         let mut data = CircuitData::new(-2, -1, 8, 5);
         data.chips.insert("m1p2".to_string(), "f0-Button".to_string());
         data.chips.insert("p0p2".to_string(), "t0-Break".to_string());
-        data.wires.insert("m1p2e".to_string(), "Stub".to_string());
-        data.wires.insert("p0p2w".to_string(), "Stub".to_string());
+        data.wires.insert("m1p2e".to_string(), WireShape::Stub);
+        data.wires.insert("p0p2w".to_string(), WireShape::Stub);
         let bytes = data.serialize().unwrap();
         assert_eq!(String::from_utf8(bytes).unwrap().as_str(),
                    "bounds = [-2, -1, 8, 5]\n\n\

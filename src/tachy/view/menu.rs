@@ -20,6 +20,7 @@
 use super::prefs::{PrefsAction, PrefsView};
 use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
+use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Resources, Sound};
 use tachy::save::MenuSection;
@@ -59,13 +60,24 @@ pub struct MenuView {
 
 impl MenuView {
     pub fn new(window_size: RectSize<u32>, state: &GameState) -> MenuView {
-        let section_buttons =
-            vec![
-                SectionButton::new(window_size, 0, MenuSection::Navigation),
-                SectionButton::new(window_size, 1, MenuSection::Messages),
-                SectionButton::new(window_size, 2, MenuSection::Puzzles),
-                SectionButton::new(window_size, 3, MenuSection::Prefs),
-            ];
+        let section_buttons = vec![
+            SectionButton::new(window_size,
+                               0,
+                               "Navigation",
+                               MenuSection::Navigation),
+            SectionButton::new(window_size,
+                               1,
+                               "Messages",
+                               MenuSection::Messages),
+            SectionButton::new(window_size,
+                               2,
+                               "Tasks",
+                               MenuSection::Puzzles),
+            SectionButton::new(window_size,
+                               3,
+                               "Settings",
+                               MenuSection::Prefs),
+        ];
         let section_rect =
             Rect::new(SECTION_MARGIN_HORZ,
                       SECTION_TOP,
@@ -148,11 +160,13 @@ impl MenuView {
 
 struct SectionButton {
     rect: Rect<i32>,
+    label: &'static str,
     section: MenuSection,
 }
 
 impl SectionButton {
-    fn new(window_size: RectSize<u32>, index: i32, section: MenuSection)
+    fn new(window_size: RectSize<u32>, index: i32, label: &'static str,
+           section: MenuSection)
            -> SectionButton {
         let width = ((window_size.width as i32) -
                          2 * SECTION_BUTTON_MARGIN_HORZ -
@@ -163,7 +177,11 @@ impl SectionButton {
                              SECTION_BUTTON_MARGIN_TOP,
                              width,
                              SECTION_BUTTON_HEIGHT);
-        SectionButton { rect, section }
+        SectionButton {
+            rect,
+            label,
+            section,
+        }
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
@@ -173,10 +191,14 @@ impl SectionButton {
         } else {
             (0.0, 0.25, 0.0)
         };
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(matrix, color, self.rect.as_f32());
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(matrix, color, rect);
+        resources.fonts().roman().draw(&matrix,
+                                       20.0,
+                                       Align::Center,
+                                       (rect.x + 0.5 * rect.width,
+                                        rect.y + 0.5 * rect.height - 10.0),
+                                       self.label);
     }
 
     fn handle_event(&mut self, event: &Event, current_section: MenuSection,

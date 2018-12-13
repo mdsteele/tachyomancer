@@ -75,6 +75,7 @@ pub struct EditGrid {
     wire_groups: Vec<Vec<usize>>,
     errors: Vec<WireError>,
     eval: Option<CircuitEval>,
+    modified: bool,
 }
 
 impl EditGrid {
@@ -90,6 +91,7 @@ impl EditGrid {
             wire_groups: Vec::new(),
             errors: Vec::new(),
             eval: None,
+            modified: false,
         };
         grid.typecheck_wires();
         grid
@@ -110,6 +112,7 @@ impl EditGrid {
             wire_groups: Vec::new(),
             errors: Vec::new(),
             eval: None,
+            modified: false,
         };
 
         // Chips:
@@ -265,6 +268,10 @@ impl EditGrid {
         data
     }
 
+    pub fn is_modified(&self) -> bool { self.modified }
+
+    pub fn mark_unmodified(&mut self) { self.modified = false; }
+
     pub fn puzzle(&self) -> Puzzle { self.puzzle }
 
     pub fn bounds(&self) -> CoordsRect { self.bounds }
@@ -343,6 +350,7 @@ impl EditGrid {
             self.mutate_one(change);
         }
         self.typecheck_wires();
+        self.modified = true;
     }
 
     fn mutate_one(&mut self, change: &GridChange) {

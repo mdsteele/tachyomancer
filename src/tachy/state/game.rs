@@ -53,12 +53,16 @@ impl GameState {
 
     pub fn save(&mut self) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
-            if let Some(ref grid) = self.edit_grid {
-                // TODO: Only save circuit if there have been changes
-                let puzzle = profile.current_puzzle();
-                let circuit_data = grid.to_circuit_data();
-                profile
-                    .save_circuit(puzzle, &self.circuit_name, &circuit_data)?;
+            if let Some(ref mut grid) = self.edit_grid {
+                if grid.is_modified() {
+                    let puzzle = profile.current_puzzle();
+                    let circuit_data = grid.to_circuit_data();
+                    profile
+                        .save_circuit(puzzle,
+                                      &self.circuit_name,
+                                      &circuit_data)?;
+                    grid.mark_unmodified();
+                }
             }
             profile.save()?;
         }

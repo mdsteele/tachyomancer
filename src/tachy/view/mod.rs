@@ -26,6 +26,7 @@ mod menu;
 mod parts;
 mod prefs;
 mod puzzle;
+mod verify;
 mod wire;
 
 pub use self::begin::{BeginAction, BeginView};

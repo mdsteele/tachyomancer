@@ -30,7 +30,7 @@ mod size;
 pub use self::check::WireColor;
 pub use self::chip::ChipType;
 pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
-pub use self::eval::{CircuitEval, EvalResult};
+pub use self::eval::{CircuitEval, EvalError, EvalResult};
 pub use self::game::GameState;
 pub use self::iface::Interface;
 pub use self::port::{PortColor, PortFlow, PortSpec};

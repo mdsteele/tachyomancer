@@ -53,7 +53,6 @@ impl Puzzle {
     /// Returns an iterator over all puzzles.
     pub fn all() -> AllPuzzlesIter { AllPuzzlesIter { index: 0 } }
 
-    #[allow(dead_code)]
     pub fn title(self) -> &'static str { self.data().title }
 
     pub fn kind(self) -> PuzzleKind { self.data().kind }
@@ -63,41 +62,49 @@ impl Puzzle {
 
     pub fn allows_events(self) -> bool { self.data().allow_events }
 
+    pub fn static_verification_data(self) -> &'static [u64] {
+        self.data().verification
+    }
+
     fn data(self) -> &'static PuzzleData {
         match self {
             Puzzle::TutorialOr => {
                 &PuzzleData {
                     title: "1-Bit Or Gate",
                     kind: PuzzleKind::Tutorial,
+                    allow_events: false,
                     instructions: "\
                         Create a circuit that outputs 1 if at least one of \
                         the two inputs is 1, or 0 if both inputs are 0.",
-                    allow_events: false,
+                    verification: &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1],
                 }
             }
             Puzzle::AutomateHeliostat => {
                 &PuzzleData {
                     title: "Heliostat",
                     kind: PuzzleKind::Automate,
+                    allow_events: false,
                     instructions: "\
                         Move the heliostat towards the optimal position.",
-                    allow_events: false,
+                    verification: &[],
                 }
             }
             Puzzle::SandboxBehavior => {
                 &PuzzleData {
                     title: "Behavior Sandbox",
                     kind: PuzzleKind::Sandbox,
-                    instructions: "",
                     allow_events: false,
+                    instructions: "",
+                    verification: &[],
                 }
             }
             Puzzle::SandboxEvent => {
                 &PuzzleData {
                     title: "Event Sandbox",
                     kind: PuzzleKind::Sandbox,
-                    instructions: "",
                     allow_events: true,
+                    instructions: "",
+                    verification: &[],
                 }
             }
         }
@@ -109,8 +116,9 @@ impl Puzzle {
 struct PuzzleData {
     title: &'static str,
     kind: PuzzleKind,
-    instructions: &'static str,
     allow_events: bool,
+    instructions: &'static str,
+    verification: &'static [u64],
 }
 
 //===========================================================================//

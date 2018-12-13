@@ -69,6 +69,10 @@ impl<T: BaseNum> Rect<T> {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.width <= T::zero() || self.height <= T::zero()
+    }
+
     pub fn top_left(&self) -> Point2<T> { Point2::new(self.x, self.y) }
 
     pub fn right(&self) -> T { self.x + self.width }

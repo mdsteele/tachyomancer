@@ -20,6 +20,7 @@
 use super::chip::ChipModel;
 use super::control::{ControlsAction, ControlsTray};
 use super::parts::{PartsAction, PartsTray};
+use super::verify::VerificationTray;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
 use num_integer::{div_floor, mod_floor};
@@ -49,6 +50,7 @@ pub struct CircuitView {
     edit_grid: EditGridView,
     controls_tray: ControlsTray,
     parts_tray: PartsTray,
+    verification_tray: VerificationTray,
     seconds_since_time_step: f64,
     paused: bool,
 }
@@ -62,6 +64,8 @@ impl CircuitView {
             edit_grid: EditGridView::new(window_size),
             controls_tray: ControlsTray::new(window_size, current_puzzle),
             parts_tray: PartsTray::new(window_size, current_puzzle),
+            verification_tray: VerificationTray::new(window_size,
+                                                     current_puzzle),
             seconds_since_time_step: 0.0,
             paused: true,
         }
@@ -71,6 +75,20 @@ impl CircuitView {
         self.edit_grid.draw_board(resources, grid);
         let projection =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
+        if let Some(eval) = grid.eval() {
+            self.verification_tray.draw(resources,
+                                        &projection,
+                                        Some(eval.time_step()),
+                                        eval.verification_data(),
+                                        eval.errors());
+        } else {
+            self.verification_tray.draw(resources,
+                                        &projection,
+                                        None,
+                                        grid.puzzle()
+                                            .static_verification_data(),
+                                        &[]);
+        }
         self.parts_tray.draw(resources, &projection);
         self.controls_tray.draw(resources, &projection);
         self.edit_grid.draw_dragged(resources);
@@ -81,6 +99,7 @@ impl CircuitView {
                         -> Option<CircuitAction> {
         match event {
             Event::ClockTick(tick) => {
+                let mut result = EvalResult::Continue;
                 if let Some(eval) = grid.eval_mut() {
                     if !self.paused {
                         self.seconds_since_time_step += tick.elapsed;
@@ -89,10 +108,11 @@ impl CircuitView {
                         {
                             self.seconds_since_time_step -=
                                 SECONDS_PER_TIME_STEP;
-                            self.handle_eval_result(eval.step_time());
+                            result = eval.step_time();
                         }
                     }
                 }
+                self.handle_eval_result(result, grid);
             }
             Event::KeyDown(key) => {
                 if key.command && key.shift && key.code == Keycode::F {
@@ -134,9 +154,11 @@ impl CircuitView {
                         self.paused = true;
                         grid.start_eval();
                     }
+                    let mut result = EvalResult::Continue;
                     if let Some(eval) = grid.eval_mut() {
-                        self.handle_eval_result(eval.step_time());
+                        result = eval.step_time();
                     }
+                    self.handle_eval_result(result, grid);
                 }
                 Some(ControlsAction::StepCycle) => {
                     if grid.eval().is_none() {
@@ -145,9 +167,11 @@ impl CircuitView {
                         self.paused = true;
                         grid.start_eval();
                     }
+                    let mut result = EvalResult::Continue;
                     if let Some(eval) = grid.eval_mut() {
-                        self.handle_eval_result(eval.step_cycle());
+                        result = eval.step_cycle();
                     }
+                    self.handle_eval_result(result, grid);
                 }
                 Some(ControlsAction::StepSubcycle) => {
                     if grid.eval().is_none() {
@@ -156,9 +180,11 @@ impl CircuitView {
                         self.paused = true;
                         grid.start_eval();
                     }
+                    let mut result = EvalResult::Continue;
                     if let Some(eval) = grid.eval_mut() {
-                        self.handle_eval_result(eval.step_subcycle());
+                        result = eval.step_subcycle();
                     }
+                    self.handle_eval_result(result, grid);
                 }
             }
             return None;
@@ -178,20 +204,32 @@ impl CircuitView {
             return None;
         }
 
+        let stop = self.verification_tray.handle_event(event);
+        if stop {
+            return None;
+        }
+
         self.edit_grid.handle_event(event, grid);
         return None;
     }
 
-    fn handle_eval_result(&mut self, result: EvalResult) {
+    fn handle_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid) {
         match result {
-            EvalResult::Continue => {}
+            EvalResult::Continue => return,
             EvalResult::Breakpoint(coords_vec) => {
                 debug_log!("Breakpoint: {:?}", coords_vec);
-                self.seconds_since_time_step = 0.0;
-                self.paused = true;
             }
-            _ => {} // TODO: handle victory/failure
+            EvalResult::Victory(score) => {
+                // TODO: Switch to victory mode
+                debug_log!("Victory!  score={}", score);
+                grid.stop_eval();
+            }
+            EvalResult::Failure => {
+                debug_log!("Failure!");
+            }
         }
+        self.seconds_since_time_step = 0.0;
+        self.paused = true;
     }
 }
 

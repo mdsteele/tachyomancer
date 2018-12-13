@@ -86,6 +86,7 @@ impl Font {
            })
     }
 
+    // TODO: change API to center text vertically
     pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, alignment: Align,
                 start: (f32, f32), text: &str) {
         self.texture.bind();

@@ -265,6 +265,8 @@ impl EditGrid {
         data
     }
 
+    pub fn puzzle(&self) -> Puzzle { self.puzzle }
+
     pub fn bounds(&self) -> CoordsRect { self.bounds }
 
     pub fn can_have_bounds(&self, bounds: CoordsRect) -> bool {
@@ -654,17 +656,21 @@ impl EditGrid {
         }
 
         let puzzle_eval = {
-            let wires: Vec<Vec<usize>> = self.interfaces
-                .iter()
-                .map(|interface| {
-                         interface
-                             .ports(self.bounds)
-                             .into_iter()
-                             .map(|port| wires_for_ports[&port.loc()])
-                             .collect()
-                     })
-                .collect();
-            new_puzzle_eval(self.puzzle, wires)
+            let slots: Vec<Vec<((Coords, Direction), usize)>> =
+                self.interfaces
+                    .iter()
+                    .map(|interface| {
+                        interface
+                            .ports(self.bounds)
+                            .into_iter()
+                            .map(|port| {
+                                     let loc = port.loc();
+                                     (loc, wires_for_ports[&loc])
+                                 })
+                            .collect()
+                    })
+                    .collect();
+            new_puzzle_eval(self.puzzle, slots)
         };
 
         self.eval = Some(CircuitEval::new(self.wires.len(),

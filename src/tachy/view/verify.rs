@@ -105,15 +105,13 @@ impl FabricationTable {
         let column_width = rect.width / (self.columns.len() as f32);
         let row_height = TABLE_ROW_HEIGHT as f32;
         for (index, column_name) in self.columns.iter().enumerate() {
-            resources.fonts().roman().draw(matrix,
-                                           TABLE_FONT_SIZE,
-                                           Align::Center,
-                                           (rect.x +
-                                                ((index as f32) + 0.5) *
-                                                    column_width,
-                                            rect.y + 0.5 * row_height -
-                                                0.5 * TABLE_FONT_SIZE),
-                                           &column_name);
+            let font = resources.fonts().roman();
+            font.draw(matrix,
+                      TABLE_FONT_SIZE,
+                      Align::MidCenter,
+                      (rect.x + ((index as f32) + 0.5) * column_width,
+                       rect.y + 0.5 * row_height),
+                      &column_name);
         }
         let num_columns = self.columns.len();
         let num_rows = values.len() / num_columns;
@@ -143,10 +141,8 @@ impl FabricationTable {
                 let col_center = rect.x + ((col as f32) + 0.5) * column_width;
                 resources.fonts().roman().draw(matrix,
                                                TABLE_FONT_SIZE,
-                                               Align::Center,
-                                               (col_center,
-                                                row_center -
-                                                    0.5 * TABLE_FONT_SIZE),
+                                               Align::MidCenter,
+                                               (col_center, row_center),
                                                &value.to_string());
             }
         }

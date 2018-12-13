@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, vec3};
+use cgmath::{Matrix4, Vector2, vec3};
 use std::rc::Rc;
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 Texture2D, VertexArray, VertexBuffer};
@@ -41,12 +41,11 @@ const INCONSOLATA_PNG_DATA: &[u8] =
 
 // ========================================================================= //
 
-#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub enum Align {
-    Left,
-    Center,
-    Right,
+    MidLeft,
+    TopCenter,
+    MidCenter,
 }
 
 //===========================================================================//
@@ -155,14 +154,14 @@ impl TextShader {
         self.text.set(&array);
 
         let shift = match alignment {
-            Align::Left => 0.0,
-            Align::Center => -0.5 * (num_chars as f32),
-            Align::Right => -(num_chars as f32),
+            Align::MidLeft => Vector2::new(0.0, -0.5),
+            Align::TopCenter => Vector2::new(-0.5 * (num_chars as f32), 0.0),
+            Align::MidCenter => Vector2::new(-0.5 * (num_chars as f32), -0.5),
         };
         let mvp = matrix *
             Matrix4::from_translation(vec3(start.0, start.1, 0.0)) *
             Matrix4::from_nonuniform_scale(size.0, size.1, 1.0) *
-            Matrix4::from_translation(vec3(shift, 0.0, 0.0));
+            Matrix4::from_translation(vec3(shift.x, shift.y, 0.0));
         self.mvp.set(&mvp);
 
         self.varray.bind();

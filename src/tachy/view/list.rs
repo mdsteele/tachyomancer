@@ -100,15 +100,13 @@ impl<T: Clone + Eq> ListView<T> {
                                  item_width as f32,
                                  ITEM_HEIGHT as f32);
             resources.shaders().solid().fill_rect(&matrix, color, rect);
-            resources.fonts().roman().draw(&matrix,
-                                           FONT_SIZE,
-                                           Align::Left,
-                                           ((self.rect.x +
-                                                ITEM_INNER_MARGIN) as
-                                                f32,
-                                            (top + ITEM_HEIGHT / 2) as f32 -
-                                                0.5 * FONT_SIZE),
-                                           label.as_str());
+            let font = resources.fonts().roman();
+            font.draw(&matrix,
+                      FONT_SIZE,
+                      Align::MidLeft,
+                      ((self.rect.x + ITEM_INNER_MARGIN) as f32,
+                       (top + ITEM_HEIGHT / 2) as f32),
+                      label.as_str());
         }
 
         // Draw scrollbar:

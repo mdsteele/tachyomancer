@@ -158,9 +158,9 @@ impl Button {
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         resources.fonts().roman().draw(&matrix,
                                        20.0,
-                                       Align::Center,
+                                       Align::MidCenter,
                                        (rect.x + 0.5 * rect.width,
-                                        rect.y + 0.5 * rect.height - 10.0),
+                                        rect.y + 0.5 * rect.height),
                                        self.label);
     }
 

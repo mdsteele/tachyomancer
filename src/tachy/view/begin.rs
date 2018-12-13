@@ -56,7 +56,7 @@ impl BeginView {
             .fill_rect(&projection, (0.1, 0.1, 0.1), rect);
         resources.fonts().roman().draw(&projection,
                                        40.0,
-                                       Align::Center,
+                                       Align::TopCenter,
                                        (0.5 * self.width, 100.0),
                                        "Enter new profile name:");
         self.text_entry.draw(resources, &projection);
@@ -99,7 +99,7 @@ impl TextEntry {
         resources
             .fonts()
             .roman()
-            .draw(matrix, 60.0, Align::Center, self.origin, &self.text);
+            .draw(matrix, 60.0, Align::TopCenter, self.origin, &self.text);
     }
 
     fn handle_event(&mut self, event: &Event, _audio: &mut AudioQueue)

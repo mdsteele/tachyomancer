@@ -18,9 +18,10 @@
 // +--------------------------------------------------------------------------+
 
 use super::circuit::CircuitData;
-use super::encode::{decode_name, encode_name};
+use super::encode::encode_name;
+use super::progress::{CircuitNamesIter, PuzzleProgress};
 use super::puzzle::Puzzle;
-use std::collections::{BTreeSet, HashMap, btree_set};
+use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -41,27 +42,6 @@ impl ProfileData {
         toml::from_slice(&fs::read(path)?).map_err(|err| {
             io::Error::new(io::ErrorKind::InvalidData, format!("{}", err))
         })
-    }
-}
-
-//===========================================================================//
-
-struct PuzzleProgress {
-    // TODO: store puzzle unsolved/solved and optimization graph
-    circuit_names: BTreeSet<String>,
-}
-
-impl PuzzleProgress {
-    fn new() -> PuzzleProgress {
-        PuzzleProgress { circuit_names: BTreeSet::new() }
-    }
-
-    fn circuit_names(&self) -> CircuitNamesIter {
-        CircuitNamesIter::new(&self.circuit_names)
-    }
-
-    fn has_circuit_name(&self, name: &str) -> bool {
-        self.circuit_names.contains(name)
     }
 }
 
@@ -120,38 +100,7 @@ impl Profile {
             if !puzzle_path.exists() {
                 continue;
             }
-            let mut progress = PuzzleProgress::new();
-            let entries = puzzle_path
-                .read_dir()
-                .map_err(|err| {
-                    format!(
-                        "Could not read contents of profile \
-                         {:?} puzzle {:?} directory: {}",
-                        name,
-                        puzzle,
-                        err
-                    )
-                })?;
-            for entry_result in entries {
-                let entry = entry_result
-                    .map_err(|err| {
-                        format!("Error while reading contents of profile \
-                                 {:?} puzzle {:?} directory: {}",
-                                name,
-                                puzzle,
-                                err)
-                    })?;
-                let entry_path = entry.path();
-                if entry_path.extension() != Some("toml".as_ref()) {
-                    continue;
-                }
-                if let Some(encoded) = entry_path.file_stem() {
-                    let circuit_name = decode_name(encoded);
-                    if !circuit_name.is_empty() {
-                        progress.circuit_names.insert(circuit_name);
-                    }
-                }
-            }
+            let progress = PuzzleProgress::create_or_load(&puzzle_path)?;
             puzzles.insert(puzzle, progress);
         }
 
@@ -189,6 +138,9 @@ impl Profile {
                          })?;
             self.needs_save = false;
         }
+        for (_, progress) in self.puzzles.iter_mut() {
+            progress.save()?;
+        }
         Ok(())
     }
 
@@ -201,6 +153,10 @@ impl Profile {
     pub fn set_current_puzzle(&mut self, puzzle: Puzzle) {
         self.data.current_puzzle = Some(puzzle);
         self.needs_save = true;
+    }
+
+    pub fn is_puzzle_solved(&self, puzzle: Puzzle) -> bool {
+        self.puzzles.get(&puzzle).map_or(false, PuzzleProgress::is_solved)
     }
 
     pub fn circuit_names(&self, puzzle: Puzzle) -> CircuitNamesIter {
@@ -234,58 +190,15 @@ impl Profile {
     }
 
     pub fn save_circuit(&mut self, puzzle: Puzzle, circuit_name: &str,
-                        data: &CircuitData)
+                        circuit_data: &CircuitData)
                         -> Result<(), String> {
-        let puzzle_path = self.base_path.join(format!("{:?}", puzzle));
-        if !puzzle_path.exists() {
-            debug_log!("Creating puzzle {:?} directory at {:?}",
-                       puzzle,
-                       puzzle_path);
-            fs::create_dir_all(&puzzle_path)
-                .map_err(|err| {
-                    format!("Could not create puzzle directory at {:?}: {}",
-                            puzzle_path,
-                            err)
-                })?;
+        if !self.puzzles.contains_key(&puzzle) {
+            let puzzle_path = self.base_path.join(format!("{:?}", puzzle));
+            let progress = PuzzleProgress::create_or_load(&puzzle_path)?;
+            self.puzzles.insert(puzzle, progress);
         }
-        let circuit_path =
-            puzzle_path.join(encode_name(circuit_name)).with_extension("toml");
-        debug_log!("Saving circuit {:?} to {:?}", circuit_name, circuit_path);
-        data.save(&circuit_path)?;
-        self.puzzles
-            .entry(puzzle)
-            .or_insert_with(PuzzleProgress::new)
-            .circuit_names
-            .insert(circuit_name.to_string());
-        Ok(())
-    }
-}
-
-//===========================================================================//
-
-pub struct CircuitNamesIter<'a> {
-    inner: Option<btree_set::Iter<'a, String>>,
-}
-
-impl<'a> CircuitNamesIter<'a> {
-    fn new(names: &'a BTreeSet<String>) -> CircuitNamesIter<'a> {
-        CircuitNamesIter { inner: Some(names.iter()) }
-    }
-
-    fn empty() -> CircuitNamesIter<'static> {
-        CircuitNamesIter { inner: None }
-    }
-}
-
-impl<'a> Iterator for CircuitNamesIter<'a> {
-    type Item = &'a str;
-
-    fn next(&mut self) -> Option<&'a str> {
-        if let Some(ref mut inner) = self.inner {
-            inner.next().map(String::as_str)
-        } else {
-            None
-        }
+        let progress = self.puzzles.get_mut(&puzzle).unwrap();
+        progress.save_circuit(circuit_name, circuit_data)
     }
 }
 

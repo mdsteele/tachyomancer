@@ -124,6 +124,12 @@ impl GameState {
         }
     }
 
+    pub fn is_puzzle_solved(&self, puzzle: Puzzle) -> bool {
+        self.profile
+            .as_ref()
+            .map_or(false, |profile| profile.is_puzzle_solved(puzzle))
+    }
+
     pub fn circuit_name(&self) -> &str { &self.circuit_name }
 
     pub fn set_circuit_name(&mut self, name: String) {

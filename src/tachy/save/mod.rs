@@ -23,6 +23,7 @@ mod encode;
 mod menu;
 mod prefs;
 mod profile;
+mod progress;
 mod puzzle;
 mod wire;
 
@@ -30,7 +31,8 @@ pub use self::circuit::CircuitData;
 pub use self::dir::{ProfileNamesIter, SaveDir};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
-pub use self::profile::{CircuitNamesIter, Profile};
+pub use self::profile::Profile;
+pub use self::progress::CircuitNamesIter;
 pub use self::puzzle::{AllPuzzlesIter, Puzzle, PuzzleKind};
 pub use self::wire::WireShape;
 

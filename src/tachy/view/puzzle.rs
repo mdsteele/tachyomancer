@@ -52,7 +52,13 @@ impl PuzzlesView {
     pub fn new(rect: Rect<i32>, state: &GameState) -> PuzzlesView {
         // TODO: Filter puzzles based on what's unlocked
         let puzzle_list_items = Puzzle::all()
-            .map(|puzzle| (puzzle, puzzle.title().to_string()))
+            .map(|puzzle| {
+                     let mut label = puzzle.title().to_string();
+                     if !state.is_puzzle_solved(puzzle) {
+                         label = format!("* {}", label);
+                     }
+                     (puzzle, label)
+                 })
             .collect();
         let circuit_list_height = (rect.height - ELEMENT_SPACING) / 2;
         PuzzlesView {

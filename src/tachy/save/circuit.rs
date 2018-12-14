@@ -52,13 +52,13 @@ impl CircuitData {
             .map_err(|err| format!("Could not deserialize circuit: {}", err))
     }
 
-    fn serialize(&self) -> Result<Vec<u8>, String> {
+    fn serialize_toml(&self) -> Result<Vec<u8>, String> {
         toml::to_vec(self)
             .map_err(|err| format!("Could not serialize circuit: {}", err))
     }
 
     pub fn save(&self, path: &Path) -> Result<(), String> {
-        let bytes = self.serialize()?;
+        let bytes = self.serialize_toml()?;
         fs::write(path, bytes)
             .map_err(|err| {
                          format!("Could not write circuit file to {:?}: {}",
@@ -82,7 +82,7 @@ mod tests {
         data.chips.insert("p0p2".to_string(), "t0-Break".to_string());
         data.wires.insert("m1p2e".to_string(), WireShape::Stub);
         data.wires.insert("p0p2w".to_string(), WireShape::Stub);
-        let bytes = data.serialize().unwrap();
+        let bytes = data.serialize_toml().unwrap();
         assert_eq!(String::from_utf8(bytes).unwrap().as_str(),
                    "bounds = [-2, -1, 8, 5]\n\n\
                     [chips]\n\

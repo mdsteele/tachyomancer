@@ -159,6 +159,14 @@ impl Profile {
         self.puzzles.get(&puzzle).map_or(false, PuzzleProgress::is_solved)
     }
 
+    pub fn puzzle_graph_points(&self, puzzle: Puzzle) -> &[(i32, i32)] {
+        if let Some(ref progress) = self.puzzles.get(&puzzle) {
+            progress.graph_points()
+        } else {
+            &[]
+        }
+    }
+
     pub fn circuit_names(&self, puzzle: Puzzle) -> CircuitNamesIter {
         if let Some(ref progress) = self.puzzles.get(&puzzle) {
             progress.circuit_names()

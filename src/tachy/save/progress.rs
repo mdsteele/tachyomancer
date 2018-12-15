@@ -35,7 +35,6 @@ const DATA_FILE_NAME: &str = "puzzle.progress.toml";
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct PuzzleProgressData {
-    solved: Option<bool>,
     graph: Option<Vec<(i32, i32)>>,
 }
 
@@ -151,7 +150,15 @@ impl PuzzleProgress {
         Ok(())
     }
 
-    pub fn is_solved(&self) -> bool { self.data.solved.unwrap_or(false) }
+    pub fn is_solved(&self) -> bool { !self.graph_points().is_empty() }
+
+    pub fn graph_points(&self) -> &[(i32, i32)] {
+        if let Some(ref points) = self.data.graph {
+            points.as_slice()
+        } else {
+            &[]
+        }
+    }
 
     pub fn circuit_names(&self) -> CircuitNamesIter {
         CircuitNamesIter::new(&self.circuit_names)

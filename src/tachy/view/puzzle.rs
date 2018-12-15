@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::list::ListView;
-use cgmath::Matrix4;
+use cgmath::{Deg, Matrix4, vec3};
 use tachy::font::Align;
 use tachy::geom::Rect;
 use tachy::gui::{Event, Resources};
@@ -30,6 +30,13 @@ use tachy::state::GameState;
 const CIRCUIT_LIST_WIDTH: i32 = 200;
 const ELEMENT_SPACING: i32 = 18;
 const PUZZLE_LIST_WIDTH: i32 = 250;
+
+const GRAPH_LABEL_FONT_SIZE: f32 = 14.0;
+const GRAPH_INNER_MARGIN: i32 = 10;
+const GRAPH_LABEL_MARGIN: i32 = 18;
+const GRAPH_TICK_STEP: i32 = 10;
+const GRAPH_TICK_LENGTH: f32 = 4.0;
+const GRAPH_TICK_THICKNESS: f32 = 2.0;
 
 //===========================================================================//
 
@@ -44,6 +51,7 @@ pub enum PuzzlesAction {
 pub struct PuzzlesView {
     puzzle_list: ListView<Puzzle>,
     circuit_list: ListView<String>,
+    graph: GraphView,
     edit_button: Button,
     new_button: Button,
 }
@@ -60,7 +68,7 @@ impl PuzzlesView {
                      (puzzle, label)
                  })
             .collect();
-        let circuit_list_height = (rect.height - ELEMENT_SPACING) / 2;
+        let semi_height = (rect.height - ELEMENT_SPACING) / 2;
         PuzzlesView {
             puzzle_list: ListView::new(Rect::new(rect.x,
                                                  rect.y,
@@ -71,11 +79,15 @@ impl PuzzlesView {
             circuit_list: ListView::new(Rect::new(rect.x + PUZZLE_LIST_WIDTH +
                                                       ELEMENT_SPACING,
                                                   rect.bottom() -
-                                                      circuit_list_height,
+                                                      semi_height,
                                                   CIRCUIT_LIST_WIDTH,
-                                                  circuit_list_height),
+                                                  semi_height),
                                         state.circuit_name(),
                                         circuit_list_items(state)),
+            graph: GraphView::new(Rect::new(rect.right() - semi_height,
+                                            rect.y,
+                                            semi_height,
+                                            semi_height)),
             edit_button: Button::new(Rect::new(rect.right() - 80,
                                                rect.bottom() - 40,
                                                80,
@@ -94,7 +106,10 @@ impl PuzzlesView {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 state: &GameState) {
-        self.puzzle_list.draw(resources, matrix, &state.current_puzzle());
+        let puzzle = state.current_puzzle();
+        self.puzzle_list.draw(resources, matrix, &puzzle);
+        let graph_points = state.puzzle_graph_points(puzzle);
+        self.graph.draw(resources, matrix, puzzle, graph_points);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
         self.edit_button.draw(resources, matrix);
         self.new_button.draw(resources, matrix);
@@ -180,6 +195,111 @@ impl Button {
             _ => {}
         }
         return None;
+    }
+}
+
+//===========================================================================//
+
+struct GraphView {
+    rect: Rect<i32>,
+}
+
+impl GraphView {
+    pub fn new(rect: Rect<i32>) -> GraphView { GraphView { rect } }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                puzzle: Puzzle, points: &[(i32, i32)]) {
+        let color = (0.1, 0.7, 0.4);
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+
+        // If the puzzle hasn't been solved yet, don't draw a graph.
+        let font = resources.fonts().roman();
+        if points.is_empty() {
+            font.draw(matrix,
+                      20.0,
+                      Align::MidCenter,
+                      (rect.x + 0.5 * rect.width,
+                       rect.y + 0.5 * rect.height - 12.0),
+                      "COMPLETE THIS TASK TO");
+            font.draw(matrix,
+                      20.0,
+                      Align::MidCenter,
+                      (rect.x + 0.5 * rect.width,
+                       rect.y + 0.5 * rect.height + 12.0),
+                      "VIEW OPTIMIZATION GRAPH");
+            return;
+        }
+
+        // Draw the graph data:
+        let graph_rect = Rect::new(self.rect.x + GRAPH_INNER_MARGIN,
+                                   self.rect.y + GRAPH_INNER_MARGIN,
+                                   self.rect.width - 2 * GRAPH_INNER_MARGIN -
+                                       GRAPH_LABEL_MARGIN,
+                                   self.rect.height - 2 * GRAPH_INNER_MARGIN -
+                                       GRAPH_LABEL_MARGIN);
+        let graph_rect = graph_rect.as_f32();
+        let color = (0.1, 0.1, 0.1);
+        resources.shaders().solid().fill_rect(&matrix, color, graph_rect);
+        let graph_bounds = puzzle.graph_bounds();
+        let color = (0.9, 0.1, 0.1);
+        for &(pt_x, pt_y) in points.iter() {
+            let rel_x = graph_rect.width *
+                ((pt_x as f32) / (graph_bounds.0 as f32));
+            let rel_y = graph_rect.height *
+                ((pt_y as f32) / (graph_bounds.1 as f32));
+            let point_rect = Rect::new(graph_rect.x + rel_x,
+                                       graph_rect.y,
+                                       graph_rect.width - rel_x,
+                                       graph_rect.height - rel_y);
+            resources.shaders().solid().fill_rect(&matrix, color, point_rect);
+        }
+
+        // Draw axis ticks:
+        let color = (0.1, 0.1, 0.1);
+        let unit_span = (graph_rect.width - GRAPH_TICK_THICKNESS) /
+            (graph_bounds.0 as f32);
+        let mut tick = 0;
+        while tick <= graph_bounds.0 {
+            let tick_rect = Rect::new(graph_rect.x +
+                                          (tick as f32) * unit_span,
+                                      graph_rect.bottom(),
+                                      GRAPH_TICK_THICKNESS,
+                                      GRAPH_TICK_LENGTH);
+            resources.shaders().solid().fill_rect(&matrix, color, tick_rect);
+            tick += GRAPH_TICK_STEP;
+        }
+        let unit_span = (graph_rect.height - GRAPH_TICK_THICKNESS) /
+            (graph_bounds.1 as f32);
+        tick = 0;
+        while tick <= graph_bounds.1 {
+            let tick_rect = Rect::new(graph_rect.right(),
+                                      graph_rect.bottom() -
+                                          GRAPH_TICK_THICKNESS -
+                                          (tick as f32) * unit_span,
+                                      GRAPH_TICK_LENGTH,
+                                      GRAPH_TICK_THICKNESS);
+            resources.shaders().solid().fill_rect(&matrix, color, tick_rect);
+            tick += GRAPH_TICK_STEP;
+        }
+
+        // Draw axis labels:
+        font.draw(matrix,
+                  GRAPH_LABEL_FONT_SIZE,
+                  Align::BottomCenter,
+                  (graph_rect.x + 0.5 * graph_rect.width,
+                   graph_rect.bottom() + GRAPH_LABEL_MARGIN as f32),
+                  "Size");
+        let side_matrix = matrix *
+            Matrix4::from_translation(vec3(graph_rect.right(),
+                                           graph_rect.bottom(),
+                                           0.0)) *
+            Matrix4::from_angle_z(Deg(-90.0));
+        font.draw(&side_matrix,
+                  GRAPH_LABEL_FONT_SIZE,
+                  Align::BottomCenter,
+                  (0.5 * graph_rect.height, GRAPH_LABEL_MARGIN as f32),
+                  puzzle.score_units());
     }
 }
 

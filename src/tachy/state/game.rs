@@ -130,6 +130,14 @@ impl GameState {
             .map_or(false, |profile| profile.is_puzzle_solved(puzzle))
     }
 
+    pub fn puzzle_graph_points(&self, puzzle: Puzzle) -> &[(i32, i32)] {
+        if let Some(ref profile) = self.profile {
+            profile.puzzle_graph_points(puzzle)
+        } else {
+            &[]
+        }
+    }
+
     pub fn circuit_name(&self) -> &str { &self.circuit_name }
 
     pub fn set_circuit_name(&mut self, name: String) {

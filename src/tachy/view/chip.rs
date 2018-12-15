@@ -160,9 +160,8 @@ impl ChipModel {
                  port: &PortSpec) {
         let x = port.pos.x as f32 + 0.5;
         let y = port.pos.y as f32 + 0.5;
-        let angle = port.dir.angle_from_east();
         let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
-            Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle);
+            Matrix4::from_angle_z(port.dir.angle_from_east());
         let color = match (port.color, port.flow) {
             (PortColor::Behavior, PortFlow::Send) => (1.0, 0.5, 0.0),
             (PortColor::Behavior, PortFlow::Recv) => (0.75, 0.0, 0.0),

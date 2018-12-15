@@ -46,6 +46,7 @@ pub enum Align {
     MidLeft,
     TopCenter,
     MidCenter,
+    BottomCenter,
 }
 
 //===========================================================================//
@@ -157,6 +158,9 @@ impl TextShader {
             Align::MidLeft => Vector2::new(0.0, -0.5),
             Align::TopCenter => Vector2::new(-0.5 * (num_chars as f32), 0.0),
             Align::MidCenter => Vector2::new(-0.5 * (num_chars as f32), -0.5),
+            Align::BottomCenter => {
+                Vector2::new(-0.5 * (num_chars as f32), -1.0)
+            }
         };
         let mvp = matrix *
             Matrix4::from_translation(vec3(start.0, start.1, 0.0)) *

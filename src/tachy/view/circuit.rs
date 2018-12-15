@@ -602,7 +602,7 @@ fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
     let cx = (coords.x * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
     let cy = (coords.y * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
     matrix * Matrix4::from_translation(vec3(cx, cy, 0.0)) *
-        Matrix4::from_axis_angle(vec3(0.0, 0.0, 1.0), dir.angle_from_east()) *
+        Matrix4::from_angle_z(dir.angle_from_east()) *
         Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
 }
 

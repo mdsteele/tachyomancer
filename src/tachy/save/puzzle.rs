@@ -57,6 +57,10 @@ impl Puzzle {
 
     pub fn kind(self) -> PuzzleKind { self.data().kind }
 
+    pub fn score_units(self) -> &'static str { self.data().score_units }
+
+    pub fn graph_bounds(self) -> (i32, i32) { self.data().graph_bounds }
+
     #[allow(dead_code)]
     pub fn instructions(self) -> &'static str { self.data().instructions }
 
@@ -73,6 +77,8 @@ impl Puzzle {
                     title: "1-Bit Or Gate",
                     kind: PuzzleKind::Tutorial,
                     allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
                     instructions: "\
                         Create a circuit that outputs 1 if at least one of \
                         the two inputs is 1, or 0 if both inputs are 0.",
@@ -84,6 +90,8 @@ impl Puzzle {
                     title: "Heliostat",
                     kind: PuzzleKind::Automate,
                     allow_events: false,
+                    score_units: "Time",
+                    graph_bounds: (100, 100),
                     instructions: "\
                         Move the heliostat towards the optimal position.",
                     verification: &[],
@@ -94,6 +102,8 @@ impl Puzzle {
                     title: "Behavior Sandbox",
                     kind: PuzzleKind::Sandbox,
                     allow_events: false,
+                    score_units: "",
+                    graph_bounds: (100, 100),
                     instructions: "",
                     verification: &[],
                 }
@@ -103,6 +113,8 @@ impl Puzzle {
                     title: "Event Sandbox",
                     kind: PuzzleKind::Sandbox,
                     allow_events: true,
+                    score_units: "",
+                    graph_bounds: (100, 100),
                     instructions: "",
                     verification: &[],
                 }
@@ -117,6 +129,8 @@ struct PuzzleData {
     title: &'static str,
     kind: PuzzleKind,
     allow_events: bool,
+    score_units: &'static str,
+    graph_bounds: (i32, i32),
     instructions: &'static str,
     verification: &'static [u64],
 }

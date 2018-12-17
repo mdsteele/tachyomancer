@@ -80,11 +80,9 @@ impl GameState {
             profile.save()?;
         }
         let profile = self.savedir.create_or_load_profile(name)?;
-        self.circuit_name =
-            match profile.circuit_names(profile.current_puzzle()).next() {
-                Some(name) => name.to_string(),
-                None => String::new(),
-            };
+        self.circuit_name = profile
+            .first_circuit_name_for_current_puzzle()
+            .unwrap_or_else(String::new);
         self.profile = Some(profile);
         Ok(())
     }
@@ -115,11 +113,9 @@ impl GameState {
         if let Some(ref mut profile) = self.profile {
             if profile.current_puzzle() != puzzle {
                 profile.set_current_puzzle(puzzle);
-                self.circuit_name =
-                    match profile.circuit_names(puzzle).next() {
-                        Some(name) => name.to_string(),
-                        None => String::new(),
-                    }
+                self.circuit_name = profile
+                    .first_circuit_name_for_current_puzzle()
+                    .unwrap_or_else(String::new);
             }
         }
     }
@@ -142,6 +138,19 @@ impl GameState {
 
     pub fn set_circuit_name(&mut self, name: String) {
         self.circuit_name = name;
+    }
+
+    pub fn delete_current_circuit(&mut self) -> Result<(), String> {
+        if let Some(ref mut profile) = self.profile {
+            let puzzle = profile.current_puzzle();
+            profile.delete_circuit(puzzle, &self.circuit_name)?;
+            self.circuit_name = profile
+                .first_circuit_name_for_current_puzzle()
+                .unwrap_or_else(String::new);
+            Ok(())
+        } else {
+            Err("No profile loaded".to_string())
+        }
     }
 
     pub fn edit_grid(&self) -> Option<&EditGrid> { self.edit_grid.as_ref() }

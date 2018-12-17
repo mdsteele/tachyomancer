@@ -17,15 +17,16 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::button::TextButton;
 use super::list::ListView;
 use cgmath::Matrix4;
-use tachy::font::Align;
 use tachy::geom::Rect;
 use tachy::gui::{Event, Resources};
 use tachy::state::GameState;
 
 //===========================================================================//
 
+#[derive(Clone)]
 pub enum PrefsAction {
     NewProfile,
     SwitchProfile(String),
@@ -35,7 +36,7 @@ pub enum PrefsAction {
 
 pub struct PrefsView {
     profiles_list: ListView<String>,
-    new_button: NewButton,
+    new_button: TextButton<PrefsAction>,
 }
 
 impl PrefsView {
@@ -54,10 +55,12 @@ impl PrefsView {
                                                    rect.height),
                                          current_profile_name,
                                          list_items),
-            new_button: NewButton::new(Rect::new(rect.right() - 150,
-                                                 rect.bottom() - 40,
-                                                 150,
-                                                 40)),
+            new_button: TextButton::new(Rect::new(rect.right() - 150,
+                                                  rect.bottom() - 40,
+                                                  150,
+                                                  40),
+                                        "New Profile",
+                                        PrefsAction::NewProfile),
         }
     }
 
@@ -85,40 +88,6 @@ impl PrefsView {
     }
 
     pub fn unfocus(&mut self) { self.profiles_list.unfocus(); }
-}
-
-//===========================================================================//
-
-struct NewButton {
-    rect: Rect<i32>,
-}
-
-impl NewButton {
-    pub fn new(rect: Rect<i32>) -> NewButton { NewButton { rect } }
-
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let color = (0.7, 0.1, 0.1);
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
-        resources.fonts().roman().draw(&matrix,
-                                       20.0,
-                                       Align::MidCenter,
-                                       (rect.x + 0.5 * rect.width,
-                                        rect.y + 0.5 * rect.height),
-                                       "New Profile");
-    }
-
-    pub fn handle_event(&mut self, event: &Event) -> Option<PrefsAction> {
-        match event {
-            Event::MouseDown(mouse) => {
-                if mouse.left && self.rect.contains_point(mouse.pt) {
-                    return Some(PrefsAction::NewProfile);
-                }
-            }
-            _ => {}
-        }
-        return None;
-    }
 }
 
 //===========================================================================//

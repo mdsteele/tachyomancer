@@ -168,16 +168,49 @@ impl PuzzleProgress {
         self.circuit_names.contains(name)
     }
 
+    pub fn load_circuit(&self, circuit_name: &str)
+                        -> Result<CircuitData, String> {
+        if !self.circuit_names.contains(circuit_name) {
+            return Err(format!("No such circuit: {:?}", circuit_name));
+        }
+        let circuit_path = self.circuit_path(circuit_name);
+        debug_log!("Loading circuit {:?} from {:?}",
+                   circuit_name,
+                   circuit_path);
+        CircuitData::load(&circuit_path)
+    }
+
     pub fn save_circuit(&mut self, circuit_name: &str,
                         circuit_data: &CircuitData)
                         -> Result<(), String> {
-        let circuit_path = self.base_path
-            .join(encode_name(circuit_name))
-            .with_extension("toml");
+        let circuit_path = self.circuit_path(circuit_name);
         debug_log!("Saving circuit {:?} to {:?}", circuit_name, circuit_path);
         circuit_data.save(&circuit_path)?;
         self.circuit_names.insert(circuit_name.to_string());
         Ok(())
+    }
+
+    pub fn delete_circuit(&mut self, circuit_name: &str)
+                          -> Result<(), String> {
+        if !self.circuit_names.contains(circuit_name) {
+            return Err(format!("No such circuit: {:?}", circuit_name));
+        }
+        let circuit_path = self.circuit_path(circuit_name);
+        debug_log!("Deleting circuit {:?} at {:?}",
+                   circuit_name,
+                   circuit_path);
+        fs::remove_file(&circuit_path)
+            .map_err(|err| {
+                         format!("Could not delete circuit file {:?}: {}",
+                                 circuit_path,
+                                 err)
+                     })?;
+        self.circuit_names.remove(circuit_name);
+        Ok(())
+    }
+
+    fn circuit_path(&self, circuit_name: &str) -> PathBuf {
+        self.base_path.join(encode_name(circuit_name)).with_extension("toml")
     }
 }
 

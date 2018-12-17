@@ -35,6 +35,15 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
                 match view.handle_event(&event, state, &mut audio) {
+                    Some(MenuAction::DeleteCircuit) => {
+                        match state.delete_current_circuit() {
+                            Ok(()) => view.update_circuit_list(state),
+                            Err(err) => {
+                                // TODO: display error to user; don't panic
+                                panic!("EditCircuit failed: {:?}", err);
+                            }
+                        }
+                    }
                     Some(MenuAction::EditCircuit) => {
                         match state.load_edit_grid() {
                             Ok(()) => return ModeChange::Next,

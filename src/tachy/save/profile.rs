@@ -18,7 +18,6 @@
 // +--------------------------------------------------------------------------+
 
 use super::circuit::CircuitData;
-use super::encode::encode_name;
 use super::progress::{CircuitNamesIter, PuzzleProgress};
 use super::puzzle::Puzzle;
 use std::collections::HashMap;
@@ -167,6 +166,10 @@ impl Profile {
         }
     }
 
+    pub fn first_circuit_name_for_current_puzzle(&self) -> Option<String> {
+        self.circuit_names(self.current_puzzle()).next().map(str::to_string)
+    }
+
     pub fn circuit_names(&self, puzzle: Puzzle) -> CircuitNamesIter {
         if let Some(ref progress) = self.puzzles.get(&puzzle) {
             progress.circuit_names()
@@ -185,16 +188,11 @@ impl Profile {
 
     pub fn load_circuit(&self, puzzle: Puzzle, circuit_name: &str)
                         -> Result<CircuitData, String> {
-        if !self.has_circuit_name(puzzle, circuit_name) {
-            return Err(format!("No such circuit: {:?}", circuit_name));
+        if let Some(progress) = self.puzzles.get(&puzzle) {
+            progress.load_circuit(circuit_name)
+        } else {
+            Err(format!("No such circuit: {:?}", circuit_name))
         }
-        let puzzle_path = self.base_path.join(format!("{:?}", puzzle));
-        let circuit_path =
-            puzzle_path.join(encode_name(circuit_name)).with_extension("toml");
-        debug_log!("Loading circuit {:?} from {:?}",
-                   circuit_name,
-                   circuit_path);
-        CircuitData::load(&circuit_path)
     }
 
     pub fn save_circuit(&mut self, puzzle: Puzzle, circuit_name: &str,
@@ -207,6 +205,15 @@ impl Profile {
         }
         let progress = self.puzzles.get_mut(&puzzle).unwrap();
         progress.save_circuit(circuit_name, circuit_data)
+    }
+
+    pub fn delete_circuit(&mut self, puzzle: Puzzle, circuit_name: &str)
+                          -> Result<(), String> {
+        if let Some(progress) = self.puzzles.get_mut(&puzzle) {
+            progress.delete_circuit(circuit_name)
+        } else {
+            Err(format!("No such circuit: {:?}", circuit_name))
+        }
     }
 }
 

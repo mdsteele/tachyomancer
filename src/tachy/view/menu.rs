@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::dialog::ButtonDialogBox;
 use super::prefs::{PrefsAction, PrefsView};
 use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
@@ -41,9 +42,11 @@ const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
 
 //===========================================================================//
 
+#[derive(Clone)]
 pub enum MenuAction {
     EditCircuit,
     NewCircuit,
+    DeleteCircuit,
     NewProfile,
     SwitchProfile(String),
 }
@@ -56,6 +59,7 @@ pub struct MenuView {
     section_buttons: Vec<SectionButton>,
     prefs_view: PrefsView,
     puzzles_view: PuzzlesView,
+    confirmation_dialog: Option<ButtonDialogBox<Option<MenuAction>>>,
 }
 
 impl MenuView {
@@ -90,6 +94,7 @@ impl MenuView {
             section_buttons,
             prefs_view: PrefsView::new(section_rect, state),
             puzzles_view: PuzzlesView::new(section_rect, state),
+            confirmation_dialog: None,
         }
     }
 
@@ -113,14 +118,38 @@ impl MenuView {
             }
             _ => {} // TODO
         }
+        if let Some(ref dialog) = self.confirmation_dialog {
+            dialog.draw(resources, &projection);
+        }
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
                         audio: &mut AudioQueue)
                         -> Option<MenuAction> {
+        if let Some(mut dialog) = self.confirmation_dialog.take() {
+            match dialog.handle_event(event) {
+                Some(Some(action)) => return Some(action),
+                Some(None) => {}
+                None => self.confirmation_dialog = Some(dialog),
+            }
+            return None;
+        }
         match state.menu_section() {
             MenuSection::Puzzles => {
                 match self.puzzles_view.handle_event(event, state) {
+                    Some(PuzzlesAction::Delete) => {
+                        let size = RectSize::new(self.width as i32,
+                                                 self.height as i32);
+                        let text = format!("Really delete {}?",
+                                           state.circuit_name());
+                        let buttons = &[
+                            ("Cancel", None),
+                            ("OK", Some(MenuAction::DeleteCircuit)),
+                        ];
+                        self.confirmation_dialog =
+                            Some(ButtonDialogBox::new(size, &text, buttons));
+                        return None;
+                    }
                     Some(PuzzlesAction::Edit) => {
                         return Some(MenuAction::EditCircuit);
                     }
@@ -153,6 +182,10 @@ impl MenuView {
             }
         }
         return None;
+    }
+
+    pub fn update_circuit_list(&mut self, state: &GameState) {
+        self.puzzles_view.update_circuit_list(state);
     }
 }
 

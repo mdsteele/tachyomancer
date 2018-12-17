@@ -17,22 +17,51 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod begin;
-mod button;
-mod chip;
-mod circuit;
-mod control;
-mod dialog;
-mod list;
-mod menu;
-mod parts;
-mod prefs;
-mod puzzle;
-mod verify;
-mod wire;
+use cgmath::Matrix4;
+use tachy::font::Align;
+use tachy::geom::Rect;
+use tachy::gui::{Event, Resources};
 
-pub use self::begin::{BeginAction, BeginView};
-pub use self::circuit::{CircuitAction, CircuitView};
-pub use self::menu::{MenuAction, MenuView};
+//===========================================================================//
+
+pub struct TextButton<T> {
+    rect: Rect<i32>,
+    label: String,
+    value: T,
+}
+
+impl<T: Clone> TextButton<T> {
+    pub fn new(rect: Rect<i32>, label: &str, value: T) -> TextButton<T> {
+        TextButton {
+            rect,
+            label: label.to_string(),
+            value,
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let color = (0.7, 0.1, 0.1);
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.fonts().roman().draw(&matrix,
+                                       20.0,
+                                       Align::MidCenter,
+                                       (rect.x + 0.5 * rect.width,
+                                        rect.y + 0.5 * rect.height),
+                                       &self.label);
+    }
+
+    pub fn handle_event(&mut self, event: &Event) -> Option<T> {
+        match event {
+            Event::MouseDown(mouse) => {
+                if mouse.left && self.rect.contains_point(mouse.pt) {
+                    return Some(self.value.clone());
+                }
+            }
+            _ => {}
+        }
+        return None;
+    }
+}
 
 //===========================================================================//

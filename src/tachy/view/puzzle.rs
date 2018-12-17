@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::button::TextButton;
 use super::list::ListView;
 use cgmath::{Deg, Matrix4, vec3};
 use num_integer::div_floor;
@@ -50,6 +51,7 @@ const GRAPH_TICK_THICKNESS: f32 = 2.0;
 
 #[derive(Clone, Copy)]
 pub enum PuzzlesAction {
+    Delete,
     Edit,
     New,
 }
@@ -61,8 +63,9 @@ pub struct PuzzlesView {
     circuit_list: ListView<String>,
     description: DescriptionView,
     graph: GraphView,
-    edit_button: Button,
-    new_button: Button,
+    edit_button: TextButton<PuzzlesAction>,
+    new_button: TextButton<PuzzlesAction>,
+    delete_button: TextButton<PuzzlesAction>,
 }
 
 impl PuzzlesView {
@@ -105,19 +108,26 @@ impl PuzzlesView {
                                             rect.y,
                                             semi_height,
                                             semi_height)),
-            edit_button: Button::new(Rect::new(rect.right() - 80,
-                                               rect.bottom() - 40,
-                                               80,
-                                               40),
-                                     "Edit",
-                                     PuzzlesAction::Edit),
-            new_button: Button::new(Rect::new(rect.right() - 80,
-                                              rect.bottom() - 80 -
-                                                  ELEMENT_SPACING,
-                                              80,
-                                              40),
-                                    "New",
-                                    PuzzlesAction::New),
+            edit_button: TextButton::new(Rect::new(rect.right() - 80,
+                                                   rect.bottom() - 40,
+                                                   80,
+                                                   40),
+                                         "Edit",
+                                         PuzzlesAction::Edit),
+            new_button: TextButton::new(Rect::new(rect.right() - 80,
+                                                  rect.bottom() - 80 -
+                                                      ELEMENT_SPACING,
+                                                  80,
+                                                  40),
+                                        "New",
+                                        PuzzlesAction::New),
+            delete_button: TextButton::new(Rect::new(rect.right() - 80,
+                                                     rect.bottom() - 120 -
+                                                         2 * ELEMENT_SPACING,
+                                                     80,
+                                                     40),
+                                           "Delete",
+                                           PuzzlesAction::Delete),
         }
     }
 
@@ -131,6 +141,7 @@ impl PuzzlesView {
         self.circuit_list.draw(resources, matrix, state.circuit_name());
         self.edit_button.draw(resources, matrix);
         self.new_button.draw(resources, matrix);
+        self.delete_button.draw(resources, matrix);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
@@ -153,7 +164,15 @@ impl PuzzlesView {
         if let Some(action) = self.new_button.handle_event(event) {
             return Some(action);
         }
+        if let Some(action) = self.delete_button.handle_event(event) {
+            return Some(action);
+        }
         return None;
+    }
+
+    pub fn update_circuit_list(&mut self, state: &GameState) {
+        self.circuit_list
+            .set_items(state.circuit_name(), circuit_list_items(state));
     }
 
     pub fn unfocus(&mut self) {
@@ -170,49 +189,6 @@ fn circuit_list_items(state: &GameState) -> Vec<(String, String)> {
             .collect()
     } else {
         Vec::new()
-    }
-}
-
-//===========================================================================//
-
-struct Button {
-    rect: Rect<i32>,
-    label: &'static str,
-    action: PuzzlesAction,
-}
-
-impl Button {
-    pub fn new(rect: Rect<i32>, label: &'static str, action: PuzzlesAction)
-               -> Button {
-        Button {
-            rect,
-            label,
-            action,
-        }
-    }
-
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let color = (0.7, 0.1, 0.1);
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
-        resources.fonts().roman().draw(&matrix,
-                                       20.0,
-                                       Align::MidCenter,
-                                       (rect.x + 0.5 * rect.width,
-                                        rect.y + 0.5 * rect.height),
-                                       self.label);
-    }
-
-    pub fn handle_event(&mut self, event: &Event) -> Option<PuzzlesAction> {
-        match event {
-            Event::MouseDown(mouse) => {
-                if mouse.left && self.rect.contains_point(mouse.pt) {
-                    return Some(self.action);
-                }
-            }
-            _ => {}
-        }
-        return None;
     }
 }
 

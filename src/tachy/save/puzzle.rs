@@ -61,6 +61,8 @@ impl Puzzle {
 
     pub fn graph_bounds(self) -> (i32, i32) { self.data().graph_bounds }
 
+    pub fn description(self) -> &'static str { self.data().description }
+
     #[allow(dead_code)]
     pub fn instructions(self) -> &'static str { self.data().instructions }
 
@@ -79,6 +81,11 @@ impl Puzzle {
                     allow_events: false,
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 1-bit OR gate out of AND and NOT \
+                        gates.\n\n\
+                        Once this task is completed, you will be able to use \
+                        OR gates in future tasks.",
                     instructions: "\
                         Create a circuit that outputs 1 if at least one of \
                         the two inputs is 1, or 0 if both inputs are 0.",
@@ -92,6 +99,9 @@ impl Puzzle {
                     allow_events: false,
                     score_units: "Time",
                     graph_bounds: (100, 100),
+                    description: "\
+                        Automate the ship's heliostat to reflect sunlight \
+                        onto the solar panels at the optimal angle.",
                     instructions: "\
                         Move the heliostat towards the optimal position.",
                     verification: &[],
@@ -104,6 +114,10 @@ impl Puzzle {
                     allow_events: false,
                     score_units: "",
                     graph_bounds: (100, 100),
+                    description: "\
+                        Build any circuits you want using all behavior chips \
+                        that are currently available.  You can use this area \
+                        for prototyping, experimentation, or freeform design.",
                     instructions: "",
                     verification: &[],
                 }
@@ -115,6 +129,11 @@ impl Puzzle {
                     allow_events: true,
                     score_units: "",
                     graph_bounds: (100, 100),
+                    description: "\
+                        Build any circuits you want using all behavior and \
+                        event chips that are currently available.  You can \
+                        use this area for prototyping, experimentation, or \
+                        freeform design.",
                     instructions: "",
                     verification: &[],
                 }
@@ -131,6 +150,7 @@ struct PuzzleData {
     allow_events: bool,
     score_units: &'static str,
     graph_bounds: (i32, i32),
+    description: &'static str,
     instructions: &'static str,
     verification: &'static [u64],
 }

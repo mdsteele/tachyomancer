@@ -28,6 +28,7 @@ extern crate png;
 extern crate sdl2;
 #[macro_use]
 extern crate serde_derive;
+extern crate textwrap;
 extern crate toml;
 
 mod tachy;

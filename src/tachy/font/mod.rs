@@ -43,6 +43,7 @@ const INCONSOLATA_PNG_DATA: &[u8] =
 
 #[derive(Clone, Copy)]
 pub enum Align {
+    TopLeft,
     MidLeft,
     TopCenter,
     MidCenter,
@@ -148,13 +149,16 @@ impl TextShader {
 
         let mut array = [0u32; MAX_CHARS];
         let mut num_chars = 0;
-        for chr in text.chars() {
+        // TODO: If text.chars().len() > MAX_CHARS, draw the varray multiple
+        //   times as necessary to draw the whole text string.
+        for chr in text.chars().take(MAX_CHARS) {
             array[num_chars] = chr as u32;
             num_chars += 1;
         }
         self.text.set(&array);
 
         let shift = match alignment {
+            Align::TopLeft => Vector2::new(0.0, 0.0),
             Align::MidLeft => Vector2::new(0.0, -0.5),
             Align::TopCenter => Vector2::new(-0.5 * (num_chars as f32), 0.0),
             Align::MidCenter => Vector2::new(-0.5 * (num_chars as f32), -0.5),

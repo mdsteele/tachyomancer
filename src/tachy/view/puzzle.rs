@@ -19,17 +19,25 @@
 
 use super::list::ListView;
 use cgmath::{Deg, Matrix4, vec3};
+use num_integer::div_floor;
+use std::borrow::Cow;
+use std::cell::RefCell;
 use tachy::font::Align;
 use tachy::geom::Rect;
 use tachy::gui::{Event, Resources};
 use tachy::save::Puzzle;
 use tachy::state::GameState;
+use textwrap;
 
 //===========================================================================//
 
 const CIRCUIT_LIST_WIDTH: i32 = 200;
 const ELEMENT_SPACING: i32 = 18;
 const PUZZLE_LIST_WIDTH: i32 = 250;
+
+const DESCRIPTION_FONT_SIZE: f32 = 20.0;
+const DESCRIPTION_INNER_MARGIN: i32 = 10;
+const DESCRIPTION_LINE_HEIGHT: f32 = 22.0;
 
 const GRAPH_LABEL_FONT_SIZE: f32 = 14.0;
 const GRAPH_INNER_MARGIN: i32 = 10;
@@ -51,6 +59,7 @@ pub enum PuzzlesAction {
 pub struct PuzzlesView {
     puzzle_list: ListView<Puzzle>,
     circuit_list: ListView<String>,
+    description: DescriptionView,
     graph: GraphView,
     edit_button: Button,
     new_button: Button,
@@ -84,6 +93,14 @@ impl PuzzlesView {
                                                   semi_height),
                                         state.circuit_name(),
                                         circuit_list_items(state)),
+            description:
+                DescriptionView::new(Rect::new(rect.x + PUZZLE_LIST_WIDTH +
+                                                   ELEMENT_SPACING,
+                                               rect.y,
+                                               rect.width - PUZZLE_LIST_WIDTH -
+                                                   semi_height -
+                                                   2 * ELEMENT_SPACING,
+                                               semi_height)),
             graph: GraphView::new(Rect::new(rect.right() - semi_height,
                                             rect.y,
                                             semi_height,
@@ -108,6 +125,7 @@ impl PuzzlesView {
                 state: &GameState) {
         let puzzle = state.current_puzzle();
         self.puzzle_list.draw(resources, matrix, &puzzle);
+        self.description.draw(resources, matrix, puzzle);
         let graph_points = state.puzzle_graph_points(puzzle);
         self.graph.draw(resources, matrix, puzzle, graph_points);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
@@ -195,6 +213,61 @@ impl Button {
             _ => {}
         }
         return None;
+    }
+}
+
+//===========================================================================//
+
+struct DescriptionView {
+    rect: Rect<i32>,
+    cache: RefCell<Option<(Puzzle, Vec<String>)>>,
+}
+
+impl DescriptionView {
+    pub fn new(rect: Rect<i32>) -> DescriptionView {
+        DescriptionView {
+            rect,
+            cache: RefCell::new(None),
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                puzzle: Puzzle) {
+        let color = (0.1, 0.1, 0.3);
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+
+        let mut cached = self.cache.borrow_mut();
+        match cached.as_ref() {
+            Some(&(puzz, ref strings)) if puzz == puzzle => {
+                self.draw_strings(resources, matrix, strings);
+                return;
+            }
+            _ => {}
+        }
+        let num_cols = div_floor(self.rect.width -
+                                     2 * DESCRIPTION_INNER_MARGIN,
+                                 (0.5 * DESCRIPTION_FONT_SIZE) as i32)
+            .max(1) as usize;
+        let strings = textwrap::wrap_iter(puzzle.description(), num_cols)
+            .map(Cow::into_owned)
+            .collect::<Vec<String>>();
+        self.draw_strings(resources, matrix, &strings);
+        *cached = Some((puzzle, strings));
+    }
+
+    fn draw_strings(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                    strings: &[String]) {
+        let left = (self.rect.x + DESCRIPTION_INNER_MARGIN) as f32;
+        let mut top = (self.rect.y + DESCRIPTION_INNER_MARGIN) as f32;
+        for string in strings.iter() {
+            resources.fonts().roman().draw(matrix,
+                                           DESCRIPTION_FONT_SIZE,
+                                           Align::TopLeft,
+                                           (left, top),
+                                           string);
+            top += DESCRIPTION_LINE_HEIGHT;
+        }
     }
 }
 

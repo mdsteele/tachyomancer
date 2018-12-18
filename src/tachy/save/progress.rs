@@ -28,7 +28,7 @@ use unicode_width::UnicodeWidthStr;
 //===========================================================================//
 
 /// Maximum permitted unicode width of a circuit name.
-pub const CIRCUIT_NAME_MAX_WIDTH: usize = 32;
+pub const CIRCUIT_NAME_MAX_WIDTH: usize = 20;
 
 // Note: this file name needs to have a period (or other special character) in
 // the non-extension part to ensure that it cannot conflict with any encoded
@@ -198,6 +198,34 @@ impl PuzzleProgress {
         debug_log!("Saving circuit {:?} to {:?}", circuit_name, circuit_path);
         circuit_data.save(&circuit_path)?;
         self.circuit_names.insert(circuit_name.to_string());
+        Ok(())
+    }
+
+    pub fn copy_circuit(&mut self, old_name: &str, new_name: &str)
+                        -> Result<(), String> {
+        if !self.circuit_names.contains(old_name) {
+            return Err(format!("No such circuit: {:?}", old_name));
+        }
+        if new_name.is_empty() || new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
+            return Err(format!("Invalid circuit name: {:?}", new_name));
+        }
+        if self.circuit_names.contains(new_name) {
+            return Err(format!("Circuit already exists: {:?}", new_name));
+        }
+        let new_path = self.circuit_path(new_name);
+        if new_path.exists() {
+            return Err(format!("Path already exists: {:?}", new_path));
+        }
+        let old_path = self.circuit_path(old_name);
+        debug_log!("Copying circuit from {:?} to {:?}", old_path, new_path);
+        fs::copy(&old_path, &new_path)
+            .map_err(|err| {
+                format!("Could not copy circuit file {:?} to {:?}: {}",
+                        old_path,
+                        new_path,
+                        err)
+            })?;
+        self.circuit_names.insert(new_name.to_string());
         Ok(())
     }
 

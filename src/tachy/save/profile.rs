@@ -207,6 +207,16 @@ impl Profile {
         progress.save_circuit(circuit_name, circuit_data)
     }
 
+    pub fn copy_circuit(&mut self, puzzle: Puzzle, old_name: &str,
+                        new_name: &str)
+                        -> Result<(), String> {
+        if let Some(progress) = self.puzzles.get_mut(&puzzle) {
+            progress.copy_circuit(old_name, new_name)
+        } else {
+            Err(format!("No such circuit: {:?}", old_name))
+        }
+    }
+
     pub fn delete_circuit(&mut self, puzzle: Puzzle, circuit_name: &str)
                           -> Result<(), String> {
         if let Some(progress) = self.puzzles.get_mut(&puzzle) {

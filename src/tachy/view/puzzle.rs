@@ -32,7 +32,7 @@ use textwrap;
 
 //===========================================================================//
 
-const CIRCUIT_LIST_WIDTH: i32 = 200;
+const CIRCUIT_LIST_WIDTH: i32 = 240;
 const ELEMENT_SPACING: i32 = 18;
 const PUZZLE_LIST_WIDTH: i32 = 250;
 
@@ -51,6 +51,7 @@ const GRAPH_TICK_THICKNESS: f32 = 2.0;
 
 #[derive(Clone, Copy)]
 pub enum PuzzlesAction {
+    Copy,
     Delete,
     Edit,
     New,
@@ -64,9 +65,10 @@ pub struct PuzzlesView {
     circuit_list: ListView<String>,
     description: DescriptionView,
     graph: GraphView,
+    copy_button: TextButton<PuzzlesAction>,
+    delete_button: TextButton<PuzzlesAction>,
     edit_button: TextButton<PuzzlesAction>,
     new_button: TextButton<PuzzlesAction>,
-    delete_button: TextButton<PuzzlesAction>,
     rename_button: TextButton<PuzzlesAction>,
 }
 
@@ -137,6 +139,13 @@ impl PuzzlesView {
                                                      40),
                                            "Rename",
                                            PuzzlesAction::Rename),
+            copy_button: TextButton::new(Rect::new(rect.right() - 80,
+                                                   rect.bottom() - 200 -
+                                                       4 * ELEMENT_SPACING,
+                                                   80,
+                                                   40),
+                                         "Copy",
+                                         PuzzlesAction::Copy),
         }
     }
 
@@ -148,11 +157,12 @@ impl PuzzlesView {
         let graph_points = state.puzzle_graph_points(puzzle);
         self.graph.draw(resources, matrix, puzzle, graph_points);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
-        // TODO: edit/delete/rename buttons are not always enabled
+        // TODO: edit/delete/rename/copy buttons are not always enabled
         self.edit_button.draw(resources, matrix, true);
         self.new_button.draw(resources, matrix, true);
         self.delete_button.draw(resources, matrix, true);
         self.rename_button.draw(resources, matrix, true);
+        self.copy_button.draw(resources, matrix, true);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
@@ -169,7 +179,7 @@ impl PuzzlesView {
         {
             state.set_circuit_name(circuit_name);
         }
-        // TODO: edit/delete/rename buttons are not always enabled
+        // TODO: edit/delete/rename/copy buttons are not always enabled
         if let Some(action) = self.edit_button.handle_event(event, true) {
             return Some(action);
         }
@@ -180,6 +190,9 @@ impl PuzzlesView {
             return Some(action);
         }
         if let Some(action) = self.rename_button.handle_event(event, true) {
+            return Some(action);
+        }
+        if let Some(action) = self.copy_button.handle_event(event, true) {
             return Some(action);
         }
         return None;

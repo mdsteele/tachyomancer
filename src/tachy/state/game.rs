@@ -18,7 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use super::edit::EditGrid;
-use tachy::save::{MenuSection, Profile, Puzzle, SaveDir};
+use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Profile, Puzzle,
+                  SaveDir};
+use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
@@ -153,6 +155,36 @@ impl GameState {
             }
         }
         return true;
+    }
+
+    pub fn copy_current_circuit(&mut self) -> Result<(), String> {
+        if let Some(ref mut profile) = self.profile {
+            let puzzle = profile.current_puzzle();
+            let mut new_name;
+            let mut num: u64 = 1;
+            loop {
+                new_name = format!("{}.{}", self.circuit_name, num);
+                if !profile.has_circuit_name(puzzle, &new_name) {
+                    break;
+                }
+                num += 1;
+            }
+            if new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
+                num = 1;
+                loop {
+                    new_name = format!("Version {}", num);
+                    if !profile.has_circuit_name(puzzle, &new_name) {
+                        break;
+                    }
+                    num += 1;
+                }
+            }
+            profile.copy_circuit(puzzle, &self.circuit_name, &new_name)?;
+            self.circuit_name = new_name;
+            Ok(())
+        } else {
+            Err("No profile loaded".to_string())
+        }
     }
 
     pub fn delete_current_circuit(&mut self) -> Result<(), String> {

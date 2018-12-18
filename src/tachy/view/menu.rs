@@ -45,9 +45,10 @@ const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
 
 #[derive(Clone)]
 pub enum MenuAction {
+    CopyCircuit,
+    DeleteCircuit,
     EditCircuit,
     NewCircuit,
-    DeleteCircuit,
     RenameCircuit(String),
     NewProfile,
     SwitchProfile(String),
@@ -160,6 +161,9 @@ impl MenuView {
         match state.menu_section() {
             MenuSection::Puzzles => {
                 match self.puzzles_view.handle_event(event, state) {
+                    Some(PuzzlesAction::Copy) => {
+                        return Some(MenuAction::CopyCircuit);
+                    }
                     Some(PuzzlesAction::Delete) => {
                         self.unfocus();
                         let size = RectSize::new(self.width as i32,
@@ -185,7 +189,7 @@ impl MenuView {
                         self.unfocus();
                         let size = RectSize::new(self.width as i32,
                                                  self.height as i32);
-                        let text = "Choose new name for circuit:";
+                        let text = "Choose new circuit name:";
                         let initial = state.circuit_name();
                         let dialog =
                             TextDialogBox::new(size,

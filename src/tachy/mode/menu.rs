@@ -35,6 +35,14 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
                 match view.handle_event(&event, state, &mut audio) {
+                    Some(MenuAction::CopyCircuit) => {
+                        match state.copy_current_circuit() {
+                            Ok(()) => view.update_circuit_list(state),
+                            Err(err) => {
+                                view.show_error_dialog("copy circuit", &err);
+                            }
+                        }
+                    }
                     Some(MenuAction::DeleteCircuit) => {
                         match state.delete_current_circuit() {
                             Ok(()) => view.update_circuit_list(state),

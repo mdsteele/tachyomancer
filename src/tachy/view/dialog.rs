@@ -22,6 +22,7 @@ use cgmath::Matrix4;
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
 use tachy::gui::{Event, Resources};
+use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
@@ -130,8 +131,7 @@ impl<T: Clone> ButtonDialogBox<T> {
 //===========================================================================//
 
 fn string_width(string: &str) -> i32 {
-    // TODO: string.len() isn't really correct here; use unicode_width
-    (0.5 * FONT_SIZE * (string.len() as f32)).ceil() as i32
+    (0.5 * FONT_SIZE * (string.width() as f32)).ceil() as i32
 }
 
 //===========================================================================//

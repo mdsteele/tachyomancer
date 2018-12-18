@@ -147,7 +147,8 @@ impl MenuView {
                                            state.circuit_name());
                         let buttons = &[
                             ("Cancel", None),
-                            ("OK", Some(MenuAction::DeleteCircuit)),
+                            ("Delete",
+                             Some(MenuAction::DeleteCircuit)),
                         ];
                         self.confirmation_dialog =
                             Some(ButtonDialogBox::new(size, &text, buttons));

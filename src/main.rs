@@ -30,6 +30,7 @@ extern crate sdl2;
 extern crate serde_derive;
 extern crate textwrap;
 extern crate toml;
+extern crate unicode_width;
 
 mod tachy;
 

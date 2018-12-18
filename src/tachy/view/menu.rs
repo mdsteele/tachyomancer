@@ -26,6 +26,7 @@ use tachy::geom::{Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Resources, Sound};
 use tachy::save::MenuSection;
 use tachy::state::GameState;
+use textwrap;
 
 //===========================================================================//
 
@@ -134,10 +135,12 @@ impl MenuView {
             }
             return None;
         }
+
         match state.menu_section() {
             MenuSection::Puzzles => {
                 match self.puzzles_view.handle_event(event, state) {
                     Some(PuzzlesAction::Delete) => {
+                        self.unfocus();
                         let size = RectSize::new(self.width as i32,
                                                  self.height as i32);
                         let text = format!("Really delete {}?",
@@ -172,20 +175,40 @@ impl MenuView {
             }
             _ => {} // TODO
         }
+
+        let mut should_unfocus = false;
         for button in self.section_buttons.iter_mut() {
             if let Some(section) =
                 button.handle_event(event, state.menu_section(), audio)
             {
                 state.set_menu_section(section);
-                self.prefs_view.unfocus();
-                self.puzzles_view.unfocus();
+                should_unfocus = true;
             }
+        }
+        if should_unfocus {
+            self.unfocus();
         }
         return None;
     }
 
+    pub fn show_error_dialog(&mut self, unable: &str, error: &str) {
+        debug_log!("ERROR: Unable to {}: {}", unable, error);
+        self.unfocus();
+        let size = RectSize::new(self.width as i32, self.height as i32);
+        let text = format!("ERROR: Unable to {}.\n\n{}", unable, error);
+        let text = textwrap::fill(&text, 64);
+        let buttons = &[("OK", None)];
+        let dialog = ButtonDialogBox::new(size, &text, buttons);
+        self.confirmation_dialog = Some(dialog);
+    }
+
     pub fn update_circuit_list(&mut self, state: &GameState) {
         self.puzzles_view.update_circuit_list(state);
+    }
+
+    fn unfocus(&mut self) {
+        self.prefs_view.unfocus();
+        self.puzzles_view.unfocus();
     }
 }
 

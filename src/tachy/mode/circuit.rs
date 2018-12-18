@@ -47,7 +47,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                             }
                             Err(err) => {
                                 // TODO: display error to user; don't panic
-                                panic!("NewProfile failed: {:?}", err);
+                                panic!("BackToMenu failed: {:?}", err);
                             }
                         }
                     }

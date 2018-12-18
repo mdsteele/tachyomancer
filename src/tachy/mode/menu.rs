@@ -39,8 +39,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.delete_current_circuit() {
                             Ok(()) => view.update_circuit_list(state),
                             Err(err) => {
-                                // TODO: display error to user; don't panic
-                                panic!("EditCircuit failed: {:?}", err);
+                                view.show_error_dialog("delete circuit", &err);
                             }
                         }
                     }
@@ -48,8 +47,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.load_edit_grid() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
-                                // TODO: display error to user; don't panic
-                                panic!("EditCircuit failed: {:?}", err);
+                                view.show_error_dialog("load circuit", &err);
                             }
                         }
                     }
@@ -62,8 +60,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.clear_profile() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
-                                // TODO: display error to user; don't panic
-                                panic!("NewProfile failed: {:?}", err);
+                                view.show_error_dialog("switch profile", &err);
                             }
                         }
                     }
@@ -72,8 +69,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.create_or_load_profile(name) {
                             Ok(()) => {}
                             Err(err) => {
-                                // TODO: display error to user; don't panic
-                                panic!("SwitchProfile failed: {:?}", err);
+                                view.show_error_dialog("switch profile", &err);
                             }
                         }
                     }

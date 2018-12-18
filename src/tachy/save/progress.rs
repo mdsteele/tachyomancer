@@ -23,8 +23,12 @@ use std::collections::{BTreeSet, btree_set};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
+
+/// Maximum permitted unicode width of a circuit name.
+pub const CIRCUIT_NAME_MAX_WIDTH: usize = 32;
 
 // Note: this file name needs to have a period (or other special character) in
 // the non-extension part to ensure that it cannot conflict with any encoded
@@ -118,7 +122,9 @@ impl PuzzleProgress {
             }
             if let Some(encoded) = entry_path.file_stem() {
                 let circuit_name = decode_name(encoded);
-                if !circuit_name.is_empty() {
+                if !circuit_name.is_empty() &&
+                    circuit_name.width() <= CIRCUIT_NAME_MAX_WIDTH
+                {
                     circuit_names.insert(circuit_name);
                 }
             }
@@ -183,6 +189,11 @@ impl PuzzleProgress {
     pub fn save_circuit(&mut self, circuit_name: &str,
                         circuit_data: &CircuitData)
                         -> Result<(), String> {
+        if circuit_name.is_empty() ||
+            circuit_name.width() > CIRCUIT_NAME_MAX_WIDTH
+        {
+            return Err(format!("Invalid circuit name: {:?}", circuit_name));
+        }
         let circuit_path = self.circuit_path(circuit_name);
         debug_log!("Saving circuit {:?} to {:?}", circuit_name, circuit_path);
         circuit_data.save(&circuit_path)?;
@@ -206,6 +217,38 @@ impl PuzzleProgress {
                                  err)
                      })?;
         self.circuit_names.remove(circuit_name);
+        Ok(())
+    }
+
+    pub fn rename_circuit(&mut self, old_name: &str, new_name: &str)
+                          -> Result<(), String> {
+        if !self.circuit_names.contains(old_name) {
+            return Err(format!("No such circuit: {:?}", old_name));
+        }
+        if old_name == new_name {
+            return Ok(());
+        }
+        if new_name.is_empty() || new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
+            return Err(format!("Invalid circuit name: {:?}", new_name));
+        }
+        if self.circuit_names.contains(new_name) {
+            return Err(format!("Circuit already exists: {:?}", new_name));
+        }
+        let new_path = self.circuit_path(new_name);
+        if new_path.exists() {
+            return Err(format!("Path already exists: {:?}", new_path));
+        }
+        let old_path = self.circuit_path(old_name);
+        debug_log!("Moving circuit from {:?} to {:?}", old_path, new_path);
+        fs::rename(&old_path, &new_path)
+            .map_err(|err| {
+                format!("Could not move circuit file {:?} to {:?}: {}",
+                        old_path,
+                        new_path,
+                        err)
+            })?;
+        self.circuit_names.remove(old_name);
+        self.circuit_names.insert(new_name.to_string());
         Ok(())
     }
 

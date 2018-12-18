@@ -32,7 +32,7 @@ pub use self::dir::{ProfileNamesIter, SaveDir};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
 pub use self::profile::Profile;
-pub use self::progress::CircuitNamesIter;
+pub use self::progress::{CIRCUIT_NAME_MAX_WIDTH, CircuitNamesIter};
 pub use self::puzzle::{AllPuzzlesIter, Puzzle, PuzzleKind};
 pub use self::wire::WireShape;
 

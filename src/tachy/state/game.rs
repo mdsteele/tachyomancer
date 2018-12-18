@@ -140,6 +140,21 @@ impl GameState {
         self.circuit_name = name;
     }
 
+    pub fn is_valid_circuit_rename(&self, name: &str) -> bool {
+        if name.is_empty() {
+            return false;
+        }
+        if name == self.circuit_name {
+            return true;
+        }
+        if let Some(ref profile) = self.profile {
+            if profile.has_circuit_name(profile.current_puzzle(), name) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     pub fn delete_current_circuit(&mut self) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
             let puzzle = profile.current_puzzle();
@@ -147,6 +162,18 @@ impl GameState {
             self.circuit_name = profile
                 .first_circuit_name_for_current_puzzle()
                 .unwrap_or_else(String::new);
+            Ok(())
+        } else {
+            Err("No profile loaded".to_string())
+        }
+    }
+
+    pub fn rename_current_circuit(&mut self, new_name: String)
+                                  -> Result<(), String> {
+        if let Some(ref mut profile) = self.profile {
+            let puzzle = profile.current_puzzle();
+            profile.rename_circuit(puzzle, &self.circuit_name, &new_name)?;
+            self.circuit_name = new_name;
             Ok(())
         } else {
             Err("No profile loaded".to_string())

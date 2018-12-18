@@ -215,6 +215,16 @@ impl Profile {
             Err(format!("No such circuit: {:?}", circuit_name))
         }
     }
+
+    pub fn rename_circuit(&mut self, puzzle: Puzzle, old_name: &str,
+                          new_name: &str)
+                          -> Result<(), String> {
+        if let Some(progress) = self.puzzles.get_mut(&puzzle) {
+            progress.rename_circuit(old_name, new_name)
+        } else {
+            Err(format!("No such circuit: {:?}", old_name))
+        }
+    }
 }
 
 //===========================================================================//

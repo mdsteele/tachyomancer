@@ -69,7 +69,7 @@ impl PrefsView {
         debug_assert!(state.profile().is_some());
         let current_profile_name = state.profile().unwrap().name();
         self.profiles_list.draw(resources, matrix, current_profile_name);
-        self.new_button.draw(resources, matrix);
+        self.new_button.draw(resources, matrix, true);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
@@ -81,7 +81,7 @@ impl PrefsView {
         {
             return Some(PrefsAction::SwitchProfile(profile_name));
         }
-        if let Some(action) = self.new_button.handle_event(event) {
+        if let Some(action) = self.new_button.handle_event(event, true) {
             return Some(action);
         }
         return None;

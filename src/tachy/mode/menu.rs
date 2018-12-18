@@ -55,6 +55,14 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         state.new_edit_grid();
                         return ModeChange::Next;
                     }
+                    Some(MenuAction::RenameCircuit(name)) => {
+                        match state.rename_current_circuit(name) {
+                            Ok(()) => view.update_circuit_list(state),
+                            Err(err) => {
+                                view.show_error_dialog("rename circuit", &err);
+                            }
+                        }
+                    }
                     Some(MenuAction::NewProfile) => {
                         debug_log!("Starting a new profile");
                         match state.clear_profile() {

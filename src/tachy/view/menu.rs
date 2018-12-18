@@ -17,14 +17,14 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::dialog::ButtonDialogBox;
+use super::dialog::{ButtonDialogBox, TextDialogBox};
 use super::prefs::{PrefsAction, PrefsView};
 use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Resources, Sound};
-use tachy::save::MenuSection;
+use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection};
 use tachy::state::GameState;
 use textwrap;
 
@@ -48,6 +48,7 @@ pub enum MenuAction {
     EditCircuit,
     NewCircuit,
     DeleteCircuit,
+    RenameCircuit(String),
     NewProfile,
     SwitchProfile(String),
 }
@@ -61,6 +62,7 @@ pub struct MenuView {
     prefs_view: PrefsView,
     puzzles_view: PuzzlesView,
     confirmation_dialog: Option<ButtonDialogBox<Option<MenuAction>>>,
+    rename_dialog: Option<TextDialogBox>,
 }
 
 impl MenuView {
@@ -96,6 +98,7 @@ impl MenuView {
             prefs_view: PrefsView::new(section_rect, state),
             puzzles_view: PuzzlesView::new(section_rect, state),
             confirmation_dialog: None,
+            rename_dialog: None,
         }
     }
 
@@ -119,6 +122,11 @@ impl MenuView {
             }
             _ => {} // TODO
         }
+        if let Some(ref dialog) = self.rename_dialog {
+            dialog.draw(resources, &projection, |name| {
+                state.is_valid_circuit_rename(name)
+            });
+        }
         if let Some(ref dialog) = self.confirmation_dialog {
             dialog.draw(resources, &projection);
         }
@@ -132,6 +140,19 @@ impl MenuView {
                 Some(Some(action)) => return Some(action),
                 Some(None) => {}
                 None => self.confirmation_dialog = Some(dialog),
+            }
+            return None;
+        }
+
+        if let Some(mut dialog) = self.rename_dialog.take() {
+            match dialog.handle_event(event, |name| {
+                state.is_valid_circuit_rename(name)
+            }) {
+                Some(Some(name)) => {
+                    return Some(MenuAction::RenameCircuit(name));
+                }
+                Some(None) => {}
+                None => self.rename_dialog = Some(dialog),
             }
             return None;
         }
@@ -159,6 +180,20 @@ impl MenuView {
                     }
                     Some(PuzzlesAction::New) => {
                         return Some(MenuAction::NewCircuit);
+                    }
+                    Some(PuzzlesAction::Rename) => {
+                        self.unfocus();
+                        let size = RectSize::new(self.width as i32,
+                                                 self.height as i32);
+                        let text = "Choose new name for circuit:";
+                        let initial = state.circuit_name();
+                        let dialog =
+                            TextDialogBox::new(size,
+                                               text,
+                                               initial,
+                                               CIRCUIT_NAME_MAX_WIDTH);
+                        self.rename_dialog = Some(dialog);
+                        return None;
                     }
                     None => {}
                 }

@@ -20,7 +20,75 @@
 use cgmath::Matrix4;
 use tachy::font::Align;
 use tachy::geom::Rect;
-use tachy::gui::{Event, Resources};
+use tachy::gui::{Event, Keycode, Resources};
+use unicode_width::UnicodeWidthStr;
+
+//===========================================================================//
+
+const TEXT_BOX_INNER_MARGIN: f32 = 5.0;
+
+//===========================================================================//
+
+pub struct TextBox {
+    rect: Rect<i32>,
+    string: String,
+    max_len: usize,
+}
+
+impl TextBox {
+    pub fn new(rect: Rect<i32>, initial: &str, max_len: usize) -> TextBox {
+        TextBox {
+            rect,
+            string: initial.to_string(),
+            max_len,
+        }
+    }
+
+    pub fn string(&self) -> &str { &self.string }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let color = (0.0, 0.0, 0.0);
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.fonts().roman().draw(&matrix,
+                                       20.0,
+                                       Align::MidLeft,
+                                       (rect.x + TEXT_BOX_INNER_MARGIN,
+                                        rect.y + 0.5 * rect.height),
+                                       &self.string);
+        // TODO: draw cursor
+    }
+
+    pub fn handle_event(&mut self, event: &Event) {
+        match event {
+            Event::KeyDown(key) => {
+                match key.code {
+                    Keycode::Backspace => {
+                        if self.string.pop().is_some() {
+                            // TODO: play sound
+                        }
+                    }
+                    // TODO: arrows should move cursor
+                    _ => {}
+                }
+            }
+            Event::TextInput(text) => {
+                for chr in text.chars() {
+                    if self.string.width() >= self.max_len {
+                        break;
+                    }
+                    if (chr >= ' ' && chr <= '~') ||
+                        (chr >= '\u{a1}' && chr <= '\u{ff}')
+                    {
+                        self.string.push(chr);
+                        // TODO: play sound
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
 
 //===========================================================================//
 
@@ -39,8 +107,13 @@ impl<T: Clone> TextButton<T> {
         }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let color = (0.7, 0.1, 0.1);
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                enabled: bool) {
+        let color = if enabled {
+            (0.7, 0.1, 0.1)
+        } else {
+            (0.4, 0.4, 0.4)
+        };
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         resources.fonts().roman().draw(&matrix,
@@ -51,10 +124,12 @@ impl<T: Clone> TextButton<T> {
                                        &self.label);
     }
 
-    pub fn handle_event(&mut self, event: &Event) -> Option<T> {
+    pub fn handle_event(&mut self, event: &Event, enabled: bool) -> Option<T> {
         match event {
             Event::MouseDown(mouse) => {
-                if mouse.left && self.rect.contains_point(mouse.pt) {
+                if enabled && mouse.left &&
+                    self.rect.contains_point(mouse.pt)
+                {
                     return Some(self.value.clone());
                 }
             }

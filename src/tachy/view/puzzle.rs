@@ -54,6 +54,7 @@ pub enum PuzzlesAction {
     Delete,
     Edit,
     New,
+    Rename,
 }
 
 //===========================================================================//
@@ -66,6 +67,7 @@ pub struct PuzzlesView {
     edit_button: TextButton<PuzzlesAction>,
     new_button: TextButton<PuzzlesAction>,
     delete_button: TextButton<PuzzlesAction>,
+    rename_button: TextButton<PuzzlesAction>,
 }
 
 impl PuzzlesView {
@@ -128,6 +130,13 @@ impl PuzzlesView {
                                                      40),
                                            "Delete",
                                            PuzzlesAction::Delete),
+            rename_button: TextButton::new(Rect::new(rect.right() - 80,
+                                                     rect.bottom() - 160 -
+                                                         3 * ELEMENT_SPACING,
+                                                     80,
+                                                     40),
+                                           "Rename",
+                                           PuzzlesAction::Rename),
         }
     }
 
@@ -139,9 +148,11 @@ impl PuzzlesView {
         let graph_points = state.puzzle_graph_points(puzzle);
         self.graph.draw(resources, matrix, puzzle, graph_points);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
-        self.edit_button.draw(resources, matrix);
-        self.new_button.draw(resources, matrix);
-        self.delete_button.draw(resources, matrix);
+        // TODO: edit/delete/rename buttons are not always enabled
+        self.edit_button.draw(resources, matrix, true);
+        self.new_button.draw(resources, matrix, true);
+        self.delete_button.draw(resources, matrix, true);
+        self.rename_button.draw(resources, matrix, true);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
@@ -158,13 +169,17 @@ impl PuzzlesView {
         {
             state.set_circuit_name(circuit_name);
         }
-        if let Some(action) = self.edit_button.handle_event(event) {
+        // TODO: edit/delete/rename buttons are not always enabled
+        if let Some(action) = self.edit_button.handle_event(event, true) {
             return Some(action);
         }
-        if let Some(action) = self.new_button.handle_event(event) {
+        if let Some(action) = self.new_button.handle_event(event, true) {
             return Some(action);
         }
-        if let Some(action) = self.delete_button.handle_event(event) {
+        if let Some(action) = self.delete_button.handle_event(event, true) {
+            return Some(action);
+        }
+        if let Some(action) = self.rename_button.handle_event(event, true) {
             return Some(action);
         }
         return None;

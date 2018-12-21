@@ -171,8 +171,7 @@ impl PuzzlesView {
             self.puzzle_list.handle_event(event, &state.current_puzzle())
         {
             state.set_current_puzzle(puzzle);
-            self.circuit_list
-                .set_items(state.circuit_name(), circuit_list_items(state));
+            self.update_circuit_list(state);
         }
         if let Some(circuit_name) =
             self.circuit_list.handle_event(event, state.circuit_name())

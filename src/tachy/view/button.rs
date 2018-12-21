@@ -25,7 +25,9 @@ use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
+const TEXT_BOX_FONT_SIZE: f32 = 20.0;
 const TEXT_BOX_INNER_MARGIN: f32 = 5.0;
+const TEXT_BUTTON_FONT_SIZE: f32 = 20.0;
 
 //===========================================================================//
 
@@ -51,7 +53,7 @@ impl TextBox {
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         resources.fonts().roman().draw(&matrix,
-                                       20.0,
+                                       TEXT_BOX_FONT_SIZE,
                                        Align::MidLeft,
                                        (rect.x + TEXT_BOX_INNER_MARGIN,
                                         rect.y + 0.5 * rect.height),
@@ -117,7 +119,7 @@ impl<T: Clone> TextButton<T> {
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         resources.fonts().roman().draw(&matrix,
-                                       20.0,
+                                       TEXT_BUTTON_FONT_SIZE,
                                        Align::MidCenter,
                                        (rect.x + 0.5 * rect.width,
                                         rect.y + 0.5 * rect.height),

@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::circuit::CircuitData;
+use super::converse::{Conversation, ConversationProgress};
 use super::progress::{CircuitNamesIter, PuzzleProgress};
 use super::puzzle::Puzzle;
 use std::collections::HashMap;
@@ -33,7 +34,8 @@ const DATA_FILE_NAME: &str = "profile.toml";
 
 #[derive(Default, Deserialize, Serialize)]
 struct ProfileData {
-    current_puzzle: Option<Puzzle>,
+    conversation: Option<Conversation>,
+    puzzle: Option<Puzzle>,
 }
 
 impl ProfileData {
@@ -51,6 +53,7 @@ pub struct Profile {
     base_path: PathBuf,
     data: ProfileData,
     needs_save: bool,
+    conversations: HashMap<Conversation, ConversationProgress>,
     puzzles: HashMap<Puzzle, PuzzleProgress>,
 }
 
@@ -92,6 +95,18 @@ impl Profile {
             ProfileData::default()
         };
 
+        // Load conversation progress:
+        let mut conversations =
+            HashMap::<Conversation, ConversationProgress>::new();
+        for conv in Conversation::all() {
+            let conv_path = base_path.join(format!("{:?}.toml", conv));
+            if !conv_path.exists() {
+                continue;
+            }
+            let progress = ConversationProgress::create_or_load(&conv_path)?;
+            conversations.insert(conv, progress);
+        }
+
         // Load puzzle progress:
         let mut puzzles = HashMap::<Puzzle, PuzzleProgress>::new();
         for puzzle in Puzzle::all() {
@@ -109,6 +124,7 @@ impl Profile {
             base_path: base_path.to_path_buf(),
             data,
             needs_save,
+            conversations,
             puzzles,
         };
         profile.save()?;
@@ -140,17 +156,48 @@ impl Profile {
         for (_, progress) in self.puzzles.iter_mut() {
             progress.save()?;
         }
+        for (_, progress) in self.conversations.iter_mut() {
+            progress.save()?;
+        }
         Ok(())
     }
 
     pub fn name(&self) -> &str { &self.name }
 
+    pub fn current_conversation(&self) -> Conversation {
+        self.data.conversation.unwrap_or(Conversation::first())
+    }
+
+    pub fn set_current_conversation(&mut self, conv: Conversation) {
+        self.data.conversation = Some(conv);
+        self.needs_save = true;
+    }
+
+    pub fn conversation_progress(&self, conv: Conversation) -> usize {
+        self.conversations.get(&conv).map_or(0, ConversationProgress::progress)
+    }
+
+    pub fn is_conversation_complete(&self, conv: Conversation) -> bool {
+        self.conversations
+            .get(&conv)
+            .map_or(false, ConversationProgress::is_complete)
+    }
+
+    pub fn set_conversation_choice(&mut self, conv: Conversation,
+                                   key: String, value: String) {
+        if !self.conversations.contains_key(&conv) {
+            let path = self.base_path.join(format!("{:?}.toml", conv));
+            self.conversations.insert(conv, ConversationProgress::new(path));
+        }
+        self.conversations.get_mut(&conv).unwrap().set_choice(key, value);
+    }
+
     pub fn current_puzzle(&self) -> Puzzle {
-        self.data.current_puzzle.unwrap_or(Puzzle::first())
+        self.data.puzzle.unwrap_or(Puzzle::first())
     }
 
     pub fn set_current_puzzle(&mut self, puzzle: Puzzle) {
-        self.data.current_puzzle = Some(puzzle);
+        self.data.puzzle = Some(puzzle);
         self.needs_save = true;
     }
 

@@ -48,6 +48,8 @@ pub enum Align {
     TopCenter,
     MidCenter,
     BottomCenter,
+    TopRight,
+    MidRight,
 }
 
 //===========================================================================//
@@ -148,7 +150,7 @@ impl TextShader {
         self.program.bind();
 
         let mut array = [0u32; MAX_CHARS];
-        let mut num_chars = 0;
+        let mut num_chars: usize = 0;
         // TODO: If text.chars().len() > MAX_CHARS, draw the varray multiple
         //   times as necessary to draw the whole text string.
         for chr in text.chars().take(MAX_CHARS) {
@@ -165,6 +167,8 @@ impl TextShader {
             Align::BottomCenter => {
                 Vector2::new(-0.5 * (num_chars as f32), -1.0)
             }
+            Align::TopRight => Vector2::new(-(num_chars as f32), 0.0),
+            Align::MidRight => Vector2::new(-(num_chars as f32), -0.5),
         };
         let mvp = matrix *
             Matrix4::from_translation(vec3(start.0, start.1, 0.0)) *

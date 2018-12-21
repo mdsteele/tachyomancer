@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 mod circuit;
+mod converse;
 mod dir;
 mod encode;
 mod menu;
@@ -28,6 +29,8 @@ mod puzzle;
 mod wire;
 
 pub use self::circuit::CircuitData;
+pub use self::converse::{AllConversationsIter, Conversation,
+                         ConversationProgress};
 pub use self::dir::{ProfileNamesIter, SaveDir};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;

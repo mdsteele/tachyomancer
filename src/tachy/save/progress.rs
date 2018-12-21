@@ -61,6 +61,8 @@ impl PuzzleProgressData {
 pub struct PuzzleProgress {
     base_path: PathBuf,
     data: PuzzleProgressData,
+    // TODO: make this unicode-case-insensitive (since some filesystems are
+    //   case-insensitive); maybe use unicase crate.
     circuit_names: BTreeSet<String>,
     needs_save: bool,
 }

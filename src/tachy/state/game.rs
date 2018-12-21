@@ -18,8 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 use super::edit::EditGrid;
-use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Profile, Puzzle,
-                  SaveDir};
+use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Profile,
+                  Puzzle, SaveDir};
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -101,6 +101,38 @@ impl GameState {
 
     pub fn set_menu_section(&mut self, section: MenuSection) {
         self.menu_section = section;
+    }
+
+    pub fn current_conversation(&self) -> Conversation {
+        if let Some(ref profile) = self.profile {
+            profile.current_conversation()
+        } else {
+            Conversation::first()
+        }
+    }
+
+    pub fn set_current_conversation(&mut self, conv: Conversation) {
+        if let Some(ref mut profile) = self.profile {
+            profile.set_current_conversation(conv);
+        }
+    }
+
+    pub fn is_conversation_complete(&self, conv: Conversation) -> bool {
+        self.profile
+            .as_ref()
+            .map_or(false, |profile| profile.is_conversation_complete(conv))
+    }
+
+    pub fn set_current_conversation_choice(&mut self, key: String,
+                                           value: String) {
+        if let Some(ref mut profile) = self.profile {
+            let conv = profile.current_conversation();
+            debug_log!("Making conversation {:?} choice {:?} = {:?}",
+                       conv,
+                       key,
+                       value);
+            profile.set_conversation_choice(conv, key, value);
+        }
     }
 
     pub fn current_puzzle(&self) -> Puzzle {

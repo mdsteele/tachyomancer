@@ -19,6 +19,7 @@
 
 mod check;
 mod chip;
+mod converse;
 mod edit;
 mod eval;
 mod game;
@@ -29,6 +30,7 @@ mod size;
 
 pub use self::check::WireColor;
 pub use self::chip::ChipType;
+pub use self::converse::{ConversationBubble, ConversationPortrait};
 pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
 pub use self::eval::{CircuitEval, EvalError, EvalResult};
 pub use self::game::GameState;

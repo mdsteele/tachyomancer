@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::converse::{ConverseAction, ConverseView};
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use super::prefs::{PrefsAction, PrefsView};
 use super::puzzle::{PuzzlesAction, PuzzlesView};
@@ -60,6 +61,7 @@ pub struct MenuView {
     width: f32,
     height: f32,
     section_buttons: Vec<SectionButton>,
+    converse_view: ConverseView,
     prefs_view: PrefsView,
     puzzles_view: PuzzlesView,
     confirmation_dialog: Option<ButtonDialogBox<Option<MenuAction>>>,
@@ -96,6 +98,7 @@ impl MenuView {
             width: window_size.width as f32,
             height: window_size.height as f32,
             section_buttons,
+            converse_view: ConverseView::new(section_rect, state),
             prefs_view: PrefsView::new(section_rect, state),
             puzzles_view: PuzzlesView::new(section_rect, state),
             confirmation_dialog: None,
@@ -115,13 +118,18 @@ impl MenuView {
             button.draw(resources, &projection, state.menu_section());
         }
         match state.menu_section() {
+            MenuSection::Navigation => {
+                // TODO
+            }
+            MenuSection::Messages => {
+                self.converse_view.draw(resources, &projection, state);
+            }
             MenuSection::Puzzles => {
                 self.puzzles_view.draw(resources, &projection, state);
             }
             MenuSection::Prefs => {
                 self.prefs_view.draw(resources, &projection, state);
             }
-            _ => {} // TODO
         }
         if let Some(ref dialog) = self.rename_dialog {
             dialog.draw(resources, &projection, |name| {
@@ -159,6 +167,23 @@ impl MenuView {
         }
 
         match state.menu_section() {
+            MenuSection::Navigation => {
+                // TODO
+            }
+            MenuSection::Messages => {
+                match self.converse_view.handle_event(event, state) {
+                    Some(ConverseAction::GoToPuzzle(puzzle)) => {
+                        state.set_current_puzzle(puzzle);
+                        self.puzzles_view.update_circuit_list(state);
+                        state.set_menu_section(MenuSection::Puzzles);
+                    }
+                    Some(ConverseAction::MakeChoice(key, value)) => {
+                        state.set_current_conversation_choice(key, value);
+                        self.converse_view.update_conversation(state);
+                    }
+                    None => {}
+                }
+            }
             MenuSection::Puzzles => {
                 match self.puzzles_view.handle_event(event, state) {
                     Some(PuzzlesAction::Copy) => {
@@ -213,7 +238,6 @@ impl MenuView {
                     None => {}
                 }
             }
-            _ => {} // TODO
         }
 
         let mut should_unfocus = false;
@@ -247,6 +271,7 @@ impl MenuView {
     }
 
     fn unfocus(&mut self) {
+        self.converse_view.unfocus();
         self.prefs_view.unfocus();
         self.puzzles_view.unfocus();
     }

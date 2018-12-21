@@ -22,6 +22,7 @@ mod button;
 mod chip;
 mod circuit;
 mod control;
+mod converse;
 mod dialog;
 mod list;
 mod menu;

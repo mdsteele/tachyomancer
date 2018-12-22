@@ -27,6 +27,7 @@ pub mod gui;
 pub mod mode;
 pub mod save;
 pub mod shader;
+pub mod sound;
 pub mod state;
 pub mod texture;
 pub mod view;

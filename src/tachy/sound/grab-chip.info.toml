@@ -1,0 +1,9 @@
+name = "Money Pickup"
+artist = "LeMudCrab"
+license = "CC0 1.0"
+year = 2012
+url = "https://freesound.org/people/LeMudCrab/sounds/163451/"
+comments = """
+This file was modified from the original by (1) trimming to just the first part
+of the sound, and (2) converting from WAV to FLAC.
+"""

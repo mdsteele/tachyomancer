@@ -15,6 +15,7 @@ rusttype = "0.7"
 [dependencies]
 app_dirs = "1.2"
 cgmath = "0.16"
+claxon = "0.4"
 getopts = "0.2"
 gl = "0.10"
 indexmap = "1"

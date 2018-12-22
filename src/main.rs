@@ -19,6 +19,7 @@
 
 extern crate app_dirs;
 extern crate cgmath;
+extern crate claxon;
 extern crate getopts;
 extern crate gl;
 extern crate indexmap;

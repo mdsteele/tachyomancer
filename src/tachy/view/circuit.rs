@@ -194,9 +194,11 @@ impl CircuitView {
         match opt_action {
             Some(PartsAction::Grab(ctype, pt)) => {
                 self.edit_grid.grab_from_parts_tray(ctype, pt);
+                audio.play_sound(Sound::GrabChip);
             }
             Some(PartsAction::Drop) => {
                 self.edit_grid.drop_into_parts_tray(grid);
+                audio.play_sound(Sound::DropChip);
             }
             None => {}
         }
@@ -209,7 +211,7 @@ impl CircuitView {
             return None;
         }
 
-        self.edit_grid.handle_event(event, grid);
+        self.edit_grid.handle_event(event, grid, audio);
         return None;
     }
 
@@ -398,7 +400,8 @@ impl EditGridView {
                                            0.0))
     }
 
-    fn handle_event(&mut self, event: &Event, grid: &mut EditGrid) {
+    fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
+                    audio: &mut AudioQueue) {
         match event {
             Event::KeyDown(key) => {
                 match key.code {
@@ -455,6 +458,7 @@ impl EditGridView {
                                                             orient,
                                                             Some(coords),
                                                             mouse.pt));
+                        audio.play_sound(Sound::GrabChip);
                     } else {
                         let mut drag = WireDrag::new();
                         if drag.move_to(self.zone_for_point(mouse.pt), grid) {
@@ -497,6 +501,7 @@ impl EditGridView {
                     }
                     if let Some(drag) = self.chip_drag.take() {
                         drag.drop_onto_board(grid);
+                        audio.play_sound(Sound::DropChip);
                     }
                     if let Some(drag) = self.wire_drag.take() {
                         drag.finish(grid);

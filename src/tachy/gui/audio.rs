@@ -20,10 +20,11 @@
 use sdl2;
 use sdl2::audio::AudioFormatNum;
 use std::sync::{Arc, Mutex};
+use tachy::sound;
 
 // ========================================================================= //
 
-const DESIRED_AUDIO_RATE: i32 = 44100; // samples/second
+const DESIRED_AUDIO_RATE: i32 = sound::AUDIO_RATE as i32;
 const DESIRED_BUFFER_SIZE: u16 = 1024; // num samples
 const DESIRED_NUM_CHANNELS: u8 = 1; // mono
 
@@ -32,6 +33,8 @@ const DESIRED_NUM_CHANNELS: u8 = 1; // mono
 #[derive(Clone, Copy, Debug)]
 pub enum Sound {
     Beep = 0,
+    DropChip,
+    GrabChip,
 }
 
 //===========================================================================//
@@ -58,14 +61,10 @@ struct AudioData {
 
 impl AudioData {
     fn new() -> Result<AudioData, String> {
-        let beep_num_samples = (DESIRED_AUDIO_RATE / 4) as usize;
-        let mut beep_data = Vec::with_capacity(beep_num_samples);
-        for idx in 0..beep_num_samples {
-            let cycle = 440.0 * (idx as f32) / (DESIRED_AUDIO_RATE as f32);
-            let sample = if cycle.fract() < 0.5 { -0.25 } else { 0.25 };
-            beep_data.push(sample);
-        }
-        let sound_data = vec![beep_data];
+        let beep = sound::beep_data()?;
+        let drop_chip = sound::drop_chip_data()?;
+        let grab_chip = sound::grab_chip_data()?;
+        let sound_data = vec![beep, drop_chip, grab_chip];
         Ok(AudioData { sound_data })
     }
 

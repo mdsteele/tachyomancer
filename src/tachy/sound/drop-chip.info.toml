@@ -1,0 +1,10 @@
+name = "drop metal thing.wav"
+artist = "Reitanna"
+license = "CC0 1.0"
+year = 2015
+url = "https://freesound.org/people/Reitanna/sounds/264148/"
+comments = """
+This file was modified from the original by (1) trimming to just the first part
+of the sound, (2) resampling from 48000 Hz to 44100 Hz, and (3) converting from
+WAV to FLAC.
+"""

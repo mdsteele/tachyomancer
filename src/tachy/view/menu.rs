@@ -270,6 +270,10 @@ impl MenuView {
         self.puzzles_view.update_circuit_list(state);
     }
 
+    pub fn update_puzzle_list(&mut self, state: &GameState) {
+        self.puzzles_view.update_puzzle_list(state);
+    }
+
     fn unfocus(&mut self) {
         self.converse_view.unfocus();
         self.prefs_view.unfocus();

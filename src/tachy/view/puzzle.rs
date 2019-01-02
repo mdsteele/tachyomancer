@@ -74,16 +74,6 @@ pub struct PuzzlesView {
 
 impl PuzzlesView {
     pub fn new(rect: Rect<i32>, state: &GameState) -> PuzzlesView {
-        // TODO: Filter puzzles based on what's unlocked
-        let puzzle_list_items = Puzzle::all()
-            .map(|puzzle| {
-                     let mut label = puzzle.title().to_string();
-                     if !state.is_puzzle_solved(puzzle) {
-                         label = format!("* {}", label);
-                     }
-                     (puzzle, label)
-                 })
-            .collect();
         let semi_height = (rect.height - ELEMENT_SPACING) / 2;
         PuzzlesView {
             puzzle_list: ListView::new(Rect::new(rect.x,
@@ -91,7 +81,7 @@ impl PuzzlesView {
                                                  PUZZLE_LIST_WIDTH,
                                                  rect.height),
                                        &state.current_puzzle(),
-                                       puzzle_list_items),
+                                       puzzle_list_items(state)),
             circuit_list: ListView::new(Rect::new(rect.x + PUZZLE_LIST_WIDTH +
                                                       ELEMENT_SPACING,
                                                   rect.bottom() -
@@ -202,6 +192,11 @@ impl PuzzlesView {
             .set_items(state.circuit_name(), circuit_list_items(state));
     }
 
+    pub fn update_puzzle_list(&mut self, state: &GameState) {
+        self.puzzle_list
+            .set_items(&state.current_puzzle(), puzzle_list_items(state));
+    }
+
     pub fn unfocus(&mut self) {
         self.puzzle_list.unfocus();
         self.circuit_list.unfocus();
@@ -217,6 +212,19 @@ fn circuit_list_items(state: &GameState) -> Vec<(String, String)> {
     } else {
         Vec::new()
     }
+}
+
+fn puzzle_list_items(state: &GameState) -> Vec<(Puzzle, String)> {
+    Puzzle::all()
+        .filter(|&puzzle| state.is_puzzle_unlocked(puzzle))
+        .map(|puzzle| {
+                 let mut label = puzzle.title().to_string();
+                 if !state.is_puzzle_solved(puzzle) {
+                     label = format!("* {}", label);
+                 }
+                 (puzzle, label)
+             })
+        .collect()
 }
 
 //===========================================================================//

@@ -83,7 +83,11 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     Some(MenuAction::SwitchProfile(name)) => {
                         debug_log!("Switching to profile {:?}", name);
                         match state.create_or_load_profile(name) {
-                            Ok(()) => {}
+                            Ok(()) => {
+                                // TODO: also update conversation list
+                                view.update_puzzle_list(state);
+                                view.update_circuit_list(state);
+                            }
                             Err(err) => {
                                 view.show_error_dialog("switch profile", &err);
                             }

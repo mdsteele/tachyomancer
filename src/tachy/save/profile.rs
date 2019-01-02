@@ -201,6 +201,10 @@ impl Profile {
         self.needs_save = true;
     }
 
+    pub fn is_puzzle_unlocked(&self, puzzle: Puzzle) -> bool {
+        self.puzzles.contains_key(&puzzle) || puzzle == Puzzle::first()
+    }
+
     pub fn is_puzzle_solved(&self, puzzle: Puzzle) -> bool {
         self.puzzles.get(&puzzle).map_or(false, PuzzleProgress::is_solved)
     }

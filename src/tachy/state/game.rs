@@ -154,6 +154,13 @@ impl GameState {
         }
     }
 
+    pub fn is_puzzle_unlocked(&self, puzzle: Puzzle) -> bool {
+        match self.profile.as_ref() {
+            Some(profile) => profile.is_puzzle_unlocked(puzzle),
+            None => puzzle == Puzzle::first(),
+        }
+    }
+
     pub fn is_puzzle_solved(&self, puzzle: Puzzle) -> bool {
         self.profile
             .as_ref()

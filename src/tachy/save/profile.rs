@@ -177,6 +177,10 @@ impl Profile {
         self.conversations.get(&conv).map_or(0, ConversationProgress::progress)
     }
 
+    pub fn is_conversation_unlocked(&self, conv: Conversation) -> bool {
+        self.conversations.contains_key(&conv) || conv == Conversation::first()
+    }
+
     pub fn is_conversation_complete(&self, conv: Conversation) -> bool {
         self.conversations
             .get(&conv)

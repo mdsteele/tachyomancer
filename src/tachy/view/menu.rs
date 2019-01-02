@@ -179,7 +179,7 @@ impl MenuView {
                     }
                     Some(ConverseAction::MakeChoice(key, value)) => {
                         state.set_current_conversation_choice(key, value);
-                        self.converse_view.update_conversation(state);
+                        self.converse_view.update_conversation_bubbles(state);
                     }
                     None => {}
                 }
@@ -268,6 +268,11 @@ impl MenuView {
 
     pub fn update_circuit_list(&mut self, state: &GameState) {
         self.puzzles_view.update_circuit_list(state);
+    }
+
+    pub fn update_conversation(&mut self, state: &GameState) {
+        self.converse_view.update_conversation_list(state);
+        self.converse_view.update_conversation_bubbles(state);
     }
 
     pub fn update_puzzle_list(&mut self, state: &GameState) {

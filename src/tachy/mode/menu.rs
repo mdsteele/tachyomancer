@@ -84,7 +84,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         debug_log!("Switching to profile {:?}", name);
                         match state.create_or_load_profile(name) {
                             Ok(()) => {
-                                // TODO: also update conversation list
+                                view.update_conversation(state);
                                 view.update_puzzle_list(state);
                                 view.update_circuit_list(state);
                             }

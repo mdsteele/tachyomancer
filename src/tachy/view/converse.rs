@@ -66,23 +66,13 @@ pub struct ConverseView {
 
 impl ConverseView {
     pub fn new(rect: Rect<i32>, state: &GameState) -> ConverseView {
-        // TODO: Filter conversations based on what's unlocked
-        let conv_list_items = Conversation::all()
-            .map(|conv| {
-                     let mut label = conv.title().to_string();
-                     if !state.is_conversation_complete(conv) {
-                         label = format!("* {}", label);
-                     }
-                     (conv, label)
-                 })
-            .collect();
         ConverseView {
             conv_list: ListView::new(Rect::new(rect.x,
                                                rect.y,
                                                CONV_LIST_WIDTH,
                                                rect.height),
                                      &state.current_conversation(),
-                                     conv_list_items),
+                                     conv_list_items(state)),
             bubbles_list: BubblesListView::new(Rect::new(rect.x +
                                                              CONV_LIST_WIDTH +
                                                              ELEMENT_SPACING,
@@ -112,14 +102,32 @@ impl ConverseView {
         self.bubbles_list.handle_event(event)
     }
 
-    pub fn update_conversation(&mut self, state: &GameState) {
+    pub fn update_conversation_bubbles(&mut self, state: &GameState) {
         self.bubbles_list.update_conversation(state);
+    }
+
+    pub fn update_conversation_list(&mut self, state: &GameState) {
+        self.conv_list
+            .set_items(&state.current_conversation(), conv_list_items(state));
     }
 
     pub fn unfocus(&mut self) {
         self.conv_list.unfocus();
         self.bubbles_list.unfocus();
     }
+}
+
+fn conv_list_items(state: &GameState) -> Vec<(Conversation, String)> {
+    Conversation::all()
+        .filter(|&conv| state.is_conversation_unlocked(conv))
+        .map(|conv| {
+                 let mut label = conv.title().to_string();
+                 if !state.is_conversation_complete(conv) {
+                     label = format!("* {}", label);
+                 }
+                 (conv, label)
+             })
+        .collect()
 }
 
 //===========================================================================//

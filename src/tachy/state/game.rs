@@ -117,6 +117,13 @@ impl GameState {
         }
     }
 
+    pub fn is_conversation_unlocked(&self, conv: Conversation) -> bool {
+        match self.profile.as_ref() {
+            Some(profile) => profile.is_conversation_unlocked(conv),
+            None => conv == Conversation::first(),
+        }
+    }
+
     pub fn is_conversation_complete(&self, conv: Conversation) -> bool {
         self.profile
             .as_ref()

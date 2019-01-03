@@ -144,8 +144,8 @@ impl PuzzlesView {
         let puzzle = state.current_puzzle();
         self.puzzle_list.draw(resources, matrix, &puzzle);
         self.description.draw(resources, matrix, puzzle);
-        let graph_points = state.puzzle_graph_points(puzzle);
-        self.graph.draw(resources, matrix, puzzle, graph_points);
+        let scores = state.puzzle_scores(puzzle);
+        self.graph.draw(resources, matrix, puzzle, scores);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
         // TODO: edit/delete/rename/copy buttons are not always enabled
         self.edit_button.draw(resources, matrix, true);

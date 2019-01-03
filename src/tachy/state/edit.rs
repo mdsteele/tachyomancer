@@ -837,6 +837,12 @@ impl<'a> Iterator for WireFragmentsIter<'a> {
             None
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+}
+
+impl<'a> ExactSizeIterator for WireFragmentsIter<'a> {
+    fn len(&self) -> usize { self.inner.len() }
 }
 
 //===========================================================================//

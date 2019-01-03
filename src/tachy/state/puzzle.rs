@@ -17,7 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::eval::{CircuitState, EvalError, NullPuzzleEval, PuzzleEval};
+use super::eval::{CircuitState, EvalError, EvalScore, NullPuzzleEval,
+                  PuzzleEval};
 use tachy::geom::{Coords, Direction};
 use tachy::save::Puzzle;
 
@@ -65,9 +66,9 @@ impl PuzzleEval for TutorialOrEval {
     fn verification_data(&self) -> &[u64] { &self.verification }
 
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<i32> {
+                       -> Option<EvalScore> {
         if time_step >= 4 {
-            Some(0)
+            Some(EvalScore::WireLength)
         } else {
             state.send_behavior(self.input1_wire, time_step & 0x1);
             state.send_behavior(self.input2_wire, (time_step & 0x2) >> 1);
@@ -122,7 +123,7 @@ impl PuzzleEval for SandboxEventEval {
     fn verification_data(&self) -> &[u64] { &[] }
 
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<i32> {
+                       -> Option<EvalScore> {
         state.send_event(self.metronome, 0);
         state.send_behavior(self.timer, time_step & 0xff);
         None

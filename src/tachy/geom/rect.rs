@@ -79,6 +79,8 @@ impl<T: BaseNum> Rect<T> {
 
     pub fn bottom(&self) -> T { self.y + self.height }
 
+    pub fn area(&self) -> T { self.width * self.height }
+
     pub fn contains_point(&self, pt: Point2<T>) -> bool {
         pt.x >= self.x && pt.y >= self.y && pt.x < self.x + self.width &&
             pt.y < self.y + self.height

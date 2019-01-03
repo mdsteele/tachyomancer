@@ -213,12 +213,25 @@ impl Profile {
         self.puzzles.get(&puzzle).map_or(false, PuzzleProgress::is_solved)
     }
 
-    pub fn puzzle_graph_points(&self, puzzle: Puzzle) -> &[(i32, i32)] {
+    pub fn puzzle_scores(&self, puzzle: Puzzle) -> &[(i32, i32)] {
         if let Some(ref progress) = self.puzzles.get(&puzzle) {
-            progress.graph_points()
+            progress.scores()
         } else {
             &[]
         }
+    }
+
+    pub fn record_puzzle_score(&mut self, puzzle: Puzzle, area: i32,
+                               score: i32)
+                               -> Result<(), String> {
+        if !self.puzzles.contains_key(&puzzle) {
+            let puzzle_path = self.base_path.join(format!("{:?}", puzzle));
+            let progress = PuzzleProgress::create_or_load(&puzzle_path)?;
+            self.puzzles.insert(puzzle, progress);
+        }
+        let progress = self.puzzles.get_mut(&puzzle).unwrap();
+        progress.record_score(area, score);
+        progress.save()
     }
 
     pub fn first_circuit_name_for_current_puzzle(&self) -> Option<String> {

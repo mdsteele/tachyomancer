@@ -56,21 +56,39 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         window_options.fullscreen = !window_options.fullscreen;
                         return ModeChange::RebootWindow(window_options);
                     }
+                    Some(CircuitAction::Victory(area, score)) => {
+                        record_score(state, area, score);
+                    }
                     None => {}
                 }
             }
             None => {
-                let grid = state.edit_grid_mut().unwrap();
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
-                view.handle_event(&Event::new_clock_tick(elapsed),
-                                  grid,
-                                  &mut audio);
+                match view.handle_event(&Event::new_clock_tick(elapsed),
+                                          state.edit_grid_mut().unwrap(),
+                                          &mut audio) {
+                    Some(CircuitAction::Victory(area, score)) => {
+                        record_score(state, area, score);
+                    }
+                    Some(_) => unreachable!(),
+                    None => {}
+                }
                 last_tick = now;
                 window.pump_audio(&mut audio);
-                view.draw(window.resources(), grid);
+                view.draw(window.resources(), state.edit_grid_mut().unwrap());
                 window.swap();
             }
+        }
+    }
+}
+
+fn record_score(state: &mut GameState, area: i32, score: i32) {
+    match state.record_current_puzzle_score(area, score) {
+        Ok(()) => {}
+        Err(err) => {
+            // TODO: display error to user; don't panic
+            panic!("Victory failed: {:?}", err);
         }
     }
 }

@@ -31,13 +31,21 @@ pub enum EvalResult {
     Continue,
     Breakpoint(Vec<Coords>),
     Failure,
-    Victory(i32),
+    Victory(EvalScore),
 }
 
 pub struct EvalError {
     pub time_step: u32,
     pub port: Option<(Coords, Direction)>,
     pub message: String,
+}
+
+#[allow(dead_code)]
+pub enum EvalScore {
+    /// Score is equal to the supplied value.
+    Value(i32),
+    /// Score is equal to the number of wire fragments in the circuit.
+    WireLength,
 }
 
 //===========================================================================//
@@ -258,7 +266,7 @@ pub trait PuzzleEval {
     /// Called at the beginning of each time step; sets up input values for the
     /// circuit.
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<i32>;
+                       -> Option<EvalScore>;
 
     /// Called at the beginning of each cycle; optionally sends additional
     /// events for that time step.  The default implementation is a no-op.
@@ -288,7 +296,7 @@ impl PuzzleEval for NullPuzzleEval {
     fn verification_data(&self) -> &[u64] { &[] }
 
     fn begin_time_step(&mut self, _step: u32, _state: &mut CircuitState)
-                       -> Option<i32> {
+                       -> Option<EvalScore> {
         None
     }
 }

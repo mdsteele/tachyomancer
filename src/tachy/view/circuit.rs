@@ -19,6 +19,7 @@
 
 use super::chip::ChipModel;
 use super::control::{ControlsAction, ControlsTray};
+use super::dialog::ButtonDialogBox;
 use super::parts::{PartsAction, PartsTray};
 use super::verify::VerificationTray;
 use super::wire::WireModel;
@@ -27,7 +28,7 @@ use num_integer::{div_floor, mod_floor};
 use tachy::geom::{Coords, CoordsRect, Direction, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::{Puzzle, WireShape};
-use tachy::state::{ChipType, EditGrid, EvalResult, GridChange};
+use tachy::state::{ChipType, EditGrid, EvalResult, EvalScore, GridChange};
 
 //===========================================================================//
 
@@ -37,9 +38,11 @@ const SECONDS_PER_TIME_STEP: f64 = 1.0;
 
 //===========================================================================//
 
+#[derive(Clone, Copy, Debug)]
 pub enum CircuitAction {
     BackToMenu,
     ToggleFullscreen,
+    Victory(i32, i32),
 }
 
 //===========================================================================//
@@ -53,6 +56,7 @@ pub struct CircuitView {
     verification_tray: VerificationTray,
     seconds_since_time_step: f64,
     paused: bool,
+    victory_dialog: Option<ButtonDialogBox<Option<CircuitAction>>>,
 }
 
 impl CircuitView {
@@ -68,6 +72,7 @@ impl CircuitView {
                                                      current_puzzle),
             seconds_since_time_step: 0.0,
             paused: true,
+            victory_dialog: None,
         }
     }
 
@@ -92,11 +97,24 @@ impl CircuitView {
         self.parts_tray.draw(resources, &projection);
         self.controls_tray.draw(resources, &projection);
         self.edit_grid.draw_dragged(resources);
+        if let Some(ref dialog) = self.victory_dialog {
+            dialog.draw(resources, &projection);
+        }
     }
 
     pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
                         audio: &mut AudioQueue)
                         -> Option<CircuitAction> {
+        if let Some(mut dialog) = self.victory_dialog.take() {
+            match dialog.handle_event(event) {
+                Some(Some(action)) => return Some(action),
+                Some(None) => {}
+                None => self.victory_dialog = Some(dialog),
+            }
+            return None;
+        }
+
+        let mut action: Option<CircuitAction> = None;
         match event {
             Event::ClockTick(tick) => {
                 let mut result = EvalResult::Continue;
@@ -112,7 +130,7 @@ impl CircuitView {
                         }
                     }
                 }
-                self.handle_eval_result(result, grid);
+                action = self.handle_eval_result(result, grid);
             }
             Event::KeyDown(key) => {
                 if key.command && key.shift && key.code == Keycode::F {
@@ -158,7 +176,7 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_time();
                     }
-                    self.handle_eval_result(result, grid);
+                    action = self.handle_eval_result(result, grid);
                 }
                 Some(ControlsAction::StepCycle) => {
                     if grid.eval().is_none() {
@@ -171,7 +189,7 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_cycle();
                     }
-                    self.handle_eval_result(result, grid);
+                    action = self.handle_eval_result(result, grid);
                 }
                 Some(ControlsAction::StepSubcycle) => {
                     if grid.eval().is_none() {
@@ -184,10 +202,10 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_subcycle();
                     }
-                    self.handle_eval_result(result, grid);
+                    action = self.handle_eval_result(result, grid);
                 }
             }
-            return None;
+            return action;
         }
 
         let (opt_action, stop) = self.parts_tray.handle_event(event);
@@ -203,28 +221,50 @@ impl CircuitView {
             None => {}
         }
         if stop {
-            return None;
+            return action;
         }
 
         let stop = self.verification_tray.handle_event(event);
         if stop {
-            return None;
+            return action;
         }
 
         self.edit_grid.handle_event(event, grid, audio);
-        return None;
+        return action;
     }
 
-    fn handle_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid) {
+    fn handle_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid)
+                          -> Option<CircuitAction> {
+        let mut action: Option<CircuitAction> = None;
         match result {
-            EvalResult::Continue => return,
+            EvalResult::Continue => return None,
             EvalResult::Breakpoint(coords_vec) => {
                 debug_log!("Breakpoint: {:?}", coords_vec);
             }
             EvalResult::Victory(score) => {
-                // TODO: Switch to victory mode
-                debug_log!("Victory!  score={}", score);
+                let area = grid.bounds().area();
+                let score = match score {
+                    EvalScore::Value(value) => value,
+                    EvalScore::WireLength => {
+                        grid.wire_fragments().len() as i32
+                    }
+                };
+                debug_log!("Victory!  area={}, score={}", area, score);
                 grid.stop_eval();
+                action = Some(CircuitAction::Victory(area, score));
+                let size = RectSize::new(self.width as i32,
+                                         self.height as i32);
+                // TODO: The dialog box should show the optimization graph
+                //   (with this point plotted on it).
+                let text =
+                    format!("Victory!\nArea: {}\nScore: {}", area, score);
+                let buttons = &[
+                    ("Continue editing", None),
+                    ("Back to menu",
+                     Some(CircuitAction::BackToMenu)),
+                ];
+                self.victory_dialog =
+                    Some(ButtonDialogBox::new(size, &text, buttons));
             }
             EvalResult::Failure => {
                 debug_log!("Failure!");
@@ -232,6 +272,7 @@ impl CircuitView {
         }
         self.seconds_since_time_step = 0.0;
         self.paused = true;
+        return action;
     }
 }
 

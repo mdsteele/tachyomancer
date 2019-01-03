@@ -21,6 +21,7 @@ use super::circuit::CircuitData;
 use super::encode::{decode_name, encode_name};
 use std::collections::{BTreeSet, btree_set};
 use std::fs;
+use std::i64;
 use std::io;
 use std::path::{Path, PathBuf};
 use unicode_width::UnicodeWidthStr;
@@ -85,7 +86,12 @@ impl PuzzleProgress {
         let data_path = base_path.join(DATA_FILE_NAME);
         let data = if data_path.exists() {
             match PuzzleProgressData::try_load(&data_path) {
-                Ok(data) => data,
+                Ok(mut data) => {
+                    if let Some(ref mut points) = data.graph {
+                        fix_graph_data(points);
+                    }
+                    data
+                }
                 Err(err) => {
                     debug_log!("Could not read puzzle progress \
                                 data file from {:?}: {}",
@@ -158,14 +164,24 @@ impl PuzzleProgress {
         Ok(())
     }
 
-    pub fn is_solved(&self) -> bool { !self.graph_points().is_empty() }
+    pub fn is_solved(&self) -> bool { !self.scores().is_empty() }
 
-    pub fn graph_points(&self) -> &[(i32, i32)] {
+    pub fn scores(&self) -> &[(i32, i32)] {
         if let Some(ref points) = self.data.graph {
             points.as_slice()
         } else {
             &[]
         }
+    }
+
+    pub fn record_score(&mut self, area: i32, score: i32) {
+        if self.data.graph.is_none() {
+            self.data.graph = Some(vec![]);
+        }
+        let points = self.data.graph.as_mut().unwrap();
+        points.push((area, score));
+        fix_graph_data(points);
+        self.needs_save = true;
     }
 
     pub fn circuit_names(&self) -> CircuitNamesIter {
@@ -287,6 +303,20 @@ impl PuzzleProgress {
     }
 }
 
+fn fix_graph_data(points: &mut Vec<(i32, i32)>) {
+    points.sort();
+    let mut best_score = i64::MAX;
+    points.retain(|&(_, score)| {
+        let score = score as i64;
+        if score < best_score {
+            best_score = score;
+            true
+        } else {
+            false
+        }
+    });
+}
+
 //===========================================================================//
 
 pub struct CircuitNamesIter<'a> {
@@ -312,6 +342,62 @@ impl<'a> Iterator for CircuitNamesIter<'a> {
         } else {
             None
         }
+    }
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::fix_graph_data;
+
+    #[test]
+    fn fix_empty_graph_data() {
+        let mut scores = vec![];
+        fix_graph_data(&mut scores);
+        assert_eq!(scores, vec![]);
+    }
+
+    #[test]
+    fn fix_graph_data_with_one_score() {
+        let mut scores = vec![(20, 30)];
+        fix_graph_data(&mut scores);
+        assert_eq!(scores, vec![(20, 30)]);
+    }
+
+    #[test]
+    fn fix_unsorted_graph_data() {
+        let mut scores = vec![(16, 35), (9, 50), (20, 30), (12, 40)];
+        fix_graph_data(&mut scores);
+        assert_eq!(scores, vec![(9, 50), (12, 40), (16, 35), (20, 30)]);
+    }
+
+    #[test]
+    fn fix_repeated_scores() {
+        let mut scores = vec![(9, 50), (16, 35), (16, 35), (9, 50)];
+        fix_graph_data(&mut scores);
+        assert_eq!(scores, vec![(9, 50), (16, 35)]);
+    }
+
+    #[test]
+    fn fix_dominated_scores_with_same_area() {
+        let mut scores = vec![(9, 60), (9, 50), (16, 35), (16, 40)];
+        fix_graph_data(&mut scores);
+        assert_eq!(scores, vec![(9, 50), (16, 35)]);
+    }
+
+    #[test]
+    fn fix_dominated_scores_with_same_score() {
+        let mut scores = vec![(9, 60), (16, 60), (20, 30)];
+        fix_graph_data(&mut scores);
+        assert_eq!(scores, vec![(9, 60), (20, 30)]);
+    }
+
+    #[test]
+    fn fix_fully_dominated_scores() {
+        let mut scores = vec![(9, 60), (20, 70), (16, 75)];
+        fix_graph_data(&mut scores);
+        assert_eq!(scores, vec![(9, 60)]);
     }
 }
 

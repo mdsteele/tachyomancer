@@ -174,11 +174,27 @@ impl GameState {
             .map_or(false, |profile| profile.is_puzzle_solved(puzzle))
     }
 
-    pub fn puzzle_graph_points(&self, puzzle: Puzzle) -> &[(i32, i32)] {
+    pub fn puzzle_scores(&self, puzzle: Puzzle) -> &[(i32, i32)] {
         if let Some(ref profile) = self.profile {
-            profile.puzzle_graph_points(puzzle)
+            profile.puzzle_scores(puzzle)
         } else {
             &[]
+        }
+    }
+
+    pub fn record_current_puzzle_score(&mut self, area: i32, score: i32)
+                                       -> Result<(), String> {
+        if let Some(ref mut profile) = self.profile {
+            let puzzle = profile.current_puzzle();
+            debug_log!("Recording {:?} score (area={}, score={})",
+                       puzzle,
+                       area,
+                       score);
+            profile.record_puzzle_score(puzzle, area, score)?;
+            debug_assert!(profile.is_puzzle_solved(puzzle));
+            Ok(())
+        } else {
+            Err("No profile loaded".to_string())
         }
     }
 

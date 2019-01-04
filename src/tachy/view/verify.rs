@@ -82,6 +82,9 @@ impl VerificationTray {
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
                 true
             }
+            Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
+                true
+            }
             _ => false,
         }
     }

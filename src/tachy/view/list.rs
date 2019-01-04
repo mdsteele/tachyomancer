@@ -174,7 +174,7 @@ impl<T: Clone + Eq> ListView<T> {
                 self.drag = None;
             }
             Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
-                let new_scroll_top = self.scroll_top - scroll.delta.y;
+                let new_scroll_top = self.scroll_top + scroll.delta.y;
                 self.scroll_top = new_scroll_top.max(0).min(self.scroll_max);
             }
             _ => {}

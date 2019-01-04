@@ -549,6 +549,9 @@ impl EditGridView {
                     }
                 }
             }
+            Event::Scroll(scroll) => {
+                self.scroll += scroll.delta;
+            }
             _ => {}
         }
     }

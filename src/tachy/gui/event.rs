@@ -20,7 +20,7 @@
 use cgmath::{Point2, Vector2};
 use sdl2;
 pub use sdl2::keyboard::Keycode;
-use sdl2::mouse::{MouseButton, MouseWheelDirection};
+use sdl2::mouse::MouseButton;
 use std::time::Duration;
 
 //===========================================================================//
@@ -97,12 +97,11 @@ impl Event {
                     _ => None,
                 }
             }
-            sdl2::event::Event::MouseWheel { x, y, direction, .. } => {
+            sdl2::event::Event::MouseWheel { x, y, .. } => {
                 let mouse = pump.mouse_state();
                 let data = ScrollEventData {
                     pt: Point2::new(mouse.x(), mouse.y()),
-                    delta: Vector2::new(x, y) * SCROLL_DELTA_MULTIPLIER,
-                    flipped: direction == MouseWheelDirection::Flipped,
+                    delta: Vector2::new(x, -y) * SCROLL_DELTA_MULTIPLIER,
                 };
                 Some(Event::Scroll(data))
             }
@@ -122,6 +121,7 @@ impl Event {
                 Event::MouseMove(mouse.relative_to(origin))
             }
             Event::MouseUp(mouse) => Event::MouseUp(mouse.relative_to(origin)),
+            Event::Scroll(scroll) => Event::Scroll(scroll.relative_to(origin)),
             _ => self.clone(),
         }
     }
@@ -196,7 +196,18 @@ impl MouseEventData {
 pub struct ScrollEventData {
     pub pt: Point2<i32>,
     pub delta: Vector2<i32>,
-    pub flipped: bool,
+}
+
+impl ScrollEventData {
+    fn relative_to(&self, origin: Point2<i32>) -> ScrollEventData {
+        ScrollEventData {
+            pt: Point2 {
+                x: self.pt.x - origin.x,
+                y: self.pt.y - origin.y,
+            },
+            delta: self.delta,
+        }
+    }
 }
 
 //===========================================================================//

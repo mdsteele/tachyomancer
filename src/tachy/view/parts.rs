@@ -123,6 +123,9 @@ impl PartsTray {
                     (None, false)
                 }
             }
+            Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
+                (None, true)
+            }
             _ => (None, false),
         }
     }

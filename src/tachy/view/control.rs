@@ -98,6 +98,9 @@ impl ControlsTray {
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
                 Some(None)
             }
+            Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
+                Some(None)
+            }
             _ => None,
         }
     }

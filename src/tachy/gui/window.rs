@@ -120,10 +120,13 @@ impl<'a> Window<'a> {
 
     pub fn poll_event(&mut self) -> Option<Event> {
         loop {
-            match self.gui_context.event_pump.poll_event() {
+            let pump = &mut self.gui_context.event_pump;
+            match pump.poll_event() {
                 None => return None,
                 Some(sdl_event) => {
-                    if let Some(event) = Event::from_sdl_event(sdl_event) {
+                    if let Some(event) = Event::from_sdl_event(sdl_event,
+                                                               pump)
+                    {
                         return Some(event);
                     }
                 }

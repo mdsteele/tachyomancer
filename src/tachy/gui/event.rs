@@ -17,15 +17,17 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::Point2;
+use cgmath::{Point2, Vector2};
 use sdl2;
 pub use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseButton;
+use sdl2::mouse::{MouseButton, MouseWheelDirection};
 use std::time::Duration;
 
 //===========================================================================//
 
 const MAX_CLOCK_TICK_SECONDS: f64 = 1.0 / 30.0;
+
+const SCROLL_DELTA_MULTIPLIER: i32 = 5;
 
 //===========================================================================//
 
@@ -37,6 +39,7 @@ pub enum Event {
     MouseDown(MouseEventData),
     MouseMove(MouseEventData),
     MouseUp(MouseEventData),
+    Scroll(ScrollEventData),
     TextInput(String),
 }
 
@@ -49,7 +52,8 @@ impl Event {
         Event::ClockTick(data)
     }
 
-    pub(super) fn from_sdl_event(sdl_event: sdl2::event::Event)
+    pub(super) fn from_sdl_event(sdl_event: sdl2::event::Event,
+                                 pump: &sdl2::EventPump)
                                  -> Option<Event> {
         match sdl_event {
             sdl2::event::Event::Quit { .. } => Some(Event::Quit),
@@ -92,6 +96,15 @@ impl Event {
                     }
                     _ => None,
                 }
+            }
+            sdl2::event::Event::MouseWheel { x, y, direction, .. } => {
+                let mouse = pump.mouse_state();
+                let data = ScrollEventData {
+                    pt: Point2::new(mouse.x(), mouse.y()),
+                    delta: Vector2::new(x, y) * SCROLL_DELTA_MULTIPLIER,
+                    flipped: direction == MouseWheelDirection::Flipped,
+                };
+                Some(Event::Scroll(data))
             }
             sdl2::event::Event::TextInput { text, .. } => {
                 Some(Event::TextInput(text))
@@ -175,6 +188,15 @@ impl MouseEventData {
             right: self.right,
         }
     }
+}
+
+//===========================================================================//
+
+#[derive(Clone)]
+pub struct ScrollEventData {
+    pub pt: Point2<i32>,
+    pub delta: Vector2<i32>,
+    pub flipped: bool,
 }
 
 //===========================================================================//

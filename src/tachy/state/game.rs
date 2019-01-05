@@ -20,6 +20,7 @@
 use super::edit::EditGrid;
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Profile,
                   Puzzle, SaveDir};
+use unicase;
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -208,7 +209,7 @@ impl GameState {
         if name.is_empty() {
             return false;
         }
-        if name == self.circuit_name {
+        if unicase::eq(name, &self.circuit_name) {
             return true;
         }
         if let Some(ref profile) = self.profile {

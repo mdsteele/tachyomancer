@@ -118,6 +118,7 @@ impl SaveDir {
     }
 
     pub fn has_profile(&self, name: &str) -> bool {
+        // TODO: Make this case-insensitive, just like for circuit names.
         self.profile_names.contains(name)
     }
 

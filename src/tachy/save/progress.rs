@@ -24,6 +24,7 @@ use std::fs;
 use std::i64;
 use std::io;
 use std::path::{Path, PathBuf};
+use unicase::UniCase;
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -62,9 +63,7 @@ impl PuzzleProgressData {
 pub struct PuzzleProgress {
     base_path: PathBuf,
     data: PuzzleProgressData,
-    // TODO: make this unicode-case-insensitive (since some filesystems are
-    //   case-insensitive); maybe use unicase crate.
-    circuit_names: BTreeSet<String>,
+    circuit_names: BTreeSet<UniCase<String>>,
     needs_save: bool,
 }
 
@@ -106,7 +105,7 @@ impl PuzzleProgress {
         };
 
         // Get circuit names:
-        let mut circuit_names = BTreeSet::<String>::new();
+        let mut circuit_names = BTreeSet::<UniCase<String>>::new();
         let entries = base_path
             .read_dir()
             .map_err(|err| {
@@ -133,7 +132,7 @@ impl PuzzleProgress {
                 if !circuit_name.is_empty() &&
                     circuit_name.width() <= CIRCUIT_NAME_MAX_WIDTH
                 {
-                    circuit_names.insert(circuit_name);
+                    circuit_names.insert(UniCase::new(circuit_name));
                 }
             }
         }
@@ -188,16 +187,24 @@ impl PuzzleProgress {
         CircuitNamesIter::new(&self.circuit_names)
     }
 
+    /// Returns true if there is a circuit with the given name for this puzzle.
+    /// For the purposes of name collisions, circuit names are treated as
+    /// case-insensitive, for better compatibility with case-insensitive
+    /// filesystems.
     pub fn has_circuit_name(&self, name: &str) -> bool {
-        self.circuit_names.contains(name)
+        // It would be nice to avoid the string copy here (and elsewhere in
+        // this file) if UniCase ever implements the Borrow trait
+        // (https://github.com/seanmonstar/unicase/issues/22).
+        self.circuit_names.contains(&UniCase::new(name.to_string()))
     }
 
     pub fn load_circuit(&self, circuit_name: &str)
                         -> Result<CircuitData, String> {
-        if !self.circuit_names.contains(circuit_name) {
-            return Err(format!("No such circuit: {:?}", circuit_name));
-        }
-        let circuit_path = self.circuit_path(circuit_name);
+        let circuit_name_uni = UniCase::new(circuit_name.to_string());
+        let circuit_path = match self.circuit_names.get(&circuit_name_uni) {
+            Some(name) => self.circuit_path(&name),
+            None => return Err(format!("No such circuit: {:?}", circuit_name)),
+        };
         debug_log!("Loading circuit {:?} from {:?}",
                    circuit_name,
                    circuit_path);
@@ -212,29 +219,35 @@ impl PuzzleProgress {
         {
             return Err(format!("Invalid circuit name: {:?}", circuit_name));
         }
-        let circuit_path = self.circuit_path(circuit_name);
+        let circuit_name_uni = UniCase::new(circuit_name.to_string());
+        let circuit_path = match self.circuit_names.get(&circuit_name_uni) {
+            Some(name) => self.circuit_path(&name),
+            None => self.circuit_path(circuit_name),
+        };
         debug_log!("Saving circuit {:?} to {:?}", circuit_name, circuit_path);
         circuit_data.save(&circuit_path)?;
-        self.circuit_names.insert(circuit_name.to_string());
+        self.circuit_names.insert(circuit_name_uni);
         Ok(())
     }
 
     pub fn copy_circuit(&mut self, old_name: &str, new_name: &str)
                         -> Result<(), String> {
-        if !self.circuit_names.contains(old_name) {
-            return Err(format!("No such circuit: {:?}", old_name));
-        }
+        let old_name_uni = UniCase::new(old_name.to_string());
+        let old_path = match self.circuit_names.get(&old_name_uni) {
+            Some(name) => self.circuit_path(&name),
+            None => return Err(format!("No such circuit: {:?}", old_name)),
+        };
         if new_name.is_empty() || new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
             return Err(format!("Invalid circuit name: {:?}", new_name));
         }
-        if self.circuit_names.contains(new_name) {
+        let new_name_uni = UniCase::new(new_name.to_string());
+        if self.circuit_names.contains(&new_name_uni) {
             return Err(format!("Circuit already exists: {:?}", new_name));
         }
         let new_path = self.circuit_path(new_name);
         if new_path.exists() {
             return Err(format!("Path already exists: {:?}", new_path));
         }
-        let old_path = self.circuit_path(old_name);
         debug_log!("Copying circuit from {:?} to {:?}", old_path, new_path);
         fs::copy(&old_path, &new_path)
             .map_err(|err| {
@@ -243,16 +256,17 @@ impl PuzzleProgress {
                         new_path,
                         err)
             })?;
-        self.circuit_names.insert(new_name.to_string());
+        self.circuit_names.insert(new_name_uni);
         Ok(())
     }
 
     pub fn delete_circuit(&mut self, circuit_name: &str)
                           -> Result<(), String> {
-        if !self.circuit_names.contains(circuit_name) {
-            return Err(format!("No such circuit: {:?}", circuit_name));
-        }
-        let circuit_path = self.circuit_path(circuit_name);
+        let circuit_name_uni = UniCase::new(circuit_name.to_string());
+        let circuit_path = match self.circuit_names.get(&circuit_name_uni) {
+            Some(name) => self.circuit_path(&name),
+            None => return Err(format!("No such circuit: {:?}", circuit_name)),
+        };
         debug_log!("Deleting circuit {:?} at {:?}",
                    circuit_name,
                    circuit_path);
@@ -262,29 +276,39 @@ impl PuzzleProgress {
                                  circuit_path,
                                  err)
                      })?;
-        self.circuit_names.remove(circuit_name);
+        self.circuit_names.remove(&circuit_name_uni);
         Ok(())
     }
 
     pub fn rename_circuit(&mut self, old_name: &str, new_name: &str)
                           -> Result<(), String> {
-        if !self.circuit_names.contains(old_name) {
-            return Err(format!("No such circuit: {:?}", old_name));
-        }
-        if old_name == new_name {
+        let old_name_uni = UniCase::new(old_name.to_string());
+        let old_path = match self.circuit_names.get(&old_name_uni) {
+            Some(name) => self.circuit_path(&name),
+            None => return Err(format!("No such circuit: {:?}", old_name)),
+        };
+        if new_name == old_name {
             return Ok(());
         }
         if new_name.is_empty() || new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
             return Err(format!("Invalid circuit name: {:?}", new_name));
         }
-        if self.circuit_names.contains(new_name) {
-            return Err(format!("Circuit already exists: {:?}", new_name));
+        let new_name_uni = UniCase::new(new_name.to_string());
+        let new_path = self.circuit_path(&new_name);
+        if new_name_uni != old_name_uni {
+            if self.circuit_names.contains(&new_name_uni) {
+                return Err(format!("Circuit already exists: {:?}", new_name));
+            }
+            // We already know there's not another circuit with this name, so
+            // there shouldn't be a file at the new path, but in case there is
+            // somehow, we do an extra check here to avoid clobbering it.
+            // However, we omit this safety check if the two names differ only
+            // by case, because otherwise a case-insensitive filesystem would
+            // report that the new path already exists.
+            if new_path.exists() {
+                return Err(format!("Path already exists: {:?}", new_path));
+            }
         }
-        let new_path = self.circuit_path(new_name);
-        if new_path.exists() {
-            return Err(format!("Path already exists: {:?}", new_path));
-        }
-        let old_path = self.circuit_path(old_name);
         debug_log!("Moving circuit from {:?} to {:?}", old_path, new_path);
         fs::rename(&old_path, &new_path)
             .map_err(|err| {
@@ -293,8 +317,8 @@ impl PuzzleProgress {
                         new_path,
                         err)
             })?;
-        self.circuit_names.remove(old_name);
-        self.circuit_names.insert(new_name.to_string());
+        self.circuit_names.remove(&old_name_uni);
+        self.circuit_names.insert(new_name_uni);
         Ok(())
     }
 
@@ -320,11 +344,11 @@ fn fix_graph_data(points: &mut Vec<(i32, i32)>) {
 //===========================================================================//
 
 pub struct CircuitNamesIter<'a> {
-    inner: Option<btree_set::Iter<'a, String>>,
+    inner: Option<btree_set::Iter<'a, UniCase<String>>>,
 }
 
 impl<'a> CircuitNamesIter<'a> {
-    fn new(names: &'a BTreeSet<String>) -> CircuitNamesIter<'a> {
+    fn new(names: &'a BTreeSet<UniCase<String>>) -> CircuitNamesIter<'a> {
         CircuitNamesIter { inner: Some(names.iter()) }
     }
 
@@ -338,7 +362,7 @@ impl<'a> Iterator for CircuitNamesIter<'a> {
 
     fn next(&mut self) -> Option<&'a str> {
         if let Some(ref mut inner) = self.inner {
-            inner.next().map(String::as_str)
+            inner.next().map(UniCase::as_ref)
         } else {
             None
         }

@@ -24,6 +24,7 @@ use app_dirs::{self, AppDataType, AppDirsError, AppInfo};
 use std::collections::{BTreeSet, btree_set};
 use std::fs;
 use std::path::PathBuf;
+use unicase::UniCase;
 
 //===========================================================================//
 
@@ -34,7 +35,7 @@ const PREFS_FILE_NAME: &str = "prefs.toml";
 pub struct SaveDir {
     base_path: PathBuf,
     prefs: Prefs,
-    profile_names: BTreeSet<String>,
+    profile_names: BTreeSet<UniCase<String>>,
 }
 
 impl SaveDir {
@@ -62,7 +63,7 @@ impl SaveDir {
         let mut prefs = Prefs::create_or_load(&prefs_path)?;
 
         // Load list of profiles.
-        let mut profile_names = BTreeSet::<String>::new();
+        let mut profile_names = BTreeSet::<UniCase<String>>::new();
         let entries = base_path
             .read_dir()
             .map_err(|err| {
@@ -79,13 +80,15 @@ impl SaveDir {
             if !entry.path().is_dir() {
                 continue;
             }
-            profile_names.insert(decode_name(&entry.file_name()));
+            let profile_name = decode_name(&entry.file_name());
+            profile_names.insert(UniCase::new(profile_name));
         }
 
         // Repair prefs.current_profile if necessary.
         let has_current_profile;
         if let Some(profile) = prefs.current_profile() {
-            has_current_profile = profile_names.contains(&profile.to_string());
+            has_current_profile =
+                profile_names.contains(&UniCase::new(profile.to_string()));
             if !has_current_profile {
                 debug_log!("Profile {:?} does not exist", profile);
             }
@@ -97,9 +100,9 @@ impl SaveDir {
                 debug_log!("Setting current profile to None");
                 prefs.set_current_profile(None);
             } else {
-                let name = profile_names.iter().next().unwrap().clone();
+                let name: &str = &profile_names.iter().next().unwrap();
                 debug_log!("Defaulting current profile to {:?}", name);
-                prefs.set_current_profile(Some(name));
+                prefs.set_current_profile(Some(name.to_string()));
             }
             prefs.save()?;
         }
@@ -118,8 +121,10 @@ impl SaveDir {
     }
 
     pub fn has_profile(&self, name: &str) -> bool {
-        // TODO: Make this case-insensitive, just like for circuit names.
-        self.profile_names.contains(name)
+        // It would be nice to avoid the string copy here (and elsewhere in
+        // this file) if UniCase ever implements the Borrow trait
+        // (https://github.com/seanmonstar/unicase/issues/22).
+        self.profile_names.contains(&UniCase::new(name.to_string()))
     }
 
     pub fn load_current_profile_if_any(&self)
@@ -142,7 +147,7 @@ impl SaveDir {
             self.prefs.set_current_profile(Some(profile.name().to_string()));
             self.prefs.save()?;
         }
-        self.profile_names.insert(profile.name().to_string());
+        self.profile_names.insert(UniCase::new(profile.name().to_string()));
         Ok(profile)
     }
 }
@@ -150,14 +155,14 @@ impl SaveDir {
 //===========================================================================//
 
 pub struct ProfileNamesIter<'a> {
-    inner: btree_set::Iter<'a, String>,
+    inner: btree_set::Iter<'a, UniCase<String>>,
 }
 
 impl<'a> Iterator for ProfileNamesIter<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<&'a str> {
-        self.inner.next().map(String::as_str)
+        self.inner.next().map(UniCase::as_ref)
     }
 }
 

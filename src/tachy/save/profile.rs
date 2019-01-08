@@ -177,6 +177,10 @@ impl Profile {
         self.conversations.get(&conv).map_or(0, ConversationProgress::progress)
     }
 
+    pub fn increment_conversation_progress(&mut self, conv: Conversation) {
+        self.conversation_progress_mut(conv).increment_progress();
+    }
+
     pub fn is_conversation_unlocked(&self, conv: Conversation) -> bool {
         self.conversations.contains_key(&conv) || conv == Conversation::first()
     }
@@ -187,13 +191,31 @@ impl Profile {
             .map_or(false, ConversationProgress::is_complete)
     }
 
+    pub fn mark_conversation_complete(&mut self, conv: Conversation) {
+        self.conversation_progress_mut(conv).mark_complete();
+    }
+
+    pub fn get_conversation_choice(&self, conv: Conversation, key: &str)
+                                   -> Option<&str> {
+        if let Some(progress) = self.conversations.get(&conv) {
+            progress.get_choice(key)
+        } else {
+            None
+        }
+    }
+
     pub fn set_conversation_choice(&mut self, conv: Conversation,
                                    key: String, value: String) {
+        self.conversation_progress_mut(conv).set_choice(key, value);
+    }
+
+    fn conversation_progress_mut(&mut self, conv: Conversation)
+                                 -> &mut ConversationProgress {
         if !self.conversations.contains_key(&conv) {
             let path = self.base_path.join(format!("{:?}.toml", conv));
             self.conversations.insert(conv, ConversationProgress::new(path));
         }
-        self.conversations.get_mut(&conv).unwrap().set_choice(key, value);
+        self.conversations.get_mut(&conv).unwrap()
     }
 
     pub fn current_puzzle(&self) -> Puzzle {

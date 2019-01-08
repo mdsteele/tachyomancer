@@ -25,7 +25,7 @@ use tachy::font::Align;
 use tachy::geom::Rect;
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
-use tachy::save::{Conversation, Puzzle};
+use tachy::save::{Conversation, Profile, Puzzle};
 use tachy::state::{ConversationBubble, ConversationPortrait, GameState};
 
 //===========================================================================//
@@ -41,6 +41,8 @@ const BUBBLE_SPACING: i32 = 16;
 const CHOICE_HEIGHT: i32 = 30;
 const CHOICE_SPACING: i32 = 2;
 
+const MORE_BUTTON_HEIGHT: i32 = 30;
+
 const PORTRAIT_HEIGHT: i32 = 75;
 const PORTRAIT_WIDTH: i32 = 60;
 
@@ -53,7 +55,9 @@ const SCROLLBAR_MARGIN: i32 = 5;
 
 #[derive(Clone)]
 pub enum ConverseAction {
+    Complete,
     GoToPuzzle(Puzzle),
+    Increment,
     MakeChoice(String, String),
 }
 
@@ -135,6 +139,8 @@ fn conv_list_items(state: &GameState) -> Vec<(Conversation, String)> {
 struct BubblesListView {
     rect: Rect<i32>,
     bubbles: Vec<Box<BubbleView>>,
+    num_bubbles_shown: usize,
+    more_button: Option<MoreButton>,
     scroll_top: i32,
     scroll_max: i32,
     drag: Option<i32>,
@@ -145,16 +151,17 @@ impl BubblesListView {
         let mut view = BubblesListView {
             rect,
             bubbles: Vec::new(),
+            num_bubbles_shown: 0,
+            more_button: None,
             scroll_top: 0,
             scroll_max: 0,
             drag: None,
         };
         view.update_conversation(state);
-        view.scroll_top = view.scroll_max;
         view
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         // Draw background and define clipping area:
         let stencil = Stencil::new();
         {
@@ -171,12 +178,20 @@ impl BubblesListView {
                                  (self.rect.y - self.scroll_top) as f32,
                                  0.0);
         let bubble_matrix = matrix * Matrix4::from_translation(bubble_offset);
-        for bubble in self.bubbles.iter() {
+        for bubble in self.bubbles.iter().take(self.num_bubbles_shown) {
             let rect = bubble.rect();
             if rect.bottom() > self.scroll_top &&
                 rect.y < self.scroll_top + self.rect.height
             {
                 bubble.draw(resources, &bubble_matrix);
+            }
+        }
+        if let Some(ref button) = self.more_button {
+            let rect = button.rect;
+            if rect.bottom() > self.scroll_top &&
+                rect.y < self.scroll_top + self.rect.height
+            {
+                button.draw(resources, &bubble_matrix);
             }
         }
 
@@ -200,7 +215,7 @@ impl BubblesListView {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event) -> Option<ConverseAction> {
+    fn handle_event(&mut self, event: &Event) -> Option<ConverseAction> {
         // Handle scrollbar events:
         match event {
             Event::MouseDown(mouse)
@@ -236,18 +251,65 @@ impl BubblesListView {
         // Handle conversation bubble events:
         let bubble_event =
             event.relative_to(self.rect.top_left() - vec2(0, self.scroll_top));
-        for bubble in self.bubbles.iter_mut() {
+        for bubble in self.bubbles.iter_mut().take(self.num_bubbles_shown) {
             if let Some(action) = bubble.handle_event(&bubble_event) {
                 return Some(action);
+            }
+        }
+        if let Some(ref mut button) = self.more_button {
+            if button.handle_event(&bubble_event) {
+                if self.num_bubbles_shown + 1 < self.bubbles.len() {
+                    return Some(ConverseAction::Increment);
+                }
+                if let Some(ref bubble) = self.bubbles.last() {
+                    if bubble.is_choice() {
+                        return Some(ConverseAction::Increment);
+                    }
+                }
+                return Some(ConverseAction::Complete);
             }
         }
         return None;
     }
 
-    pub fn update_conversation(&mut self, state: &GameState) {
+    fn update_conversation(&mut self, state: &GameState) {
         debug_assert!(state.profile().is_some());
         let profile = state.profile().unwrap();
         let conv = profile.current_conversation();
+        let num_bubbles_shown =
+            profile.conversation_progress(conv).saturating_add(1);
+        if num_bubbles_shown > self.bubbles.len() {
+            self.rebuild_bubbles(profile, conv);
+        }
+        self.num_bubbles_shown = num_bubbles_shown.min(self.bubbles.len());
+
+        self.more_button = if self.num_bubbles_shown < self.bubbles.len() {
+            let width = self.rect.width - (SCROLLBAR_MARGIN + SCROLLBAR_WIDTH);
+            let top = if self.num_bubbles_shown == 0 {
+                0
+            } else {
+                self.bubbles[self.num_bubbles_shown - 1].rect().bottom() +
+                    BUBBLE_SPACING
+            };
+            let more_button = MoreButton::new(width, top);
+            Some(more_button)
+        } else {
+            None
+        };
+
+        let total_height = if let Some(ref button) = self.more_button {
+            button.rect.bottom()
+        } else if let Some(bubble) = self.bubbles.last() {
+            bubble.rect().bottom()
+        } else {
+            0
+        };
+        self.scroll_max = (total_height - self.rect.height).max(0);
+        self.scroll_top = self.scroll_max;
+    }
+
+    fn rebuild_bubbles(&mut self, profile: &Profile, conv: Conversation) {
+        debug_log!("Rebuilding conversation bubbles");
         let bubble_width = self.rect.width -
             (SCROLLBAR_MARGIN + SCROLLBAR_WIDTH);
         let mut bubble_top: i32 = 0;
@@ -281,13 +343,15 @@ impl BubblesListView {
             bubble_views.push(bubble_view);
         }
         self.bubbles = bubble_views;
-        self.scroll_max = (bubble_top - self.rect.height).max(0);
     }
 
     fn unfocus(&mut self) {
         self.drag = None;
         for bubble in self.bubbles.iter_mut() {
             bubble.unfocus();
+        }
+        if let Some(ref mut button) = self.more_button {
+            button.unfocus();
         }
     }
 
@@ -309,8 +373,59 @@ impl BubblesListView {
 
 //===========================================================================//
 
+struct MoreButton {
+    rect: Rect<i32>,
+    hovering: bool,
+}
+
+impl MoreButton {
+    fn new(width: i32, top: i32) -> MoreButton {
+        MoreButton {
+            rect: Rect::new(0, top, width, MORE_BUTTON_HEIGHT),
+            hovering: false,
+        }
+    }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let color = if self.hovering {
+            (1.0, 0.5, 0.1)
+        } else {
+            (0.5, 0.25, 0.1)
+        };
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.fonts().roman().draw(&matrix,
+                                       BUBBLE_FONT_SIZE,
+                                       Align::MidCenter,
+                                       (rect.x + 0.5 * rect.width,
+                                        rect.y + 0.5 * rect.height),
+                                       "- More -");
+    }
+
+    fn handle_event(&mut self, event: &Event) -> bool {
+        match event {
+            Event::MouseDown(mouse) => {
+                if self.rect.contains_point(mouse.pt) {
+                    return true;
+                }
+            }
+            Event::MouseMove(mouse) => {
+                self.hovering = self.rect.contains_point(mouse.pt);
+            }
+            _ => {}
+        }
+        return false;
+    }
+
+    fn unfocus(&mut self) { self.hovering = false; }
+}
+
+//===========================================================================//
+
 trait BubbleView {
     fn rect(&self) -> Rect<i32>;
+
+    fn is_choice(&self) -> bool { false }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>);
 
@@ -494,6 +609,8 @@ impl YouChoiceBubbleView {
 
 impl BubbleView for YouChoiceBubbleView {
     fn rect(&self) -> Rect<i32> { self.rect }
+
+    fn is_choice(&self) -> bool { true }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         for (index, &(_, ref label)) in self.choices.iter().enumerate() {

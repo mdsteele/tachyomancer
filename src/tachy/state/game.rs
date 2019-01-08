@@ -118,6 +118,13 @@ impl GameState {
         }
     }
 
+    pub fn increment_current_conversation_progress(&mut self) {
+        if let Some(ref mut profile) = self.profile {
+            let conv = profile.current_conversation();
+            profile.increment_conversation_progress(conv);
+        }
+    }
+
     pub fn is_conversation_unlocked(&self, conv: Conversation) -> bool {
         match self.profile.as_ref() {
             Some(profile) => profile.is_conversation_unlocked(conv),
@@ -129,6 +136,13 @@ impl GameState {
         self.profile
             .as_ref()
             .map_or(false, |profile| profile.is_conversation_complete(conv))
+    }
+
+    pub fn mark_current_conversation_complete(&mut self) {
+        if let Some(ref mut profile) = self.profile {
+            let conv = profile.current_conversation();
+            profile.mark_conversation_complete(conv);
+        }
     }
 
     pub fn set_current_conversation_choice(&mut self, key: String,

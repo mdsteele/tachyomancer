@@ -137,7 +137,38 @@ impl ConversationProgress {
         }
     }
 
+    pub fn increment_progress(&mut self) {
+        if !self.is_complete() {
+            if let Some(ref mut index) = self.data.progress {
+                *index += 1;
+            } else {
+                self.data.progress = Some(1);
+            }
+            self.needs_save = true;
+        }
+    }
+
     pub fn is_complete(&self) -> bool { self.data.complete.unwrap_or(false) }
+
+    pub fn mark_complete(&mut self) {
+        if !self.is_complete() {
+            self.data.complete = Some(true);
+            self.data.progress = None;
+            self.needs_save = true;
+        }
+    }
+
+    pub fn get_choice(&self, key: &str) -> Option<&str> {
+        if let Some(ref choices) = self.data.choices {
+            if let Some(choice) = choices.get(key) {
+                Some(choice)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
 
     pub fn set_choice(&mut self, key: String, value: String) {
         if self.data.choices.is_none() {

@@ -172,13 +172,23 @@ impl MenuView {
             }
             MenuSection::Messages => {
                 match self.converse_view.handle_event(event, state) {
+                    Some(ConverseAction::Complete) => {
+                        state.mark_current_conversation_complete();
+                        self.converse_view.update_conversation_list(state);
+                        self.converse_view.update_conversation_bubbles(state);
+                    }
                     Some(ConverseAction::GoToPuzzle(puzzle)) => {
                         state.set_current_puzzle(puzzle);
                         self.puzzles_view.update_circuit_list(state);
                         state.set_menu_section(MenuSection::Puzzles);
                     }
+                    Some(ConverseAction::Increment) => {
+                        state.increment_current_conversation_progress();
+                        self.converse_view.update_conversation_bubbles(state);
+                    }
                     Some(ConverseAction::MakeChoice(key, value)) => {
                         state.set_current_conversation_choice(key, value);
+                        state.increment_current_conversation_progress();
                         self.converse_view.update_conversation_bubbles(state);
                     }
                     None => {}

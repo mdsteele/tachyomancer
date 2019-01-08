@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::list::ListView;
-use cgmath::{Matrix4, Point2, vec2, vec3};
+use cgmath::{Matrix4, Point2, vec2};
 use num_integer::{div_floor, div_mod_floor};
 use std::borrow::Cow;
 use tachy::font::Align;
-use tachy::geom::Rect;
+use tachy::geom::{MatrixExt, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 use tachy::save::{Conversation, Profile, Puzzle};
@@ -174,10 +174,9 @@ impl BubblesListView {
         stencil.enable_clipping();
 
         // Draw conversation bubbles:
-        let bubble_offset = vec3(self.rect.x as f32,
-                                 (self.rect.y - self.scroll_top) as f32,
-                                 0.0);
-        let bubble_matrix = matrix * Matrix4::from_translation(bubble_offset);
+        let bubble_matrix = matrix *
+            Matrix4::trans2(self.rect.x as f32,
+                            (self.rect.y - self.scroll_top) as f32);
         for bubble in self.bubbles.iter().take(self.num_bubbles_shown) {
             let rect = bubble.rect();
             if rect.bottom() > self.scroll_top &&

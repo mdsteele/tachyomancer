@@ -17,8 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, Vector2, vec3};
+use cgmath::{Matrix4, Vector2};
 use std::rc::Rc;
+use tachy::geom::MatrixExt;
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 Texture2D, VertexArray, VertexBuffer};
 
@@ -170,10 +171,9 @@ impl TextShader {
             Align::TopRight => Vector2::new(-(num_chars as f32), 0.0),
             Align::MidRight => Vector2::new(-(num_chars as f32), -0.5),
         };
-        let mvp = matrix *
-            Matrix4::from_translation(vec3(start.0, start.1, 0.0)) *
-            Matrix4::from_nonuniform_scale(size.0, size.1, 1.0) *
-            Matrix4::from_translation(vec3(shift.x, shift.y, 0.0));
+        let mvp = matrix * Matrix4::trans2(start.0, start.1) *
+            Matrix4::scale2(size.0, size.1) *
+            Matrix4::trans2v(shift);
         self.mvp.set(&mvp);
 
         self.varray.bind();

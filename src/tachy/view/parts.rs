@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, Point2, vec3};
+use cgmath::{Matrix4, Point2};
 use num_integer::div_mod_floor;
 use tachy::font::Align;
-use tachy::geom::{Rect, RectSize};
+use tachy::geom::{MatrixExt, Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::Puzzle;
 use tachy::state::ChipType;
@@ -96,8 +96,7 @@ impl PartsTray {
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(matrix, (0.0, 0.5, 0.0), rect);
-        let matrix = matrix *
-            Matrix4::from_translation(vec3(rect.x, rect.y, 0.0));
+        let matrix = matrix * Matrix4::trans2(rect.x, rect.y);
         for part in self.parts.iter() {
             part.draw(resources, &matrix);
         }

@@ -19,12 +19,12 @@
 
 use super::button::TextButton;
 use super::list::ListView;
-use cgmath::{Deg, Matrix4, vec3};
+use cgmath::{Deg, Matrix4};
 use num_integer::div_floor;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use tachy::font::Align;
-use tachy::geom::Rect;
+use tachy::geom::{MatrixExt, Rect};
 use tachy::gui::{Event, Resources};
 use tachy::save::Puzzle;
 use tachy::state::GameState;
@@ -375,9 +375,7 @@ impl GraphView {
                    graph_rect.bottom() + GRAPH_LABEL_MARGIN as f32),
                   "Size");
         let side_matrix = matrix *
-            Matrix4::from_translation(vec3(graph_rect.right(),
-                                           graph_rect.bottom(),
-                                           0.0)) *
+            Matrix4::trans2(graph_rect.right(), graph_rect.bottom()) *
             Matrix4::from_angle_z(Deg(-90.0));
         font.draw(&side_matrix,
                   GRAPH_LABEL_FONT_SIZE,

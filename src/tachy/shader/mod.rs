@@ -17,8 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, Vector2, Vector3, Vector4, vec3};
-use tachy::geom::Rect;
+use cgmath::{Matrix4, Vector2, Vector3, Vector4};
+use tachy::geom::{MatrixExt, Rect};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 VertexArray, VertexBuffer};
 
@@ -194,9 +194,8 @@ impl SolidShader {
                      rect: Rect<f32>) {
         self.program.bind();
         self.color.set(&color.into());
-        let mvp = matrix *
-            Matrix4::from_translation(vec3(rect.x, rect.y, 0.0)) *
-            Matrix4::from_nonuniform_scale(rect.width, rect.height, 1.0);
+        let mvp = matrix * Matrix4::trans2(rect.x, rect.y) *
+            Matrix4::scale2(rect.width, rect.height);
         self.mvp.set(&mvp);
         self.varray.bind();
         self.rect_vbuffer.attribf(0, 3, 0, 0);

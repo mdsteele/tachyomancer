@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, vec2, vec3};
+use cgmath::{Matrix4, vec2};
 use tachy::font::Align;
-use tachy::geom::{Coords, CoordsSize, Orientation, Rect};
+use tachy::geom::{Coords, CoordsSize, MatrixExt, Orientation, Rect};
 use tachy::gui::Resources;
 use tachy::state::{ChipType, EditGrid, Interface, PortColor, PortFlow,
                    PortSpec};
@@ -134,12 +134,10 @@ impl ChipModel {
                       orient: Orientation, size: CoordsSize, icon: ChipIcon) {
         let width = size.width as f32 - 2.0 * MARGIN;
         let height = size.height as f32 - 2.0 * MARGIN;
-        let matrix = matrix *
-            Matrix4::from_translation(vec3(MARGIN, MARGIN, 0.0)) *
-            Matrix4::from_nonuniform_scale(width, height, 1.0) *
-            Matrix4::from_translation(vec3(0.5, 0.5, 0.0)) *
-            orient.matrix() *
-            Matrix4::from_translation(vec3(-0.5, -0.5, 0.0));
+        let matrix = matrix * Matrix4::trans2(MARGIN, MARGIN) *
+            Matrix4::scale2(width, height) *
+            Matrix4::trans2(0.5, 0.5) *
+            orient.matrix() * Matrix4::trans2(-0.5, -0.5);
         let icon_index = icon as u32;
         let icon_coords = vec2(icon_index % 8, icon_index / 8);
         resources.textures().chip_icons().bind();
@@ -160,7 +158,7 @@ impl ChipModel {
                  port: &PortSpec) {
         let x = port.pos.x as f32 + 0.5;
         let y = port.pos.y as f32 + 0.5;
-        let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
+        let mat = matrix * Matrix4::trans2(x, y) *
             Matrix4::from_angle_z(port.dir.angle_from_east());
         let color = match (port.color, port.flow) {
             (PortColor::Behavior, PortFlow::Send) => (1.0, 0.5, 0.0),

@@ -19,6 +19,7 @@
 
 use super::coords::{CoordsDelta, CoordsSize};
 use super::dir::Direction;
+use super::matrix::MatrixExt;
 use super::rect::RectSize;
 use cgmath::{Deg, Matrix4};
 use std::fmt;
@@ -39,7 +40,7 @@ impl Orientation {
     pub fn matrix(&self) -> Matrix4<f32> {
         let matrix = Matrix4::from_angle_z(Deg(90.0 * (self.rotate as f32)));
         if self.mirror {
-            matrix * Matrix4::from_nonuniform_scale(1.0, -1.0, 1.0)
+            matrix * Matrix4::scale2(1.0, -1.0)
         } else {
             matrix
         }

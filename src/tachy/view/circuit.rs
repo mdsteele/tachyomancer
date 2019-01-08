@@ -23,9 +23,10 @@ use super::dialog::ButtonDialogBox;
 use super::parts::{PartsAction, PartsTray};
 use super::verify::VerificationTray;
 use super::wire::WireModel;
-use cgmath::{self, Matrix4, Point2, Vector2, vec3, vec4};
+use cgmath::{self, Matrix4, Point2, Vector2, vec4};
 use num_integer::{div_floor, mod_floor};
-use tachy::geom::{Coords, CoordsRect, Direction, Orientation, Rect, RectSize};
+use tachy::geom::{Coords, CoordsRect, Direction, MatrixExt, Orientation,
+                  Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::{Puzzle, WireShape};
 use tachy::state::{ChipType, EditGrid, EvalResult, EvalScore, GridChange};
@@ -355,7 +356,7 @@ impl EditGridView {
             let coords = interface.top_left(bounds);
             let x = (coords.x * GRID_CELL_SIZE) as f32;
             let y = (coords.y * GRID_CELL_SIZE) as f32;
-            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
+            let mat = matrix * Matrix4::trans2(x, y) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
             self.chip_model.draw_interface(resources, &mat, interface);
         }
@@ -408,7 +409,7 @@ impl EditGridView {
             }
             let x = (coords.x * GRID_CELL_SIZE) as f32;
             let y = (coords.y * GRID_CELL_SIZE) as f32;
-            let mat = matrix * Matrix4::from_translation(vec3(x, y, 0.0)) *
+            let mat = matrix * Matrix4::trans2(x, y) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
             self.chip_model.draw_chip(resources,
                                       &mat,
@@ -423,8 +424,7 @@ impl EditGridView {
             let pt = drag.chip_topleft();
             let x = pt.x as f32;
             let y = pt.y as f32;
-            let matrix = self.vp_matrix() *
-                Matrix4::from_translation(vec3(x, y, 0.0)) *
+            let matrix = self.vp_matrix() * Matrix4::trans2(x, y) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
             self.chip_model.draw_chip(resources,
                                       &matrix,
@@ -436,9 +436,7 @@ impl EditGridView {
 
     fn vp_matrix(&self) -> Matrix4<f32> {
         cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0) *
-            Matrix4::from_translation(vec3(-self.scroll.x as f32,
-                                           -self.scroll.y as f32,
-                                           0.0))
+            Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
     }
 
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
@@ -650,7 +648,7 @@ fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
                  -> Matrix4<f32> {
     let cx = (coords.x * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
     let cy = (coords.y * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
-    matrix * Matrix4::from_translation(vec3(cx, cy, 0.0)) *
+    matrix * Matrix4::trans2(cx, cy) *
         Matrix4::from_angle_z(dir.angle_from_east()) *
         Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
 }

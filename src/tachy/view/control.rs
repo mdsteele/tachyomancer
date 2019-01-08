@@ -17,8 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, vec3};
-use tachy::geom::{Rect, RectSize};
+use cgmath::Matrix4;
+use tachy::geom::{MatrixExt, Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::Puzzle;
 
@@ -78,8 +78,7 @@ impl ControlsTray {
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(matrix, (0.0, 0.5, 0.0), rect);
-        let matrix = matrix *
-            Matrix4::from_translation(vec3(rect.x, rect.y, 0.0));
+        let matrix = matrix * Matrix4::trans2(rect.x, rect.y);
         for button in self.buttons.iter() {
             button.draw(resources, &matrix);
         }

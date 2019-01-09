@@ -155,6 +155,32 @@ impl PrefsView {
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
                         -> Option<PrefsAction> {
         debug_assert!(state.profile().is_some());
+        if let Some(action) = self.handle_pane_event(event, state) {
+            return Some(action);
+        }
+
+        let mut next_pane: Option<PrefsPane> = None;
+        for button in self.pane_buttons.iter_mut() {
+            if let Some(pane) = button
+                .handle_event(event, &self.current_pane)
+            {
+                next_pane = Some(pane);
+                break;
+            }
+        }
+        if let Some(pane) = next_pane {
+            self.handle_pane_event(&Event::Unfocus, state);
+            self.current_pane = pane;
+        }
+        if let Some(action) = self.quit_button.handle_event(event, true) {
+            return Some(action);
+        }
+
+        return None;
+    }
+
+    fn handle_pane_event(&mut self, event: &Event, state: &mut GameState)
+                         -> Option<PrefsAction> {
         match self.current_pane {
             PrefsPane::Hotkeys => {
                 // TODO
@@ -180,28 +206,8 @@ impl PrefsView {
                 // TODO
             }
         }
-
-        let mut next_pane: Option<PrefsPane> = None;
-        for button in self.pane_buttons.iter_mut() {
-            if let Some(pane) = button
-                .handle_event(event, &self.current_pane)
-            {
-                next_pane = Some(pane);
-                break;
-            }
-        }
-        if let Some(pane) = next_pane {
-            self.unfocus();
-            self.current_pane = pane;
-        }
-        if let Some(action) = self.quit_button.handle_event(event, true) {
-            return Some(action);
-        }
-
         return None;
     }
-
-    pub fn unfocus(&mut self) { self.profiles_list.unfocus(); }
 }
 
 //===========================================================================//

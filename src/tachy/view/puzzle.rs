@@ -196,11 +196,6 @@ impl PuzzlesView {
         self.puzzle_list
             .set_items(&state.current_puzzle(), puzzle_list_items(state));
     }
-
-    pub fn unfocus(&mut self) {
-        self.puzzle_list.unfocus();
-        self.circuit_list.unfocus();
-    }
 }
 
 fn circuit_list_items(state: &GameState) -> Vec<(String, String)> {

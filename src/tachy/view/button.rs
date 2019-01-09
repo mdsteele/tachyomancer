@@ -120,6 +120,7 @@ pub struct TextButton<T> {
     rect: Rect<i32>,
     label: String,
     value: T,
+    hovering: bool,
 }
 
 impl<T: Clone> TextButton<T> {
@@ -128,15 +129,18 @@ impl<T: Clone> TextButton<T> {
             rect,
             label: label.to_string(),
             value,
+            hovering: false,
         }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 enabled: bool) {
-        let color = if enabled {
-            (0.7, 0.1, 0.1)
-        } else {
+        let color = if !enabled {
             (0.4, 0.4, 0.4)
+        } else if self.hovering {
+            (1.0, 0.2, 0.2)
+        } else {
+            (0.7, 0.1, 0.1)
         };
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
@@ -157,6 +161,10 @@ impl<T: Clone> TextButton<T> {
                     return Some(self.value.clone());
                 }
             }
+            Event::MouseMove(mouse) => {
+                self.hovering = self.rect.contains_point(mouse.pt);
+            }
+            Event::Unfocus => self.hovering = false,
             _ => {}
         }
         return None;

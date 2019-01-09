@@ -33,14 +33,15 @@ const SCROLL_DELTA_MULTIPLIER: i32 = 5;
 
 #[derive(Clone)]
 pub enum Event {
-    Quit,
     ClockTick(ClockEventData),
     KeyDown(KeyEventData),
     MouseDown(MouseEventData),
     MouseMove(MouseEventData),
     MouseUp(MouseEventData),
+    Quit,
     Scroll(ScrollEventData),
     TextInput(String),
+    Unfocus,
 }
 
 impl Event {
@@ -56,7 +57,6 @@ impl Event {
                                  pump: &sdl2::EventPump)
                                  -> Option<Event> {
         match sdl_event {
-            sdl2::event::Event::Quit { .. } => Some(Event::Quit),
             sdl2::event::Event::KeyDown { keycode, keymod, .. } => {
                 if let Some(code) = keycode {
                     let data = KeyEventData::new(code, keymod);
@@ -80,14 +80,6 @@ impl Event {
                     _ => None,
                 }
             }
-            sdl2::event::Event::MouseMotion { x, y, mousestate, .. } => {
-                let data = MouseEventData {
-                    pt: Point2 { x, y },
-                    left: mousestate.left(),
-                    right: mousestate.right(),
-                };
-                Some(Event::MouseMove(data))
-            }
             sdl2::event::Event::MouseButtonUp { x, y, mouse_btn, .. } => {
                 match mouse_btn {
                     MouseButton::Left | MouseButton::Right => {
@@ -97,6 +89,14 @@ impl Event {
                     _ => None,
                 }
             }
+            sdl2::event::Event::MouseMotion { x, y, mousestate, .. } => {
+                let data = MouseEventData {
+                    pt: Point2 { x, y },
+                    left: mousestate.left(),
+                    right: mousestate.right(),
+                };
+                Some(Event::MouseMove(data))
+            }
             sdl2::event::Event::MouseWheel { x, y, .. } => {
                 let mouse = pump.mouse_state();
                 let data = ScrollEventData {
@@ -105,8 +105,26 @@ impl Event {
                 };
                 Some(Event::Scroll(data))
             }
+            sdl2::event::Event::Quit { .. } => Some(Event::Quit),
             sdl2::event::Event::TextInput { text, .. } => {
                 Some(Event::TextInput(text))
+            }
+            sdl2::event::Event::Window { win_event, .. } => {
+                match win_event {
+                    sdl2::event::WindowEvent::FocusGained => {
+                        let mouse = pump.mouse_state();
+                        let data = MouseEventData {
+                            pt: Point2::new(mouse.x(), mouse.y()),
+                            left: mouse.left(),
+                            right: mouse.right(),
+                        };
+                        Some(Event::MouseMove(data))
+                    }
+                    sdl2::event::WindowEvent::FocusLost => {
+                        Some(Event::Unfocus)
+                    }
+                    _ => None,
+                }
             }
             _ => None,
         }

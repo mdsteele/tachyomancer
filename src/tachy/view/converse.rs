@@ -114,11 +114,6 @@ impl ConverseView {
         self.conv_list
             .set_items(&state.current_conversation(), conv_list_items(state));
     }
-
-    pub fn unfocus(&mut self) {
-        self.conv_list.unfocus();
-        self.bubbles_list.unfocus();
-    }
 }
 
 fn conv_list_items(state: &GameState) -> Vec<(Conversation, String)> {
@@ -244,6 +239,7 @@ impl BubblesListView {
                 let new_scroll_top = self.scroll_top + scroll.delta.y;
                 self.scroll_top = new_scroll_top.max(0).min(self.scroll_max);
             }
+            Event::Unfocus => self.drag = None,
             _ => {}
         }
 
@@ -344,16 +340,6 @@ impl BubblesListView {
         self.bubbles = bubble_views;
     }
 
-    fn unfocus(&mut self) {
-        self.drag = None;
-        for bubble in self.bubbles.iter_mut() {
-            bubble.unfocus();
-        }
-        if let Some(ref mut button) = self.more_button {
-            button.unfocus();
-        }
-    }
-
     fn scroll_handle_rect(&self) -> Option<Rect<i32>> {
         if self.scroll_max != 0 {
             let total_height = self.scroll_max + self.rect.height;
@@ -411,12 +397,11 @@ impl MoreButton {
             Event::MouseMove(mouse) => {
                 self.hovering = self.rect.contains_point(mouse.pt);
             }
+            Event::Unfocus => self.hovering = false,
             _ => {}
         }
         return false;
     }
-
-    fn unfocus(&mut self) { self.hovering = false; }
 }
 
 //===========================================================================//
@@ -431,8 +416,6 @@ trait BubbleView {
     fn handle_event(&mut self, _event: &Event) -> Option<ConverseAction> {
         None
     }
-
-    fn unfocus(&mut self) {}
 }
 
 //===========================================================================//
@@ -557,12 +540,11 @@ impl BubbleView for PuzzleBubbleView {
             Event::MouseMove(mouse) => {
                 self.hovering = self.rect.contains_point(mouse.pt);
             }
+            Event::Unfocus => self.hovering = false,
             _ => {}
         }
         return None;
     }
-
-    fn unfocus(&mut self) { self.hovering = false; }
 }
 
 //===========================================================================//
@@ -648,12 +630,11 @@ impl BubbleView for YouChoiceBubbleView {
             Event::MouseMove(mouse) => {
                 self.hovering = self.choice_for_pt(mouse.pt);
             }
+            Event::Unfocus => self.hovering = None,
             _ => {}
         }
         return None;
     }
-
-    fn unfocus(&mut self) { self.hovering = None; }
 }
 
 //===========================================================================//

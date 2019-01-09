@@ -177,6 +177,9 @@ impl<T: Clone + Eq> ListView<T> {
                 let new_scroll_top = self.scroll_top + scroll.delta.y;
                 self.scroll_top = new_scroll_top.max(0).min(self.scroll_max);
             }
+            Event::Unfocus => {
+                self.drag = None;
+            }
             _ => {}
         }
         return None;
@@ -202,8 +205,6 @@ impl<T: Clone + Eq> ListView<T> {
             (mid_current - self.rect.height / 2).max(0).min(self.scroll_max);
         self.items = items;
     }
-
-    pub fn unfocus(&mut self) { self.drag = None; }
 
     fn has_scrollbar(&self) -> bool { self.scroll_max != 0 }
 

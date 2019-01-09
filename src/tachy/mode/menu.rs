@@ -39,7 +39,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.copy_current_circuit() {
                             Ok(()) => view.update_circuit_list(state),
                             Err(err) => {
-                                view.show_error_dialog("copy circuit", &err);
+                                view.show_error(state, "copy circuit", &err);
                             }
                         }
                     }
@@ -47,7 +47,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.delete_current_circuit() {
                             Ok(()) => view.update_circuit_list(state),
                             Err(err) => {
-                                view.show_error_dialog("delete circuit", &err);
+                                view.show_error(state, "delete circuit", &err);
                             }
                         }
                     }
@@ -55,7 +55,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.load_edit_grid() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
-                                view.show_error_dialog("load circuit", &err);
+                                view.show_error(state, "load circuit", &err);
                             }
                         }
                     }
@@ -67,7 +67,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.rename_current_circuit(name) {
                             Ok(()) => view.update_circuit_list(state),
                             Err(err) => {
-                                view.show_error_dialog("rename circuit", &err);
+                                view.show_error(state, "rename circuit", &err);
                             }
                         }
                     }
@@ -76,7 +76,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.clear_profile() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
-                                view.show_error_dialog("switch profile", &err);
+                                view.show_error(state, "switch profile", &err);
                             }
                         }
                     }
@@ -89,7 +89,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 view.update_circuit_list(state);
                             }
                             Err(err) => {
-                                view.show_error_dialog("switch profile", &err);
+                                view.show_error(state, "switch profile", &err);
                             }
                         }
                     }

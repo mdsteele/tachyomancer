@@ -167,6 +167,29 @@ impl MenuView {
             return None;
         }
 
+        if let Some(action) = self.handle_section_event(event, state) {
+            return Some(action);
+        }
+
+        let mut next_section: Option<MenuSection> = None;
+        for button in self.section_buttons.iter_mut() {
+            if let Some(section) =
+                button.handle_event(event, state.menu_section(), audio)
+            {
+                next_section = Some(section);
+                break;
+            }
+        }
+        if let Some(section) = next_section {
+            self.handle_section_event(&Event::Unfocus, state);
+            state.set_menu_section(section);
+        }
+
+        return None;
+    }
+
+    fn handle_section_event(&mut self, event: &Event, state: &mut GameState)
+                            -> Option<MenuAction> {
         match state.menu_section() {
             MenuSection::Navigation => {
                 // TODO
@@ -201,7 +224,7 @@ impl MenuView {
                         return Some(MenuAction::CopyCircuit);
                     }
                     Some(PuzzlesAction::Delete) => {
-                        self.unfocus();
+                        self.unfocus(state);
                         let size = RectSize::new(self.width as i32,
                                                  self.height as i32);
                         let text = format!("Really delete {}?",
@@ -222,7 +245,7 @@ impl MenuView {
                         return Some(MenuAction::NewCircuit);
                     }
                     Some(PuzzlesAction::Rename) => {
-                        self.unfocus();
+                        self.unfocus(state);
                         let size = RectSize::new(self.width as i32,
                                                  self.height as i32);
                         let text = "Choose new circuit name:";
@@ -253,25 +276,13 @@ impl MenuView {
                 }
             }
         }
-
-        let mut should_unfocus = false;
-        for button in self.section_buttons.iter_mut() {
-            if let Some(section) =
-                button.handle_event(event, state.menu_section(), audio)
-            {
-                state.set_menu_section(section);
-                should_unfocus = true;
-            }
-        }
-        if should_unfocus {
-            self.unfocus();
-        }
         return None;
     }
 
-    pub fn show_error_dialog(&mut self, unable: &str, error: &str) {
+    pub fn show_error(&mut self, state: &mut GameState, unable: &str,
+                      error: &str) {
         debug_log!("ERROR: Unable to {}: {}", unable, error);
-        self.unfocus();
+        self.unfocus(state);
         let size = RectSize::new(self.width as i32, self.height as i32);
         let text = format!("ERROR: Unable to {}.\n\n{}", unable, error);
         let text = textwrap::fill(&text, 64);
@@ -293,10 +304,10 @@ impl MenuView {
         self.puzzles_view.update_puzzle_list(state);
     }
 
-    fn unfocus(&mut self) {
-        self.converse_view.unfocus();
-        self.prefs_view.unfocus();
-        self.puzzles_view.unfocus();
+    fn unfocus(&mut self, state: &mut GameState) {
+        self.converse_view.handle_event(&Event::Unfocus, state);
+        self.prefs_view.handle_event(&Event::Unfocus, state);
+        self.puzzles_view.handle_event(&Event::Unfocus, state);
     }
 }
 

@@ -53,6 +53,7 @@ pub enum MenuAction {
     RenameCircuit(String),
     NewProfile,
     SwitchProfile(String),
+    QuitGame,
 }
 
 //===========================================================================//
@@ -244,6 +245,9 @@ impl MenuView {
                     }
                     Some(PrefsAction::SwitchProfile(name)) => {
                         return Some(MenuAction::SwitchProfile(name));
+                    }
+                    Some(PrefsAction::QuitGame) => {
+                        return Some(MenuAction::QuitGame);
                     }
                     None => {}
                 }

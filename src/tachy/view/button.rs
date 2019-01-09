@@ -94,6 +94,28 @@ impl TextBox {
 
 //===========================================================================//
 
+pub struct RadioButton<T> {
+    inner: TextButton<T>,
+}
+
+impl<T: Clone + PartialEq> RadioButton<T> {
+    pub fn new(rect: Rect<i32>, label: &str, value: T) -> RadioButton<T> {
+        RadioButton { inner: TextButton::new(rect, label, value) }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                value: &T) {
+        self.inner.draw(resources, matrix, value != &self.inner.value);
+    }
+
+    pub fn handle_event(&mut self, event: &Event, value: &T) -> Option<T> {
+        let enabled = value != &self.inner.value;
+        self.inner.handle_event(event, enabled)
+    }
+}
+
+//===========================================================================//
+
 pub struct TextButton<T> {
     rect: Rect<i32>,
     label: String,

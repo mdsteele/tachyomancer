@@ -93,6 +93,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                             }
                         }
                     }
+                    Some(MenuAction::QuitGame) => return ModeChange::Quit,
                     None => {}
                 }
             }

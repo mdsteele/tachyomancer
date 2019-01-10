@@ -90,7 +90,6 @@ impl Font {
            })
     }
 
-    // TODO: change API to center text vertically
     pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, alignment: Align,
                 start: (f32, f32), text: &str) {
         self.texture.bind();
@@ -149,18 +148,11 @@ impl TextShader {
     fn draw(&self, matrix: &Matrix4<f32>, size: (f32, f32),
             alignment: Align, start: (f32, f32), text: &str) {
         self.program.bind();
+        self.varray.bind();
 
-        let mut array = [0u32; MAX_CHARS];
-        let mut num_chars: usize = 0;
-        // TODO: If text.chars().len() > MAX_CHARS, draw the varray multiple
-        //   times as necessary to draw the whole text string.
-        for chr in text.chars().take(MAX_CHARS) {
-            array[num_chars] = chr as u32;
-            num_chars += 1;
-        }
-        self.text.set(&array);
-
-        let shift = match alignment {
+        let chars: Vec<u32> = text.chars().map(|c| c as u32).collect();
+        let num_chars = chars.len();
+        let mut shift = match alignment {
             Align::TopLeft => Vector2::new(0.0, 0.0),
             Align::MidLeft => Vector2::new(0.0, -0.5),
             Align::TopCenter => Vector2::new(-0.5 * (num_chars as f32), 0.0),
@@ -171,14 +163,23 @@ impl TextShader {
             Align::TopRight => Vector2::new(-(num_chars as f32), 0.0),
             Align::MidRight => Vector2::new(-(num_chars as f32), -0.5),
         };
-        let mvp = matrix * Matrix4::trans2(start.0, start.1) *
-            Matrix4::scale2(size.0, size.1) *
-            Matrix4::trans2v(shift);
-        self.mvp.set(&mvp);
 
-        self.varray.bind();
-        self.varray
-            .draw(Primitive::Triangles, 0, CHAR_VERTICES.len() * num_chars);
+        let mut array = [0u32; MAX_CHARS];
+        let mut offset = 0;
+        while offset < num_chars {
+            let stride = (num_chars - offset).min(MAX_CHARS);
+            (&mut array[..stride])
+                .copy_from_slice(&chars[offset..(offset + stride)]);
+            self.text.set(&array);
+            let mvp = matrix * Matrix4::trans2(start.0, start.1) *
+                Matrix4::scale2(size.0, size.1) *
+                Matrix4::trans2v(shift);
+            self.mvp.set(&mvp);
+            self.varray
+                .draw(Primitive::Triangles, 0, CHAR_VERTICES.len() * stride);
+            shift.x += stride as f32;
+            offset += stride;
+        }
     }
 }
 

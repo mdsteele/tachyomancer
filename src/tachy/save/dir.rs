@@ -116,6 +116,10 @@ impl SaveDir {
 
     pub fn prefs(&self) -> &Prefs { &self.prefs }
 
+    pub fn prefs_mut(&mut self) -> &mut Prefs { &mut self.prefs }
+
+    pub fn save(&mut self) -> Result<(), String> { self.prefs.save() }
+
     pub fn profile_names(&self) -> ProfileNamesIter {
         ProfileNamesIter { inner: self.profile_names.iter() }
     }

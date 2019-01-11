@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::button::{RadioButton, TextButton};
+use super::button::{Checkbox, RadioButton, TextButton};
 use super::list::ListView;
-use cgmath::Matrix4;
+use cgmath::{Matrix4, Point2};
 use tachy::geom::Rect;
 use tachy::gui::{Event, Resources};
 use tachy::state::GameState;
@@ -42,15 +42,15 @@ pub enum PrefsAction {
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum PrefsPane {
-    Hotkeys,
     AudioVideo,
+    Hotkeys,
     Profiles,
     Credits,
 }
 
 const PANES: &[(PrefsPane, &str)] = &[
-    (PrefsPane::Hotkeys, "Controls"),
     (PrefsPane::AudioVideo, "Audio/Video"),
+    (PrefsPane::Hotkeys, "Controls"),
     (PrefsPane::Profiles, "Profiles"),
     (PrefsPane::Credits, "Credits"),
 ];
@@ -61,14 +61,12 @@ pub struct PrefsView {
     current_pane: PrefsPane,
     pane_buttons: Vec<RadioButton<PrefsPane>>,
     quit_button: TextButton<PrefsAction>,
-    profiles_list: ListView<String>,
-    new_button: TextButton<PrefsAction>,
+    audio_video_pane: AudioVideoPane,
+    profiles_pane: ProfilesPane,
 }
 
 impl PrefsView {
     pub fn new(rect: Rect<i32>, state: &GameState) -> PrefsView {
-        debug_assert!(state.profile().is_some());
-
         let num_panes = PANES.len() as i32;
         let pane_button_height = (rect.height + PANE_BUTTON_SPACING) /
             (num_panes + 1) -
@@ -98,30 +96,20 @@ impl PrefsView {
                                           "Exit Game",
                                           PrefsAction::QuitGame);
 
-        let current_profile_name = state.profile().unwrap().name();
-        let list_items = state
-            .savedir()
-            .profile_names()
-            .map(|name| (name.to_string(), name.to_string()))
-            .collect();
+        let pane_offset = PANE_BUTTON_WIDTH + PANE_BUTTON_SPACING;
+        let pane_rect = Rect::new(rect.x + pane_offset,
+                                  rect.y,
+                                  rect.width - pane_offset,
+                                  rect.height);
+        let audio_video_pane = AudioVideoPane::new(pane_rect, state);
+        let profiles_pane = ProfilesPane::new(pane_rect, state);
 
         PrefsView {
-            current_pane: PrefsPane::Hotkeys,
+            current_pane: PrefsPane::AudioVideo,
             pane_buttons,
             quit_button,
-            profiles_list: ListView::new(Rect::new(rect.x + PANE_BUTTON_WIDTH +
-                                                       PANE_BUTTON_SPACING,
-                                                   rect.y,
-                                                   300,
-                                                   rect.height),
-                                         current_profile_name,
-                                         list_items),
-            new_button: TextButton::new(Rect::new(rect.right() - 150,
-                                                  rect.bottom() - 40,
-                                                  150,
-                                                  40),
-                                        "New Profile",
-                                        PrefsAction::NewProfile),
+            audio_video_pane,
+            profiles_pane,
         }
     }
 
@@ -138,13 +126,10 @@ impl PrefsView {
                 // TODO
             }
             PrefsPane::AudioVideo => {
-                // TODO
+                self.audio_video_pane.draw(resources, matrix, state);
             }
             PrefsPane::Profiles => {
-                let current_profile_name = state.profile().unwrap().name();
-                self.profiles_list
-                    .draw(resources, matrix, current_profile_name);
-                self.new_button.draw(resources, matrix, true);
+                self.profiles_pane.draw(resources, matrix, state);
             }
             PrefsPane::Credits => {
                 // TODO
@@ -183,28 +168,100 @@ impl PrefsView {
                          -> Option<PrefsAction> {
         match self.current_pane {
             PrefsPane::Hotkeys => {
-                // TODO
+                None // TODO
             }
             PrefsPane::AudioVideo => {
-                // TODO
+                self.audio_video_pane.handle_event(event, state)
             }
             PrefsPane::Profiles => {
-                let current_profile_name = state.profile().unwrap().name();
-                if let Some(profile_name) =
-                    self.profiles_list
-                        .handle_event(event, current_profile_name)
-                {
-                    return Some(PrefsAction::SwitchProfile(profile_name));
-                }
-                if let Some(action) = self.new_button
-                    .handle_event(event, true)
-                {
-                    return Some(action);
-                }
+                self.profiles_pane.handle_event(event, state)
             }
             PrefsPane::Credits => {
-                // TODO
+                None // TODO
             }
+        }
+    }
+}
+
+//===========================================================================//
+
+pub struct AudioVideoPane {
+    antialias_checkbox: Checkbox,
+}
+
+impl AudioVideoPane {
+    pub fn new(rect: Rect<i32>, _state: &GameState) -> AudioVideoPane {
+        let antialias_checkbox =
+            Checkbox::new(Point2::new(rect.x, rect.y + 20), "Antialiasing");
+        AudioVideoPane { antialias_checkbox }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                state: &GameState) {
+        self.antialias_checkbox
+            .draw(resources, matrix, state.prefs().antialiasing(), true);
+    }
+
+    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
+                        -> Option<PrefsAction> {
+        if let Some(checked) =
+            self.antialias_checkbox
+                .handle_event(event, state.prefs().antialiasing(), true)
+        {
+            state.prefs_mut().set_antialiasing(checked);
+        }
+        None
+    }
+}
+
+//===========================================================================//
+
+pub struct ProfilesPane {
+    profiles_list: ListView<String>,
+    new_button: TextButton<PrefsAction>,
+}
+
+impl ProfilesPane {
+    pub fn new(rect: Rect<i32>, state: &GameState) -> ProfilesPane {
+        debug_assert!(state.profile().is_some());
+        let current_profile_name = state.profile().unwrap().name();
+        let list_items = state
+            .profile_names()
+            .map(|name| (name.to_string(), name.to_string()))
+            .collect();
+        let profiles_list =
+            ListView::new(Rect::new(rect.x, rect.y, 300, rect.height),
+                          current_profile_name,
+                          list_items);
+        let new_button = TextButton::new(Rect::new(rect.right() - 150,
+                                                   rect.bottom() - 40,
+                                                   150,
+                                                   40),
+                                         "New Profile",
+                                         PrefsAction::NewProfile);
+        ProfilesPane {
+            profiles_list,
+            new_button,
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                state: &GameState) {
+        let current_profile_name = state.profile().unwrap().name();
+        self.profiles_list.draw(resources, matrix, current_profile_name);
+        self.new_button.draw(resources, matrix, true);
+    }
+
+    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
+                        -> Option<PrefsAction> {
+        let current_profile_name = state.profile().unwrap().name();
+        if let Some(profile_name) =
+            self.profiles_list.handle_event(event, current_profile_name)
+        {
+            return Some(PrefsAction::SwitchProfile(profile_name));
+        }
+        if let Some(action) = self.new_button.handle_event(event, true) {
+            return Some(action);
         }
         return None;
     }

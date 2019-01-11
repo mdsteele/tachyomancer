@@ -38,7 +38,7 @@ mod tachy;
 
 use self::tachy::gui::{GuiContext, Window, WindowOptions};
 use self::tachy::mode::{self, ModeChange};
-use self::tachy::save::SaveDir;
+use self::tachy::save::{Prefs, SaveDir};
 use self::tachy::state::GameState;
 use std::path::PathBuf;
 
@@ -73,6 +73,7 @@ fn main() {
 
 #[derive(Debug)]
 struct StartupFlags {
+    antialiasing: Option<bool>,
     fullscreen: Option<bool>,
     resolution: Option<(u32, u32)>,
     save_dir: Option<PathBuf>,
@@ -81,6 +82,10 @@ struct StartupFlags {
 fn parse_flags() -> StartupFlags {
     let mut opts = getopts::Options::new();
     opts.optflag("h", "help", "print this help menu");
+    opts.optflagopt("",
+                    "antialiasing",
+                    "override antialiasing setting",
+                    "BOOL");
     opts.optflagopt("", "fullscreen", "override fullscreen setting", "BOOL");
     opts.optopt("", "resolution", "override window/screen resolution", "WxH");
     opts.optopt("", "save_dir", "override save dir path", "PATH");
@@ -96,6 +101,9 @@ fn parse_flags() -> StartupFlags {
         std::process::exit(0);
     }
 
+    let antialiasing = matches
+        .opt_default("antialiasing", "true")
+        .and_then(|value| value.parse().ok());
     let fullscreen = matches
         .opt_default("fullscreen", "true")
         .and_then(|value| value.parse().ok());
@@ -113,6 +121,7 @@ fn parse_flags() -> StartupFlags {
     });
     let save_dir = matches.opt_str("save_dir").map(PathBuf::from);
     StartupFlags {
+        antialiasing,
         fullscreen,
         resolution,
         save_dir,
@@ -126,7 +135,7 @@ fn run_game(flags: &StartupFlags) -> Result<(), String> {
     let mut state = GameState::new(savedir)?;
     let mut gui_context = GuiContext::init()?;
     let mut window_options =
-        Some(initial_window_options(flags, state.savedir(), &gui_context)?);
+        Some(initial_window_options(flags, state.prefs(), &gui_context)?);
     while let Some(options) = window_options {
         window_options = boot_window(&mut state, &mut gui_context, &options)?;
     }
@@ -134,19 +143,21 @@ fn run_game(flags: &StartupFlags) -> Result<(), String> {
     Ok(())
 }
 
-fn initial_window_options(flags: &StartupFlags, savedir: &SaveDir,
+fn initial_window_options(flags: &StartupFlags, prefs: &Prefs,
                           gui_context: &GuiContext)
                           -> Result<WindowOptions, String> {
-    let fullscreen =
-        flags.fullscreen.unwrap_or_else(|| savedir.prefs().fullscreen());
+    let antialiasing =
+        flags.antialiasing.unwrap_or_else(|| prefs.antialiasing());
+    let fullscreen = flags.fullscreen.unwrap_or_else(|| prefs.fullscreen());
     let resolution = if let Some(res) = flags.resolution {
         res
-    } else if let Some(res) = savedir.prefs().resolution() {
+    } else if let Some(res) = prefs.resolution() {
         res
     } else {
         gui_context.get_native_resolution()?
     };
     Ok(WindowOptions {
+           antialiasing,
            fullscreen,
            resolution,
        })

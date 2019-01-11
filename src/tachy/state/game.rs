@@ -18,8 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 use super::edit::EditGrid;
-use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Profile,
-                  Puzzle, SaveDir};
+use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Prefs,
+                  Profile, ProfileNamesIter, Puzzle, SaveDir};
 use unicase;
 use unicode_width::UnicodeWidthStr;
 
@@ -69,11 +69,21 @@ impl GameState {
             }
             profile.save()?;
         }
-        // TODO: save prefs if necessary
+        self.savedir.save()?;
         Ok(())
     }
 
-    pub fn savedir(&self) -> &SaveDir { &self.savedir }
+    pub fn prefs(&self) -> &Prefs { self.savedir.prefs() }
+
+    pub fn prefs_mut(&mut self) -> &mut Prefs { self.savedir.prefs_mut() }
+
+    pub fn profile_names(&self) -> ProfileNamesIter {
+        self.savedir.profile_names()
+    }
+
+    pub fn has_profile(&self, name: &str) -> bool {
+        self.savedir.has_profile(name)
+    }
 
     pub fn profile(&self) -> Option<&Profile> { self.profile.as_ref() }
 

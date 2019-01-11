@@ -26,6 +26,7 @@ use toml;
 
 #[derive(Default, Deserialize, Serialize)]
 struct PrefsData {
+    antialiasing: Option<bool>,
     fullscreen: Option<bool>,
     resolution: Option<(u32, u32)>,
     current_profile: Option<String>,
@@ -44,11 +45,12 @@ impl PrefsData {
 pub struct Prefs {
     path: PathBuf,
     data: PrefsData,
+    needs_save: bool,
 }
 
 impl Prefs {
     pub fn create_or_load(path: &Path) -> Result<Prefs, String> {
-        let mut create = false;
+        let mut needs_save = false;
         let data = if path.exists() {
             match PrefsData::try_load(path) {
                 Ok(prefs) => prefs,
@@ -58,27 +60,39 @@ impl Prefs {
                 }
             }
         } else {
-            create = true;
+            needs_save = true;
             PrefsData::default()
         };
-        let prefs = Prefs {
+        let mut prefs = Prefs {
             path: path.to_path_buf(),
             data,
+            needs_save,
         };
-        if create {
-            prefs.save()?;
-        }
+        prefs.save()?;
         Ok(prefs)
     }
 
-    pub fn save(&self) -> Result<(), String> {
+    pub fn save(&mut self) -> Result<(), String> {
+        if !self.needs_save {
+            return Ok(());
+        }
         debug_log!("Saving prefs to {:?}", self.path);
         let data =
             toml::to_vec(&self.data)
                 .map_err(|err| format!("Could not serialize prefs: {}", err))?;
         fs::write(&self.path, data)
             .map_err(|err| format!("Could not write prefs file: {}", err))?;
-        Ok(())
+        self.needs_save = false;
+        return Ok(());
+    }
+
+    pub fn antialiasing(&self) -> bool {
+        self.data.antialiasing.unwrap_or(false)
+    }
+
+    pub fn set_antialiasing(&mut self, antialiasing: bool) {
+        self.data.antialiasing = Some(antialiasing);
+        self.needs_save = true;
     }
 
     pub fn fullscreen(&self) -> bool { self.data.fullscreen.unwrap_or(true) }

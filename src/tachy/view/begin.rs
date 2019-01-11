@@ -69,7 +69,7 @@ impl BeginView {
             if name.is_empty() {
                 // TODO: display error to user
                 debug_log!("Profile name must be non-empty");
-            } else if state.savedir().has_profile(&name) {
+            } else if state.has_profile(&name) {
                 // TODO: display error to user
                 debug_log!("Profile {:?} already exists", name);
             } else {

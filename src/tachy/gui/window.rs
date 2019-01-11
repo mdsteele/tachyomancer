@@ -34,6 +34,7 @@ const WINDOW_TITLE: &str = "Tachyomancer";
 
 #[derive(Debug)]
 pub struct WindowOptions {
+    pub antialiasing: bool,
     pub fullscreen: bool,
     pub resolution: (u32, u32),
 }
@@ -42,6 +43,7 @@ pub struct Window<'a> {
     gui_context: &'a mut GuiContext,
     sdl_window: sdl2::video::Window,
     _gl_context: sdl2::video::GLContext,
+    antialiasing: bool,
     resources: Resources,
 }
 
@@ -65,7 +67,11 @@ impl<'a> Window<'a> {
             // Make sure we have a stencil buffer (1 bit is all we need).
             gl_attr.set_stencil_size(1);
 
-            // TODO: enable anti-aliasing?
+            // Optionally enable multisample antialiasing.
+            if options.antialiasing {
+                gl_attr.set_multisample_buffers(1);
+                gl_attr.set_multisample_samples(4);
+            }
         }
         let (width, height) = options.resolution;
         let sdl_window =
@@ -102,6 +108,7 @@ impl<'a> Window<'a> {
                gui_context,
                sdl_window,
                _gl_context: gl_context,
+               antialiasing: options.antialiasing,
                resources,
            })
     }
@@ -110,6 +117,7 @@ impl<'a> Window<'a> {
 
     pub fn options(&self) -> WindowOptions {
         WindowOptions {
+            antialiasing: self.antialiasing,
             fullscreen: self.sdl_window.fullscreen_state() !=
                 sdl2::video::FullscreenType::Off,
             resolution: self.size(),

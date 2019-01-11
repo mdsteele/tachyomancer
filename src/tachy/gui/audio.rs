@@ -41,15 +41,26 @@ pub enum Sound {
 
 pub struct AudioQueue {
     sounds: Vec<Sound>,
+    sound_volume: Option<f32>, // 0.0 to 1.0
 }
 
 impl AudioQueue {
-    pub fn new() -> AudioQueue { AudioQueue { sounds: Vec::new() } }
+    pub fn new() -> AudioQueue {
+        AudioQueue {
+            sounds: Vec::new(),
+            sound_volume: None,
+        }
+    }
 
     pub fn play_sound(&mut self, sound: Sound) { self.sounds.push(sound); }
 
+    pub fn set_sound_volume_percent(&mut self, percent: i32) {
+        self.sound_volume = Some(0.01 * (percent.max(0).min(100) as f32));
+    }
+
     pub(super) fn merge(&mut self, other: AudioQueue) {
         self.sounds.extend(other.sounds);
+        self.sound_volume = other.sound_volume.or(self.sound_volume);
     }
 }
 
@@ -79,16 +90,20 @@ pub struct AudioMixer {
     audio_data: AudioData,
     audio_queue: Arc<Mutex<AudioQueue>>,
     active_sounds: Vec<(Sound, usize)>,
+    sound_volume: f32, // 0.0 to 1.0
 }
 
 impl AudioMixer {
     fn new(audio_queue: Arc<Mutex<AudioQueue>>, audio_data: AudioData)
            -> AudioMixer {
-        AudioMixer {
+        let mut mixer = AudioMixer {
             audio_queue,
             audio_data,
             active_sounds: Vec::new(),
-        }
+            sound_volume: 0.0,
+        };
+        mixer.drain_queue();
+        mixer
     }
 
     pub fn audio_device(
@@ -130,6 +145,9 @@ impl AudioMixer {
         for sound in audio_queue.sounds.drain(..) {
             self.active_sounds.push((sound, 0));
         }
+        if let Some(volume) = audio_queue.sound_volume.take() {
+            self.sound_volume = volume;
+        }
     }
 }
 
@@ -153,6 +171,9 @@ impl sdl2::audio::AudioCallback for AudioMixer {
             if end < data.len() {
                 remaining_sounds.push((sound, end));
             }
+        }
+        for sample in out.iter_mut() {
+            *sample *= self.sound_volume;
         }
         self.active_sounds = remaining_sounds;
     }

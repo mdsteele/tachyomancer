@@ -138,6 +138,102 @@ impl<T: Clone + PartialEq> RadioButton<T> {
 
 //===========================================================================//
 
+pub enum SliderAction {
+    Update(i32),
+    Release,
+}
+
+pub struct Slider {
+    rect: Rect<i32>,
+    value: i32,
+    maximum: i32,
+    drag: Option<(i32, i32)>,
+}
+
+impl Slider {
+    pub fn new(rect: Rect<i32>, value: i32, maximum: i32) -> Slider {
+        debug_assert!(rect.width > rect.height);
+        let maximum = maximum.max(1);
+        Slider {
+            rect,
+            value: value.max(0).min(maximum),
+            maximum,
+            drag: None,
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let color = (0.0, 0.2, 0.2);
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+
+        let color = if self.drag.is_some() {
+            (0.2, 0.8, 0.8)
+        } else {
+            (0.1, 0.6, 0.6)
+        };
+        let rect = self.handle_rect().as_f32();
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+    }
+
+    pub fn handle_event(&mut self, event: &Event) -> Option<SliderAction> {
+        match event {
+            Event::MouseDown(mouse) => {
+                if mouse.left && self.handle_rect().contains_point(mouse.pt) {
+                    self.drag = Some((mouse.pt.x, 0));
+                }
+            }
+            Event::MouseMove(mouse) => {
+                if let Some((start, _)) = self.drag.take() {
+                    let old_left = self.handle_left();
+                    let delta = mouse.pt.x - start;
+                    let range = self.rect.width - self.rect.height;
+                    let value = div_round(range * self.value +
+                                              delta * self.maximum,
+                                          range);
+                    let value = value.max(0).min(self.maximum);
+                    if value != self.value {
+                        self.value = value.max(0).min(self.maximum);
+                        let new_left = self.handle_left();
+                        let new_start = start + new_left - old_left;
+                        let new_delta = mouse.pt.x - new_start;
+                        self.drag = Some((new_start, new_delta));
+                        return Some(SliderAction::Update(self.value));
+                    } else {
+                        self.drag = Some((start, delta));
+                    }
+                }
+            }
+            Event::MouseUp(_) => {
+                if self.drag.take().is_some() {
+                    return Some(SliderAction::Release);
+                }
+            }
+            Event::Unfocus => self.drag = None,
+            _ => {}
+        }
+        return None;
+    }
+
+    fn handle_left(&self) -> i32 {
+        self.rect.x +
+            div_round((self.rect.width - self.rect.height) * self.value,
+                      self.maximum)
+    }
+
+    fn handle_rect(&self) -> Rect<i32> {
+        let mut left = self.handle_left();
+        if let Some((_, delta)) = self.drag {
+            left = (left + delta)
+                .max(self.rect.x)
+                .min(self.rect.right() - self.rect.height);
+        }
+        Rect::new(left, self.rect.y, self.rect.height, self.rect.height)
+    }
+}
+
+//===========================================================================//
+
 pub struct TextBox {
     rect: Rect<i32>,
     string: String,
@@ -254,6 +350,12 @@ impl<T: Clone> TextButton<T> {
         }
         return None;
     }
+}
+
+//===========================================================================//
+
+fn div_round(a: i32, b: i32) -> i32 {
+    ((a as f64) / (b as f64)).round() as i32
 }
 
 //===========================================================================//

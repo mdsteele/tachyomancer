@@ -133,7 +133,8 @@ fn parse_flags() -> StartupFlags {
 fn run_game(flags: &StartupFlags) -> Result<(), String> {
     let savedir = SaveDir::create_or_load(&flags.save_dir)?;
     let mut state = GameState::new(savedir)?;
-    let mut gui_context = GuiContext::init()?;
+    let mut gui_context =
+        GuiContext::init(state.prefs().sound_volume_percent())?;
     let mut window_options =
         Some(initial_window_options(flags, state.prefs(), &gui_context)?);
     while let Some(options) = window_options {

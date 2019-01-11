@@ -167,7 +167,7 @@ impl MenuView {
             return None;
         }
 
-        if let Some(action) = self.handle_section_event(event, state) {
+        if let Some(action) = self.handle_section_event(event, state, audio) {
             return Some(action);
         }
 
@@ -181,14 +181,15 @@ impl MenuView {
             }
         }
         if let Some(section) = next_section {
-            self.handle_section_event(&Event::Unfocus, state);
+            self.handle_section_event(&Event::Unfocus, state, audio);
             state.set_menu_section(section);
         }
 
         return None;
     }
 
-    fn handle_section_event(&mut self, event: &Event, state: &mut GameState)
+    fn handle_section_event(&mut self, event: &Event, state: &mut GameState,
+                            audio: &mut AudioQueue)
                             -> Option<MenuAction> {
         match state.menu_section() {
             MenuSection::Navigation => {
@@ -262,7 +263,7 @@ impl MenuView {
                 }
             }
             MenuSection::Prefs => {
-                match self.prefs_view.handle_event(event, state) {
+                match self.prefs_view.handle_event(event, state, audio) {
                     Some(PrefsAction::NewProfile) => {
                         return Some(MenuAction::NewProfile);
                     }
@@ -305,8 +306,9 @@ impl MenuView {
     }
 
     fn unfocus(&mut self, state: &mut GameState) {
+        let mut audio = AudioQueue::new();
         self.converse_view.handle_event(&Event::Unfocus, state);
-        self.prefs_view.handle_event(&Event::Unfocus, state);
+        self.prefs_view.handle_event(&Event::Unfocus, state, &mut audio);
         self.puzzles_view.handle_event(&Event::Unfocus, state);
     }
 }

@@ -17,11 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::button::{Checkbox, RadioButton, TextButton};
+use super::button::{Checkbox, RadioButton, Slider, SliderAction, TextButton};
 use super::list::ListView;
 use cgmath::{Matrix4, Point2};
 use tachy::geom::Rect;
-use tachy::gui::{Event, Resources};
+use tachy::gui::{AudioQueue, Event, Resources, Sound};
 use tachy::state::GameState;
 
 //===========================================================================//
@@ -137,10 +137,11 @@ impl PrefsView {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
+    pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
+                        audio: &mut AudioQueue)
                         -> Option<PrefsAction> {
         debug_assert!(state.profile().is_some());
-        if let Some(action) = self.handle_pane_event(event, state) {
+        if let Some(action) = self.handle_pane_event(event, state, audio) {
             return Some(action);
         }
 
@@ -154,7 +155,7 @@ impl PrefsView {
             }
         }
         if let Some(pane) = next_pane {
-            self.handle_pane_event(&Event::Unfocus, state);
+            self.handle_pane_event(&Event::Unfocus, state, audio);
             self.current_pane = pane;
         }
         if let Some(action) = self.quit_button.handle_event(event, true) {
@@ -164,14 +165,15 @@ impl PrefsView {
         return None;
     }
 
-    fn handle_pane_event(&mut self, event: &Event, state: &mut GameState)
+    fn handle_pane_event(&mut self, event: &Event, state: &mut GameState,
+                         audio: &mut AudioQueue)
                          -> Option<PrefsAction> {
         match self.current_pane {
             PrefsPane::Hotkeys => {
                 None // TODO
             }
             PrefsPane::AudioVideo => {
-                self.audio_video_pane.handle_event(event, state)
+                self.audio_video_pane.handle_event(event, state, audio)
             }
             PrefsPane::Profiles => {
                 self.profiles_pane.handle_event(event, state)
@@ -187,28 +189,48 @@ impl PrefsView {
 
 pub struct AudioVideoPane {
     antialias_checkbox: Checkbox,
+    sound_volume_slider: Slider,
 }
 
 impl AudioVideoPane {
-    pub fn new(rect: Rect<i32>, _state: &GameState) -> AudioVideoPane {
+    pub fn new(rect: Rect<i32>, state: &GameState) -> AudioVideoPane {
         let antialias_checkbox =
             Checkbox::new(Point2::new(rect.x, rect.y + 20), "Antialiasing");
-        AudioVideoPane { antialias_checkbox }
+        let sound_volume_slider =
+            Slider::new(Rect::new(rect.x, rect.y + 80, rect.width, 30),
+                        state.prefs().sound_volume_percent(),
+                        100);
+        AudioVideoPane {
+            antialias_checkbox,
+            sound_volume_slider,
+        }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 state: &GameState) {
         self.antialias_checkbox
             .draw(resources, matrix, state.prefs().antialiasing(), true);
+        self.sound_volume_slider.draw(resources, matrix);
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
+    pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
+                        audio: &mut AudioQueue)
                         -> Option<PrefsAction> {
         if let Some(checked) =
             self.antialias_checkbox
                 .handle_event(event, state.prefs().antialiasing(), true)
         {
             state.prefs_mut().set_antialiasing(checked);
+        }
+        match self.sound_volume_slider.handle_event(event) {
+            Some(SliderAction::Update(volume)) => {
+                state.prefs_mut().set_sound_volume_percent(volume);
+                audio.set_sound_volume_percent(volume);
+            }
+            Some(SliderAction::Release) => {
+                audio.play_sound(Sound::Beep);
+            }
+            None => {}
         }
         None
     }

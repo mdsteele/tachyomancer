@@ -24,12 +24,17 @@ use toml;
 
 //===========================================================================//
 
+const DEFAULT_SOUND_VOLUME_PERCENT: i32 = 80;
+
+//===========================================================================//
+
 #[derive(Default, Deserialize, Serialize)]
 struct PrefsData {
     antialiasing: Option<bool>,
+    current_profile: Option<String>,
     fullscreen: Option<bool>,
     resolution: Option<(u32, u32)>,
-    current_profile: Option<String>,
+    sound_volume: Option<i32>,
 }
 
 impl PrefsData {
@@ -95,16 +100,30 @@ impl Prefs {
         self.needs_save = true;
     }
 
-    pub fn fullscreen(&self) -> bool { self.data.fullscreen.unwrap_or(true) }
-
-    pub fn resolution(&self) -> Option<(u32, u32)> { self.data.resolution }
-
     pub fn current_profile(&self) -> Option<&str> {
         self.data.current_profile.as_ref().map(String::as_str)
     }
 
     pub fn set_current_profile(&mut self, profile: Option<String>) {
         self.data.current_profile = profile;
+        self.needs_save = true;
+    }
+
+    pub fn fullscreen(&self) -> bool { self.data.fullscreen.unwrap_or(true) }
+
+    pub fn resolution(&self) -> Option<(u32, u32)> { self.data.resolution }
+
+    pub fn sound_volume_percent(&self) -> i32 {
+        self.data
+            .sound_volume
+            .unwrap_or(DEFAULT_SOUND_VOLUME_PERCENT)
+            .max(0)
+            .min(100)
+    }
+
+    pub fn set_sound_volume_percent(&mut self, percent: i32) {
+        self.data.sound_volume = Some(percent.max(0).min(100));
+        self.needs_save = true;
     }
 }
 

@@ -35,6 +35,18 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
                 match view.handle_event(&event, state, &mut audio) {
+                    Some(MenuAction::GoToPuzzle(puzzle)) => {
+                        match state.unlock_puzzle(puzzle) {
+                            Ok(()) => {
+                                view.update_puzzle_list(state);
+                                state.set_current_puzzle(puzzle);
+                                view.go_to_current_puzzle(state);
+                            }
+                            Err(err) => {
+                                view.show_error(state, "unlock puzzle", &err);
+                            }
+                        }
+                    }
                     Some(MenuAction::CopyCircuit) => {
                         match state.copy_current_circuit() {
                             Ok(()) => view.update_circuit_list(state),

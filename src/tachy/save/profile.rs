@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::circuit::CircuitData;
-use super::converse::{Conversation, ConversationProgress};
+use super::converse::{Conversation, ConversationProgress, Prereq};
 use super::progress::{CircuitNamesIter, PuzzleProgress};
 use super::puzzle::Puzzle;
 use std::collections::HashMap;
@@ -182,7 +182,23 @@ impl Profile {
     }
 
     pub fn is_conversation_unlocked(&self, conv: Conversation) -> bool {
-        self.conversations.contains_key(&conv) || conv == Conversation::first()
+        self.conversations.contains_key(&conv) ||
+            self.eval_prereq(conv.prereq())
+    }
+
+    fn eval_prereq(&self, prereq: &Prereq) -> bool {
+        match *prereq {
+            Prereq::Complete(conv) => self.is_conversation_complete(conv),
+            Prereq::All(reqs) => reqs.iter().all(|req| self.eval_prereq(req)),
+            Prereq::Any(reqs) => reqs.iter().any(|req| self.eval_prereq(req)),
+            Prereq::Choice(conv, key, value, then_req, else_req) => {
+                if self.get_conversation_choice(conv, key) == Some(value) {
+                    self.eval_prereq(then_req)
+                } else {
+                    self.eval_prereq(else_req)
+                }
+            }
+        }
     }
 
     pub fn is_conversation_complete(&self, conv: Conversation) -> bool {
@@ -229,6 +245,17 @@ impl Profile {
 
     pub fn is_puzzle_unlocked(&self, puzzle: Puzzle) -> bool {
         self.puzzles.contains_key(&puzzle) || puzzle == Puzzle::first()
+    }
+
+    pub fn unlock_puzzle(&mut self, puzzle: Puzzle) -> Result<(), String> {
+        if !self.puzzles.contains_key(&puzzle) {
+            debug_log!("Unlocking puzzle {:?}", puzzle);
+            let puzzle_path = self.base_path.join(format!("{:?}", puzzle));
+            let mut progress = PuzzleProgress::create_or_load(&puzzle_path)?;
+            progress.save()?;
+            self.puzzles.insert(puzzle, progress);
+        }
+        Ok(())
     }
 
     pub fn is_puzzle_solved(&self, puzzle: Puzzle) -> bool {

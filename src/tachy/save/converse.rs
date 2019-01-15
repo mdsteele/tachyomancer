@@ -25,12 +25,28 @@ use std::usize;
 
 //===========================================================================//
 
+#[allow(dead_code)]
+pub enum Prereq {
+    Complete(Conversation),
+    All(&'static [Prereq]),
+    Any(&'static [Prereq]),
+    Choice(Conversation,
+           &'static str,
+           &'static str,
+           &'static Prereq,
+           &'static Prereq),
+}
+
+//===========================================================================//
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum Conversation {
     WakeUp,
+    RestorePower,
 }
 
-const ALL_CONVERSATIONS: &[Conversation] = &[Conversation::WakeUp];
+const ALL_CONVERSATIONS: &[Conversation] =
+    &[Conversation::WakeUp, Conversation::RestorePower];
 
 impl Conversation {
     /// Returns the first conversation in the game, which is always unlocked.
@@ -42,6 +58,16 @@ impl Conversation {
     pub fn title(self) -> &'static str {
         match self {
             Conversation::WakeUp => "Wakeup Call",
+            Conversation::RestorePower => "Restoring Power",
+        }
+    }
+
+    pub fn prereq(self) -> &'static Prereq {
+        match self {
+            Conversation::WakeUp => &Prereq::All(&[]),
+            Conversation::RestorePower => {
+                &Prereq::Complete(Conversation::WakeUp)
+            }
         }
     }
 }

@@ -193,6 +193,13 @@ impl GameState {
         }
     }
 
+    pub fn unlock_puzzle(&mut self, puzzle: Puzzle) -> Result<(), String> {
+        match self.profile.as_mut() {
+            Some(profile) => profile.unlock_puzzle(puzzle),
+            None => Err("No profile loaded".to_string()),
+        }
+    }
+
     pub fn is_puzzle_solved(&self, puzzle: Puzzle) -> bool {
         self.profile
             .as_ref()

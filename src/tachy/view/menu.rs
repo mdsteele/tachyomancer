@@ -25,7 +25,7 @@ use cgmath::{self, Matrix4};
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Resources, Sound};
-use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection};
+use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::GameState;
 use textwrap;
 
@@ -46,6 +46,7 @@ const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
 
 #[derive(Clone)]
 pub enum MenuAction {
+    GoToPuzzle(Puzzle),
     CopyCircuit,
     DeleteCircuit,
     EditCircuit,
@@ -203,9 +204,7 @@ impl MenuView {
                         self.converse_view.update_conversation_bubbles(state);
                     }
                     Some(ConverseAction::GoToPuzzle(puzzle)) => {
-                        state.set_current_puzzle(puzzle);
-                        self.puzzles_view.update_circuit_list(state);
-                        state.set_menu_section(MenuSection::Puzzles);
+                        return Some(MenuAction::GoToPuzzle(puzzle));
                     }
                     Some(ConverseAction::Increment) => {
                         state.increment_current_conversation_progress();
@@ -290,6 +289,12 @@ impl MenuView {
         let buttons = &[("OK", None)];
         let dialog = ButtonDialogBox::new(size, &text, buttons);
         self.confirmation_dialog = Some(dialog);
+    }
+
+    pub fn go_to_current_puzzle(&mut self, state: &mut GameState) {
+        self.unfocus(state);
+        state.set_menu_section(MenuSection::Puzzles);
+        self.update_circuit_list(state);
     }
 
     pub fn update_circuit_list(&mut self, state: &GameState) {

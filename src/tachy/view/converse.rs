@@ -102,8 +102,11 @@ impl ConverseView {
             self.conv_list.handle_event(event, &state.current_conversation())
         {
             state.set_current_conversation(conv);
+            self.update_conversation_bubbles(state);
+            None
+        } else {
+            self.bubbles_list.handle_event(event)
         }
-        self.bubbles_list.handle_event(event)
     }
 
     pub fn update_conversation_bubbles(&mut self, state: &GameState) {
@@ -133,6 +136,7 @@ fn conv_list_items(state: &GameState) -> Vec<(Conversation, String)> {
 
 struct BubblesListView {
     rect: Rect<i32>,
+    conv: Conversation,
     bubbles: Vec<Box<BubbleView>>,
     num_bubbles_shown: usize,
     more_button: Option<MoreButton>,
@@ -145,6 +149,7 @@ impl BubblesListView {
     fn new(rect: Rect<i32>, state: &GameState) -> BubblesListView {
         let mut view = BubblesListView {
             rect,
+            conv: Conversation::first(),
             bubbles: Vec::new(),
             num_bubbles_shown: 0,
             more_button: None,
@@ -257,7 +262,7 @@ impl BubblesListView {
                     return Some(ConverseAction::Increment);
                 }
                 if let Some(ref bubble) = self.bubbles.last() {
-                    if bubble.is_choice() {
+                    if bubble.is_choice_or_puzzle() {
                         return Some(ConverseAction::Increment);
                     }
                 }
@@ -273,7 +278,7 @@ impl BubblesListView {
         let conv = profile.current_conversation();
         let num_bubbles_shown =
             profile.conversation_progress(conv).saturating_add(1);
-        if num_bubbles_shown > self.bubbles.len() {
+        if conv != self.conv || num_bubbles_shown > self.bubbles.len() {
             self.rebuild_bubbles(profile, conv);
         }
         self.num_bubbles_shown = num_bubbles_shown.min(self.bubbles.len());
@@ -305,6 +310,7 @@ impl BubblesListView {
 
     fn rebuild_bubbles(&mut self, profile: &Profile, conv: Conversation) {
         debug_log!("Rebuilding conversation bubbles");
+        self.conv = conv;
         let bubble_width = self.rect.width -
             (SCROLLBAR_MARGIN + SCROLLBAR_WIDTH);
         let mut bubble_top: i32 = 0;
@@ -409,7 +415,7 @@ impl MoreButton {
 trait BubbleView {
     fn rect(&self) -> Rect<i32>;
 
-    fn is_choice(&self) -> bool { false }
+    fn is_choice_or_puzzle(&self) -> bool { false }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>);
 
@@ -513,6 +519,8 @@ impl PuzzleBubbleView {
 impl BubbleView for PuzzleBubbleView {
     fn rect(&self) -> Rect<i32> { self.rect }
 
+    fn is_choice_or_puzzle(&self) -> bool { true }
+
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let color = if self.hovering {
             (0.1, 1.0, 1.0)
@@ -591,7 +599,7 @@ impl YouChoiceBubbleView {
 impl BubbleView for YouChoiceBubbleView {
     fn rect(&self) -> Rect<i32> { self.rect }
 
-    fn is_choice(&self) -> bool { true }
+    fn is_choice_or_puzzle(&self) -> bool { true }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         for (index, &(_, ref label)) in self.choices.iter().enumerate() {

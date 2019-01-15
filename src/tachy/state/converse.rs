@@ -43,6 +43,9 @@ impl ConversationBubble {
             Conversation::WakeUp => {
                 ConversationBubble::make_wake_up(profile, &mut builder)
             }
+            Conversation::RestorePower => {
+                ConversationBubble::make_restore_power(profile, &mut builder)
+            }
         };
         builder.build()
     }
@@ -64,6 +67,19 @@ impl ConversationBubble {
         builder.puzzle(profile, Puzzle::TutorialOr)?;
         builder.you("\"How's that look?\"");
         builder.esra("Congrats!");
+        Ok(())
+    }
+
+    fn make_restore_power(profile: &Profile,
+                          builder: &mut ConversationBuilder)
+                          -> Result<(), ()> {
+        builder.esra("Now that you've been trained on the basics of circuit \
+                      design, the first task we need to accomplish is \
+                      restoring additional ship power.  That will allow us \
+                      to safely rouse additional crew members from cryosleep, \
+                      and to start bringing other ship systems back online.");
+        builder.puzzle(profile, Puzzle::AutomateHeliostat)?;
+        builder.esra("Excellent work.");
         Ok(())
     }
 }

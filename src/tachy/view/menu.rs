@@ -54,6 +54,7 @@ pub enum MenuAction {
     RenameCircuit(String),
     NewProfile,
     SwitchProfile(String),
+    DeleteProfile,
     QuitGame,
 }
 
@@ -269,6 +270,24 @@ impl MenuView {
                     Some(PrefsAction::SwitchProfile(name)) => {
                         return Some(MenuAction::SwitchProfile(name));
                     }
+                    Some(PrefsAction::DeleteProfile) => {
+                        self.unfocus(state);
+                        let size = RectSize::new(self.width as i32,
+                                                 self.height as i32);
+                        let text = format!("Are you sure you want \
+                                            to delete all progress\n\
+                                            on profile \"{}\"?\n\n\
+                                            This cannot be undone!",
+                                           state.profile().unwrap().name());
+                        let buttons = &[
+                            ("Cancel", None),
+                            ("Delete",
+                             Some(MenuAction::DeleteProfile)),
+                        ];
+                        self.confirmation_dialog =
+                            Some(ButtonDialogBox::new(size, &text, buttons));
+                        return None;
+                    }
                     Some(PrefsAction::QuitGame) => {
                         return Some(MenuAction::QuitGame);
                     }
@@ -304,6 +323,10 @@ impl MenuView {
     pub fn update_conversation(&mut self, state: &GameState) {
         self.converse_view.update_conversation_list(state);
         self.converse_view.update_conversation_bubbles(state);
+    }
+
+    pub fn update_profile_list(&mut self, state: &GameState) {
+        self.prefs_view.update_profile_list(state);
     }
 
     pub fn update_puzzle_list(&mut self, state: &GameState) {

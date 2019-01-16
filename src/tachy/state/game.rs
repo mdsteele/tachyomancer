@@ -100,6 +100,24 @@ impl GameState {
         Ok(())
     }
 
+    pub fn delete_current_profile(&mut self) -> Result<(), String> {
+        let deleted_name = if let Some(ref mut profile) = self.profile {
+            profile.delete()?;
+            profile.name().to_string()
+        } else {
+            return Err("No profile loaded".to_string());
+        };
+        self.profile = None;
+        self.savedir.remove_profile(deleted_name);
+        if let Some(name) = self.profile_names()
+            .next()
+            .map(|name| name.to_string())
+        {
+            self.create_or_load_profile(name)?;
+        }
+        Ok(())
+    }
+
     pub fn clear_profile(&mut self) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
             profile.save()?;

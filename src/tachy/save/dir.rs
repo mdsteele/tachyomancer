@@ -154,6 +154,13 @@ impl SaveDir {
         self.profile_names.insert(UniCase::new(profile.name().to_string()));
         Ok(profile)
     }
+
+    pub fn remove_profile(&mut self, name: String) {
+        if self.prefs.current_profile() == Some(&name) {
+            self.prefs.set_current_profile(None);
+        }
+        self.profile_names.remove(&UniCase::new(name));
+    }
 }
 
 //===========================================================================//

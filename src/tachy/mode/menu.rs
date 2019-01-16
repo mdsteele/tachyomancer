@@ -105,6 +105,23 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                             }
                         }
                     }
+                    Some(MenuAction::DeleteProfile) => {
+                        match state.delete_current_profile() {
+                            Ok(()) => {
+                                if state.profile().is_none() {
+                                    return ModeChange::Next;
+                                } else {
+                                    view.update_profile_list(state);
+                                    view.update_conversation(state);
+                                    view.update_puzzle_list(state);
+                                    view.update_circuit_list(state);
+                                }
+                            }
+                            Err(err) => {
+                                view.show_error(state, "delete profile", &err);
+                            }
+                        }
+                    }
                     Some(MenuAction::QuitGame) => return ModeChange::Quit,
                     None => {}
                 }

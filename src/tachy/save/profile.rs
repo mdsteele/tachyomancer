@@ -162,6 +162,18 @@ impl Profile {
         Ok(())
     }
 
+    pub fn delete(&mut self) -> Result<(), String> {
+        debug_log!("Deleting profile {:?} from {:?}",
+                   self.name,
+                   self.base_path);
+        fs::remove_dir_all(&self.base_path).map_err(|err| {
+            format!("Could not delete profile {:?} data from {:?}: {}",
+                    self.name,
+                    self.base_path,
+                    err)
+        })
+    }
+
     pub fn name(&self) -> &str { &self.name }
 
     pub fn current_conversation(&self) -> Conversation {

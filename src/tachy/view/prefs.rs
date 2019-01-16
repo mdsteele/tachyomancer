@@ -35,6 +35,7 @@ const PANE_BUTTON_WIDTH: i32 = 180;
 pub enum PrefsAction {
     NewProfile,
     SwitchProfile(String),
+    DeleteProfile,
     QuitGame,
 }
 
@@ -183,6 +184,10 @@ impl PrefsView {
             }
         }
     }
+
+    pub fn update_profile_list(&mut self, state: &GameState) {
+        self.profiles_pane.update_profile_list(state);
+    }
 }
 
 //===========================================================================//
@@ -239,54 +244,71 @@ impl AudioVideoPane {
 //===========================================================================//
 
 pub struct ProfilesPane {
-    profiles_list: ListView<String>,
+    profile_list: ListView<String>,
     new_button: TextButton<PrefsAction>,
+    delete_button: TextButton<PrefsAction>,
 }
 
 impl ProfilesPane {
     pub fn new(rect: Rect<i32>, state: &GameState) -> ProfilesPane {
         debug_assert!(state.profile().is_some());
-        let current_profile_name = state.profile().unwrap().name();
-        let list_items = state
-            .profile_names()
-            .map(|name| (name.to_string(), name.to_string()))
-            .collect();
-        let profiles_list =
+        let profile_list =
             ListView::new(Rect::new(rect.x, rect.y, 300, rect.height),
-                          current_profile_name,
-                          list_items);
-        let new_button = TextButton::new(Rect::new(rect.right() - 150,
-                                                   rect.bottom() - 40,
-                                                   150,
-                                                   40),
-                                         "New Profile",
-                                         PrefsAction::NewProfile);
+                          state.profile().unwrap().name(),
+                          profile_list_items(state));
+        let new_button =
+            TextButton::new(Rect::new(rect.right() - 150, rect.y, 150, 40),
+                            "New Profile",
+                            PrefsAction::NewProfile);
+        let delete_button = TextButton::new(Rect::new(rect.right() - 150,
+                                                      rect.bottom() - 40,
+                                                      150,
+                                                      40),
+                                            "Delete Profile",
+                                            PrefsAction::DeleteProfile);
         ProfilesPane {
-            profiles_list,
+            profile_list,
             new_button,
+            delete_button,
         }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 state: &GameState) {
         let current_profile_name = state.profile().unwrap().name();
-        self.profiles_list.draw(resources, matrix, current_profile_name);
+        self.profile_list.draw(resources, matrix, current_profile_name);
         self.new_button.draw(resources, matrix, true);
+        self.delete_button.draw(resources, matrix, true);
     }
 
     pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
                         -> Option<PrefsAction> {
         let current_profile_name = state.profile().unwrap().name();
         if let Some(profile_name) =
-            self.profiles_list.handle_event(event, current_profile_name)
+            self.profile_list.handle_event(event, current_profile_name)
         {
             return Some(PrefsAction::SwitchProfile(profile_name));
         }
         if let Some(action) = self.new_button.handle_event(event, true) {
             return Some(action);
         }
+        if let Some(action) = self.delete_button.handle_event(event, true) {
+            return Some(action);
+        }
         return None;
     }
+
+    pub fn update_profile_list(&mut self, state: &GameState) {
+        self.profile_list.set_items(state.profile().unwrap().name(),
+                                    profile_list_items(state));
+    }
+}
+
+fn profile_list_items(state: &GameState) -> Vec<(String, String)> {
+    state
+        .profile_names()
+        .map(|name| (name.to_string(), name.to_string()))
+        .collect()
 }
 
 //===========================================================================//

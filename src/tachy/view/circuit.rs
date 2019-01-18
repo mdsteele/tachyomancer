@@ -443,24 +443,32 @@ impl EditGridView {
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
                     prefs: &Prefs, audio: &mut AudioQueue) {
         match event {
-            Event::KeyDown(key) => {
-                match key.code {
-                    Keycode::Up => self.scroll.y -= SCROLL_PER_KEYDOWN,
-                    Keycode::Down => self.scroll.y += SCROLL_PER_KEYDOWN,
-                    Keycode::Left => self.scroll.x -= SCROLL_PER_KEYDOWN,
-                    Keycode::Right => self.scroll.x += SCROLL_PER_KEYDOWN,
-                    _ => {}
-                }
-                if let Some(ref mut drag) = self.chip_drag {
-                    if !key.command && !key.shift {
-                        match prefs.hotkey_for_code(key.code) {
-                            Some(Hotkey::FlipHorz) => drag.flip_horz(),
-                            Some(Hotkey::FlipVert) => drag.flip_vert(),
-                            Some(Hotkey::RotateCcw) => drag.rotate_ccw(),
-                            Some(Hotkey::RotateCw) => drag.rotate_cw(),
-                            None => {}
+            Event::KeyDown(key) if !key.command && !key.shift => {
+                match prefs.hotkey_for_code(key.code) {
+                    Some(Hotkey::ScrollUp) => {
+                        self.scroll.y -= SCROLL_PER_KEYDOWN
+                    }
+                    Some(Hotkey::ScrollDown) => {
+                        self.scroll.y += SCROLL_PER_KEYDOWN
+                    }
+                    Some(Hotkey::ScrollLeft) => {
+                        self.scroll.x -= SCROLL_PER_KEYDOWN
+                    }
+                    Some(Hotkey::ScrollRight) => {
+                        self.scroll.x += SCROLL_PER_KEYDOWN
+                    }
+                    Some(hotkey) => {
+                        if let Some(ref mut drag) = self.chip_drag {
+                            match hotkey {
+                                Hotkey::FlipHorz => drag.flip_horz(),
+                                Hotkey::FlipVert => drag.flip_vert(),
+                                Hotkey::RotateCcw => drag.rotate_ccw(),
+                                Hotkey::RotateCw => drag.rotate_cw(),
+                                _ => {}
+                            }
                         }
                     }
+                    None => {}
                 }
             }
             Event::MouseDown(mouse) => {

@@ -30,6 +30,10 @@ pub enum Hotkey {
     FlipVert,
     RotateCcw,
     RotateCw,
+    ScrollDown,
+    ScrollLeft,
+    ScrollRight,
+    ScrollUp,
 }
 
 const ALL_HOTKEYS: &[Hotkey] = &[
@@ -37,6 +41,10 @@ const ALL_HOTKEYS: &[Hotkey] = &[
     Hotkey::FlipVert,
     Hotkey::RotateCcw,
     Hotkey::RotateCw,
+    Hotkey::ScrollDown,
+    Hotkey::ScrollLeft,
+    Hotkey::ScrollRight,
+    Hotkey::ScrollUp,
 ];
 
 impl Hotkey {
@@ -49,6 +57,10 @@ impl Hotkey {
             Hotkey::FlipVert => "Flip vertically",
             Hotkey::RotateCcw => "Rotate counterclockwise",
             Hotkey::RotateCw => "Rotate clockwise",
+            Hotkey::ScrollDown => "Scroll down",
+            Hotkey::ScrollLeft => "Scroll left",
+            Hotkey::ScrollRight => "Scroll right",
+            Hotkey::ScrollUp => "Scroll up",
         }
     }
 
@@ -58,6 +70,10 @@ impl Hotkey {
             Hotkey::FlipVert => Keycode::W,
             Hotkey::RotateCcw => Keycode::Q,
             Hotkey::RotateCw => Keycode::E,
+            Hotkey::ScrollDown => Keycode::Down,
+            Hotkey::ScrollLeft => Keycode::Left,
+            Hotkey::ScrollRight => Keycode::Right,
+            Hotkey::ScrollUp => Keycode::Up,
         }
     }
 
@@ -67,6 +83,10 @@ impl Hotkey {
             Keycode::W => Some(Hotkey::FlipVert),
             Keycode::Q => Some(Hotkey::RotateCcw),
             Keycode::E => Some(Hotkey::RotateCw),
+            Keycode::Down => Some(Hotkey::ScrollDown),
+            Keycode::Left => Some(Hotkey::ScrollLeft),
+            Keycode::Right => Some(Hotkey::ScrollRight),
+            Keycode::Up => Some(Hotkey::ScrollUp),
             _ => None,
         }
     }
@@ -88,6 +108,10 @@ impl FromStr for Hotkey {
             "FlipVert" => Ok(Hotkey::FlipVert),
             "RotateCcw" => Ok(Hotkey::RotateCcw),
             "RotateCw" => Ok(Hotkey::RotateCw),
+            "ScrollDown" => Ok(Hotkey::ScrollDown),
+            "ScrollLeft" => Ok(Hotkey::ScrollLeft),
+            "ScrollRight" => Ok(Hotkey::ScrollRight),
+            "ScrollUp" => Ok(Hotkey::ScrollUp),
             _ => Err(()),
         }
     }

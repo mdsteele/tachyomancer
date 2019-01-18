@@ -17,11 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::button::{Checkbox, RadioButton, Slider, SliderAction, TextButton};
+use super::button::{Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton,
+                    Slider, SliderAction, TextButton};
 use super::list::ListView;
 use cgmath::{Matrix4, Point2};
 use tachy::geom::Rect;
 use tachy::gui::{AudioQueue, Event, Resources, Sound};
+use tachy::save::Hotkey;
 use tachy::state::GameState;
 
 //===========================================================================//
@@ -63,6 +65,7 @@ pub struct PrefsView {
     pane_buttons: Vec<RadioButton<PrefsPane>>,
     quit_button: TextButton<PrefsAction>,
     audio_video_pane: AudioVideoPane,
+    hotkeys_pane: HotkeysPane,
     profiles_pane: ProfilesPane,
 }
 
@@ -103,6 +106,7 @@ impl PrefsView {
                                   rect.width - pane_offset,
                                   rect.height);
         let audio_video_pane = AudioVideoPane::new(pane_rect, state);
+        let hotkeys_pane = HotkeysPane::new(pane_rect);
         let profiles_pane = ProfilesPane::new(pane_rect, state);
 
         PrefsView {
@@ -110,6 +114,7 @@ impl PrefsView {
             pane_buttons,
             quit_button,
             audio_video_pane,
+            hotkeys_pane,
             profiles_pane,
         }
     }
@@ -123,11 +128,11 @@ impl PrefsView {
         self.quit_button.draw(resources, matrix, true);
 
         match self.current_pane {
-            PrefsPane::Hotkeys => {
-                // TODO
-            }
             PrefsPane::AudioVideo => {
                 self.audio_video_pane.draw(resources, matrix, state);
+            }
+            PrefsPane::Hotkeys => {
+                self.hotkeys_pane.draw(resources, matrix, state);
             }
             PrefsPane::Profiles => {
                 self.profiles_pane.draw(resources, matrix, state);
@@ -170,12 +175,10 @@ impl PrefsView {
                          audio: &mut AudioQueue)
                          -> Option<PrefsAction> {
         match self.current_pane {
-            PrefsPane::Hotkeys => {
-                None // TODO
-            }
             PrefsPane::AudioVideo => {
                 self.audio_video_pane.handle_event(event, state, audio)
             }
+            PrefsPane::Hotkeys => self.hotkeys_pane.handle_event(event, state),
             PrefsPane::Profiles => {
                 self.profiles_pane.handle_event(event, state)
             }
@@ -238,6 +241,76 @@ impl AudioVideoPane {
             None => {}
         }
         None
+    }
+}
+
+//===========================================================================//
+
+pub struct HotkeysPane {
+    hotkey_boxes: Vec<HotkeyBox>,
+    defaults_button: TextButton<()>,
+}
+
+impl HotkeysPane {
+    pub fn new(rect: Rect<i32>) -> HotkeysPane {
+        let left = rect.x;
+        let mut top = rect.y - 16;
+        let hotkey_boxes = Hotkey::all()
+            .map(|hotkey| {
+                     top += 32;
+                     HotkeyBox::new(Point2::new(left, top), hotkey)
+                 })
+            .collect();
+        let defaults_button_rect =
+            Rect::new(rect.right() - 200, rect.bottom() - 40, 200, 40);
+        let defaults_button =
+            TextButton::new(defaults_button_rect, "Restore Defaults", ());
+        HotkeysPane {
+            hotkey_boxes,
+            defaults_button,
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                state: &GameState) {
+        for hotkey_box in self.hotkey_boxes.iter() {
+            let keycode = state.prefs().hotkey_code(hotkey_box.hotkey());
+            hotkey_box.draw(resources, matrix, keycode);
+        }
+
+        let enabled = !state.prefs().hotkeys_are_defaults();
+        self.defaults_button.draw(resources, matrix, enabled);
+    }
+
+    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
+                        -> Option<PrefsAction> {
+        let enabled = !state.prefs().hotkeys_are_defaults();
+        if let Some(()) = self.defaults_button.handle_event(event, enabled) {
+            state.prefs_mut().set_hotkeys_to_defaults();
+            return None;
+        }
+
+        let mut listening: Option<Hotkey> = None;
+        for hotkey_box in self.hotkey_boxes.iter_mut() {
+            match hotkey_box.handle_event(event) {
+                Some(HotkeyBoxAction::Listening) => {
+                    listening = Some(hotkey_box.hotkey());
+                }
+                Some(HotkeyBoxAction::Update(keycode)) => {
+                    let hotkey = hotkey_box.hotkey();
+                    state.prefs_mut().set_hotkey_code(hotkey, keycode);
+                }
+                None => {}
+            }
+        }
+        if let Some(hotkey) = listening {
+            for hotkey_box in self.hotkey_boxes.iter_mut() {
+                if hotkey_box.hotkey() != hotkey {
+                    hotkey_box.handle_event(&Event::Unfocus);
+                }
+            }
+        }
+        return None;
     }
 }
 

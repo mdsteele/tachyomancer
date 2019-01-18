@@ -21,6 +21,7 @@ use cgmath::{Matrix4, Point2};
 use tachy::font::Align;
 use tachy::geom::Rect;
 use tachy::gui::{Event, Keycode, Resources};
+use tachy::save::Hotkey;
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -31,8 +32,16 @@ const CHECKBOX_CHECK_PADDING: i32 = 4;
 const CHECKBOX_CHECK_SIZE: i32 = CHECKBOX_BOX_SIZE -
     2 * CHECKBOX_CHECK_PADDING;
 const CHECKBOX_FONT_SIZE: f32 = 20.0;
+
+const HOTKEY_BOX_HEIGHT: i32 = 28;
+const HOTKEY_BOX_WIDTH: i32 = 68;
+const HOTKEY_BOX_SPACING: i32 = 8;
+const HOTKEY_BOX_FONT_SIZE: f32 = 20.0;
+const HOTKEY_LABEL_FONT_SIZE: f32 = 20.0;
+
 const TEXT_BOX_FONT_SIZE: f32 = 20.0;
 const TEXT_BOX_INNER_MARGIN: f32 = 5.0;
+
 const TEXT_BUTTON_FONT_SIZE: f32 = 20.0;
 
 //===========================================================================//
@@ -108,6 +117,100 @@ impl Checkbox {
                 self.hovering = self.rect.contains_point(mouse.pt);
             }
             Event::Unfocus => self.hovering = false,
+            _ => {}
+        }
+        return None;
+    }
+}
+
+//===========================================================================//
+
+pub enum HotkeyBoxAction {
+    Listening,
+    Update(Keycode),
+}
+
+pub struct HotkeyBox {
+    rect: Rect<i32>,
+    hotkey: Hotkey,
+    listening: bool,
+    hovering: bool,
+}
+
+impl HotkeyBox {
+    pub fn new(mid_left: Point2<i32>, hotkey: Hotkey) -> HotkeyBox {
+        let top = mid_left.y - HOTKEY_BOX_HEIGHT / 2;
+        let width = HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING +
+            (0.5 * HOTKEY_LABEL_FONT_SIZE *
+                (hotkey.name().width() as f32))
+                .ceil() as i32;
+        HotkeyBox {
+            rect: Rect::new(mid_left.x, top, width, HOTKEY_BOX_HEIGHT),
+            hotkey,
+            listening: false,
+            hovering: false,
+        }
+    }
+
+    pub fn hotkey(&self) -> Hotkey { self.hotkey }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                keycode: Keycode) {
+        let box_rect = Rect::new(self.rect.x,
+                                 self.rect.y,
+                                 HOTKEY_BOX_WIDTH,
+                                 HOTKEY_BOX_HEIGHT);
+        let box_color = if self.listening {
+            (1.0, 1.0, 0.4)
+        } else if self.hovering {
+            (1.0, 0.2, 0.2)
+        } else {
+            (0.7, 0.1, 0.1)
+        };
+        resources
+            .shaders()
+            .solid()
+            .fill_rect(&matrix, box_color, box_rect.as_f32());
+        let font = resources.fonts().roman();
+        if !self.listening {
+            font.draw(&matrix,
+                      HOTKEY_BOX_FONT_SIZE,
+                      Align::MidCenter,
+                      ((box_rect.x + box_rect.width / 2) as f32,
+                       (box_rect.y + box_rect.height / 2) as f32),
+                      Hotkey::keycode_name(keycode));
+        }
+        font.draw(&matrix,
+                  HOTKEY_LABEL_FONT_SIZE,
+                  Align::MidLeft,
+                  ((box_rect.right() + HOTKEY_BOX_SPACING) as f32,
+                   (box_rect.y + box_rect.height / 2) as f32),
+                  self.hotkey.name());
+    }
+
+    pub fn handle_event(&mut self, event: &Event) -> Option<HotkeyBoxAction> {
+        match event {
+            Event::KeyDown(key) => {
+                if self.listening && Hotkey::is_valid_keycode(key.code) {
+                    self.listening = false;
+                    return Some(HotkeyBoxAction::Update(key.code));
+                }
+            }
+            Event::MouseDown(mouse) if mouse.left => {
+                if self.rect.contains_point(mouse.pt) {
+                    self.listening = true;
+                    return Some(HotkeyBoxAction::Listening);
+                } else {
+                    self.listening = false;
+                }
+            }
+            Event::MouseMove(mouse) => {
+                self.hovering = self.rect.contains_point(mouse.pt);
+            }
+            Event::Unfocus => {
+                self.listening = false;
+                self.hovering = false;
+            }
             _ => {}
         }
         return None;

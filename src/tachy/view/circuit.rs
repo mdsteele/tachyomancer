@@ -28,7 +28,7 @@ use num_integer::{div_floor, mod_floor};
 use tachy::geom::{Coords, CoordsRect, Direction, MatrixExt, Orientation,
                   Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
-use tachy::save::{Puzzle, WireShape};
+use tachy::save::{Hotkey, Prefs, Puzzle, WireShape};
 use tachy::state::{ChipType, EditGrid, EvalResult, EvalScore, GridChange};
 
 //===========================================================================//
@@ -103,7 +103,8 @@ impl CircuitView {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
+    pub fn handle_event(&mut self, event: &Event,
+                        (grid, prefs): (&mut EditGrid, &Prefs),
                         audio: &mut AudioQueue)
                         -> Option<CircuitAction> {
         if let Some(mut dialog) = self.victory_dialog.take() {
@@ -230,7 +231,7 @@ impl CircuitView {
             return action;
         }
 
-        self.edit_grid.handle_event(event, grid, audio);
+        self.edit_grid.handle_event(event, grid, prefs, audio);
         return action;
     }
 
@@ -440,7 +441,7 @@ impl EditGridView {
     }
 
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
-                    audio: &mut AudioQueue) {
+                    prefs: &Prefs, audio: &mut AudioQueue) {
         match event {
             Event::KeyDown(key) => {
                 match key.code {
@@ -450,15 +451,14 @@ impl EditGridView {
                     Keycode::Right => self.scroll.x += SCROLL_PER_KEYDOWN,
                     _ => {}
                 }
-                // TODO: Make these hotkeys customizable by prefs.
                 if let Some(ref mut drag) = self.chip_drag {
                     if !key.command && !key.shift {
-                        match key.code {
-                            Keycode::A => drag.flip_horz(),
-                            Keycode::E => drag.rotate_cw(),
-                            Keycode::Q => drag.rotate_ccw(),
-                            Keycode::W => drag.flip_vert(),
-                            _ => {}
+                        match prefs.hotkey_for_code(key.code) {
+                            Some(Hotkey::FlipHorz) => drag.flip_horz(),
+                            Some(Hotkey::FlipVert) => drag.flip_vert(),
+                            Some(Hotkey::RotateCcw) => drag.rotate_ccw(),
+                            Some(Hotkey::RotateCw) => drag.rotate_cw(),
+                            None => {}
                         }
                     }
                 }

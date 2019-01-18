@@ -326,8 +326,13 @@ impl GameState {
 
     pub fn edit_grid(&self) -> Option<&EditGrid> { self.edit_grid.as_ref() }
 
-    pub fn edit_grid_mut(&mut self) -> Option<&mut EditGrid> {
-        self.edit_grid.as_mut()
+    pub fn edit_grid_mut_and_prefs(&mut self)
+                                   -> Option<(&mut EditGrid, &Prefs)> {
+        if let Some(ref mut grid) = self.edit_grid {
+            Some((grid, self.savedir.prefs()))
+        } else {
+            None
+        }
     }
 
     pub fn clear_edit_grid(&mut self) { self.edit_grid = None; }

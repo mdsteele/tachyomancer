@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::hotkey::{Hotkey, HotkeyCodes, Keycode};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -35,6 +36,7 @@ struct PrefsData {
     fullscreen: Option<bool>,
     resolution: Option<(u32, u32)>,
     sound_volume: Option<i32>,
+    hotkeys: Option<HotkeyCodes>,
 }
 
 impl PrefsData {
@@ -124,6 +126,42 @@ impl Prefs {
     pub fn set_sound_volume_percent(&mut self, percent: i32) {
         self.data.sound_volume = Some(percent.max(0).min(100));
         self.needs_save = true;
+    }
+
+    pub fn hotkey_for_code(&self, keycode: Keycode) -> Option<Hotkey> {
+        if let Some(ref hotkeys) = self.data.hotkeys {
+            hotkeys.hotkey(keycode)
+        } else {
+            Hotkey::default_for_keycode(keycode)
+        }
+    }
+
+    pub fn hotkey_code(&self, hotkey: Hotkey) -> Keycode {
+        if let Some(ref hotkeys) = self.data.hotkeys {
+            hotkeys.keycode(hotkey)
+        } else {
+            hotkey.default_keycode()
+        }
+    }
+
+    pub fn set_hotkey_code(&mut self, hotkey: Hotkey, code: Keycode) {
+        if self.data.hotkeys.is_none() {
+            self.data.hotkeys = Some(HotkeyCodes::default());
+        }
+        self.data.hotkeys.as_mut().unwrap().set_keycode(hotkey, code);
+        if self.data.hotkeys.as_ref().unwrap().are_defaults() {
+            self.data.hotkeys = None;
+        }
+        self.needs_save = true;
+    }
+
+    pub fn hotkeys_are_defaults(&self) -> bool { self.data.hotkeys.is_none() }
+
+    pub fn set_hotkeys_to_defaults(&mut self) {
+        if self.data.hotkeys.is_some() {
+            self.data.hotkeys = None;
+            self.needs_save = true;
+        }
     }
 }
 

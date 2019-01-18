@@ -21,6 +21,7 @@ mod circuit;
 mod converse;
 mod dir;
 mod encode;
+mod hotkey;
 mod menu;
 mod prefs;
 mod profile;
@@ -32,6 +33,7 @@ pub use self::circuit::CircuitData;
 pub use self::converse::{AllConversationsIter, Conversation,
                          ConversationProgress};
 pub use self::dir::{ProfileNamesIter, SaveDir};
+pub use self::hotkey::Hotkey;
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
 pub use self::profile::Profile;

@@ -35,7 +35,7 @@ use tachy::state::{ChipType, EditGrid, EvalResult, EvalScore, GridChange};
 
 const BOUNDS_MARGIN: i32 = 30;
 const SCROLL_PER_KEYDOWN: i32 = 40;
-const SECONDS_PER_TIME_STEP: f64 = 1.0;
+const SECONDS_PER_TIME_STEP: f64 = 0.1;
 
 //===========================================================================//
 

@@ -78,6 +78,36 @@ impl ConversationBubble {
                       restoring additional ship power.  That will allow us \
                       to safely rouse additional crew members from cryosleep, \
                       and to start bringing other ship systems back online.");
+        builder.esra("The LTF core is badly damaged, and we simply don't \
+                      have the raw materials available to repair it.  The \
+                      backup reactor is probably repairable, but not without \
+                      physical access to it, and because of the damaged \
+                      sections of the ship, you can't safely reach it from \
+                      where you are now.");
+        builder.esra("Therefore, my recommendation is that you begin by \
+                      repairing the heliostat controller so we can get proper \
+                      output from the few remaining solar panels.  We won't \
+                      get very much power from that, but it's a start.");
+        let choice = builder
+            .choice(profile, "start")
+            .option("sgtm", "Sounds like a good plan.")
+            .option("how-much", "How much power will we get?")
+            .done()?;
+        if choice == "how-much" {
+            builder.esra("Probably enough to rouse one additional crew \
+                          member from cryosleep, and provide life support \
+                          for the both of you, but not much more than that.");
+        } else {
+            builder.esra("As I said, it's a start.");
+        }
+        builder.esra("The heliostat position sensors are still working, and \
+                      can automatically calculate the optimal mirror \
+                      position at any given time.  However, the motor control \
+                      board that actually moves the mirror into that position \
+                      needs to be replaced.");
+        builder.esra("I'll upload the relevant specifications to your \
+                      terminal.  Let me know when you have a working design, \
+                      and then we can get it installed.");
         builder.puzzle(profile, Puzzle::AutomateHeliostat)?;
         builder.esra("Excellent work.");
         Ok(())
@@ -158,7 +188,7 @@ impl<'a, 'b> ChoiceBuilder<'a, 'b> {
         self
     }
 
-    fn done(self) -> Result<(), ()> {
+    fn done(self) -> Result<String, ()> {
         debug_assert!(!self.choices.is_empty());
         let choice =
             self.profile
@@ -166,9 +196,10 @@ impl<'a, 'b> ChoiceBuilder<'a, 'b> {
         if choice.is_some() ||
             self.conversation.progress > self.conversation.bubbles.len()
         {
-            let bubble = ConversationBubble::YouSpeech(self.get_label(choice));
+            let (value, label) = self.get_choice(choice);
+            let bubble = ConversationBubble::YouSpeech(label);
             self.conversation.bubbles.push(bubble);
-            Ok(())
+            Ok(value)
         } else {
             let bubble = ConversationBubble::YouChoice(self.key, self.choices);
             self.conversation.bubbles.push(bubble);
@@ -176,15 +207,15 @@ impl<'a, 'b> ChoiceBuilder<'a, 'b> {
         }
     }
 
-    fn get_label(&self, opt_choice: Option<&str>) -> String {
+    fn get_choice(&self, opt_choice: Option<&str>) -> (String, String) {
         if let Some(choice) = opt_choice {
             for &(ref value, ref label) in self.choices.iter() {
                 if value == choice {
-                    return label.clone();
+                    return (value.clone(), label.clone());
                 }
             }
         }
-        return self.choices[0].1.clone();
+        return self.choices[0].clone();
     }
 }
 

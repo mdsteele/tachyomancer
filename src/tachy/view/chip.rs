@@ -37,6 +37,8 @@ const MARGIN: f32 = 0.1;
 enum ChipIcon {
     Add = 0,
     And,
+    Compare,
+    Mux,
     Not,
     Pack1,
     Pack2,
@@ -111,6 +113,8 @@ impl ChipModel {
         match ctype {
             ChipType::Add => ChipIcon::Add,
             ChipType::And => ChipIcon::And,
+            ChipType::Compare => ChipIcon::Compare,
+            ChipType::Mux => ChipIcon::Mux,
             ChipType::Not => ChipIcon::Not,
             ChipType::Pack => {
                 if orient.is_mirrored() {

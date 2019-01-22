@@ -98,13 +98,13 @@ impl Puzzle {
                     kind: PuzzleKind::Automate,
                     allow_events: false,
                     score_units: "Time",
-                    graph_bounds: (100, 100),
+                    graph_bounds: (150, 150),
                     description: "\
                         Automate the ship's heliostat to reflect sunlight \
                         onto the solar panels at the optimal angle.",
                     instructions: "\
                         Move the heliostat towards the optimal position.",
-                    verification: &[],
+                    verification: &[3, 7, 15, 15, 1000],
                 }
             }
             Puzzle::SandboxBehavior => {

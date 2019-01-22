@@ -40,6 +40,8 @@ pub enum ChipType {
     Unpack,
     // Arithmetic:
     Add,
+    Compare,
+    Mux,
     // Events:
     Clock,
     Delay,
@@ -64,11 +66,13 @@ impl str::FromStr for ChipType {
             "Break" => Ok(ChipType::Break),
             "Button" => Ok(ChipType::Button),
             "Clock" => Ok(ChipType::Clock),
+            "Compare" => Ok(ChipType::Compare),
             "Delay" => Ok(ChipType::Delay),
             "Discard" => Ok(ChipType::Discard),
             "Display" => Ok(ChipType::Display),
             "Join" => Ok(ChipType::Join),
             "Latest" => Ok(ChipType::Latest),
+            "Mux" => Ok(ChipType::Mux),
             "Not" => Ok(ChipType::Not),
             "Pack" => Ok(ChipType::Pack),
             "Ram" => Ok(ChipType::Ram),
@@ -139,12 +143,20 @@ impl ChipType {
                     (PortFlow::Send, PortColor::Behavior, (0, 0), North),
                 ]
             }
-            ChipType::Add => {
+            ChipType::Add | ChipType::Compare => {
                 &[
                     (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
                     (PortFlow::Recv, PortColor::Behavior, (0, 0), South),
                     (PortFlow::Send, PortColor::Behavior, (0, 0), East),
                     (PortFlow::Send, PortColor::Behavior, (0, 0), North),
+                ]
+            }
+            ChipType::Mux => {
+                &[
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), South),
+                    (PortFlow::Send, PortColor::Behavior, (0, 0), East),
+                    (PortFlow::Recv, PortColor::Behavior, (0, 0), North),
                 ]
             }
             ChipType::Clock | ChipType::Delay | ChipType::Discard |
@@ -234,6 +246,21 @@ impl ChipType {
                     AbstractConstraint::Equal(2, 3),
                 ]
             }
+            ChipType::Compare => {
+                &[
+                    AbstractConstraint::Equal(0, 1),
+                    AbstractConstraint::Exact(2, WireSize::One),
+                    AbstractConstraint::Exact(3, WireSize::One),
+                ]
+            }
+            ChipType::Mux => {
+                &[
+                    AbstractConstraint::Equal(0, 1),
+                    AbstractConstraint::Equal(0, 2),
+                    AbstractConstraint::Equal(1, 2),
+                    AbstractConstraint::Exact(3, WireSize::One),
+                ]
+            }
             ChipType::Pack => {
                 &[
                     AbstractConstraint::Equal(0, 1),
@@ -298,7 +325,10 @@ impl ChipType {
             ChipType::And | ChipType::Pack | ChipType::Join |
             ChipType::Sample => &[(0, 2), (1, 2)],
             ChipType::Unpack => &[(0, 1), (0, 2)],
-            ChipType::Add => &[(0, 2), (1, 2), (0, 3), (1, 3)],
+            ChipType::Add | ChipType::Compare => {
+                &[(0, 2), (1, 2), (0, 3), (1, 3)]
+            }
+            ChipType::Mux => &[(0, 2), (1, 2), (3, 2)],
             ChipType::Ram => &[(0, 2), (1, 2), (3, 5), (4, 5), (1, 5), (4, 2)],
         }
     }
@@ -336,6 +366,13 @@ impl ChipType {
             ChipType::Clock => {
                 vec![(1, eval::ClockChipEval::new(slots[0].0, slots[1].0))]
             }
+            ChipType::Compare => {
+                let chip_eval = eval::CompareChipEval::new(slots[0].0,
+                                                           slots[1].0,
+                                                           slots[2].0,
+                                                           slots[3].0);
+                vec![(2, chip_eval)]
+            }
             ChipType::Const(value) => {
                 vec![(0, eval::ConstChipEval::new(value, slots[0].0))]
             }
@@ -354,6 +391,13 @@ impl ChipType {
             }
             ChipType::Latest => {
                 vec![(1, eval::LatestChipEval::new(slots[0].0, slots[1].0))]
+            }
+            ChipType::Mux => {
+                let chip_eval = eval::MuxChipEval::new(slots[0].0,
+                                                       slots[1].0,
+                                                       slots[2].0,
+                                                       slots[3].0);
+                vec![(2, chip_eval)]
             }
             ChipType::Not => {
                 let chip_eval =
@@ -514,6 +558,7 @@ mod tests {
             ChipType::Break,
             ChipType::Button,
             ChipType::Clock,
+            ChipType::Compare,
             ChipType::Const(0),
             ChipType::Const(13),
             ChipType::Const(0xffffffff),
@@ -522,6 +567,7 @@ mod tests {
             ChipType::Display,
             ChipType::Join,
             ChipType::Latest,
+            ChipType::Mux,
             ChipType::Not,
             ChipType::Pack,
             ChipType::Ram,

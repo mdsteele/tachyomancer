@@ -486,6 +486,35 @@ impl ChipEval for ClockChipEval {
     }
 }
 
+pub struct CompareChipEval {
+    input1: usize,
+    input2: usize,
+    output1: usize,
+    output2: usize,
+}
+
+impl CompareChipEval {
+    pub fn new(input1: usize, input2: usize, output1: usize, output2: usize)
+               -> Box<ChipEval> {
+        Box::new(CompareChipEval {
+                     input1,
+                     input2,
+                     output1,
+                     output2,
+                 })
+    }
+}
+
+impl ChipEval for CompareChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let input1 = state.recv_behavior(self.input1).0;
+        let input2 = state.recv_behavior(self.input2).0;
+        let (output1, output2) = if input1 < input2 { (1, 0) } else { (0, 1) };
+        state.send_behavior(self.output1, output1);
+        state.send_behavior(self.output2, output2);
+    }
+}
+
 pub struct ConstChipEval {
     output: usize,
     value: u32,
@@ -599,6 +628,36 @@ impl ChipEval for LatestChipEval {
         if let Some(value) = state.recv_event(self.input) {
             state.send_behavior(self.output, value);
         }
+    }
+}
+
+pub struct MuxChipEval {
+    input1: usize,
+    input2: usize,
+    output: usize,
+    control: usize,
+}
+
+impl MuxChipEval {
+    pub fn new(input1: usize, input2: usize, output: usize, control: usize)
+               -> Box<ChipEval> {
+        Box::new(MuxChipEval {
+                     input1,
+                     input2,
+                     output,
+                     control,
+                 })
+    }
+}
+
+impl ChipEval for MuxChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let output = if state.recv_behavior(self.control).0 == 0 {
+            state.recv_behavior(self.input1).0
+        } else {
+            state.recv_behavior(self.input2).0
+        };
+        state.send_behavior(self.output, output);
     }
 }
 

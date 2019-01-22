@@ -39,7 +39,7 @@ const TABLE_FONT_SIZE: f32 = 16.0;
 
 pub struct VerificationTray {
     rect: Rect<i32>,
-    table: FabricationTable, // TODO: Different subviews for different puzzles
+    subview: Box<PuzzleVerifyView>,
 }
 
 impl VerificationTray {
@@ -57,13 +57,21 @@ impl VerificationTray {
                                    rect.y + TRAY_INNER_MARGIN,
                                    rect.width - 2 * TRAY_INNER_MARGIN,
                                    rect.height - 2 * TRAY_INNER_MARGIN);
-        // TODO: create table or other view based on puzzle
-        let table =
-            FabricationTable::new(
-                inner_rect,
-                vec!["in1".to_string(), "in2".to_string(), "out".to_string()],
-            );
-        VerificationTray { rect, table }
+        let subview =
+            match current_puzzle {
+                Puzzle::AutomateHeliostat => HeliostatCam::new(inner_rect),
+                _ => {
+                    FabricationTable::new(
+                        inner_rect,
+                        vec![
+                            "in1".to_string(),
+                            "in2".to_string(),
+                            "out".to_string(),
+                        ],
+                    )
+                }
+            };
+        VerificationTray { rect, subview }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
@@ -74,7 +82,7 @@ impl VerificationTray {
         }
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(matrix, (0.0, 0.5, 0.0), rect);
-        self.table.draw(resources, matrix, time_step, puzzle_data, errors);
+        self.subview.draw(resources, matrix, time_step, puzzle_data, errors);
     }
 
     pub fn handle_event(&mut self, event: &Event) -> bool {
@@ -92,16 +100,25 @@ impl VerificationTray {
 
 //===========================================================================//
 
+trait PuzzleVerifyView {
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+            time_step: Option<u32>, values: &[u64], errors: &[EvalError]);
+}
+
+//===========================================================================//
+
 struct FabricationTable {
     rect: Rect<i32>,
     columns: Vec<String>,
 }
 
 impl FabricationTable {
-    fn new(rect: Rect<i32>, columns: Vec<String>) -> FabricationTable {
-        FabricationTable { rect, columns }
+    fn new(rect: Rect<i32>, columns: Vec<String>) -> Box<PuzzleVerifyView> {
+        Box::new(FabricationTable { rect, columns })
     }
+}
 
+impl PuzzleVerifyView for FabricationTable {
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
             time_step: Option<u32>, values: &[u64], errors: &[EvalError]) {
         let rect = self.rect.as_f32();
@@ -149,6 +166,45 @@ impl FabricationTable {
                                                &value.to_string());
             }
         }
+    }
+}
+
+//===========================================================================//
+
+struct HeliostatCam {
+    rect: Rect<i32>,
+}
+
+impl HeliostatCam {
+    fn new(rect: Rect<i32>) -> Box<PuzzleVerifyView> {
+        Box::new(HeliostatCam { rect })
+    }
+}
+
+impl PuzzleVerifyView for HeliostatCam {
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+            _time_step: Option<u32>, values: &[u64], _errors: &[EvalError]) {
+        debug_assert_eq!(values.len(), 5);
+        // TODO: Draw a grid view of the heliostat coordinates, and a visual
+        //   energy meter.
+        let left = self.rect.x as f32;
+        let top = self.rect.y as f32;
+        let font = resources.fonts().roman();
+        font.draw(matrix,
+                  TABLE_FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top),
+                  &format!("Energy: {}", values[4]));
+        font.draw(matrix,
+                  TABLE_FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top + 30.0),
+                  &format!("Pos: ({}, {})", values[2], values[3]));
+        font.draw(matrix,
+                  TABLE_FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top + 60.0),
+                  &format!("Opt: ({}, {})", values[0], values[1]));
     }
 }
 

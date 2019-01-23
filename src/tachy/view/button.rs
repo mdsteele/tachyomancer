@@ -39,6 +39,7 @@ const HOTKEY_BOX_SPACING: i32 = 8;
 const HOTKEY_BOX_FONT_SIZE: f32 = 20.0;
 const HOTKEY_LABEL_FONT_SIZE: f32 = 20.0;
 
+const TEXT_BOX_CURSOR_BLINK_PERIOD: f64 = 1.0;
 const TEXT_BOX_FONT_SIZE: f32 = 20.0;
 const TEXT_BOX_INNER_MARGIN: f32 = 5.0;
 
@@ -341,6 +342,9 @@ pub struct TextBox {
     rect: Rect<i32>,
     string: String,
     max_len: usize,
+    cursor_byte: usize,
+    cursor_char: usize,
+    cursor_blink: f64,
 }
 
 impl TextBox {
@@ -349,34 +353,90 @@ impl TextBox {
             rect,
             string: initial.to_string(),
             max_len,
+            cursor_byte: initial.len(),
+            cursor_char: initial.width(),
+            cursor_blink: 0.0,
         }
     }
 
     pub fn string(&self) -> &str { &self.string }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        // Box:
         let color = (0.0, 0.0, 0.0);
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
+        // Text:
         resources.fonts().roman().draw(&matrix,
                                        TEXT_BOX_FONT_SIZE,
                                        Align::MidLeft,
                                        (rect.x + TEXT_BOX_INNER_MARGIN,
                                         rect.y + 0.5 * rect.height),
                                        &self.string);
-        // TODO: draw cursor
+        // Cursor:
+        if self.cursor_blink < 0.5 * TEXT_BOX_CURSOR_BLINK_PERIOD {
+            let color = (0.5, 0.5, 0.0);
+            let cursor_rect =
+                Rect::new(rect.x + TEXT_BOX_INNER_MARGIN +
+                              0.5 * TEXT_BOX_FONT_SIZE *
+                                  self.cursor_char as f32,
+                          rect.y + 0.5 * (rect.height - TEXT_BOX_FONT_SIZE),
+                          1.0,
+                          TEXT_BOX_FONT_SIZE);
+            resources.shaders().solid().fill_rect(&matrix, color, cursor_rect);
+        }
     }
 
     pub fn handle_event(&mut self, event: &Event) {
         match event {
+            Event::ClockTick(tick) => {
+                self.cursor_blink = (self.cursor_blink + tick.elapsed) %
+                    TEXT_BOX_CURSOR_BLINK_PERIOD;
+            }
             Event::KeyDown(key) => {
                 match key.code {
                     Keycode::Backspace => {
-                        if self.string.pop().is_some() {
+                        let rest = self.string.split_off(self.cursor_byte);
+                        if let Some(chr) = self.string.pop() {
+                            self.cursor_byte -= chr.len_utf8();
+                            self.cursor_char -= 1;
+                            self.cursor_blink = 0.0;
+                            // TODO: play sound
+                        }
+                        self.string.push_str(&rest);
+                    }
+                    Keycode::Delete => {
+                        if self.cursor_byte < self.string.len() {
+                            self.string.remove(self.cursor_byte);
                             // TODO: play sound
                         }
                     }
-                    // TODO: arrows should move cursor
+                    Keycode::Up | Keycode::PageUp | Keycode::Home => {
+                        self.cursor_byte = 0;
+                        self.cursor_char = 0;
+                        self.cursor_blink = 0.0;
+                    }
+                    Keycode::Down | Keycode::PageDown | Keycode::End => {
+                        self.cursor_byte = self.string.len();
+                        self.cursor_char = self.string.width();
+                        self.cursor_blink = 0.0;
+                    }
+                    Keycode::Left => {
+                        let (part, _) = self.string.split_at(self.cursor_byte);
+                        if let Some(chr) = part.chars().next_back() {
+                            self.cursor_byte -= chr.len_utf8();
+                            self.cursor_char -= 1;
+                            self.cursor_blink = 0.0;
+                        }
+                    }
+                    Keycode::Right => {
+                        let (_, part) = self.string.split_at(self.cursor_byte);
+                        if let Some(chr) = part.chars().next() {
+                            self.cursor_byte += chr.len_utf8();
+                            self.cursor_char += 1;
+                            self.cursor_blink = 0.0;
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -388,7 +448,10 @@ impl TextBox {
                     if (chr >= ' ' && chr <= '~') ||
                         (chr >= '\u{a1}' && chr <= '\u{ff}')
                     {
-                        self.string.push(chr);
+                        self.string.insert(self.cursor_byte, chr);
+                        self.cursor_byte += chr.len_utf8();
+                        self.cursor_char += 1;
+                        self.cursor_blink = 0.0;
                         // TODO: play sound
                     }
                 }

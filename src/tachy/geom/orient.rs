@@ -37,6 +37,8 @@ pub struct Orientation {
 impl Orientation {
     pub fn is_mirrored(&self) -> bool { self.mirror }
 
+    pub fn is_rotated_90(&self) -> bool { self.rotate % 2 == 1 }
+
     pub fn matrix(&self) -> Matrix4<f32> {
         let matrix = Matrix4::from_angle_z(Deg(90.0 * (self.rotate as f32)));
         if self.mirror {

@@ -772,6 +772,42 @@ impl ChipEval for SampleChipEval {
     }
 }
 
+pub struct SubChipEval {
+    size: WireSize,
+    input1: usize,
+    input2: usize,
+    output1: usize,
+    output2: usize,
+}
+
+impl SubChipEval {
+    pub fn new(size: WireSize, input1: usize, input2: usize, output1: usize,
+               output2: usize)
+               -> Box<ChipEval> {
+        Box::new(SubChipEval {
+                     size,
+                     input1,
+                     input2,
+                     output1,
+                     output2,
+                 })
+    }
+}
+
+impl ChipEval for SubChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input1, changed1) = state.recv_behavior(self.input1);
+        let (input2, changed2) = state.recv_behavior(self.input2);
+        if changed1 || changed2 {
+            let diff = (input1 as i64) - (input2 as i64);
+            let abs = diff.abs() as u32;
+            let wrapped = (diff & (self.size.mask() as i64)) as u32;
+            state.send_behavior(self.output1, abs);
+            state.send_behavior(self.output2, wrapped);
+        }
+    }
+}
+
 pub struct UnpackChipEval {
     output_size: WireSize,
     input: usize,

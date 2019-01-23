@@ -40,6 +40,7 @@ pub enum ChipType {
     Unpack,
     // Arithmetic:
     Add,
+    Sub,
     Compare,
     Mux,
     // Events:
@@ -77,6 +78,7 @@ impl str::FromStr for ChipType {
             "Pack" => Ok(ChipType::Pack),
             "Ram" => Ok(ChipType::Ram),
             "Sample" => Ok(ChipType::Sample),
+            "Sub" => Ok(ChipType::Sub),
             "Unpack" => Ok(ChipType::Unpack),
             _ => {
                 if string.starts_with("Const(") && string.ends_with(')') {
@@ -143,7 +145,7 @@ impl ChipType {
                     (PortFlow::Send, PortColor::Behavior, (0, 0), North),
                 ]
             }
-            ChipType::Add | ChipType::Compare => {
+            ChipType::Add | ChipType::Sub | ChipType::Compare => {
                 &[
                     (PortFlow::Recv, PortColor::Behavior, (0, 0), West),
                     (PortFlow::Recv, PortColor::Behavior, (0, 0), South),
@@ -236,7 +238,7 @@ impl ChipType {
                     AbstractConstraint::Equal(1, 2),
                 ]
             }
-            ChipType::Add => {
+            ChipType::Add | ChipType::Sub => {
                 &[
                     AbstractConstraint::Equal(0, 1),
                     AbstractConstraint::Equal(0, 2),
@@ -325,7 +327,7 @@ impl ChipType {
             ChipType::And | ChipType::Pack | ChipType::Join |
             ChipType::Sample => &[(0, 2), (1, 2)],
             ChipType::Unpack => &[(0, 1), (0, 2)],
-            ChipType::Add | ChipType::Compare => {
+            ChipType::Add | ChipType::Sub | ChipType::Compare => {
                 &[(0, 2), (1, 2), (0, 3), (1, 3)]
             }
             ChipType::Mux => &[(0, 2), (1, 2), (3, 2)],
@@ -432,6 +434,14 @@ impl ChipType {
                 let chip_eval = eval::SampleChipEval::new(slots[0].0,
                                                           slots[1].0,
                                                           slots[2].0);
+                vec![(2, chip_eval)]
+            }
+            ChipType::Sub => {
+                let chip_eval = eval::SubChipEval::new(slots[2].1,
+                                                       slots[0].0,
+                                                       slots[1].0,
+                                                       slots[2].0,
+                                                       slots[3].0);
                 vec![(2, chip_eval)]
             }
             ChipType::Unpack => {
@@ -572,6 +582,7 @@ mod tests {
             ChipType::Pack,
             ChipType::Ram,
             ChipType::Sample,
+            ChipType::Sub,
             ChipType::Unpack,
         ];
         for &ctype in chip_types.iter() {

@@ -44,6 +44,7 @@ const ALL_CHIP_TYPES: &[ChipType] = &[
     ChipType::Pack,
     ChipType::Unpack,
     ChipType::Add,
+    ChipType::Sub,
     ChipType::Compare,
     ChipType::Mux,
     ChipType::Clock,

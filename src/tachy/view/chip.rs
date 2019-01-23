@@ -42,6 +42,8 @@ enum ChipIcon {
     Not,
     Pack1,
     Pack2,
+    Sub1,
+    Sub2,
     Unpack1,
     Unpack2,
     Blank,
@@ -121,6 +123,13 @@ impl ChipModel {
                     ChipIcon::Pack2
                 } else {
                     ChipIcon::Pack1
+                }
+            }
+            ChipType::Sub => {
+                if orient.is_rotated_90() {
+                    ChipIcon::Sub2
+                } else {
+                    ChipIcon::Sub1
                 }
             }
             ChipType::Unpack => {

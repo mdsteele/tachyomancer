@@ -24,6 +24,7 @@ mod circuit;
 mod control;
 mod converse;
 mod dialog;
+mod grid;
 mod list;
 mod menu;
 mod parts;

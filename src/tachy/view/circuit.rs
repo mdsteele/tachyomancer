@@ -19,12 +19,13 @@
 
 use super::chip::ChipModel;
 use super::control::{ControlsAction, ControlsTray};
-use super::dialog::ButtonDialogBox;
+use super::dialog::{ButtonDialogBox, TextDialogBox};
 use super::parts::{PartsAction, PartsTray};
 use super::verify::VerificationTray;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec4};
 use num_integer::{div_floor, mod_floor};
+use std::u32;
 use tachy::geom::{Coords, CoordsRect, Direction, MatrixExt, Orientation,
                   Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
@@ -57,6 +58,7 @@ pub struct CircuitView {
     verification_tray: VerificationTray,
     seconds_since_time_step: f64,
     paused: bool,
+    edit_const_dialog: Option<(TextDialogBox, Coords)>,
     victory_dialog: Option<ButtonDialogBox<Option<CircuitAction>>>,
 }
 
@@ -73,6 +75,7 @@ impl CircuitView {
                                                      current_puzzle),
             seconds_since_time_step: 0.0,
             paused: true,
+            edit_const_dialog: None,
             victory_dialog: None,
         }
     }
@@ -98,6 +101,9 @@ impl CircuitView {
         self.parts_tray.draw(resources, &projection);
         self.controls_tray.draw(resources, &projection);
         self.edit_grid.draw_dragged(resources);
+        if let Some((ref dialog, _)) = self.edit_const_dialog {
+            dialog.draw(resources, &projection, is_valid_const);
+        }
         if let Some(ref dialog) = self.victory_dialog {
             dialog.draw(resources, &projection);
         }
@@ -107,6 +113,39 @@ impl CircuitView {
                         (grid, prefs): (&mut EditGrid, &Prefs),
                         audio: &mut AudioQueue)
                         -> Option<CircuitAction> {
+        if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
+            match dialog.handle_event(event, is_valid_const) {
+                Some(Some(text)) => {
+                    if let Ok(new_value) = text.parse::<u32>() {
+                        if let Some((ChipType::Const(old_value),
+                                     orient,
+                                     coords)) = grid.chip_at(coords)
+                        {
+                            let old_ctype = ChipType::Const(old_value);
+                            let new_ctype = ChipType::Const(new_value);
+                            grid.mutate(
+                                &[
+                                    GridChange::ToggleChip(
+                                        coords,
+                                        orient,
+                                        old_ctype,
+                                    ),
+                                    GridChange::ToggleChip(
+                                        coords,
+                                        orient,
+                                        new_ctype,
+                                    ),
+                                ],
+                            );
+                        }
+                    }
+                }
+                Some(None) => {}
+                None => self.edit_const_dialog = Some((dialog, coords)),
+            }
+            return None;
+        }
+
         if let Some(mut dialog) = self.victory_dialog.take() {
             match dialog.handle_event(event) {
                 Some(Some(action)) => return Some(action),
@@ -231,7 +270,18 @@ impl CircuitView {
             return action;
         }
 
-        self.edit_grid.handle_event(event, grid, prefs, audio);
+        match self.edit_grid.handle_event(event, grid, prefs, audio) {
+            Some(EditGridAction::EditConst(coords, value)) => {
+                let size = RectSize::new(self.width as i32,
+                                         self.height as i32);
+                let dialog = TextDialogBox::new(size,
+                                                "Choose new const value:",
+                                                &value.to_string(),
+                                                u32::MAX.to_string().len());
+                self.edit_const_dialog = Some((dialog, coords));
+            }
+            None => {}
+        }
         return action;
     }
 
@@ -278,10 +328,16 @@ impl CircuitView {
     }
 }
 
+fn is_valid_const(text: &str) -> bool { text.parse::<u32>().is_ok() }
+
 //===========================================================================//
 
 const GRID_CELL_SIZE: i32 = 64;
 const ZONE_CENTER_SEMI_SIZE: i32 = 12;
+
+pub enum EditGridAction {
+    EditConst(Coords, u32),
+}
 
 struct EditGridView {
     width: f32,
@@ -441,7 +497,8 @@ impl EditGridView {
     }
 
     fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
-                    prefs: &Prefs, audio: &mut AudioQueue) {
+                    prefs: &Prefs, audio: &mut AudioQueue)
+                    -> Option<EditGridAction> {
         match event {
             Event::KeyDown(key) if !key.command && !key.shift => {
                 match prefs.hotkey_for_code(key.code) {
@@ -485,7 +542,7 @@ impl EditGridView {
                             }
                         }
                     }
-                    return;
+                    return None;
                 }
                 if mouse.left {
                     let mouse_coords = self.coords_for_point(mouse.pt);
@@ -516,6 +573,11 @@ impl EditGridView {
                     }
                 } else if mouse.right {
                     let coords = self.coords_for_point(mouse.pt);
+                    if let Some((ChipType::Const(value), _, _)) =
+                        grid.chip_at(coords)
+                    {
+                        return Some(EditGridAction::EditConst(coords, value));
+                    }
                     let east = grid.wire_shape_at(coords, Direction::East);
                     if east == Some(WireShape::Cross) ||
                         (east == Some(WireShape::Straight) &&
@@ -560,6 +622,7 @@ impl EditGridView {
             }
             _ => {}
         }
+        return None;
     }
 
     pub fn grab_from_parts_tray(&mut self, ctype: ChipType, pt: Point2<i32>) {

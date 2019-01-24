@@ -26,6 +26,11 @@ use std::str::FromStr;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Hotkey {
+    EvalReset,
+    EvalRunPause,
+    EvalStepCycle,
+    EvalStepSubcycle,
+    EvalStepTime,
     FlipHorz,
     FlipVert,
     RotateCcw,
@@ -37,6 +42,11 @@ pub enum Hotkey {
 }
 
 const ALL_HOTKEYS: &[Hotkey] = &[
+    Hotkey::EvalReset,
+    Hotkey::EvalRunPause,
+    Hotkey::EvalStepCycle,
+    Hotkey::EvalStepSubcycle,
+    Hotkey::EvalStepTime,
     Hotkey::FlipHorz,
     Hotkey::FlipVert,
     Hotkey::RotateCcw,
@@ -53,6 +63,11 @@ impl Hotkey {
 
     pub fn name(self) -> &'static str {
         match self {
+            Hotkey::EvalReset => "Reset evaluation",
+            Hotkey::EvalRunPause => "Run/pause evaluation",
+            Hotkey::EvalStepCycle => "Advance by one cycle",
+            Hotkey::EvalStepSubcycle => "Advance by one subcycle",
+            Hotkey::EvalStepTime => "Advance by one time step",
             Hotkey::FlipHorz => "Flip horzizontally",
             Hotkey::FlipVert => "Flip vertically",
             Hotkey::RotateCcw => "Rotate counterclockwise",
@@ -66,6 +81,11 @@ impl Hotkey {
 
     pub fn default_keycode(self) -> Keycode {
         match self {
+            Hotkey::EvalReset => Keycode::T,
+            Hotkey::EvalRunPause => Keycode::R,
+            Hotkey::EvalStepCycle => Keycode::D,
+            Hotkey::EvalStepSubcycle => Keycode::S,
+            Hotkey::EvalStepTime => Keycode::F,
             Hotkey::FlipHorz => Keycode::A,
             Hotkey::FlipVert => Keycode::W,
             Hotkey::RotateCcw => Keycode::Q,
@@ -80,9 +100,14 @@ impl Hotkey {
     pub fn default_for_keycode(code: Keycode) -> Option<Hotkey> {
         match code {
             Keycode::A => Some(Hotkey::FlipHorz),
-            Keycode::W => Some(Hotkey::FlipVert),
-            Keycode::Q => Some(Hotkey::RotateCcw),
+            Keycode::D => Some(Hotkey::EvalStepCycle),
             Keycode::E => Some(Hotkey::RotateCw),
+            Keycode::F => Some(Hotkey::EvalStepTime),
+            Keycode::Q => Some(Hotkey::RotateCcw),
+            Keycode::R => Some(Hotkey::EvalRunPause),
+            Keycode::S => Some(Hotkey::EvalStepSubcycle),
+            Keycode::T => Some(Hotkey::EvalReset),
+            Keycode::W => Some(Hotkey::FlipVert),
             Keycode::Down => Some(Hotkey::ScrollDown),
             Keycode::Left => Some(Hotkey::ScrollLeft),
             Keycode::Right => Some(Hotkey::ScrollRight),
@@ -104,6 +129,11 @@ impl FromStr for Hotkey {
     type Err = ();
     fn from_str(string: &str) -> Result<Hotkey, ()> {
         match string {
+            "EvalReset" => Ok(Hotkey::EvalReset),
+            "EvalRunPause" => Ok(Hotkey::EvalRunPause),
+            "EvalStepCycle" => Ok(Hotkey::EvalStepCycle),
+            "EvalStepSubcycle" => Ok(Hotkey::EvalStepSubcycle),
+            "EvalStepTime" => Ok(Hotkey::EvalStepTime),
             "FlipHorz" => Ok(Hotkey::FlipHorz),
             "FlipVert" => Ok(Hotkey::FlipVert),
             "RotateCcw" => Ok(Hotkey::RotateCcw),

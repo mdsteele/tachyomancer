@@ -179,7 +179,7 @@ impl CircuitView {
             _ => {}
         }
 
-        if let Some(opt_action) = self.controls_tray.on_event(event) {
+        if let Some(opt_action) = self.controls_tray.on_event(event, prefs) {
             match opt_action {
                 None => {}
                 Some(ControlsAction::Reset) => {

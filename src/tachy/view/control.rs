@@ -20,7 +20,7 @@
 use cgmath::Matrix4;
 use tachy::geom::{MatrixExt, Rect, RectSize};
 use tachy::gui::{Event, Resources};
-use tachy::save::Puzzle;
+use tachy::save::{Hotkey, Prefs, Puzzle};
 
 //===========================================================================//
 
@@ -51,19 +51,22 @@ pub struct ControlsTray {
 impl ControlsTray {
     pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle)
                -> ControlsTray {
-        let mut actions = vec![
-            ControlsAction::Reset,
-            ControlsAction::RunOrPause,
-            ControlsAction::StepSubcycle,
-        ];
+        let mut actions =
+            vec![
+                (ControlsAction::Reset, Hotkey::EvalReset),
+                (ControlsAction::RunOrPause, Hotkey::EvalRunPause),
+                (ControlsAction::StepSubcycle, Hotkey::EvalStepSubcycle),
+            ];
         if current_puzzle.allows_events() {
-            actions.push(ControlsAction::StepCycle);
+            actions.push((ControlsAction::StepCycle, Hotkey::EvalStepCycle));
         }
-        actions.push(ControlsAction::StepTime);
+        actions.push((ControlsAction::StepTime, Hotkey::EvalStepTime));
         let buttons = actions
             .into_iter()
             .enumerate()
-            .map(|(index, action)| ControlsButton::new(action, index as i32))
+            .map(|(index, (action, hotkey))| {
+                     ControlsButton::new(action, index as i32, hotkey)
+                 })
             .collect::<Vec<ControlsButton>>();
         let width = 2 * TRAY_MARGIN +
             (buttons.len() as i32) * (BUTTON_WIDTH + BUTTON_SPACING) -
@@ -84,11 +87,11 @@ impl ControlsTray {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event)
+    pub fn on_event(&mut self, event: &Event, prefs: &Prefs)
                     -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
             let point = self.rect.top_left();
-            let opt_action = button.on_event(&event.relative_to(point));
+            let opt_action = button.on_event(&event.relative_to(point), prefs);
             if opt_action.is_some() {
                 return Some(opt_action);
             }
@@ -110,10 +113,12 @@ impl ControlsTray {
 struct ControlsButton {
     action: ControlsAction,
     rect: Rect<i32>,
+    hotkey: Hotkey,
 }
 
 impl ControlsButton {
-    pub fn new(action: ControlsAction, index: i32) -> ControlsButton {
+    pub fn new(action: ControlsAction, index: i32, hotkey: Hotkey)
+               -> ControlsButton {
         ControlsButton {
             action,
             rect: Rect::new(TRAY_MARGIN +
@@ -121,6 +126,7 @@ impl ControlsButton {
                             TRAY_MARGIN,
                             BUTTON_WIDTH,
                             BUTTON_HEIGHT),
+            hotkey,
         }
     }
 
@@ -131,14 +137,21 @@ impl ControlsButton {
             .fill_rect(matrix, (0.75, 0.0, 0.0), self.rect.as_f32());
     }
 
-    pub fn on_event(&mut self, event: &Event) -> Option<ControlsAction> {
+    pub fn on_event(&mut self, event: &Event, prefs: &Prefs)
+                    -> Option<ControlsAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if mouse.left && self.rect.contains_point(mouse.pt) {
+                    // TODO: play sound
                     return Some(self.action);
                 }
             }
-            // TODO: support hotkeys
+            Event::KeyDown(key) => {
+                if key.code == prefs.hotkey_code(self.hotkey) {
+                    // TODO: play sound
+                    return Some(self.action);
+                }
+            }
             _ => {}
         }
         return None;

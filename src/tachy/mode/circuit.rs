@@ -36,11 +36,9 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
-                match view.handle_event(&event,
-                                          state
-                                              .edit_grid_mut_and_prefs()
-                                              .unwrap(),
-                                          &mut audio) {
+                match view.on_event(&event,
+                                      state.edit_grid_mut_and_prefs().unwrap(),
+                                      &mut audio) {
                     Some(CircuitAction::BackToMenu) => {
                         match state.save() {
                             Ok(()) => {
@@ -67,11 +65,9 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             None => {
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
-                match view.handle_event(&Event::new_clock_tick(elapsed),
-                                          state
-                                              .edit_grid_mut_and_prefs()
-                                              .unwrap(),
-                                          &mut audio) {
+                match view.on_event(&Event::new_clock_tick(elapsed),
+                                      state.edit_grid_mut_and_prefs().unwrap(),
+                                      &mut audio) {
                     Some(CircuitAction::Victory(area, score)) => {
                         record_score(state, area, score);
                     }

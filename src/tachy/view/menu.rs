@@ -144,11 +144,11 @@ impl MenuView {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
-                        audio: &mut AudioQueue)
-                        -> Option<MenuAction> {
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
+                    audio: &mut AudioQueue)
+                    -> Option<MenuAction> {
         if let Some(mut dialog) = self.confirmation_dialog.take() {
-            match dialog.handle_event(event) {
+            match dialog.on_event(event) {
                 Some(Some(action)) => return Some(action),
                 Some(None) => {}
                 None => self.confirmation_dialog = Some(dialog),
@@ -157,7 +157,7 @@ impl MenuView {
         }
 
         if let Some(mut dialog) = self.rename_dialog.take() {
-            match dialog.handle_event(event, |name| {
+            match dialog.on_event(event, |name| {
                 state.is_valid_circuit_rename(name)
             }) {
                 Some(Some(name)) => {
@@ -169,36 +169,36 @@ impl MenuView {
             return None;
         }
 
-        if let Some(action) = self.handle_section_event(event, state, audio) {
+        if let Some(action) = self.on_section_event(event, state, audio) {
             return Some(action);
         }
 
         let mut next_section: Option<MenuSection> = None;
         for button in self.section_buttons.iter_mut() {
             if let Some(section) =
-                button.handle_event(event, state.menu_section(), audio)
+                button.on_event(event, state.menu_section(), audio)
             {
                 next_section = Some(section);
                 break;
             }
         }
         if let Some(section) = next_section {
-            self.handle_section_event(&Event::Unfocus, state, audio);
+            self.on_section_event(&Event::Unfocus, state, audio);
             state.set_menu_section(section);
         }
 
         return None;
     }
 
-    fn handle_section_event(&mut self, event: &Event, state: &mut GameState,
-                            audio: &mut AudioQueue)
-                            -> Option<MenuAction> {
+    fn on_section_event(&mut self, event: &Event, state: &mut GameState,
+                        audio: &mut AudioQueue)
+                        -> Option<MenuAction> {
         match state.menu_section() {
             MenuSection::Navigation => {
                 // TODO
             }
             MenuSection::Messages => {
-                match self.converse_view.handle_event(event, state) {
+                match self.converse_view.on_event(event, state) {
                     Some(ConverseAction::Complete) => {
                         state.mark_current_conversation_complete();
                         self.converse_view.update_conversation_list(state);
@@ -220,7 +220,7 @@ impl MenuView {
                 }
             }
             MenuSection::Puzzles => {
-                match self.puzzles_view.handle_event(event, state) {
+                match self.puzzles_view.on_event(event, state) {
                     Some(PuzzlesAction::Copy) => {
                         return Some(MenuAction::CopyCircuit);
                     }
@@ -263,7 +263,7 @@ impl MenuView {
                 }
             }
             MenuSection::Prefs => {
-                match self.prefs_view.handle_event(event, state, audio) {
+                match self.prefs_view.on_event(event, state, audio) {
                     Some(PrefsAction::NewProfile) => {
                         return Some(MenuAction::NewProfile);
                     }
@@ -335,9 +335,9 @@ impl MenuView {
 
     fn unfocus(&mut self, state: &mut GameState) {
         let mut audio = AudioQueue::new();
-        self.converse_view.handle_event(&Event::Unfocus, state);
-        self.prefs_view.handle_event(&Event::Unfocus, state, &mut audio);
-        self.puzzles_view.handle_event(&Event::Unfocus, state);
+        self.converse_view.on_event(&Event::Unfocus, state);
+        self.prefs_view.on_event(&Event::Unfocus, state, &mut audio);
+        self.puzzles_view.on_event(&Event::Unfocus, state);
     }
 }
 
@@ -386,9 +386,9 @@ impl SectionButton {
                                        self.label);
     }
 
-    fn handle_event(&mut self, event: &Event, current_section: MenuSection,
-                    audio: &mut AudioQueue)
-                    -> Option<MenuSection> {
+    fn on_event(&mut self, event: &Event, current_section: MenuSection,
+                audio: &mut AudioQueue)
+                -> Option<MenuSection> {
         match event {
             Event::MouseDown(mouse) => {
                 if self.section != current_section &&

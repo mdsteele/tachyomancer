@@ -129,7 +129,7 @@ impl<T: Clone + Eq> ListView<T> {
         }
     }
 
-    pub fn handle_event<Q>(&mut self, event: &Event, current: &Q) -> Option<T>
+    pub fn on_event<Q>(&mut self, event: &Event, current: &Q) -> Option<T>
     where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,

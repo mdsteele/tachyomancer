@@ -118,9 +118,9 @@ impl<T: Clone> ButtonDialogBox<T> {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event) -> Option<T> {
+    pub fn on_event(&mut self, event: &Event) -> Option<T> {
         for button in self.buttons.iter_mut() {
-            if let Some(value) = button.handle_event(event, true) {
+            if let Some(value) = button.on_event(event, true) {
                 return Some(value);
             }
         }
@@ -217,18 +217,18 @@ impl TextDialogBox {
         self.cancel_button.draw(resources, matrix, true);
     }
 
-    pub fn handle_event<F>(&mut self, event: &Event, is_valid: F)
-                           -> Option<Option<String>>
+    pub fn on_event<F>(&mut self, event: &Event, is_valid: F)
+                       -> Option<Option<String>>
     where
         F: Fn(&str) -> bool,
     {
-        self.textbox.handle_event(event);
+        self.textbox.on_event(event);
         let string = self.textbox.string();
         let valid = is_valid(string);
-        if let Some(()) = self.ok_button.handle_event(event, valid) {
+        if let Some(()) = self.ok_button.on_event(event, valid) {
             return Some(Some(string.to_string()));
         }
-        if let Some(()) = self.cancel_button.handle_event(event, true) {
+        if let Some(()) = self.cancel_button.on_event(event, true) {
             return Some(None);
         }
         return None;

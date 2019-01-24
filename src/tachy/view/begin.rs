@@ -62,10 +62,10 @@ impl BeginView {
         self.text_entry.draw(resources, &projection);
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
-                        audio: &mut AudioQueue)
-                        -> Option<BeginAction> {
-        if let Some(name) = self.text_entry.handle_event(event, audio) {
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
+                    audio: &mut AudioQueue)
+                    -> Option<BeginAction> {
+        if let Some(name) = self.text_entry.on_event(event, audio) {
             if name.is_empty() {
                 // TODO: display error to user
                 debug_log!("Profile name must be non-empty");
@@ -102,8 +102,8 @@ impl TextEntry {
             .draw(matrix, 60.0, Align::TopCenter, self.origin, &self.text);
     }
 
-    fn handle_event(&mut self, event: &Event, _audio: &mut AudioQueue)
-                    -> Option<String> {
+    fn on_event(&mut self, event: &Event, _audio: &mut AudioQueue)
+                -> Option<String> {
         match event {
             Event::KeyDown(key) => {
                 match key.code {

@@ -105,8 +105,7 @@ impl PartsTray {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event)
-                        -> (Option<PartsAction>, bool) {
+    pub fn on_event(&mut self, event: &Event) -> (Option<PartsAction>, bool) {
         match event {
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
                 let delta = self.rect.top_left() - Point2::new(0, 0);

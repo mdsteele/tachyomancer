@@ -84,11 +84,11 @@ impl ControlsTray {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event)
-                        -> Option<Option<ControlsAction>> {
+    pub fn on_event(&mut self, event: &Event)
+                    -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
             let point = self.rect.top_left();
-            let opt_action = button.handle_event(&event.relative_to(point));
+            let opt_action = button.on_event(&event.relative_to(point));
             if opt_action.is_some() {
                 return Some(opt_action);
             }
@@ -131,7 +131,7 @@ impl ControlsButton {
             .fill_rect(matrix, (0.75, 0.0, 0.0), self.rect.as_f32());
     }
 
-    pub fn handle_event(&mut self, event: &Event) -> Option<ControlsAction> {
+    pub fn on_event(&mut self, event: &Event) -> Option<ControlsAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if mouse.left && self.rect.contains_point(mouse.pt) {

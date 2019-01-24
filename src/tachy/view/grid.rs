@@ -200,9 +200,9 @@ impl EditGridView {
             Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
     }
 
-    pub fn handle_event(&mut self, event: &Event, grid: &mut EditGrid,
-                        prefs: &Prefs, audio: &mut AudioQueue)
-                        -> Option<EditGridAction> {
+    pub fn on_event(&mut self, event: &Event, grid: &mut EditGrid,
+                    prefs: &Prefs, audio: &mut AudioQueue)
+                    -> Option<EditGridAction> {
         match event {
             Event::KeyDown(key) if !key.command && !key.shift => {
                 match prefs.hotkey_for_code(key.code) {

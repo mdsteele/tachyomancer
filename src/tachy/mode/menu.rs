@@ -34,7 +34,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
-                match view.handle_event(&event, state, &mut audio) {
+                match view.on_event(&event, state, &mut audio) {
                     Some(MenuAction::GoToPuzzle(puzzle)) => {
                         match state.unlock_puzzle(puzzle) {
                             Ok(()) => {
@@ -129,9 +129,9 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             None => {
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
-                view.handle_event(&Event::new_clock_tick(elapsed),
-                                  state,
-                                  &mut audio);
+                view.on_event(&Event::new_clock_tick(elapsed),
+                              state,
+                              &mut audio);
                 last_tick = now;
                 window.pump_audio(&mut audio);
                 view.draw(window.resources(), state);

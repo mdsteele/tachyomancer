@@ -103,9 +103,8 @@ impl Checkbox {
                                        &self.label);
     }
 
-    pub fn handle_event(&mut self, event: &Event, checked: bool,
-                        enabled: bool)
-                        -> Option<bool> {
+    pub fn on_event(&mut self, event: &Event, checked: bool, enabled: bool)
+                    -> Option<bool> {
         match event {
             Event::MouseDown(mouse) => {
                 if enabled && mouse.left &&
@@ -189,7 +188,7 @@ impl HotkeyBox {
                   self.hotkey.name());
     }
 
-    pub fn handle_event(&mut self, event: &Event) -> Option<HotkeyBoxAction> {
+    pub fn on_event(&mut self, event: &Event) -> Option<HotkeyBoxAction> {
         match event {
             Event::KeyDown(key) => {
                 if self.listening && Hotkey::is_valid_keycode(key.code) {
@@ -234,9 +233,9 @@ impl<T: Clone + PartialEq> RadioButton<T> {
         self.inner.draw(resources, matrix, value != &self.inner.value);
     }
 
-    pub fn handle_event(&mut self, event: &Event, value: &T) -> Option<T> {
+    pub fn on_event(&mut self, event: &Event, value: &T) -> Option<T> {
         let enabled = value != &self.inner.value;
-        self.inner.handle_event(event, enabled)
+        self.inner.on_event(event, enabled)
     }
 }
 
@@ -280,7 +279,7 @@ impl Slider {
         resources.shaders().solid().fill_rect(&matrix, color, rect);
     }
 
-    pub fn handle_event(&mut self, event: &Event) -> Option<SliderAction> {
+    pub fn on_event(&mut self, event: &Event) -> Option<SliderAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if mouse.left && self.handle_rect().contains_point(mouse.pt) {
@@ -387,7 +386,7 @@ impl TextBox {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event) {
+    pub fn on_event(&mut self, event: &Event) {
         match event {
             Event::ClockTick(tick) => {
                 self.cursor_blink = (self.cursor_blink + tick.elapsed) %
@@ -499,7 +498,7 @@ impl<T: Clone> TextButton<T> {
                                        &self.label);
     }
 
-    pub fn handle_event(&mut self, event: &Event, enabled: bool) -> Option<T> {
+    pub fn on_event(&mut self, event: &Event, enabled: bool) -> Option<T> {
         match event {
             Event::MouseDown(mouse) => {
                 if enabled && mouse.left &&

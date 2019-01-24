@@ -96,16 +96,16 @@ impl ConverseView {
         self.bubbles_list.draw(resources, matrix);
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
-                        -> Option<ConverseAction> {
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState)
+                    -> Option<ConverseAction> {
         if let Some(conv) =
-            self.conv_list.handle_event(event, &state.current_conversation())
+            self.conv_list.on_event(event, &state.current_conversation())
         {
             state.set_current_conversation(conv);
             self.update_conversation_bubbles(state);
             None
         } else {
-            self.bubbles_list.handle_event(event)
+            self.bubbles_list.on_event(event)
         }
     }
 
@@ -214,7 +214,7 @@ impl BubblesListView {
         }
     }
 
-    fn handle_event(&mut self, event: &Event) -> Option<ConverseAction> {
+    fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
         // Handle scrollbar events:
         match event {
             Event::MouseDown(mouse)
@@ -252,12 +252,12 @@ impl BubblesListView {
         let bubble_event =
             event.relative_to(self.rect.top_left() - vec2(0, self.scroll_top));
         for bubble in self.bubbles.iter_mut().take(self.num_bubbles_shown) {
-            if let Some(action) = bubble.handle_event(&bubble_event) {
+            if let Some(action) = bubble.on_event(&bubble_event) {
                 return Some(action);
             }
         }
         if let Some(ref mut button) = self.more_button {
-            if button.handle_event(&bubble_event) {
+            if button.on_event(&bubble_event) {
                 if self.num_bubbles_shown + 1 < self.bubbles.len() {
                     return Some(ConverseAction::Increment);
                 }
@@ -393,7 +393,7 @@ impl MoreButton {
                                        "- More -");
     }
 
-    fn handle_event(&mut self, event: &Event) -> bool {
+    fn on_event(&mut self, event: &Event) -> bool {
         match event {
             Event::MouseDown(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
@@ -419,9 +419,7 @@ trait BubbleView {
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>);
 
-    fn handle_event(&mut self, _event: &Event) -> Option<ConverseAction> {
-        None
-    }
+    fn on_event(&mut self, _event: &Event) -> Option<ConverseAction> { None }
 }
 
 //===========================================================================//
@@ -538,7 +536,7 @@ impl BubbleView for PuzzleBubbleView {
                                        &label);
     }
 
-    fn handle_event(&mut self, event: &Event) -> Option<ConverseAction> {
+    fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
@@ -626,7 +624,7 @@ impl BubbleView for YouChoiceBubbleView {
         }
     }
 
-    fn handle_event(&mut self, event: &Event) -> Option<ConverseAction> {
+    fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if let Some(index) = self.choice_for_pt(mouse.pt) {

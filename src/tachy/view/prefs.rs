@@ -143,45 +143,41 @@ impl PrefsView {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
-                        audio: &mut AudioQueue)
-                        -> Option<PrefsAction> {
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
+                    audio: &mut AudioQueue)
+                    -> Option<PrefsAction> {
         debug_assert!(state.profile().is_some());
-        if let Some(action) = self.handle_pane_event(event, state, audio) {
+        if let Some(action) = self.on_pane_event(event, state, audio) {
             return Some(action);
         }
 
         let mut next_pane: Option<PrefsPane> = None;
         for button in self.pane_buttons.iter_mut() {
-            if let Some(pane) = button
-                .handle_event(event, &self.current_pane)
-            {
+            if let Some(pane) = button.on_event(event, &self.current_pane) {
                 next_pane = Some(pane);
                 break;
             }
         }
         if let Some(pane) = next_pane {
-            self.handle_pane_event(&Event::Unfocus, state, audio);
+            self.on_pane_event(&Event::Unfocus, state, audio);
             self.current_pane = pane;
         }
-        if let Some(action) = self.quit_button.handle_event(event, true) {
+        if let Some(action) = self.quit_button.on_event(event, true) {
             return Some(action);
         }
 
         return None;
     }
 
-    fn handle_pane_event(&mut self, event: &Event, state: &mut GameState,
-                         audio: &mut AudioQueue)
-                         -> Option<PrefsAction> {
+    fn on_pane_event(&mut self, event: &Event, state: &mut GameState,
+                     audio: &mut AudioQueue)
+                     -> Option<PrefsAction> {
         match self.current_pane {
             PrefsPane::AudioVideo => {
-                self.audio_video_pane.handle_event(event, state, audio)
+                self.audio_video_pane.on_event(event, state, audio)
             }
-            PrefsPane::Hotkeys => self.hotkeys_pane.handle_event(event, state),
-            PrefsPane::Profiles => {
-                self.profiles_pane.handle_event(event, state)
-            }
+            PrefsPane::Hotkeys => self.hotkeys_pane.on_event(event, state),
+            PrefsPane::Profiles => self.profiles_pane.on_event(event, state),
             PrefsPane::Credits => {
                 None // TODO
             }
@@ -221,16 +217,16 @@ impl AudioVideoPane {
         self.sound_volume_slider.draw(resources, matrix);
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState,
-                        audio: &mut AudioQueue)
-                        -> Option<PrefsAction> {
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
+                    audio: &mut AudioQueue)
+                    -> Option<PrefsAction> {
         if let Some(checked) =
             self.antialias_checkbox
-                .handle_event(event, state.prefs().antialiasing(), true)
+                .on_event(event, state.prefs().antialiasing(), true)
         {
             state.prefs_mut().set_antialiasing(checked);
         }
-        match self.sound_volume_slider.handle_event(event) {
+        match self.sound_volume_slider.on_event(event) {
             Some(SliderAction::Update(volume)) => {
                 state.prefs_mut().set_sound_volume_percent(volume);
                 audio.set_sound_volume_percent(volume);
@@ -282,17 +278,17 @@ impl HotkeysPane {
         self.defaults_button.draw(resources, matrix, enabled);
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
-                        -> Option<PrefsAction> {
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState)
+                    -> Option<PrefsAction> {
         let enabled = !state.prefs().hotkeys_are_defaults();
-        if let Some(()) = self.defaults_button.handle_event(event, enabled) {
+        if let Some(()) = self.defaults_button.on_event(event, enabled) {
             state.prefs_mut().set_hotkeys_to_defaults();
             return None;
         }
 
         let mut listening: Option<Hotkey> = None;
         for hotkey_box in self.hotkey_boxes.iter_mut() {
-            match hotkey_box.handle_event(event) {
+            match hotkey_box.on_event(event) {
                 Some(HotkeyBoxAction::Listening) => {
                     listening = Some(hotkey_box.hotkey());
                 }
@@ -306,7 +302,7 @@ impl HotkeysPane {
         if let Some(hotkey) = listening {
             for hotkey_box in self.hotkey_boxes.iter_mut() {
                 if hotkey_box.hotkey() != hotkey {
-                    hotkey_box.handle_event(&Event::Unfocus);
+                    hotkey_box.on_event(&Event::Unfocus);
                 }
             }
         }
@@ -354,18 +350,18 @@ impl ProfilesPane {
         self.delete_button.draw(resources, matrix, true);
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
-                        -> Option<PrefsAction> {
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState)
+                    -> Option<PrefsAction> {
         let current_profile_name = state.profile().unwrap().name();
         if let Some(profile_name) =
-            self.profile_list.handle_event(event, current_profile_name)
+            self.profile_list.on_event(event, current_profile_name)
         {
             return Some(PrefsAction::SwitchProfile(profile_name));
         }
-        if let Some(action) = self.new_button.handle_event(event, true) {
+        if let Some(action) = self.new_button.on_event(event, true) {
             return Some(action);
         }
-        if let Some(action) = self.delete_button.handle_event(event, true) {
+        if let Some(action) = self.delete_button.on_event(event, true) {
             return Some(action);
         }
         return None;

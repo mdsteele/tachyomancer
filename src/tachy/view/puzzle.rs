@@ -155,33 +155,33 @@ impl PuzzlesView {
         self.copy_button.draw(resources, matrix, true);
     }
 
-    pub fn handle_event(&mut self, event: &Event, state: &mut GameState)
-                        -> Option<PuzzlesAction> {
-        if let Some(puzzle) =
-            self.puzzle_list.handle_event(event, &state.current_puzzle())
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState)
+                    -> Option<PuzzlesAction> {
+        if let Some(puzzle) = self.puzzle_list
+            .on_event(event, &state.current_puzzle())
         {
             state.set_current_puzzle(puzzle);
             self.update_circuit_list(state);
         }
         if let Some(circuit_name) =
-            self.circuit_list.handle_event(event, state.circuit_name())
+            self.circuit_list.on_event(event, state.circuit_name())
         {
             state.set_circuit_name(circuit_name);
         }
         // TODO: edit/delete/rename/copy buttons are not always enabled
-        if let Some(action) = self.edit_button.handle_event(event, true) {
+        if let Some(action) = self.edit_button.on_event(event, true) {
             return Some(action);
         }
-        if let Some(action) = self.new_button.handle_event(event, true) {
+        if let Some(action) = self.new_button.on_event(event, true) {
             return Some(action);
         }
-        if let Some(action) = self.delete_button.handle_event(event, true) {
+        if let Some(action) = self.delete_button.on_event(event, true) {
             return Some(action);
         }
-        if let Some(action) = self.rename_button.handle_event(event, true) {
+        if let Some(action) = self.rename_button.on_event(event, true) {
             return Some(action);
         }
-        if let Some(action) = self.copy_button.handle_event(event, true) {
+        if let Some(action) = self.copy_button.on_event(event, true) {
             return Some(action);
         }
         return None;

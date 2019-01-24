@@ -85,7 +85,7 @@ impl VerificationTray {
         self.subview.draw(resources, matrix, time_step, puzzle_data, errors);
     }
 
-    pub fn handle_event(&mut self, event: &Event) -> bool {
+    pub fn on_event(&mut self, event: &Event) -> bool {
         match event {
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
                 true

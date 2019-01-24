@@ -104,12 +104,12 @@ impl CircuitView {
         }
     }
 
-    pub fn handle_event(&mut self, event: &Event,
-                        (grid, prefs): (&mut EditGrid, &Prefs),
-                        audio: &mut AudioQueue)
-                        -> Option<CircuitAction> {
+    pub fn on_event(&mut self, event: &Event,
+                    (grid, prefs): (&mut EditGrid, &Prefs),
+                    audio: &mut AudioQueue)
+                    -> Option<CircuitAction> {
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
-            match dialog.handle_event(event, is_valid_const) {
+            match dialog.on_event(event, is_valid_const) {
                 Some(Some(text)) => {
                     if let Ok(new_value) = text.parse::<u32>() {
                         if let Some((ChipType::Const(old_value),
@@ -142,7 +142,7 @@ impl CircuitView {
         }
 
         if let Some(mut dialog) = self.victory_dialog.take() {
-            match dialog.handle_event(event) {
+            match dialog.on_event(event) {
                 Some(Some(action)) => return Some(action),
                 Some(None) => {}
                 None => self.victory_dialog = Some(dialog),
@@ -166,7 +166,7 @@ impl CircuitView {
                         }
                     }
                 }
-                action = self.handle_eval_result(result, grid);
+                action = self.on_eval_result(result, grid);
             }
             Event::KeyDown(key) => {
                 if key.command && key.shift && key.code == Keycode::F {
@@ -179,7 +179,7 @@ impl CircuitView {
             _ => {}
         }
 
-        if let Some(opt_action) = self.controls_tray.handle_event(event) {
+        if let Some(opt_action) = self.controls_tray.on_event(event) {
             match opt_action {
                 None => {}
                 Some(ControlsAction::Reset) => {
@@ -212,7 +212,7 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_time();
                     }
-                    action = self.handle_eval_result(result, grid);
+                    action = self.on_eval_result(result, grid);
                 }
                 Some(ControlsAction::StepCycle) => {
                     if grid.eval().is_none() {
@@ -225,7 +225,7 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_cycle();
                     }
-                    action = self.handle_eval_result(result, grid);
+                    action = self.on_eval_result(result, grid);
                 }
                 Some(ControlsAction::StepSubcycle) => {
                     if grid.eval().is_none() {
@@ -238,13 +238,13 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_subcycle();
                     }
-                    action = self.handle_eval_result(result, grid);
+                    action = self.on_eval_result(result, grid);
                 }
             }
             return action;
         }
 
-        let (opt_action, stop) = self.parts_tray.handle_event(event);
+        let (opt_action, stop) = self.parts_tray.on_event(event);
         match opt_action {
             Some(PartsAction::Grab(ctype, pt)) => {
                 self.edit_grid.grab_from_parts_tray(ctype, pt);
@@ -260,12 +260,12 @@ impl CircuitView {
             return action;
         }
 
-        let stop = self.verification_tray.handle_event(event);
+        let stop = self.verification_tray.on_event(event);
         if stop {
             return action;
         }
 
-        match self.edit_grid.handle_event(event, grid, prefs, audio) {
+        match self.edit_grid.on_event(event, grid, prefs, audio) {
             Some(EditGridAction::EditConst(coords, value)) => {
                 let size = RectSize::new(self.width as i32,
                                          self.height as i32);
@@ -280,8 +280,8 @@ impl CircuitView {
         return action;
     }
 
-    fn handle_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid)
-                          -> Option<CircuitAction> {
+    fn on_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid)
+                      -> Option<CircuitAction> {
         let mut action: Option<CircuitAction> = None;
         match result {
             EvalResult::Continue => return None,

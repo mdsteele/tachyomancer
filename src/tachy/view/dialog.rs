@@ -21,7 +21,7 @@ use super::button::{TextBox, TextButton};
 use cgmath::Matrix4;
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
-use tachy::gui::{Event, Resources};
+use tachy::gui::{Event, Keycode, Resources};
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -46,25 +46,27 @@ pub struct ButtonDialogBox<T> {
 }
 
 impl<T: Clone> ButtonDialogBox<T> {
-    pub fn new(window_size: RectSize<i32>, text: &str, buttons: &[(&str, T)])
+    pub fn new(window_size: RectSize<i32>, text: &str,
+               buttons: &[(&str, T, Option<Keycode>)])
                -> ButtonDialogBox<T> {
         let strings: Vec<String> =
             text.split('\n').map(str::to_string).collect();
 
         let mut width = 0;
-        let buttons: Vec<(&str, T, i32, i32)> = buttons
-            .iter()
-            .map(|&(label, ref value)| {
-                let button_width =
+        let buttons: Vec<(&str, T, Option<Keycode>, i32, i32)> =
+            buttons
+                .iter()
+                .map(|&(label, ref value, key)| {
+                    let button_width =
                     BUTTON_MIN_WIDTH
                         .max(string_width(label) + 2 * BUTTON_INNER_MARGIN);
-                if width > 0 {
-                    width += BUTTON_SPACING;
-                }
-                width += button_width;
-                (label, value.clone(), width, button_width)
-            })
-            .collect();
+                    if width > 0 {
+                        width += BUTTON_SPACING;
+                    }
+                    width += button_width;
+                    (label, value.clone(), key, width, button_width)
+                })
+                .collect();
         for string in strings.iter() {
             width = width.max(string_width(string));
         }
@@ -81,13 +83,13 @@ impl<T: Clone> ButtonDialogBox<T> {
 
         let buttons = buttons
             .into_iter()
-            .map(|(label, value, button_offset, button_width)| {
+            .map(|(label, value, key, button_offset, button_width)| {
                      let button_rect = Rect::new(rect.right() - MARGIN -
                                                      button_offset,
                                                  rect.y + button_top,
                                                  button_width,
                                                  BUTTON_HEIGHT);
-                     TextButton::new(button_rect, label, value)
+                     TextButton::new_with_key(button_rect, label, value, key)
                  })
             .collect();
 
@@ -174,14 +176,20 @@ impl TextDialogBox {
                                        rect.y + button_top,
                                        BUTTON_MIN_WIDTH,
                                        BUTTON_HEIGHT);
-        let ok_button = TextButton::new(ok_button_rect, "OK", ());
+        let ok_button = TextButton::new_with_key(ok_button_rect,
+                                                 "OK",
+                                                 (),
+                                                 Some(Keycode::Return));
 
         let cancel_button_rect = Rect::new(ok_button_rect.x - BUTTON_SPACING -
                                                BUTTON_MIN_WIDTH,
                                            rect.y + button_top,
                                            BUTTON_MIN_WIDTH,
                                            BUTTON_HEIGHT);
-        let cancel_button = TextButton::new(cancel_button_rect, "Cancel", ());
+        let cancel_button = TextButton::new_with_key(cancel_button_rect,
+                                                     "Cancel",
+                                                     (),
+                                                     Some(Keycode::Escape));
 
         TextDialogBox {
             rect,

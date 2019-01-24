@@ -24,7 +24,7 @@ use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Resources, Sound};
+use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::GameState;
 use textwrap;
@@ -230,11 +230,11 @@ impl MenuView {
                                                  self.height as i32);
                         let text = format!("Really delete {}?",
                                            state.circuit_name());
-                        let buttons = &[
-                            ("Cancel", None),
-                            ("Delete",
-                             Some(MenuAction::DeleteCircuit)),
-                        ];
+                        let cancel_button =
+                            ("Cancel", None, Some(Keycode::Escape));
+                        let delete_button =
+                            ("Delete", Some(MenuAction::DeleteCircuit), None);
+                        let buttons = &[cancel_button, delete_button];
                         self.confirmation_dialog =
                             Some(ButtonDialogBox::new(size, &text, buttons));
                         return None;
@@ -279,11 +279,11 @@ impl MenuView {
                                             on profile \"{}\"?\n\n\
                                             This cannot be undone!",
                                            state.profile().unwrap().name());
-                        let buttons = &[
-                            ("Cancel", None),
-                            ("Delete",
-                             Some(MenuAction::DeleteProfile)),
-                        ];
+                        let cancel_button =
+                            ("Cancel", None, Some(Keycode::Escape));
+                        let delete_button =
+                            ("Delete", Some(MenuAction::DeleteProfile), None);
+                        let buttons = &[cancel_button, delete_button];
                         self.confirmation_dialog =
                             Some(ButtonDialogBox::new(size, &text, buttons));
                         return None;
@@ -305,7 +305,7 @@ impl MenuView {
         let size = RectSize::new(self.width as i32, self.height as i32);
         let text = format!("ERROR: Unable to {}.\n\n{}", unable, error);
         let text = textwrap::fill(&text, 64);
-        let buttons = &[("OK", None)];
+        let buttons = &[("OK", None, Some(Keycode::Return))];
         let dialog = ButtonDialogBox::new(size, &text, buttons);
         self.confirmation_dialog = Some(dialog);
     }

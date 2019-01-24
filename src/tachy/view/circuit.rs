@@ -305,11 +305,13 @@ impl CircuitView {
                 //   (with this point plotted on it).
                 let text =
                     format!("Victory!\nArea: {}\nScore: {}", area, score);
-                let buttons = &[
-                    ("Continue editing", None),
-                    ("Back to menu",
-                     Some(CircuitAction::BackToMenu)),
-                ];
+                let buttons =
+                    &[
+                        ("Continue editing", None, Some(Keycode::Escape)),
+                        ("Back to menu",
+                         Some(CircuitAction::BackToMenu),
+                         Some(Keycode::Return)),
+                    ];
                 self.victory_dialog =
                     Some(ButtonDialogBox::new(size, &text, buttons));
             }

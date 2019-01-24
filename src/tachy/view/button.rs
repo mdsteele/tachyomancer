@@ -466,15 +466,23 @@ pub struct TextButton<T> {
     rect: Rect<i32>,
     label: String,
     value: T,
+    keycode: Option<Keycode>,
     hovering: bool,
 }
 
 impl<T: Clone> TextButton<T> {
     pub fn new(rect: Rect<i32>, label: &str, value: T) -> TextButton<T> {
+        TextButton::new_with_key(rect, label, value, None)
+    }
+
+    pub fn new_with_key(rect: Rect<i32>, label: &str, value: T,
+                        keycode: Option<Keycode>)
+                        -> TextButton<T> {
         TextButton {
             rect,
             label: label.to_string(),
             value,
+            keycode,
             hovering: false,
         }
     }
@@ -500,10 +508,17 @@ impl<T: Clone> TextButton<T> {
 
     pub fn on_event(&mut self, event: &Event, enabled: bool) -> Option<T> {
         match event {
+            Event::KeyDown(key) => {
+                if enabled && Some(key.code) == self.keycode {
+                    // TODO: play sound
+                    return Some(self.value.clone());
+                }
+            }
             Event::MouseDown(mouse) => {
                 if enabled && mouse.left &&
                     self.rect.contains_point(mouse.pt)
                 {
+                    // TODO: play sound
                     return Some(self.value.clone());
                 }
             }

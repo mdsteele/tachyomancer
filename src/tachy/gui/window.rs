@@ -103,6 +103,10 @@ impl<'a> Window<'a> {
         gui_context
             .video_subsystem
             .gl_set_swap_interval(sdl2::video::SwapInterval::VSync);
+        unsafe {
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        }
         let resources = Resources::new()?;
         Ok(Window {
                gui_context,

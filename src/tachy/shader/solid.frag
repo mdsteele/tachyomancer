@@ -2,8 +2,8 @@
 
 uniform vec3 SolidColor;
 
-out vec3 color;
+out vec4 color;
 
 void main() {
-  color = SolidColor;
+  color = vec4(SolidColor, 1.0);
 }

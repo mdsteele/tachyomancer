@@ -35,6 +35,8 @@ const TRAY_WIDTH: i32 = 200;
 const TABLE_ROW_HEIGHT: i32 = 20;
 const TABLE_FONT_SIZE: f32 = 16.0;
 
+const WHITE_COLOR: (f32, f32, f32) = (1.0, 1.0, 1.0);
+
 //===========================================================================//
 
 pub struct VerificationTray {
@@ -126,12 +128,13 @@ impl PuzzleVerifyView for FabricationTable {
         let row_height = TABLE_ROW_HEIGHT as f32;
         for (index, column_name) in self.columns.iter().enumerate() {
             let font = resources.fonts().roman();
-            font.draw(matrix,
-                      TABLE_FONT_SIZE,
-                      Align::MidCenter,
-                      (rect.x + ((index as f32) + 0.5) * column_width,
-                       rect.y + 0.5 * row_height),
-                      &column_name);
+            font.draw_color(matrix,
+                            TABLE_FONT_SIZE,
+                            Align::MidCenter,
+                            (rect.x + ((index as f32) + 0.5) * column_width,
+                             rect.y + 0.5 * row_height),
+                            WHITE_COLOR,
+                            &column_name);
         }
         let num_columns = self.columns.len();
         let num_rows = values.len() / num_columns;
@@ -159,11 +162,13 @@ impl PuzzleVerifyView for FabricationTable {
                     continue;
                 }
                 let col_center = rect.x + ((col as f32) + 0.5) * column_width;
-                resources.fonts().roman().draw(matrix,
-                                               TABLE_FONT_SIZE,
-                                               Align::MidCenter,
-                                               (col_center, row_center),
-                                               &value.to_string());
+                let font = resources.fonts().roman();
+                font.draw_color(matrix,
+                                TABLE_FONT_SIZE,
+                                Align::MidCenter,
+                                (col_center, row_center),
+                                WHITE_COLOR,
+                                &value.to_string());
             }
         }
     }

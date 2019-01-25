@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, Vector2};
+use cgmath::{Matrix4, Vector2, Vector3};
 use std::rc::Rc;
 use tachy::geom::MatrixExt;
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
@@ -25,6 +25,7 @@ use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
 
 //===========================================================================//
 
+const BLACK_COLOR: (f32, f32, f32) = (0.0, 0.0, 0.0);
 const MAX_CHARS: usize = 64;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -92,9 +93,15 @@ impl Font {
 
     pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, alignment: Align,
                 start: (f32, f32), text: &str) {
+        self.draw_color(matrix, height, alignment, start, BLACK_COLOR, text);
+    }
+
+    pub fn draw_color(&self, matrix: &Matrix4<f32>, height: f32,
+                      alignment: Align, start: (f32, f32),
+                      color: (f32, f32, f32), text: &str) {
         self.texture.bind();
         let size = (self.ratio * height, height);
-        self.shader.draw(matrix, size, alignment, start, text);
+        self.shader.draw(matrix, size, alignment, start, &color.into(), text);
     }
 }
 
@@ -104,6 +111,7 @@ struct TextShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
     text: ShaderUniform<[u32; MAX_CHARS]>,
+    text_color: ShaderUniform<Vector3<f32>>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
 }
@@ -118,6 +126,7 @@ impl TextShader {
         let program = ShaderProgram::new(&[&vert, &frag])?;
         let mvp = program.get_uniform("MVP")?;
         let text = program.get_uniform("Text")?;
+        let text_color = program.get_uniform("TextColor")?;
 
         // Set up vertex data:
         let varray = VertexArray::new(2);
@@ -140,15 +149,18 @@ impl TextShader {
                program,
                mvp,
                text,
+               text_color,
                varray,
                _vbuffer: vbuffer,
            })
     }
 
     fn draw(&self, matrix: &Matrix4<f32>, size: (f32, f32),
-            alignment: Align, start: (f32, f32), text: &str) {
+            alignment: Align, start: (f32, f32), color: &Vector3<f32>,
+            text: &str) {
         self.program.bind();
         self.varray.bind();
+        self.text_color.set(color);
 
         let chars: Vec<u32> = text.chars().map(|c| c as u32).collect();
         let num_chars = chars.len();

@@ -282,7 +282,14 @@ impl EditGrid {
                 return false;
             }
         }
-        // TODO: Also check wires.
+        for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
+            if !bounds.contains_point(coords) &&
+                (shape != WireShape::Stub ||
+                     !bounds.contains_point(coords + dir))
+            {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -918,5 +925,9 @@ fn key_string_location(key: &str) -> Option<(Coords, Direction)> {
         None
     }
 }
+
+//===========================================================================//
+
+// TODO: Tests for to/from_circuit_data.  Make sure we enforce bounds.
 
 //===========================================================================//

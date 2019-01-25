@@ -118,20 +118,18 @@ impl CircuitView {
                         {
                             let old_ctype = ChipType::Const(old_value);
                             let new_ctype = ChipType::Const(new_value);
-                            grid.mutate(
-                                &[
-                                    GridChange::ToggleChip(
-                                        coords,
-                                        orient,
-                                        old_ctype,
-                                    ),
-                                    GridChange::ToggleChip(
-                                        coords,
-                                        orient,
-                                        new_ctype,
-                                    ),
-                                ],
-                            );
+                            grid.mutate(vec![
+                                GridChange::ToggleChip(
+                                    coords,
+                                    orient,
+                                    old_ctype
+                                ),
+                                GridChange::ToggleChip(
+                                    coords,
+                                    orient,
+                                    new_ctype
+                                ),
+                            ]);
                         }
                     }
                 }

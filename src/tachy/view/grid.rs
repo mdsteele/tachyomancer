@@ -24,7 +24,7 @@ use num_integer::{div_floor, mod_floor};
 use std::u32;
 use tachy::geom::{Coords, CoordsRect, Direction, MatrixExt, Orientation,
                   Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Resources, Sound};
+use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::{Hotkey, Prefs, WireShape};
 use tachy::state::{ChipType, EditGrid, GridChange};
 
@@ -204,32 +204,40 @@ impl EditGridView {
                     prefs: &Prefs, audio: &mut AudioQueue)
                     -> Option<EditGridAction> {
         match event {
-            Event::KeyDown(key) if !key.command && !key.shift => {
-                match prefs.hotkey_for_code(key.code) {
-                    Some(Hotkey::ScrollUp) => {
-                        self.scroll.y -= SCROLL_PER_KEYDOWN
+            Event::KeyDown(key) => {
+                if key.command {
+                    match key.code {
+                        Keycode::Z if key.shift => grid.redo(),
+                        Keycode::Z => grid.undo(),
+                        _ => {}
                     }
-                    Some(Hotkey::ScrollDown) => {
-                        self.scroll.y += SCROLL_PER_KEYDOWN
-                    }
-                    Some(Hotkey::ScrollLeft) => {
-                        self.scroll.x -= SCROLL_PER_KEYDOWN
-                    }
-                    Some(Hotkey::ScrollRight) => {
-                        self.scroll.x += SCROLL_PER_KEYDOWN
-                    }
-                    Some(hotkey) => {
-                        if let Some(ref mut drag) = self.chip_drag {
-                            match hotkey {
-                                Hotkey::FlipHorz => drag.flip_horz(),
-                                Hotkey::FlipVert => drag.flip_vert(),
-                                Hotkey::RotateCcw => drag.rotate_ccw(),
-                                Hotkey::RotateCw => drag.rotate_cw(),
-                                _ => {}
+                } else {
+                    match prefs.hotkey_for_code(key.code) {
+                        Some(Hotkey::ScrollUp) => {
+                            self.scroll.y -= SCROLL_PER_KEYDOWN
+                        }
+                        Some(Hotkey::ScrollDown) => {
+                            self.scroll.y += SCROLL_PER_KEYDOWN
+                        }
+                        Some(Hotkey::ScrollLeft) => {
+                            self.scroll.x -= SCROLL_PER_KEYDOWN
+                        }
+                        Some(Hotkey::ScrollRight) => {
+                            self.scroll.x += SCROLL_PER_KEYDOWN
+                        }
+                        Some(hotkey) => {
+                            if let Some(ref mut drag) = self.chip_drag {
+                                match hotkey {
+                                    Hotkey::FlipHorz => drag.flip_horz(),
+                                    Hotkey::FlipVert => drag.flip_vert(),
+                                    Hotkey::RotateCcw => drag.rotate_ccw(),
+                                    Hotkey::RotateCw => drag.rotate_cw(),
+                                    _ => {}
+                                }
                             }
                         }
+                        None => {}
                     }
-                    None => {}
                 }
             }
             Event::MouseDown(mouse) => {
@@ -288,7 +296,7 @@ impl EditGridView {
                              grid.wire_shape_at(coords, Direction::South) ==
                                  Some(WireShape::Straight))
                     {
-                        grid.mutate(&[GridChange::ToggleCrossWire(coords)]);
+                        grid.mutate(vec![GridChange::ToggleCrossWire(coords)]);
                     }
                 }
             }
@@ -498,7 +506,7 @@ impl BoundsDrag {
         debug_assert_eq!(self.acceptable, grid.can_have_bounds(self.bounds));
         if self.acceptable {
             let old_bounds = grid.bounds();
-            grid.mutate(&[GridChange::SwapBounds(old_bounds, self.bounds)]);
+            grid.mutate(vec![GridChange::SwapBounds(old_bounds, self.bounds)]);
         }
     }
 }
@@ -570,21 +578,19 @@ impl ChipDrag {
                                                 self.reorient *
                                                     self.old_orient,
                                                 self.chip_type));
-            grid.mutate(&changes);
+            grid.mutate(changes);
         }
     }
 
     pub fn drop_into_parts_tray(self, grid: &mut EditGrid) {
         if let Some(old_coords) = self.old_coords {
-            grid.mutate(
-                &[
-                    GridChange::ToggleChip(
-                        old_coords,
-                        self.old_orient,
-                        self.chip_type,
-                    ),
-                ],
-            );
+            grid.mutate(vec![
+                GridChange::ToggleChip(
+                    old_coords,
+                    self.old_orient,
+                    self.chip_type
+                ),
+            ]);
         }
     }
 }
@@ -731,7 +737,7 @@ impl WireDrag {
         match (grid.wire_shape_at(coords, dir),
                  grid.wire_shape_at(coords + dir, -dir)) {
             (None, _) => {
-                grid.mutate(&[GridChange::ToggleStubWire(coords, dir)]);
+                grid.mutate(vec![GridChange::ToggleStubWire(coords, dir)]);
                 self.changed = true;
                 true
             }
@@ -746,7 +752,7 @@ impl WireDrag {
         match (grid.wire_shape_at(coords, dir),
                  grid.wire_shape_at(coords + dir, -dir)) {
             (Some(WireShape::Stub), Some(WireShape::Stub)) => {
-                grid.mutate(&[GridChange::ToggleStubWire(coords, dir)]);
+                grid.mutate(vec![GridChange::ToggleStubWire(coords, dir)]);
                 self.changed = true;
             }
             (_, _) => {}
@@ -758,7 +764,7 @@ impl WireDrag {
                  grid.wire_shape_at(coords, Direction::South)) {
             (Some(WireShape::Straight), Some(WireShape::Straight)) |
             (Some(WireShape::Cross), _) => {
-                grid.mutate(&[GridChange::ToggleCrossWire(coords)]);
+                grid.mutate(vec![GridChange::ToggleCrossWire(coords)]);
                 self.changed = true;
             }
             (_, _) => {}
@@ -771,18 +777,16 @@ impl WireDrag {
         match (grid.wire_shape_at(coords, dir),
                  grid.wire_shape_at(coords, -dir)) {
             (None, Some(WireShape::Stub)) => {
-                grid.mutate(
-                    &[
-                        GridChange::ToggleStubWire(coords, dir),
-                        GridChange::ToggleCenterWire(coords, dir, -dir),
-                    ],
-                );
+                grid.mutate(vec![
+                    GridChange::ToggleStubWire(coords, dir),
+                    GridChange::ToggleCenterWire(coords, dir, -dir),
+                ]);
                 self.changed = true;
                 true
             }
             (Some(WireShape::Stub), Some(WireShape::Stub)) => {
                 grid.mutate(
-                    &[GridChange::ToggleCenterWire(coords, dir, -dir)],
+                    vec![GridChange::ToggleCenterWire(coords, dir, -dir)],
                 );
                 self.changed = true;
                 true
@@ -791,15 +795,13 @@ impl WireDrag {
                 if grid.wire_shape_at(coords - dir, dir) ==
                     Some(WireShape::Stub)
                 {
-                    grid.mutate(
-                        &[
-                            GridChange::ToggleCenterWire(coords, dir, -dir),
-                            GridChange::ToggleStubWire(coords, -dir),
-                        ],
-                    );
+                    grid.mutate(vec![
+                        GridChange::ToggleCenterWire(coords, dir, -dir),
+                        GridChange::ToggleStubWire(coords, -dir),
+                    ]);
                 } else {
                     grid.mutate(
-                        &[GridChange::ToggleCenterWire(coords, dir, -dir)],
+                        vec![GridChange::ToggleCenterWire(coords, dir, -dir)],
                     );
                 }
                 self.changed = true;
@@ -817,34 +819,30 @@ impl WireDrag {
                  grid.wire_shape_at(coords, dir2)) {
             (Some(WireShape::Stub), Some(WireShape::Stub)) => {
                 grid.mutate(
-                    &[GridChange::ToggleCenterWire(coords, dir, dir2)],
+                    vec![GridChange::ToggleCenterWire(coords, dir, dir2)],
                 );
                 self.changed = true;
                 true
             }
             (Some(WireShape::Stub), None) => {
-                grid.mutate(
-                    &[
-                        GridChange::ToggleStubWire(coords, dir2),
-                        GridChange::ToggleCenterWire(coords, dir, dir2),
-                    ],
-                );
+                grid.mutate(vec![
+                    GridChange::ToggleStubWire(coords, dir2),
+                    GridChange::ToggleCenterWire(coords, dir, dir2),
+                ]);
                 self.changed = true;
                 true
             }
             (None, Some(WireShape::Stub)) => {
-                grid.mutate(
-                    &[
-                        GridChange::ToggleStubWire(coords, dir),
-                        GridChange::ToggleCenterWire(coords, dir, dir2),
-                    ],
-                );
+                grid.mutate(vec![
+                    GridChange::ToggleStubWire(coords, dir),
+                    GridChange::ToggleCenterWire(coords, dir, dir2),
+                ]);
                 self.changed = true;
                 true
             }
             (Some(WireShape::TurnLeft), Some(WireShape::TurnRight)) => {
                 grid.mutate(
-                    &[GridChange::ToggleCenterWire(coords, dir, dir2)],
+                    vec![GridChange::ToggleCenterWire(coords, dir, dir2)],
                 );
                 self.changed = true;
                 true
@@ -867,7 +865,7 @@ impl WireDrag {
             (Some(WireShape::Stub), Some(WireShape::TurnRight), _) |
             (Some(WireShape::Stub), Some(WireShape::SplitTee), _) |
             (Some(WireShape::Stub), _, Some(WireShape::Straight)) => {
-                grid.mutate(&[GridChange::ToggleSplitWire(coords, dir)]);
+                grid.mutate(vec![GridChange::ToggleSplitWire(coords, dir)]);
                 self.changed = true;
                 true
             }
@@ -875,12 +873,10 @@ impl WireDrag {
             (None, Some(WireShape::TurnRight), _) |
             (None, Some(WireShape::SplitTee), _) |
             (None, _, Some(WireShape::Straight)) => {
-                grid.mutate(
-                    &[
-                        GridChange::ToggleStubWire(coords, dir),
-                        GridChange::ToggleSplitWire(coords, dir),
-                    ],
-                );
+                grid.mutate(vec![
+                    GridChange::ToggleStubWire(coords, dir),
+                    GridChange::ToggleSplitWire(coords, dir),
+                ]);
                 self.changed = true;
                 true
             }

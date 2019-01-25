@@ -75,6 +75,8 @@ pub struct EditGrid {
     wire_groups: Vec<Vec<usize>>,
     errors: Vec<WireError>,
     eval: Option<CircuitEval>,
+    undo_stack: Vec<Vec<GridChange>>,
+    redo_stack: Vec<Vec<GridChange>>,
     modified: bool,
 }
 
@@ -91,6 +93,8 @@ impl EditGrid {
             wire_groups: Vec::new(),
             errors: Vec::new(),
             eval: None,
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
             modified: false,
         };
         grid.typecheck_wires();
@@ -112,6 +116,8 @@ impl EditGrid {
             wire_groups: Vec::new(),
             errors: Vec::new(),
             eval: None,
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
             modified: false,
         };
 
@@ -352,10 +358,36 @@ impl EditGrid {
         return true;
     }
 
-    pub fn mutate(&mut self, changes: &[GridChange]) {
-        for change in changes {
+    pub fn undo(&mut self) {
+        if let Some(changes) = self.undo_stack.pop() {
+            for change in changes.iter().rev() {
+                self.mutate_one(change);
+            }
+            self.redo_stack.push(changes);
+            self.typecheck_wires();
+            self.modified = true;
+        }
+    }
+
+    pub fn redo(&mut self) {
+        if let Some(changes) = self.redo_stack.pop() {
+            for change in changes.iter() {
+                self.mutate_one(change);
+            }
+            self.undo_stack.push(changes);
+            self.typecheck_wires();
+            self.modified = true;
+        }
+    }
+
+    pub fn mutate(&mut self, changes: Vec<GridChange>) {
+        for change in changes.iter() {
             self.mutate_one(change);
         }
+        self.redo_stack.clear();
+        // TODO: When dragging to create a multi-fragment wire, allow undoing
+        //   the whole wire at once (instead of one visible change at a time).
+        self.undo_stack.push(changes);
         self.typecheck_wires();
         self.modified = true;
     }

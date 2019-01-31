@@ -17,6 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod enums;
+
+pub use self::enums::{Align, Font};
 use cgmath::{Matrix4, Vector2, Vector3};
 use std::rc::Rc;
 use tachy::geom::MatrixExt;
@@ -37,57 +40,49 @@ const CHAR_VERTICES: &[(u8, u8)] = &[
 const TEXT_VERT_CODE: &[u8] = include_bytes!("text.vert");
 const TEXT_FRAG_CODE: &[u8] = include_bytes!("text.frag");
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
-const INCONSOLATA_PNG_DATA: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata.png"));
-
-// ========================================================================= //
-
-#[derive(Clone, Copy)]
-pub enum Align {
-    TopLeft,
-    MidLeft,
-    TopCenter,
-    MidCenter,
-    BottomCenter,
-    TopRight,
-    MidRight,
-}
-
 //===========================================================================//
 
 pub struct Fonts {
-    roman: Font,
+    alien: FontData,
+    roman: FontData,
 }
 
 impl Fonts {
     pub fn new() -> Result<Fonts, String> {
         let shader = Rc::new(TextShader::new()?);
-        let roman =
-            Font::new("font/inconsolata", INCONSOLATA_PNG_DATA, 0.5, &shader)?;
-        Ok(Fonts { roman })
+        let alien = FontData::new(Font::Alien, &shader)?;
+        let roman = FontData::new(Font::Roman, &shader)?;
+        Ok(Fonts { alien, roman })
     }
 
-    pub fn roman(&self) -> &Font { &self.roman }
+    pub fn get(&self, font: Font) -> &FontData {
+        match font {
+            Font::Alien => self.alien(),
+            Font::Roman => self.roman(),
+        }
+    }
+
+    pub fn alien(&self) -> &FontData { &self.alien }
+
+    pub fn roman(&self) -> &FontData { &self.roman }
 }
 
 //===========================================================================//
 
-pub struct Font {
+pub struct FontData {
     shader: Rc<TextShader>,
     texture: Texture2D,
     ratio: f32,
 }
 
-impl Font {
-    fn new(png_name: &str, png_data: &[u8], ratio: f32,
-           shader: &Rc<TextShader>)
-           -> Result<Font, String> {
+impl FontData {
+    fn new(font: Font, shader: &Rc<TextShader>) -> Result<FontData, String> {
+        let (png_name, png_data) = font.png_name_and_data();
         let texture = Texture2D::from_png(png_name, png_data)?;
-        Ok(Font {
+        Ok(FontData {
                shader: shader.clone(),
                texture,
-               ratio,
+               ratio: font.ratio(),
            })
     }
 

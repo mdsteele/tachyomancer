@@ -27,6 +27,7 @@ mod dialog;
 mod grid;
 mod list;
 mod menu;
+mod paragraph;
 mod parts;
 mod prefs;
 mod puzzle;

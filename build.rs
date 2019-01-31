@@ -32,6 +32,7 @@ use std::time::SystemTime;
 
 fn main() {
     let converter = Converter::new();
+    converter.font_to_texture("galactico");
     converter.font_to_texture("inconsolata");
     converter.generate_chip_icons();
 }

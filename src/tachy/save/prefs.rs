@@ -163,6 +163,15 @@ impl Prefs {
             self.needs_save = true;
         }
     }
+
+    #[cfg(test)]
+    pub fn for_testing() -> Prefs {
+        Prefs {
+            path: std::env::temp_dir(),
+            data: PrefsData::default(),
+            needs_save: false,
+        }
+    }
 }
 
 //===========================================================================//

@@ -19,16 +19,14 @@
 
 use super::button::TextButton;
 use super::list::ListView;
+use super::paragraph::Paragraph;
 use cgmath::{Deg, Matrix4};
-use num_integer::div_floor;
-use std::borrow::Cow;
 use std::cell::RefCell;
 use tachy::font::Align;
 use tachy::geom::{MatrixExt, Rect};
 use tachy::gui::{Event, Resources};
-use tachy::save::Puzzle;
+use tachy::save::{Prefs, Puzzle};
 use tachy::state::GameState;
-use textwrap;
 
 //===========================================================================//
 
@@ -143,7 +141,7 @@ impl PuzzlesView {
                 state: &GameState) {
         let puzzle = state.current_puzzle();
         self.puzzle_list.draw(resources, matrix, &puzzle);
-        self.description.draw(resources, matrix, puzzle);
+        self.description.draw(resources, matrix, puzzle, state.prefs());
         let scores = state.puzzle_scores(puzzle);
         self.graph.draw(resources, matrix, puzzle, scores);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
@@ -226,7 +224,7 @@ fn puzzle_list_items(state: &GameState) -> Vec<(Puzzle, String)> {
 
 struct DescriptionView {
     rect: Rect<i32>,
-    cache: RefCell<Option<(Puzzle, Vec<String>)>>,
+    cache: RefCell<Option<(Puzzle, Paragraph)>>,
 }
 
 impl DescriptionView {
@@ -238,42 +236,36 @@ impl DescriptionView {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                puzzle: Puzzle) {
+                puzzle: Puzzle, prefs: &Prefs) {
         let color = (0.1, 0.1, 0.3);
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
 
         let mut cached = self.cache.borrow_mut();
         match cached.as_ref() {
-            Some(&(puzz, ref strings)) if puzz == puzzle => {
-                self.draw_strings(resources, matrix, strings);
+            Some(&(puzz, ref paragraph)) if puzz == puzzle => {
+                self.draw_text(resources, matrix, paragraph);
                 return;
             }
             _ => {}
         }
-        let num_cols = div_floor(self.rect.width -
-                                     2 * DESCRIPTION_INNER_MARGIN,
-                                 (0.5 * DESCRIPTION_FONT_SIZE) as i32)
-            .max(1) as usize;
-        let strings = textwrap::wrap_iter(puzzle.description(), num_cols)
-            .map(Cow::into_owned)
-            .collect::<Vec<String>>();
-        self.draw_strings(resources, matrix, &strings);
-        *cached = Some((puzzle, strings));
+
+        debug_log!("Recompiling description paragraph");
+        let width = (self.rect.width - 2 * DESCRIPTION_INNER_MARGIN) as f32;
+        let paragraph = Paragraph::compile(DESCRIPTION_FONT_SIZE,
+                                           DESCRIPTION_LINE_HEIGHT,
+                                           width,
+                                           prefs,
+                                           puzzle.description());
+        self.draw_text(resources, matrix, &paragraph);
+        *cached = Some((puzzle, paragraph));
     }
 
-    fn draw_strings(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                    strings: &[String]) {
+    fn draw_text(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                 paragraph: &Paragraph) {
         let left = (self.rect.x + DESCRIPTION_INNER_MARGIN) as f32;
-        let mut top = (self.rect.y + DESCRIPTION_INNER_MARGIN) as f32;
-        for string in strings.iter() {
-            resources.fonts().roman().draw(matrix,
-                                           DESCRIPTION_FONT_SIZE,
-                                           Align::TopLeft,
-                                           (left, top),
-                                           string);
-            top += DESCRIPTION_LINE_HEIGHT;
-        }
+        let top = (self.rect.y + DESCRIPTION_INNER_MARGIN) as f32;
+        paragraph.draw(resources, matrix, (left, top));
     }
 }
 

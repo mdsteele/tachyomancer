@@ -1,0 +1,10 @@
+name = "Galactico Basic"
+artist = "Don Marciano"
+license = "Freeware"
+year = 2018
+url = "http://hellodonmarciano.com/v2/project/galactico/"
+comments = """
+This file falls under 'Free Asset' section of license file.  This file was
+modified from the original by converting from OTF to TTF using
+https://everythingfonts.com/otf-to-ttf
+"""

@@ -237,7 +237,7 @@ impl DescriptionView {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 puzzle: Puzzle, prefs: &Prefs) {
-        let color = (0.1, 0.1, 0.3);
+        let color = (0.7, 0.7, 0.9);
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
 

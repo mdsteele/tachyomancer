@@ -82,10 +82,10 @@ impl Puzzle {
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
-                        Tutorial: Build a 1-bit OR gate out of AND and NOT \
-                        gates.\n\n\
-                        Once this task is completed, you will be able to use \
-                        OR gates in future tasks.",
+                        Tutorial: Build a 1-bit $*OR$* gate out of $*AND$* \
+                        and $*NOT$* gates.\n\n\
+                        Once $/this$/ task is completed, you will be able to \
+                        use $*OR$* gates in future tasks.",
                     instructions: "\
                         Create a circuit that outputs 1 if at least one of \
                         the two inputs is 1, or 0 if both inputs are 0.",

@@ -147,17 +147,19 @@ struct CompiledPiece {
     offset: f32,
     font: Font,
     color: (f32, f32, f32),
+    slant: f32,
     text: String,
 }
 
 impl CompiledPiece {
     fn draw(&self, fonts: &Fonts, matrix: &Matrix4<f32>, font_size: f32,
             left: f32, top: f32) {
-        fonts.get(self.font).draw_color(matrix,
+        fonts.get(self.font).draw_style(matrix,
                                         font_size,
                                         Align::TopLeft,
                                         (left + self.offset, top),
                                         self.color,
+                                        self.slant,
                                         &self.text);
     }
 }
@@ -166,7 +168,6 @@ impl CompiledPiece {
 
 struct Parser {
     current_align: ParserAlign,
-    current_bold: bool,
     current_color: (f32, f32, f32),
     current_font: Font,
     current_italic: bool,
@@ -179,7 +180,6 @@ impl Parser {
     fn new() -> Parser {
         Parser {
             current_align: ParserAlign::Left,
-            current_bold: false,
             current_color: (0.0, 0.0, 0.0),
             current_font: Font::Roman,
             current_italic: false,
@@ -235,16 +235,27 @@ impl Parser {
         }
     }
 
-    fn toggle_bold(&mut self) { self.current_bold = !self.current_bold; }
+    fn toggle_bold(&mut self) {
+        let next_font = match self.current_font {
+            Font::Bold => Font::Roman,
+            Font::Roman => Font::Bold,
+            _ => return,
+        };
+        self.shift_piece();
+        self.current_font = next_font;
+    }
 
-    fn toggle_italic(&mut self) { self.current_italic = !self.current_italic; }
+    fn toggle_italic(&mut self) {
+        self.shift_piece();
+        self.current_italic = !self.current_italic;
+    }
 
     fn shift_piece(&mut self) {
         if !self.current_piece.is_empty() {
-            // TODO: Use current_bold and current_italic
             let piece = ParserPiece {
                 font: self.current_font,
                 color: self.current_color,
+                slant: if self.current_italic { 0.5 } else { 0.0 },
                 text: mem::replace(&mut self.current_piece, String::new()),
             };
             let pieces = match self.current_align {
@@ -409,6 +420,7 @@ impl ParserLine {
 struct ParserPiece {
     font: Font,
     color: (f32, f32, f32),
+    slant: f32,
     text: String,
 }
 
@@ -443,6 +455,7 @@ impl ParserPiece {
             let rest = ParserPiece {
                 font: self.font,
                 color: self.color,
+                slant: self.slant,
                 text: self.text[index..].trim_start().to_string(),
             };
             self.text.truncate(index);
@@ -461,6 +474,7 @@ impl ParserPiece {
             let rest = ParserPiece {
                 font: self.font,
                 color: self.color,
+                slant: self.slant,
                 text: self.text[index..].trim_start().to_string(),
             };
             self.text.truncate(index);
@@ -474,6 +488,7 @@ impl ParserPiece {
             offset,
             font: self.font,
             color: self.color,
+            slant: self.slant,
             text: self.text,
         }
     }

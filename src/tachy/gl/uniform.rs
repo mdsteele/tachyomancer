@@ -50,6 +50,15 @@ pub trait UniformValue {
     fn set_uniform(&self, loc: GLint);
 }
 
+impl UniformValue for f32 {
+    fn gl_type() -> GLenum { gl::FLOAT }
+    fn set_uniform(&self, loc: GLint) {
+        unsafe {
+            gl::Uniform1f(loc, *self);
+        }
+    }
+}
+
 impl UniformValue for Matrix4<f32> {
     fn gl_type() -> GLenum { gl::FLOAT_MAT4 }
     fn set_uniform(&self, loc: GLint) {

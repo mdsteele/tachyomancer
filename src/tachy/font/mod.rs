@@ -44,6 +44,7 @@ const TEXT_FRAG_CODE: &[u8] = include_bytes!("text.frag");
 
 pub struct Fonts {
     alien: FontData,
+    bold: FontData,
     roman: FontData,
 }
 
@@ -51,18 +52,22 @@ impl Fonts {
     pub fn new() -> Result<Fonts, String> {
         let shader = Rc::new(TextShader::new()?);
         let alien = FontData::new(Font::Alien, &shader)?;
+        let bold = FontData::new(Font::Bold, &shader)?;
         let roman = FontData::new(Font::Roman, &shader)?;
-        Ok(Fonts { alien, roman })
+        Ok(Fonts { alien, bold, roman })
     }
 
     pub fn get(&self, font: Font) -> &FontData {
         match font {
             Font::Alien => self.alien(),
+            Font::Bold => self.bold(),
             Font::Roman => self.roman(),
         }
     }
 
     pub fn alien(&self) -> &FontData { &self.alien }
+
+    pub fn bold(&self) -> &FontData { &self.bold }
 
     pub fn roman(&self) -> &FontData { &self.roman }
 }
@@ -88,15 +93,22 @@ impl FontData {
 
     pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, alignment: Align,
                 start: (f32, f32), text: &str) {
-        self.draw_color(matrix, height, alignment, start, BLACK_COLOR, text);
+        self.draw_style(matrix,
+                        height,
+                        alignment,
+                        start,
+                        BLACK_COLOR,
+                        0.0,
+                        text);
     }
 
-    pub fn draw_color(&self, matrix: &Matrix4<f32>, height: f32,
+    pub fn draw_style(&self, matrix: &Matrix4<f32>, height: f32,
                       alignment: Align, start: (f32, f32),
-                      color: (f32, f32, f32), text: &str) {
+                      color: (f32, f32, f32), slant: f32, text: &str) {
         self.texture.bind();
         let size = (self.ratio * height, height);
-        self.shader.draw(matrix, size, alignment, start, &color.into(), text);
+        self.shader
+            .draw(matrix, size, alignment, start, &color.into(), slant, text);
     }
 }
 
@@ -104,9 +116,10 @@ impl FontData {
 
 struct TextShader {
     program: ShaderProgram,
+    color: ShaderUniform<Vector3<f32>>,
     mvp: ShaderUniform<Matrix4<f32>>,
     text: ShaderUniform<[u32; MAX_CHARS]>,
-    text_color: ShaderUniform<Vector3<f32>>,
+    slant: ShaderUniform<f32>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
 }
@@ -119,9 +132,10 @@ impl TextShader {
         let frag =
             Shader::new(ShaderType::Fragment, "text.frag", TEXT_FRAG_CODE)?;
         let program = ShaderProgram::new(&[&vert, &frag])?;
+        let color = program.get_uniform("Color")?;
         let mvp = program.get_uniform("MVP")?;
         let text = program.get_uniform("Text")?;
-        let text_color = program.get_uniform("TextColor")?;
+        let slant = program.get_uniform("Slant")?;
 
         // Set up vertex data:
         let varray = VertexArray::new(2);
@@ -140,22 +154,25 @@ impl TextShader {
         vbuffer.attribi(0, 2, 3, 0);
         vbuffer.attribi(1, 1, 3, 2);
 
-        Ok(TextShader {
-               program,
-               mvp,
-               text,
-               text_color,
-               varray,
-               _vbuffer: vbuffer,
-           })
+        let shader = TextShader {
+            program,
+            color,
+            mvp,
+            text,
+            slant,
+            varray,
+            _vbuffer: vbuffer,
+        };
+        Ok(shader)
     }
 
     fn draw(&self, matrix: &Matrix4<f32>, size: (f32, f32),
             alignment: Align, start: (f32, f32), color: &Vector3<f32>,
-            text: &str) {
+            slant: f32, text: &str) {
         self.program.bind();
         self.varray.bind();
-        self.text_color.set(color);
+        self.color.set(color);
+        self.slant.set(&slant);
 
         let chars: Vec<u32> = text.chars().map(|c| c as u32).collect();
         let num_chars = chars.len();

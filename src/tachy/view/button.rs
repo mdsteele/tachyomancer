@@ -498,12 +498,12 @@ impl<T: Clone> TextButton<T> {
         };
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
-        resources.fonts().roman().draw(&matrix,
-                                       TEXT_BUTTON_FONT_SIZE,
-                                       Align::MidCenter,
-                                       (rect.x + 0.5 * rect.width,
-                                        rect.y + 0.5 * rect.height),
-                                       &self.label);
+        resources.fonts().bold().draw(&matrix,
+                                      TEXT_BUTTON_FONT_SIZE,
+                                      Align::MidCenter,
+                                      (rect.x + 0.5 * rect.width,
+                                       rect.y + 0.5 * rect.height),
+                                      &self.label);
     }
 
     pub fn on_event(&mut self, event: &Event, enabled: bool) -> Option<T> {

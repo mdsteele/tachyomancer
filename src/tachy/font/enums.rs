@@ -25,8 +25,11 @@ use std::str::FromStr;
 const GALACTICO_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/font/galactico.png"));
 #[cfg_attr(rustfmt, rustfmt_skip)]
-const INCONSOLATA_PNG_DATA: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata.png"));
+const INCONSOLATA_BOLD_PNG_DATA: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata-bold.png"));
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const INCONSOLATA_REGULAR_PNG_DATA: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata-regular.png"));
 
 //===========================================================================//
 
@@ -46,6 +49,7 @@ pub enum Align {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Font {
     Alien,
+    Bold,
     Roman,
 }
 
@@ -53,6 +57,7 @@ impl Font {
     pub fn ratio(self) -> f32 {
         match self {
             Font::Alien => 0.7,
+            Font::Bold => 0.5,
             Font::Roman => 0.5,
         }
     }
@@ -60,7 +65,12 @@ impl Font {
     pub(super) fn png_name_and_data(self) -> (&'static str, &'static [u8]) {
         match self {
             Font::Alien => ("font/galactico", GALACTICO_PNG_DATA),
-            Font::Roman => ("font/inconsolata", INCONSOLATA_PNG_DATA),
+            Font::Bold => {
+                ("font/inconsolata-boldr", INCONSOLATA_BOLD_PNG_DATA)
+            }
+            Font::Roman => {
+                ("font/inconsolata-regular", INCONSOLATA_REGULAR_PNG_DATA)
+            }
         }
     }
 }
@@ -70,6 +80,7 @@ impl FromStr for Font {
     fn from_str(string: &str) -> Result<Font, ()> {
         match string {
             "Alien" => Ok(Font::Alien),
+            "Bold" => Ok(Font::Bold),
             "Roman" => Ok(Font::Roman),
             _ => Err(()),
         }
@@ -85,7 +96,7 @@ mod tests {
 
     #[test]
     fn font_from_str_round_trip() {
-        for &font in &[Font::Alien, Font::Roman] {
+        for &font in &[Font::Alien, Font::Bold, Font::Roman] {
             assert_eq!(Font::from_str(&format!("{:?}", font)), Ok(font));
         }
     }

@@ -72,7 +72,7 @@ pub struct MenuView {
 }
 
 impl MenuView {
-    pub fn new(window_size: RectSize<u32>, state: &GameState) -> MenuView {
+    pub fn new(window_size: RectSize<i32>, state: &GameState) -> MenuView {
         let section_buttons = vec![
             SectionButton::new(window_size,
                                0,
@@ -350,11 +350,10 @@ struct SectionButton {
 }
 
 impl SectionButton {
-    fn new(window_size: RectSize<u32>, index: i32, label: &'static str,
+    fn new(window_size: RectSize<i32>, index: i32, label: &'static str,
            section: MenuSection)
            -> SectionButton {
-        let width = ((window_size.width as i32) -
-                         2 * SECTION_BUTTON_MARGIN_HORZ -
+        let width = (window_size.width - 2 * SECTION_BUTTON_MARGIN_HORZ -
                          3 * SECTION_BUTTON_SPACING) / 4;
         let left = SECTION_BUTTON_MARGIN_HORZ +
             index * (width + SECTION_BUTTON_SPACING);

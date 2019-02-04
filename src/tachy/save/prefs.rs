@@ -21,6 +21,7 @@ use super::hotkey::{Hotkey, HotkeyCodes, Keycode};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use tachy::geom::RectSize;
 use toml;
 
 //===========================================================================//
@@ -34,7 +35,7 @@ struct PrefsData {
     antialiasing: Option<bool>,
     current_profile: Option<String>,
     fullscreen: Option<bool>,
-    resolution: Option<(u32, u32)>,
+    resolution: Option<(i32, i32)>,
     sound_volume: Option<i32>,
     hotkeys: Option<HotkeyCodes>,
 }
@@ -113,7 +114,9 @@ impl Prefs {
 
     pub fn fullscreen(&self) -> bool { self.data.fullscreen.unwrap_or(true) }
 
-    pub fn resolution(&self) -> Option<(u32, u32)> { self.data.resolution }
+    pub fn resolution(&self) -> Option<RectSize<i32>> {
+        self.data.resolution.map(|tuple| tuple.into())
+    }
 
     pub fn sound_volume_percent(&self) -> i32 {
         self.data

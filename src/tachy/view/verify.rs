@@ -46,15 +46,15 @@ pub struct VerificationTray {
 }
 
 impl VerificationTray {
-    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle)
+    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
                -> VerificationTray {
         let rect = if current_puzzle.kind() == PuzzleKind::Sandbox {
-            Rect::new(window_size.width as i32, 0, 0, 0)
+            Rect::new(window_size.width, 0, 0, 0)
         } else {
-            Rect::new(window_size.width as i32 - TRAY_WIDTH,
+            Rect::new(window_size.width - TRAY_WIDTH,
                       TRAY_OUTER_MARGIN,
                       TRAY_WIDTH,
-                      (window_size.height as i32) - 2 * TRAY_OUTER_MARGIN)
+                      window_size.height - 2 * TRAY_OUTER_MARGIN)
         };
         let inner_rect = Rect::new(rect.x + TRAY_INNER_MARGIN,
                                    rect.y + TRAY_INNER_MARGIN,

@@ -27,7 +27,7 @@ use tachy::view::{MenuAction, MenuView};
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
-    let mut view = MenuView::new(window.size().into(), state);
+    let mut view = MenuView::new(window.size(), state);
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
     loop {

@@ -55,12 +55,12 @@ pub struct EditGridView {
 }
 
 impl EditGridView {
-    pub fn new(window_size: RectSize<u32>) -> EditGridView {
+    pub fn new(window_size: RectSize<i32>) -> EditGridView {
         EditGridView {
             width: window_size.width as f32,
             height: window_size.height as f32,
-            scroll: Vector2::new(-(window_size.width as i32) / 2,
-                                 -(window_size.height as i32) / 2),
+            scroll: Vector2::new(-window_size.width / 2,
+                                 -window_size.height / 2),
             chip_model: ChipModel::new(),
             wire_model: WireModel::new(),
             bounds_drag: None,

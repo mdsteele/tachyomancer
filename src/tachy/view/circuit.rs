@@ -58,7 +58,7 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle,
+    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle,
                prefs: &Prefs)
                -> CircuitView {
         CircuitView {

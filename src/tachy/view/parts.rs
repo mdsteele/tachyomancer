@@ -75,7 +75,7 @@ pub struct PartsTray {
 }
 
 impl PartsTray {
-    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle)
+    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
                -> PartsTray {
         let mut ctypes = Vec::<ChipType>::new();
         for &ctype in ALL_CHIP_TYPES.iter() {
@@ -91,8 +91,7 @@ impl PartsTray {
         let rect = Rect::new(0,
                              TRAY_OUTER_MARGIN,
                              TRAY_WIDTH,
-                             (window_size.height as i32) -
-                                 2 * TRAY_OUTER_MARGIN);
+                             window_size.height - 2 * TRAY_OUTER_MARGIN);
         PartsTray { parts, rect }
     }
 

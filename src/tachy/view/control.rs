@@ -78,7 +78,7 @@ pub struct ControlsTray {
 }
 
 impl ControlsTray {
-    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle,
+    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle,
                prefs: &Prefs)
                -> ControlsTray {
         let mut actions =
@@ -113,8 +113,8 @@ impl ControlsTray {
         let width = 2 * TRAY_MARGIN +
             (buttons.len() as i32) * (BUTTON_WIDTH + BUTTON_SPACING) -
             BUTTON_SPACING;
-        let rect = Rect::new(((window_size.width as i32) - width) / 2,
-                             (window_size.height as i32) - TRAY_HEIGHT,
+        let rect = Rect::new((window_size.width - width) / 2,
+                             window_size.height - TRAY_HEIGHT,
                              width,
                              TRAY_HEIGHT);
         ControlsTray { buttons, rect }

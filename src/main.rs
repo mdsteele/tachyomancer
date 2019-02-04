@@ -37,6 +37,7 @@ extern crate unicode_width;
 
 mod tachy;
 
+use self::tachy::geom::RectSize;
 use self::tachy::gui::{GuiContext, Window, WindowOptions};
 use self::tachy::mode::{self, ModeChange};
 use self::tachy::save::{Prefs, SaveDir};
@@ -76,7 +77,7 @@ fn main() {
 struct StartupFlags {
     antialiasing: Option<bool>,
     fullscreen: Option<bool>,
-    resolution: Option<(u32, u32)>,
+    resolution: Option<RectSize<i32>>,
     save_dir: Option<PathBuf>,
 }
 
@@ -113,11 +114,11 @@ fn parse_flags() -> StartupFlags {
         if pieces.len() != 2 {
             return None;
         }
-        pieces[0].parse::<u32>().ok().and_then(|width| {
+        pieces[0].parse::<i32>().ok().and_then(|width| {
             pieces[1]
-                .parse::<u32>()
+                .parse::<i32>()
                 .ok()
-                .and_then(|height| Some((width, height)))
+                .and_then(|height| Some(RectSize::new(width, height)))
         })
     });
     let save_dir = matches.opt_str("save_dir").map(PathBuf::from);

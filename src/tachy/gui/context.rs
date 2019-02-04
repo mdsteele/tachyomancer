@@ -20,6 +20,7 @@
 use super::audio::{AudioMixer, AudioQueue};
 use sdl2;
 use std::sync::{Arc, Mutex};
+use tachy::geom::RectSize;
 
 //===========================================================================//
 
@@ -59,9 +60,9 @@ impl GuiContext {
            })
     }
 
-    pub fn get_native_resolution(&self) -> Result<(u32, u32), String> {
+    pub fn get_native_resolution(&self) -> Result<RectSize<i32>, String> {
         let display_mode = self.video_subsystem.desktop_display_mode(0)?;
-        Ok((display_mode.w as u32, display_mode.h as u32))
+        Ok(RectSize::new(display_mode.w, display_mode.h))
     }
 }
 

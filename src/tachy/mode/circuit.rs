@@ -29,8 +29,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
     debug_assert!(state.edit_grid().is_some());
     let puzzle = state.current_puzzle();
-    let mut view =
-        CircuitView::new(window.size().into(), puzzle, state.prefs());
+    let mut view = CircuitView::new(window.size(), puzzle, state.prefs());
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
     loop {

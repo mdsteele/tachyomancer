@@ -26,7 +26,7 @@ use tachy::view::{BeginAction, BeginView};
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
-    let mut view = BeginView::new(window.size().into(), state);
+    let mut view = BeginView::new(window.size(), state);
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
     loop {

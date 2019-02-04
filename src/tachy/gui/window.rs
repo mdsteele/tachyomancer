@@ -25,9 +25,12 @@ use gl;
 use sdl2;
 use std::mem;
 use std::os::raw::c_void;
+use tachy::geom::RectSize;
 
 //===========================================================================//
 
+const WINDOW_MIN_WIDTH: i32 = 800;
+const WINDOW_MIN_HEIGHT: i32 = 600;
 const WINDOW_TITLE: &str = "Tachyomancer";
 
 //===========================================================================//
@@ -36,7 +39,7 @@ const WINDOW_TITLE: &str = "Tachyomancer";
 pub struct WindowOptions {
     pub antialiasing: bool,
     pub fullscreen: bool,
-    pub resolution: (u32, u32),
+    pub resolution: RectSize<i32>,
 }
 
 pub struct Window<'a> {
@@ -73,7 +76,8 @@ impl<'a> Window<'a> {
                 gl_attr.set_multisample_samples(4);
             }
         }
-        let (width, height) = options.resolution;
+        let width = options.resolution.width.max(WINDOW_MIN_WIDTH) as u32;
+        let height = options.resolution.height.max(WINDOW_MIN_HEIGHT) as u32;
         let sdl_window =
             if options.fullscreen {
                 gui_context
@@ -117,7 +121,10 @@ impl<'a> Window<'a> {
            })
     }
 
-    pub fn size(&self) -> (u32, u32) { self.sdl_window.size() }
+    pub fn size(&self) -> RectSize<i32> {
+        let (width, height) = self.sdl_window.size();
+        RectSize::new(width as i32, height as i32)
+    }
 
     pub fn options(&self) -> WindowOptions {
         WindowOptions {

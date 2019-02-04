@@ -38,7 +38,7 @@ pub struct BeginView {
 }
 
 impl BeginView {
-    pub fn new(window_size: RectSize<u32>, _state: &GameState) -> BeginView {
+    pub fn new(window_size: RectSize<i32>, _state: &GameState) -> BeginView {
         BeginView {
             width: window_size.width as f32,
             height: window_size.height as f32,
@@ -88,7 +88,7 @@ struct TextEntry {
 }
 
 impl TextEntry {
-    fn new(origin_x: u32, origin_y: u32) -> TextEntry {
+    fn new(origin_x: i32, origin_y: i32) -> TextEntry {
         TextEntry {
             origin: (origin_x as f32, origin_y as f32),
             text: String::new(),

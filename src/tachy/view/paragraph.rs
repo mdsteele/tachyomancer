@@ -31,6 +31,7 @@ pub struct Paragraph {
     lines: Vec<CompiledLine>,
     font_size: f32,
     line_height: f32,
+    width: f32,
 }
 
 impl Paragraph {
@@ -58,11 +59,11 @@ impl Paragraph {
     ///   that font for subsequent text.  The default font is `Roman`.
     /// * `$[h]`, where `h` is the name of a hotkey (e.g. `FlipHorz`), inserts
     ///   the name of the keycode bound to that hotkey.
-    pub fn compile(font_size: f32, line_height: f32, width: f32,
+    pub fn compile(font_size: f32, line_height: f32, max_width: f32,
                    prefs: &Prefs, format: &str)
                    -> Paragraph {
         debug_assert!(font_size > 0.0);
-        debug_assert!(width >= 0.0);
+        debug_assert!(max_width >= 0.0);
         let mut parser = Parser::new();
         let mut chars = format.chars();
         while let Some(chr) = chars.next() {
@@ -96,13 +97,20 @@ impl Paragraph {
                 parser.push(chr);
             }
         }
-        parser.compile(font_size, line_height, width)
+        parser.compile(font_size, line_height, max_width)
+    }
+
+    pub fn width(&self) -> f32 { self.width }
+
+    pub fn height(&self) -> f32 {
+        (((self.lines.len() as f32) - 1.0) * self.line_height + self.font_size)
+            .max(0.0)
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                top_left: (f32, f32)) {
+                topleft: (f32, f32)) {
         let fonts = resources.fonts();
-        let (left, mut top) = top_left;
+        let (left, mut top) = topleft;
         for line in self.lines.iter() {
             line.draw(fonts, matrix, self.font_size, left, top);
             top += self.line_height;
@@ -267,21 +275,21 @@ impl Parser {
         }
     }
 
-    fn compile(mut self, font_size: f32, line_height: f32, width: f32)
+    fn compile(mut self, font_size: f32, line_height: f32, max_width: f32)
                -> Paragraph {
         debug_assert!(font_size > 0.0);
-        debug_assert!(width >= 0.0);
+        debug_assert!(max_width >= 0.0);
         self.shift_piece();
         if !self.current_line.is_empty() {
             self.newline();
         }
-        let mut compiler = Compiler::new(font_size, line_height, width);
+        let mut compiler = Compiler::new(font_size, line_height, max_width);
         for line in self.lines {
             for (align, pieces) in line.columns() {
                 let mut pieces = pieces.into_iter();
                 let mut next_piece = pieces.next();
                 while let Some(piece) = next_piece.take() {
-                    let remaining_width = width - compiler.offset;
+                    let remaining_width = max_width - compiler.offset;
                     match piece.split(font_size, remaining_width) {
                         ParserPieceSplit::AllFits(pp) => {
                             compiler.push(pp);
@@ -310,7 +318,6 @@ impl Parser {
                     }
                 }
                 compiler.fix_offsets(align);
-                compiler.align_start = compiler.pieces.len();
             }
             compiler.newline();
         }
@@ -323,7 +330,8 @@ impl Parser {
 struct Compiler {
     font_size: f32,
     line_height: f32,
-    width: f32,
+    max_width: f32,
+    actual_width: f32,
     lines: Vec<CompiledLine>,
     pieces: Vec<CompiledPiece>,
     align_start: usize,
@@ -331,11 +339,12 @@ struct Compiler {
 }
 
 impl Compiler {
-    fn new(font_size: f32, line_height: f32, width: f32) -> Compiler {
+    fn new(font_size: f32, line_height: f32, max_width: f32) -> Compiler {
         Compiler {
             font_size,
             line_height,
-            width,
+            max_width,
+            actual_width: 0.0,
             lines: Vec::new(),
             pieces: Vec::new(),
             align_start: 0,
@@ -352,22 +361,26 @@ impl Compiler {
     fn newline(&mut self) {
         let pieces = mem::replace(&mut self.pieces, Vec::new());
         self.lines.push(CompiledLine::new(pieces));
+        self.actual_width = self.actual_width.max(self.offset);
         self.align_start = 0;
         self.offset = 0.0;
     }
 
     fn fix_offsets(&mut self, align: ParserAlign) {
-        if self.align_start >= self.pieces.len() {
+        let align_start = self.align_start;
+        self.align_start = self.pieces.len();
+        if align_start >= self.pieces.len() {
             return;
         }
         let delta = match align {
             ParserAlign::Left => return,
-            ParserAlign::Center => 0.5 * (self.width - self.offset),
-            ParserAlign::Right => self.width - self.offset,
+            ParserAlign::Center => 0.5 * (self.max_width - self.offset),
+            ParserAlign::Right => self.max_width - self.offset,
         };
-        for piece in self.pieces[self.align_start..].iter_mut() {
+        for piece in self.pieces[align_start..].iter_mut() {
             piece.offset += delta;
         }
+        self.offset += delta;
     }
 
     fn finish(mut self) -> Paragraph {
@@ -381,6 +394,7 @@ impl Compiler {
             lines: self.lines,
             font_size: self.font_size,
             line_height: self.line_height,
+            width: self.actual_width,
         }
     }
 }
@@ -504,7 +518,7 @@ enum ParserPieceSplit {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ParserAlign {
     Left,
     Center,

@@ -601,9 +601,7 @@ impl EditGrid {
         self.wires_for_ports = HashMap::new();
         self.wire_groups = Vec::new();
         self.eval = None;
-        if cfg!(debug_assertions) {
-            self.validate_wire_fragments();
-        }
+        self.validate_wire_fragments();
 
         let mut all_ports =
             HashMap::<(Coords, Direction), (PortFlow, PortColor)>::new();
@@ -741,6 +739,9 @@ impl EditGrid {
         }
         return None;
     }
+
+    #[cfg(not(debug_assertions))]
+    fn validate_wire_fragments(&self) {}
 
     #[cfg(debug_assertions)]
     fn validate_wire_fragments(&self) {

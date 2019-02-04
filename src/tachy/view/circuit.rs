@@ -58,13 +58,16 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle)
+    pub fn new(window_size: RectSize<u32>, current_puzzle: Puzzle,
+               prefs: &Prefs)
                -> CircuitView {
         CircuitView {
             width: window_size.width as f32,
             height: window_size.height as f32,
             edit_grid: EditGridView::new(window_size),
-            controls_tray: ControlsTray::new(window_size, current_puzzle),
+            controls_tray: ControlsTray::new(window_size,
+                                             current_puzzle,
+                                             prefs),
             parts_tray: PartsTray::new(window_size, current_puzzle),
             verification_tray: VerificationTray::new(window_size,
                                                      current_puzzle),

@@ -241,6 +241,37 @@ impl<T: Clone + PartialEq> RadioButton<T> {
 
 //===========================================================================//
 
+pub struct RadioCheckbox<T> {
+    inner: Checkbox,
+    value: T,
+}
+
+impl<T: Clone + PartialEq> RadioCheckbox<T> {
+    pub fn new(mid_left: Point2<i32>, label: &str, value: T)
+               -> RadioCheckbox<T> {
+        RadioCheckbox {
+            inner: Checkbox::new(mid_left, label),
+            value,
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                value: &T) {
+        self.inner.draw(resources, matrix, value == &self.value, true);
+    }
+
+    pub fn on_event(&mut self, event: &Event, value: &T) -> Option<T> {
+        let checked = value == &self.value;
+        if let Some(true) = self.inner.on_event(event, checked, true) {
+            Some(self.value.clone())
+        } else {
+            None
+        }
+    }
+}
+
+//===========================================================================//
+
 pub enum SliderAction {
     Update(i32),
     Release,

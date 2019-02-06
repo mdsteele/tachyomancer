@@ -114,8 +114,18 @@ impl Prefs {
 
     pub fn fullscreen(&self) -> bool { self.data.fullscreen.unwrap_or(true) }
 
+    pub fn set_fullscreen(&mut self, fullscreen: bool) {
+        self.data.fullscreen = Some(fullscreen);
+        self.needs_save = true;
+    }
+
     pub fn resolution(&self) -> Option<RectSize<i32>> {
-        self.data.resolution.map(|tuple| tuple.into())
+        self.data.resolution.map(|(w, h)| RectSize::new(w, h))
+    }
+
+    pub fn set_resolution(&mut self, res: Option<RectSize<i32>>) {
+        self.data.resolution = res.map(|size| (size.width, size.height));
+        self.needs_save = true;
     }
 
     pub fn sound_volume_percent(&self) -> i32 {

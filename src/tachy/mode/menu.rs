@@ -27,7 +27,7 @@ use tachy::view::{MenuAction, MenuView};
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
-    let mut view = MenuView::new(window.size(), state);
+    let mut view = MenuView::new(window, state);
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
     loop {
@@ -82,6 +82,9 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 view.show_error(state, "rename circuit", &err);
                             }
                         }
+                    }
+                    Some(MenuAction::RebootWindow(options)) => {
+                        return ModeChange::RebootWindow(options);
                     }
                     Some(MenuAction::NewProfile) => {
                         debug_log!("Starting a new profile");

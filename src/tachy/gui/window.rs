@@ -35,23 +35,24 @@ const WINDOW_TITLE: &str = "Tachyomancer";
 
 //===========================================================================//
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WindowOptions {
     pub antialiasing: bool,
     pub fullscreen: bool,
-    pub resolution: RectSize<i32>,
+    pub resolution: Option<RectSize<i32>>,
 }
 
 pub struct Window<'a> {
     gui_context: &'a mut GuiContext,
     sdl_window: sdl2::video::Window,
     _gl_context: sdl2::video::GLContext,
-    antialiasing: bool,
     resources: Resources,
+    possible_resolutions: Vec<RectSize<i32>>,
+    options: WindowOptions,
 }
 
 impl<'a> Window<'a> {
-    pub fn create(gui_context: &'a mut GuiContext, options: &WindowOptions)
+    pub fn create(gui_context: &'a mut GuiContext, options: WindowOptions)
                   -> Result<Window<'a>, String> {
         debug_log!("Creating window: {:?}", options);
         {
@@ -76,24 +77,35 @@ impl<'a> Window<'a> {
                 gl_attr.set_multisample_samples(4);
             }
         }
-        let width = options.resolution.width.max(WINDOW_MIN_WIDTH) as u32;
-        let height = options.resolution.height.max(WINDOW_MIN_HEIGHT) as u32;
-        let sdl_window =
+        let native_resolution = gui_context.get_native_resolution()?;
+        let resolution = options.resolution.unwrap_or(native_resolution);
+        let sdl_window = {
+            let width = resolution
+                .width
+                .max(WINDOW_MIN_WIDTH)
+                .min(native_resolution.width);
+            let height = resolution
+                .height
+                .max(WINDOW_MIN_HEIGHT)
+                .min(native_resolution.height);
+            let mut builder =
+                gui_context
+                    .video_subsystem
+                    .window(WINDOW_TITLE, width as u32, height as u32);
+            builder.opengl();
             if options.fullscreen {
-                gui_context
-                    .video_subsystem
-                    .window(WINDOW_TITLE, width, height)
-                    .opengl()
-                    .fullscreen()
-                    .build()
+                if options.resolution.is_none() {
+                    builder.fullscreen_desktop();
+                } else {
+                    builder.fullscreen();
+                }
             } else {
-                gui_context
-                    .video_subsystem
-                    .window(WINDOW_TITLE, width, height)
-                    .opengl()
-                    .position_centered()
-                    .build()
-            }.map_err(|err| format!("Could not create window: {}", err))?;
+                builder.position_centered();
+            };
+            builder
+                .build()
+                .map_err(|err| format!("Could not create window: {}", err))?
+        };
         let gl_context = sdl_window.gl_create_context()?;
         // According to https://wiki.libsdl.org/SDL_GL_GetProcAddress, to
         // support Windows, we should wait until after we've created the GL
@@ -112,12 +124,18 @@ impl<'a> Window<'a> {
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
         }
         let resources = Resources::new()?;
+        let mut possible_resolutions = gui_context.get_possible_resolutions()?;
+        possible_resolutions.retain(|res| {
+                                        res.width >= WINDOW_MIN_WIDTH &&
+                                            res.height >= WINDOW_MIN_HEIGHT
+                                    });
         Ok(Window {
                gui_context,
                sdl_window,
                _gl_context: gl_context,
-               antialiasing: options.antialiasing,
                resources,
+               possible_resolutions,
+               options,
            })
     }
 
@@ -126,14 +144,11 @@ impl<'a> Window<'a> {
         RectSize::new(width as i32, height as i32)
     }
 
-    pub fn options(&self) -> WindowOptions {
-        WindowOptions {
-            antialiasing: self.antialiasing,
-            fullscreen: self.sdl_window.fullscreen_state() !=
-                sdl2::video::FullscreenType::Off,
-            resolution: self.size(),
-        }
+    pub fn possible_resolutions(&self) -> &[RectSize<i32>] {
+        &self.possible_resolutions
     }
+
+    pub fn options(&self) -> &WindowOptions { &self.options }
 
     pub fn resources(&self) -> &Resources { &self.resources }
 

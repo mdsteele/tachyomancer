@@ -137,28 +137,21 @@ fn run_game(flags: &StartupFlags) -> Result<(), String> {
     let mut state = GameState::new(savedir)?;
     let mut gui_context =
         GuiContext::init(state.prefs().sound_volume_percent())?;
-    let mut window_options =
-        Some(initial_window_options(flags, state.prefs(), &gui_context)?);
+    let mut window_options = Some(initial_window_options(flags,
+                                                         state.prefs())?);
     while let Some(options) = window_options {
-        window_options = boot_window(&mut state, &mut gui_context, &options)?;
+        window_options = boot_window(&mut state, &mut gui_context, options)?;
     }
     state.save()?;
     Ok(())
 }
 
-fn initial_window_options(flags: &StartupFlags, prefs: &Prefs,
-                          gui_context: &GuiContext)
+fn initial_window_options(flags: &StartupFlags, prefs: &Prefs)
                           -> Result<WindowOptions, String> {
     let antialiasing =
         flags.antialiasing.unwrap_or_else(|| prefs.antialiasing());
     let fullscreen = flags.fullscreen.unwrap_or_else(|| prefs.fullscreen());
-    let resolution = if let Some(res) = flags.resolution {
-        res
-    } else if let Some(res) = prefs.resolution() {
-        res
-    } else {
-        gui_context.get_native_resolution()?
-    };
+    let resolution = flags.resolution.or_else(|| prefs.resolution());
     Ok(WindowOptions {
            antialiasing,
            fullscreen,
@@ -169,7 +162,7 @@ fn initial_window_options(flags: &StartupFlags, prefs: &Prefs,
 // ========================================================================= //
 
 fn boot_window(state: &mut GameState, gui_context: &mut GuiContext,
-               window_options: &WindowOptions)
+               window_options: WindowOptions)
                -> Result<Option<WindowOptions>, String> {
     let mut window = Window::create(gui_context, window_options)?;
     loop {

@@ -51,11 +51,6 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                             }
                         }
                     }
-                    Some(CircuitAction::ToggleFullscreen) => {
-                        let mut window_options = window.options();
-                        window_options.fullscreen = !window_options.fullscreen;
-                        return ModeChange::RebootWindow(window_options);
-                    }
                     Some(CircuitAction::Victory(area, score)) => {
                         record_score(state, area, score);
                     }

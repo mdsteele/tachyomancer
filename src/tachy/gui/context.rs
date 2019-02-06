@@ -19,6 +19,7 @@
 
 use super::audio::{AudioMixer, AudioQueue};
 use sdl2;
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use tachy::geom::RectSize;
 
@@ -63,6 +64,24 @@ impl GuiContext {
     pub fn get_native_resolution(&self) -> Result<RectSize<i32>, String> {
         let display_mode = self.video_subsystem.desktop_display_mode(0)?;
         Ok(RectSize::new(display_mode.w, display_mode.h))
+    }
+
+    pub fn get_possible_resolutions(&self)
+                                    -> Result<Vec<RectSize<i32>>, String> {
+        let num_modes = self.video_subsystem.num_display_modes(0)?;
+        let mut resolutions = HashSet::<RectSize<i32>>::new();
+        for index in 0..num_modes {
+            let mode = self.video_subsystem.display_mode(0, index)?;
+            resolutions.insert(RectSize::new(mode.w, mode.h));
+        }
+        let mut resolutions: Vec<RectSize<i32>> =
+            resolutions.into_iter().collect();
+        resolutions.sort_by(|r1, r2| {
+                                r2.width
+                                    .cmp(&r1.width)
+                                    .then(r2.height.cmp(&r1.height))
+                            });
+        Ok(resolutions)
     }
 }
 

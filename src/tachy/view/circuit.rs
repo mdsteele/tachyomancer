@@ -38,7 +38,6 @@ const SECONDS_PER_TIME_STEP: f64 = 0.1;
 #[derive(Clone, Copy, Debug)]
 pub enum CircuitAction {
     BackToMenu,
-    ToggleFullscreen,
     Victory(i32, i32),
 }
 
@@ -170,9 +169,6 @@ impl CircuitView {
                 action = self.on_eval_result(result, grid);
             }
             Event::KeyDown(key) => {
-                if key.command && key.shift && key.code == Keycode::F {
-                    return Some(CircuitAction::ToggleFullscreen);
-                }
                 if key.code == Keycode::Escape {
                     return Some(CircuitAction::BackToMenu);
                 }

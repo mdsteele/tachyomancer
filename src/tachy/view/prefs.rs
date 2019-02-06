@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::button::{Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton,
-                    Slider, SliderAction, TextButton};
+                    RadioCheckbox, Slider, SliderAction, TextButton};
 use super::list::ListView;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::Rect;
-use tachy::gui::{AudioQueue, Event, Resources, Sound};
+use tachy::geom::{Rect, RectSize};
+use tachy::gui::{AudioQueue, Event, Resources, Sound, Window, WindowOptions};
 use tachy::save::Hotkey;
 use tachy::state::GameState;
 
@@ -35,6 +35,7 @@ const PANE_BUTTON_WIDTH: i32 = 180;
 
 #[derive(Clone)]
 pub enum PrefsAction {
+    RebootWindow(WindowOptions),
     NewProfile,
     SwitchProfile(String),
     DeleteProfile,
@@ -70,7 +71,8 @@ pub struct PrefsView {
 }
 
 impl PrefsView {
-    pub fn new(rect: Rect<i32>, state: &GameState) -> PrefsView {
+    pub fn new(rect: Rect<i32>, window: &Window, state: &GameState)
+               -> PrefsView {
         let num_panes = PANES.len() as i32;
         let pane_button_height = (rect.height + PANE_BUTTON_SPACING) /
             (num_panes + 1) -
@@ -105,7 +107,7 @@ impl PrefsView {
                                   rect.y,
                                   rect.width - pane_offset,
                                   rect.height);
-        let audio_video_pane = AudioVideoPane::new(pane_rect, state);
+        let audio_video_pane = AudioVideoPane::new(pane_rect, window, state);
         let hotkeys_pane = HotkeysPane::new(pane_rect);
         let profiles_pane = ProfilesPane::new(pane_rect, state);
 
@@ -129,7 +131,7 @@ impl PrefsView {
 
         match self.current_pane {
             PrefsPane::AudioVideo => {
-                self.audio_video_pane.draw(resources, matrix, state);
+                self.audio_video_pane.draw(resources, matrix);
             }
             PrefsPane::Hotkeys => {
                 self.hotkeys_pane.draw(resources, matrix, state);
@@ -193,39 +195,110 @@ impl PrefsView {
 
 pub struct AudioVideoPane {
     antialias_checkbox: Checkbox,
+    fullscreen_checkbox: Checkbox,
+    resolution_buttons: Vec<RadioCheckbox<Option<RectSize<i32>>>>,
     sound_volume_slider: Slider,
+    apply_button: TextButton<()>,
+    revert_button: TextButton<()>,
+    current_window_options: WindowOptions,
+    new_window_options: WindowOptions,
 }
 
 impl AudioVideoPane {
-    pub fn new(rect: Rect<i32>, state: &GameState) -> AudioVideoPane {
+    pub fn new(rect: Rect<i32>, window: &Window, state: &GameState)
+               -> AudioVideoPane {
         let antialias_checkbox =
             Checkbox::new(Point2::new(rect.x, rect.y + 20), "Antialiasing");
+        let fullscreen_checkbox = Checkbox::new(Point2::new(rect.x + 300,
+                                                            rect.y + 20),
+                                                "Fullscreen");
         let sound_volume_slider =
             Slider::new(Rect::new(rect.x, rect.y + 80, rect.width, 30),
                         state.prefs().sound_volume_percent(),
                         100);
+
+        let res_pos = |index| Point2::new(rect.x, rect.y + 135 + 30 * index);
+        let mut resolution_buttons =
+            vec![RadioCheckbox::new(res_pos(0), "Native", None)];
+        resolution_buttons.extend(
+            window
+                .possible_resolutions()
+                .iter()
+                .enumerate()
+                .map(|(index, &res)| {
+                    RadioCheckbox::new(res_pos((index as i32) + 1),
+                                       &format!("{}x{}",
+                                                res.width,
+                                                res.height),
+                                       Some(res))
+                }),
+        );
+
+        let apply_button_rect =
+            Rect::new(rect.right() - 200, rect.bottom() - 40, 200, 40);
+        let apply_button = TextButton::new(apply_button_rect, "Apply", ());
+        let revert_button_rect =
+            Rect::new(rect.right() - 420, rect.bottom() - 40, 200, 40);
+        let revert_button = TextButton::new(revert_button_rect, "Revert", ());
+
         AudioVideoPane {
             antialias_checkbox,
+            fullscreen_checkbox,
+            resolution_buttons,
             sound_volume_slider,
+            apply_button,
+            revert_button,
+            current_window_options: window.options().clone(),
+            new_window_options: window.options().clone(),
         }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                state: &GameState) {
-        self.antialias_checkbox
-            .draw(resources, matrix, state.prefs().antialiasing(), true);
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        self.antialias_checkbox.draw(resources,
+                                     matrix,
+                                     self.new_window_options.antialiasing,
+                                     true);
+        self.fullscreen_checkbox
+            .draw(resources, matrix, self.new_window_options.fullscreen, true);
+        for button in self.resolution_buttons.iter() {
+            button
+                .draw(resources, matrix, &self.new_window_options.resolution);
+        }
         self.sound_volume_slider.draw(resources, matrix);
+
+        let enabled = self.new_window_options != self.current_window_options;
+        self.apply_button.draw(resources, matrix, enabled);
+        self.revert_button.draw(resources, matrix, enabled);
     }
 
     pub fn on_event(&mut self, event: &Event, state: &mut GameState,
                     audio: &mut AudioQueue)
                     -> Option<PrefsAction> {
+        if let &Event::Unfocus = event {
+            self.new_window_options = self.current_window_options.clone();
+        }
+
         if let Some(checked) =
             self.antialias_checkbox
-                .on_event(event, state.prefs().antialiasing(), true)
+                .on_event(event, self.new_window_options.antialiasing, true)
         {
-            state.prefs_mut().set_antialiasing(checked);
+            self.new_window_options.antialiasing = checked;
         }
+
+        if let Some(checked) =
+            self.fullscreen_checkbox
+                .on_event(event, self.new_window_options.fullscreen, true)
+        {
+            self.new_window_options.fullscreen = checked;
+        }
+
+        let resolution = self.new_window_options.resolution;
+        for button in self.resolution_buttons.iter_mut() {
+            if let Some(new_res) = button.on_event(event, &resolution) {
+                self.new_window_options.resolution = new_res;
+            }
+        }
+
         match self.sound_volume_slider.on_event(event) {
             Some(SliderAction::Update(volume)) => {
                 state.prefs_mut().set_sound_volume_percent(volume);
@@ -236,7 +309,20 @@ impl AudioVideoPane {
             }
             None => {}
         }
-        None
+
+        let enabled = self.new_window_options != self.current_window_options;
+        if let Some(()) = self.revert_button.on_event(event, enabled) {
+            self.new_window_options = self.current_window_options.clone();
+        }
+        if let Some(()) = self.apply_button.on_event(event, enabled) {
+            let prefs = state.prefs_mut();
+            prefs.set_antialiasing(self.new_window_options.antialiasing);
+            prefs.set_fullscreen(self.new_window_options.fullscreen);
+            prefs.set_resolution(self.new_window_options.resolution);
+            let options = self.new_window_options.clone();
+            return Some(PrefsAction::RebootWindow(options));
+        }
+        return None;
     }
 }
 

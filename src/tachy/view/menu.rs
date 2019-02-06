@@ -24,7 +24,8 @@ use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
+use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound, Window,
+                 WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::GameState;
 use textwrap;
@@ -52,6 +53,7 @@ pub enum MenuAction {
     EditCircuit,
     NewCircuit,
     RenameCircuit(String),
+    RebootWindow(WindowOptions),
     NewProfile,
     SwitchProfile(String),
     DeleteProfile,
@@ -72,7 +74,8 @@ pub struct MenuView {
 }
 
 impl MenuView {
-    pub fn new(window_size: RectSize<i32>, state: &GameState) -> MenuView {
+    pub fn new(window: &Window, state: &GameState) -> MenuView {
+        let window_size = window.size();
         let section_buttons = vec![
             SectionButton::new(window_size,
                                0,
@@ -102,7 +105,7 @@ impl MenuView {
             height: window_size.height as f32,
             section_buttons,
             converse_view: ConverseView::new(section_rect, state),
-            prefs_view: PrefsView::new(section_rect, state),
+            prefs_view: PrefsView::new(section_rect, window, state),
             puzzles_view: PuzzlesView::new(section_rect, state),
             confirmation_dialog: None,
             rename_dialog: None,
@@ -264,6 +267,9 @@ impl MenuView {
             }
             MenuSection::Prefs => {
                 match self.prefs_view.on_event(event, state, audio) {
+                    Some(PrefsAction::RebootWindow(options)) => {
+                        return Some(MenuAction::RebootWindow(options));
+                    }
                     Some(PrefsAction::NewProfile) => {
                         return Some(MenuAction::NewProfile);
                     }

@@ -91,6 +91,10 @@ impl CircuitEval {
         self.interact.borrow_mut()
     }
 
+    pub fn wire_event(&self, wire_index: usize) -> Option<u32> {
+        self.state.recv_event(wire_index)
+    }
+
     pub fn wire_value(&self, wire_index: usize) -> u32 {
         self.state.values[wire_index].0
     }

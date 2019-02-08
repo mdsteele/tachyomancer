@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::chip::ChipModel;
+use super::tooltip::Tooltip;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec4};
 use num_integer::{div_floor, mod_floor};
@@ -52,6 +53,7 @@ pub struct EditGridView {
     bounds_drag: Option<BoundsDrag>,
     chip_drag: Option<ChipDrag>,
     wire_drag: Option<WireDrag>,
+    tooltip: Tooltip<GridTooltipTag>,
 }
 
 impl EditGridView {
@@ -66,6 +68,7 @@ impl EditGridView {
             bounds_drag: None,
             chip_drag: None,
             wire_drag: None,
+            tooltip: Tooltip::new(window_size),
         }
     }
 
@@ -195,6 +198,10 @@ impl EditGridView {
         }
     }
 
+    pub fn draw_tooltip(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        self.tooltip.draw(resources, matrix);
+    }
+
     fn vp_matrix(&self) -> Matrix4<f32> {
         cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0) *
             Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
@@ -204,7 +211,12 @@ impl EditGridView {
                     prefs: &Prefs, audio: &mut AudioQueue)
                     -> Option<EditGridAction> {
         match event {
+            Event::ClockTick(tick) => {
+                self.tooltip
+                    .tick(tick, prefs, |tag| tooltip_format(grid, tag));
+            }
             Event::KeyDown(key) => {
+                self.tooltip.stop_hover_all();
                 if key.command {
                     match key.code {
                         Keycode::Z if key.shift => grid.redo(),
@@ -241,9 +253,10 @@ impl EditGridView {
                 }
             }
             Event::MouseDown(mouse) => {
+                self.tooltip.stop_hover_all();
                 if grid.eval().is_some() {
                     if mouse.left {
-                        if let Some((ctype, _, coords)) =
+                        if let Some((coords, ctype, _)) =
                             grid.chip_at(self.coords_for_point(mouse.pt))
                         {
                             if ctype == ChipType::Button {
@@ -265,7 +278,7 @@ impl EditGridView {
                             self.bounds_drag =
                                 Some(BoundsDrag::new(octant, mouse.pt, grid));
                         }
-                    } else if let Some((ctype, orient, coords)) =
+                    } else if let Some((coords, ctype, orient)) =
                         grid.chip_at(mouse_coords)
                     {
                         // TODO: If mouse is within chip cell but near edge of
@@ -285,7 +298,7 @@ impl EditGridView {
                     }
                 } else if mouse.right {
                     let coords = self.coords_for_point(mouse.pt);
-                    if let Some((ChipType::Const(value), _, _)) =
+                    if let Some((_, ChipType::Const(value), _)) =
                         grid.chip_at(coords)
                     {
                         return Some(EditGridAction::EditConst(coords, value));
@@ -303,15 +316,21 @@ impl EditGridView {
             Event::MouseMove(mouse) => {
                 if let Some(ref mut drag) = self.bounds_drag {
                     drag.move_to(mouse.pt, grid);
-                }
-                if let Some(ref mut drag) = self.chip_drag {
+                } else if let Some(ref mut drag) = self.chip_drag {
                     drag.move_to(mouse.pt);
-                }
-                if let Some(mut drag) = self.wire_drag.take() {
+                } else if let Some(mut drag) = self.wire_drag.take() {
                     if drag.move_to(self.zone_for_point(mouse.pt), grid) {
                         self.wire_drag = Some(drag);
                     } else {
                         debug_log!("wire drag done (move)");
+                    }
+                } else if !mouse.left && !mouse.right {
+                    if let Some(tag) =
+                        self.tooltip_tag_for_pt(grid, mouse.pt)
+                    {
+                        self.tooltip.start_hover(tag, mouse.pt);
+                    } else {
+                        self.tooltip.stop_hover_all();
                     }
                 }
             }
@@ -330,7 +349,11 @@ impl EditGridView {
                 }
             }
             Event::Scroll(scroll) => {
+                self.tooltip.stop_hover_all();
                 self.scroll += scroll.delta;
+            }
+            Event::Unfocus => {
+                self.tooltip.stop_hover_all();
             }
             _ => {}
         }
@@ -425,6 +448,40 @@ impl EditGridView {
                         })
         }
     }
+
+    fn tooltip_tag_for_pt(&self, grid: &EditGrid, pt: Point2<i32>)
+                          -> Option<GridTooltipTag> {
+        let scrolled = pt + self.scroll;
+        let coords = Coords::new(div_floor(scrolled.x, GRID_CELL_SIZE),
+                                 div_floor(scrolled.y, GRID_CELL_SIZE));
+        if let Some((coords, ctype, _)) = grid.chip_at(coords) {
+            return Some(GridTooltipTag::Chip(coords, ctype));
+        }
+        if let Some((index, _)) = grid.interface_at(coords) {
+            return Some(GridTooltipTag::Interface(index));
+        }
+        // TODO: Figure out if we're actually visibly over the wire shape,
+        //   rather than just treating each wire shape as a triangle.
+        let x = mod_floor(scrolled.x, GRID_CELL_SIZE);
+        let y = mod_floor(scrolled.y, GRID_CELL_SIZE);
+        let dir = if x > y {
+            if x > (GRID_CELL_SIZE - y) {
+                Direction::East
+            } else {
+                Direction::North
+            }
+        } else {
+            if y > (GRID_CELL_SIZE - x) {
+                Direction::South
+            } else {
+                Direction::West
+            }
+        };
+        if let Some(index) = grid.wire_index_at(coords, dir) {
+            return Some(GridTooltipTag::Wire(index));
+        }
+        return None;
+    }
 }
 
 fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
@@ -434,6 +491,16 @@ fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
     matrix * Matrix4::trans2(cx, cy) *
         Matrix4::from_angle_z(dir.angle_from_east()) *
         Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
+}
+
+fn tooltip_format(grid: &EditGrid, tag: &GridTooltipTag) -> String {
+    match *tag {
+        GridTooltipTag::Chip(_, ctype) => ctype.tooltip_format(),
+        GridTooltipTag::Interface(index) => {
+            grid.interfaces()[index].tooltip_format()
+        }
+        GridTooltipTag::Wire(index) => grid.wire_tooltip_format(index),
+    }
 }
 
 //===========================================================================//
@@ -892,6 +959,13 @@ enum Zone {
     Center(Coords),
     East(Coords),
     South(Coords),
+}
+
+#[derive(Eq, PartialEq)]
+enum GridTooltipTag {
+    Chip(Coords, ChipType),
+    Interface(usize),
+    Wire(usize),
 }
 
 //===========================================================================//

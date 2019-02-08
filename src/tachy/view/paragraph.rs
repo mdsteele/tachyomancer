@@ -59,6 +59,13 @@ impl Paragraph {
     ///   that font for subsequent text.  The default font is `Roman`.
     /// * `$[h]`, where `h` is the name of a hotkey (e.g. `FlipHorz`), inserts
     ///   the name of the keycode bound to that hotkey.
+    /// * `$(p)`, where `p` is the name of a special phrase, inserts the phrase
+    ///   text.  Supported phrases include:
+    ///     * "Command", which turns into the equivalent modifier key name
+    ///       depending on the platform (e.g. "Command" on MacOS, "Control" on
+    ///       Linux or Windows).
+    ///     * "Right-click", which turns into the equivalent action depending
+    ///       on the platform (e.g. "Control-click" on MacOS).
     pub fn compile(font_size: f32, line_height: f32, max_width: f32,
                    prefs: &Prefs, format: &str)
                    -> Paragraph {
@@ -88,6 +95,9 @@ impl Paragraph {
                     Some('{') => parser.set_font(&parse_arg(&mut chars, '}')),
                     Some('[') => {
                         parser.push_key(&parse_arg(&mut chars, ']'), prefs)
+                    }
+                    Some('(') => {
+                        parser.push_phrase(&parse_arg(&mut chars, ')'))
                     }
                     _ => {}
                 }
@@ -198,6 +208,34 @@ impl Parser {
     }
 
     fn push(&mut self, chr: char) { self.current_piece.push(chr); }
+
+    fn push_phrase(&mut self, phrase_name: &str) {
+        let phrase = match phrase_name {
+            "Command" => {
+                if cfg!(any(target_os = "ios", target_os = "macos")) {
+                    "Command"
+                } else {
+                    "Control"
+                }
+            }
+            "Right-click" => {
+                if cfg!(any(target_os = "android", target_os = "ios")) {
+                    "Long-press"
+                } else if cfg!(target_os = "macos") {
+                    "Control-click"
+                } else {
+                    "Right-click"
+                }
+            }
+            _ => {
+                debug_log!("WARNING: Bad phrase name {:?} in paragraph format \
+                            string",
+                           phrase_name);
+                phrase_name
+            }
+        };
+        self.current_piece.push_str(phrase);
+    }
 
     fn push_key(&mut self, hotkey_name: &str, prefs: &Prefs) {
         if let Ok(hotkey) = Hotkey::from_str(hotkey_name) {

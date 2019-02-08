@@ -35,7 +35,8 @@ enum InterfacePosition {
 //===========================================================================//
 
 struct InterfacePort {
-    // TODO name and description for help box
+    name: &'static str,
+    description: &'static str,
     flow: PortFlow,
     color: PortColor,
     size: WireSize,
@@ -44,7 +45,8 @@ struct InterfacePort {
 //===========================================================================//
 
 pub struct Interface {
-    // TODO: name and description for help box
+    name: &'static str,
+    description: &'static str,
     side: Direction,
     pos: InterfacePosition,
     ports: &'static [InterfacePort],
@@ -118,6 +120,29 @@ impl Interface {
                  })
             .collect()
     }
+
+    pub fn tooltip_format(&self) -> String {
+        if self.ports.len() == 1 && self.ports[0].name.is_empty() {
+            let port = &self.ports[0];
+            format!("$*{}$>({}-bit {} {:?})$<$*\n{}",
+                    self.name,
+                    port.size.num_bits(),
+                    port.color.tooltip_format(),
+                    port.flow,
+                    self.description)
+        } else {
+            let mut fmt = format!("$*{}$*\n{}\n", self.name, self.description);
+            for port in self.ports.iter() {
+                fmt.push_str(&format!("\n$*{}$>({}-bit {} {:?})$<$*\n  {}",
+                                      port.name,
+                                      port.size.num_bits(),
+                                      port.color.tooltip_format(),
+                                      port.flow,
+                                      port.description));
+            }
+            fmt
+        }
+    }
 }
 
 //===========================================================================//
@@ -127,10 +152,14 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
         Puzzle::TutorialOr => {
             &[
                 Interface {
+                    name: "Input1",
+                    description: "First input (0 or 1).",
                     side: Direction::West,
                     pos: InterfacePosition::Center,
                     ports: &[
                         InterfacePort {
+                            name: "",
+                            description: "",
                             flow: PortFlow::Send,
                             color: PortColor::Behavior,
                             size: WireSize::One,
@@ -138,10 +167,14 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
                     ],
                 },
                 Interface {
+                    name: "Input2",
+                    description: "Second input (0 or 1).",
                     side: Direction::South,
                     pos: InterfacePosition::Center,
                     ports: &[
                         InterfacePort {
+                            name: "",
+                            description: "",
                             flow: PortFlow::Send,
                             color: PortColor::Behavior,
                             size: WireSize::One,
@@ -149,10 +182,16 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
                     ],
                 },
                 Interface {
+                    name: "Output",
+                    description: "\
+                        Should be 1 if either input is 1.\n\
+                        Should be 0 if both inputs are 0.",
                     side: Direction::East,
                     pos: InterfacePosition::Center,
                     ports: &[
                         InterfacePort {
+                            name: "",
+                            description: "",
                             flow: PortFlow::Recv,
                             color: PortColor::Behavior,
                             size: WireSize::One,
@@ -164,15 +203,24 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
         Puzzle::AutomateHeliostat => {
             &[
                 Interface {
+                    name: "Sensor Interface",
+                    description: "\
+                        Connects to a photosensor array that determines the \
+                        ideal position for the heliostat mirror.  Use the \
+                        motor interface to move the mirror to this position.",
                     side: Direction::South,
                     pos: InterfacePosition::Left(0),
                     ports: &[
                         InterfacePort {
+                            name: "XGoal",
+                            description: "Outputs ideal X position.",
                             flow: PortFlow::Send,
                             color: PortColor::Behavior,
                             size: WireSize::Four,
                         },
                         InterfacePort {
+                            name: "YGoal",
+                            description: "Outputs ideal Y position.",
                             flow: PortFlow::Send,
                             color: PortColor::Behavior,
                             size: WireSize::Four,
@@ -180,20 +228,36 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
                     ],
                 },
                 Interface {
+                    name: "Motor Interface",
+                    description: "\
+                        Connects to a stepper motor that controls the \
+                        position of the heliostat mirror.",
                     side: Direction::South,
                     pos: InterfacePosition::Right(0),
                     ports: &[
                         InterfacePort {
+                            name: "XPos",
+                            description: "Outputs current X position.",
                             flow: PortFlow::Send,
                             color: PortColor::Behavior,
                             size: WireSize::Four,
                         },
                         InterfacePort {
+                            name: "YPos",
+                            description: "Outputs current Y position.",
                             flow: PortFlow::Send,
                             color: PortColor::Behavior,
                             size: WireSize::Four,
                         },
                         InterfacePort {
+                            name: "Motor",
+                            description: "\
+                                Receives motor commands.\n    \
+                                Send 8 to move up.\n    \
+                                Send 4 to move down.\n    \
+                                Send 2 to move left.\n    \
+                                Send 1 to move right.\n  \
+                                Send any other value to not move.",
                             flow: PortFlow::Recv,
                             color: PortColor::Behavior,
                             size: WireSize::Four,
@@ -205,10 +269,14 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
         Puzzle::SandboxBehavior => {
             &[
                 Interface {
+                    name: "Timer Interface",
+                    description: "Connected to a digital timer.",
                     side: Direction::West,
                     pos: InterfacePosition::Right(0),
                     ports: &[
                         InterfacePort {
+                            name: "Time",
+                            description: "Outputs the current time step.",
                             flow: PortFlow::Send,
                             color: PortColor::Behavior,
                             size: WireSize::Eight,
@@ -220,18 +288,24 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
         Puzzle::SandboxEvent => {
             &[
                 Interface {
+                    name: "Timer Interface",
+                    description: "Connected to a digital timer.",
                     side: Direction::West,
                     pos: InterfacePosition::Right(0),
                     ports: &[
                         InterfacePort {
-                            flow: PortFlow::Send,
-                            color: PortColor::Event,
-                            size: WireSize::Zero,
-                        },
-                        InterfacePort {
+                            name: "Time",
+                            description: "Outputs the current time step.",
                             flow: PortFlow::Send,
                             color: PortColor::Behavior,
                             size: WireSize::Eight,
+                        },
+                        InterfacePort {
+                            name: "Metronome",
+                            description: "Sends an event on each time step.",
+                            flow: PortFlow::Send,
+                            color: PortColor::Event,
+                            size: WireSize::Zero,
                         },
                     ],
                 },

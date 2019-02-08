@@ -497,6 +497,25 @@ impl ChipType {
             })
             .collect()
     }
+
+    pub fn tooltip_format(self) -> String {
+        let name = match self {
+            ChipType::Const(_) => "Const".to_string(),
+            other => format!("{:?}", other),
+        };
+        let description = match self {
+            ChipType::Const(_) => {
+                "Outputs a constant value.\n\
+                 $(Right-click) on the chip to change the output value."
+            }
+            ChipType::Discard => {
+                "Transforms value-carrying events into 0-bit events by \
+                 discarding the value."
+            }
+            _ => "TODO",
+        };
+        format!("$*{}$*\n{}", name, description)
+    }
 }
 
 //===========================================================================//

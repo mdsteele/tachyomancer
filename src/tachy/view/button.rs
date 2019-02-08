@@ -397,12 +397,15 @@ impl TextBox {
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         // Text:
-        resources.fonts().roman().draw(&matrix,
-                                       TEXT_BOX_FONT_SIZE,
-                                       Align::MidLeft,
-                                       (rect.x + TEXT_BOX_INNER_MARGIN,
-                                        rect.y + 0.5 * rect.height),
-                                       &self.string);
+        let font = resources.fonts().roman();
+        font.draw_style(&matrix,
+                        TEXT_BOX_FONT_SIZE,
+                        Align::MidLeft,
+                        (rect.x + TEXT_BOX_INNER_MARGIN,
+                         rect.y + 0.5 * rect.height),
+                        (1.0, 1.0, 1.0),
+                        0.0,
+                        &self.string);
         // Cursor:
         if self.cursor_blink < 0.5 * TEXT_BOX_CURSOR_BLINK_PERIOD {
             let color = (0.5, 0.5, 0.0);

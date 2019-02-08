@@ -25,7 +25,8 @@ mod window;
 
 pub use self::audio::{AudioQueue, Sound};
 pub use self::context::GuiContext;
-pub use self::event::{Event, KeyEventData, Keycode};
+pub use self::event::{ClockEventData, Event, KeyEventData, Keycode,
+                      MouseEventData, ScrollEventData};
 pub use self::resource::Resources;
 pub use self::window::{Window, WindowOptions};
 

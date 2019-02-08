@@ -57,16 +57,13 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle,
-               prefs: &Prefs)
+    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
                -> CircuitView {
         CircuitView {
             width: window_size.width as f32,
             height: window_size.height as f32,
             edit_grid: EditGridView::new(window_size),
-            controls_tray: ControlsTray::new(window_size,
-                                             current_puzzle,
-                                             prefs),
+            controls_tray: ControlsTray::new(window_size, current_puzzle),
             parts_tray: PartsTray::new(window_size, current_puzzle),
             verification_tray: VerificationTray::new(window_size,
                                                      current_puzzle),
@@ -98,6 +95,7 @@ impl CircuitView {
         self.parts_tray.draw(resources, &projection);
         self.controls_tray.draw(resources, &projection);
         self.edit_grid.draw_dragged(resources);
+        self.edit_grid.draw_tooltip(resources, &projection);
         if let Some((ref dialog, _)) = self.edit_const_dialog {
             dialog.draw(resources, &projection, is_valid_const);
         }
@@ -114,9 +112,9 @@ impl CircuitView {
             match dialog.on_event(event, is_valid_const) {
                 Some(Some(text)) => {
                     if let Ok(new_value) = text.parse::<u32>() {
-                        if let Some((ChipType::Const(old_value),
-                                     orient,
-                                     coords)) = grid.chip_at(coords)
+                        if let Some((coords,
+                                     ChipType::Const(old_value),
+                                     orient)) = grid.chip_at(coords)
                         {
                             let old_ctype = ChipType::Const(old_value);
                             let new_ctype = ChipType::Const(new_value);

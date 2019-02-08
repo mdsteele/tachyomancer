@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::paragraph::Paragraph;
+use super::tooltip::Tooltip;
 use cgmath::Matrix4;
-use tachy::geom::{MatrixExt, Rect, RectSize};
+use tachy::geom::{Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::{Hotkey, Prefs, Puzzle};
 
@@ -28,12 +28,6 @@ use tachy::save::{Hotkey, Prefs, Puzzle};
 const BUTTON_WIDTH: i32 = 48;
 const BUTTON_HEIGHT: i32 = 32;
 const BUTTON_SPACING: i32 = 8;
-
-const TOOLTIP_FONT_SIZE: f32 = 20.0;
-const TOOLTIP_HOVER_TIME: f64 = 0.5;
-const TOOLTIP_LINE_HEIGHT: f32 = 22.0;
-const TOOLTIP_INNER_MARGIN: f32 = 10.0;
-const TOOLTIP_WIDTH: f32 = 360.0;
 
 const TRAY_MARGIN: i32 = 12;
 const TRAY_HEIGHT: i32 = 2 * TRAY_MARGIN + BUTTON_HEIGHT;
@@ -61,7 +55,7 @@ const TOOLTIP_STEP_TIME: &str = "\
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ControlsAction {
     Reset,
     RunOrPause,
@@ -70,78 +64,91 @@ pub enum ControlsAction {
     StepTime,
 }
 
+impl ControlsAction {
+    fn tooltip_format(self) -> &'static str {
+        match self {
+            ControlsAction::Reset => TOOLTIP_RESET,
+            ControlsAction::RunOrPause => TOOLTIP_RUN_PAUSE,
+            ControlsAction::StepSubcycle => TOOLTIP_STEP_SUBCYCLE,
+            ControlsAction::StepCycle => TOOLTIP_STEP_CYCLE,
+            ControlsAction::StepTime => TOOLTIP_STEP_TIME,
+        }
+    }
+}
+
 //===========================================================================//
 
 pub struct ControlsTray {
-    buttons: Vec<ControlsButton>,
     rect: Rect<i32>,
+    buttons: Vec<ControlsButton>,
+    tooltip: Tooltip<ControlsAction>,
 }
 
 impl ControlsTray {
-    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle,
-               prefs: &Prefs)
+    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
                -> ControlsTray {
         let mut actions =
             vec![
-                (ControlsAction::Reset, Hotkey::EvalReset, TOOLTIP_RESET),
-                (ControlsAction::RunOrPause,
-                 Hotkey::EvalRunPause,
-                 TOOLTIP_RUN_PAUSE),
-                (ControlsAction::StepSubcycle,
-                 Hotkey::EvalStepSubcycle,
-                 TOOLTIP_STEP_SUBCYCLE),
+                (ControlsAction::Reset, Hotkey::EvalReset),
+                (ControlsAction::RunOrPause, Hotkey::EvalRunPause),
+                (ControlsAction::StepSubcycle, Hotkey::EvalStepSubcycle),
             ];
         if current_puzzle.allows_events() {
-            actions.push((ControlsAction::StepCycle,
-                          Hotkey::EvalStepCycle,
-                          TOOLTIP_STEP_CYCLE));
+            actions.push((ControlsAction::StepCycle, Hotkey::EvalStepCycle));
         }
-        actions.push((ControlsAction::StepTime,
-                      Hotkey::EvalStepTime,
-                      TOOLTIP_STEP_TIME));
-        let buttons = actions
-            .into_iter()
-            .enumerate()
-            .map(|(index, (action, hotkey, tooltip))| {
-                     ControlsButton::new(action,
-                                         index as i32,
-                                         hotkey,
-                                         tooltip,
-                                         prefs)
-                 })
-            .collect::<Vec<ControlsButton>>();
+        actions.push((ControlsAction::StepTime, Hotkey::EvalStepTime));
         let width = 2 * TRAY_MARGIN +
-            (buttons.len() as i32) * (BUTTON_WIDTH + BUTTON_SPACING) -
+            (actions.len() as i32) * (BUTTON_WIDTH + BUTTON_SPACING) -
             BUTTON_SPACING;
         let rect = Rect::new((window_size.width - width) / 2,
                              window_size.height - TRAY_HEIGHT,
                              width,
                              TRAY_HEIGHT);
-        ControlsTray { buttons, rect }
+        let buttons = actions
+            .into_iter()
+            .enumerate()
+            .map(|(index, (action, hotkey))| {
+                let rect = Rect::new(rect.x + TRAY_MARGIN +
+                                         (BUTTON_WIDTH + BUTTON_SPACING) *
+                                             (index as i32),
+                                     rect.y + TRAY_MARGIN,
+                                     BUTTON_WIDTH,
+                                     BUTTON_HEIGHT);
+                ControlsButton::new(action, rect, hotkey)
+            })
+            .collect::<Vec<ControlsButton>>();
+        let tooltip = Tooltip::new(window_size);
+        ControlsTray {
+            rect,
+            buttons,
+            tooltip,
+        }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(matrix, (0.0, 0.5, 0.0), rect);
-        let matrix = matrix * Matrix4::trans2(rect.x, rect.y);
         for button in self.buttons.iter() {
-            button.draw(resources, &matrix);
+            button.draw(resources, matrix);
         }
-        for button in self.buttons.iter() {
-            button.draw_tooltip(resources, &matrix);
-        }
+        self.tooltip.draw(resources, matrix);
     }
 
     pub fn on_event(&mut self, event: &Event, prefs: &Prefs)
                     -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
-            let point = self.rect.top_left();
-            let opt_action = button.on_event(&event.relative_to(point), prefs);
+            let opt_action = button.on_event(event, prefs, &mut self.tooltip);
             if opt_action.is_some() {
                 return Some(opt_action);
             }
         }
         match event {
+            Event::ClockTick(tick) => {
+                self.tooltip.tick(tick, prefs, |action| {
+                    action.tooltip_format().to_string()
+                });
+                None
+            }
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
                 Some(None)
             }
@@ -160,29 +167,16 @@ struct ControlsButton {
     rect: Rect<i32>,
     hotkey: Hotkey,
     hovering: bool,
-    hover_time: f64,
-    tooltip: Paragraph,
 }
 
 impl ControlsButton {
-    pub fn new(action: ControlsAction, index: i32, hotkey: Hotkey,
-               tooltip: &str, prefs: &Prefs)
+    pub fn new(action: ControlsAction, rect: Rect<i32>, hotkey: Hotkey)
                -> ControlsButton {
         ControlsButton {
             action,
-            rect: Rect::new(TRAY_MARGIN +
-                                (BUTTON_WIDTH + BUTTON_SPACING) * index,
-                            TRAY_MARGIN,
-                            BUTTON_WIDTH,
-                            BUTTON_HEIGHT),
+            rect,
             hotkey,
             hovering: false,
-            hover_time: 0.0,
-            tooltip: Paragraph::compile(TOOLTIP_FONT_SIZE,
-                                        TOOLTIP_LINE_HEIGHT,
-                                        TOOLTIP_WIDTH,
-                                        prefs,
-                                        tooltip),
         }
     }
 
@@ -196,36 +190,10 @@ impl ControlsButton {
         resources.shaders().solid().fill_rect(matrix, color, rect);
     }
 
-    pub fn draw_tooltip(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        if self.hovering && self.hover_time >= TOOLTIP_HOVER_TIME {
-            let width = self.tooltip.width() + 2.0 * TOOLTIP_INNER_MARGIN;
-            let height = self.tooltip.height() + 2.0 * TOOLTIP_INNER_MARGIN;
-            let rect = Rect::new((self.rect.x as f32) +
-                                     0.5 * (self.rect.width as f32) -
-                                     0.5 * width,
-                                 (self.rect.y as f32) - (height + 10.0),
-                                 width,
-                                 height);
-            resources
-                .shaders()
-                .solid()
-                .fill_rect(matrix, (0.9, 0.9, 0.9), rect);
-            self.tooltip.draw(resources,
-                              matrix,
-                              (rect.x + TOOLTIP_INNER_MARGIN,
-                               rect.y + TOOLTIP_INNER_MARGIN));
-        }
-    }
-
-    pub fn on_event(&mut self, event: &Event, prefs: &Prefs)
+    pub fn on_event(&mut self, event: &Event, prefs: &Prefs,
+                    tooltip: &mut Tooltip<ControlsAction>)
                     -> Option<ControlsAction> {
         match event {
-            Event::ClockTick(tick) => {
-                if self.hovering {
-                    self.hover_time = (self.hover_time + tick.elapsed)
-                        .min(TOOLTIP_HOVER_TIME);
-                }
-            }
             Event::KeyDown(key) => {
                 if key.code == prefs.hotkey_code(self.hotkey) {
                     // TODO: play sound
@@ -240,13 +208,15 @@ impl ControlsButton {
             }
             Event::MouseMove(mouse) => {
                 self.hovering = self.rect.contains_point(mouse.pt);
-                if !self.hovering {
-                    self.hover_time = 0.0;
+                if self.hovering {
+                    tooltip.start_hover(self.action, mouse.pt);
+                } else {
+                    tooltip.stop_hover(&self.action);
                 }
             }
             Event::Unfocus => {
                 self.hovering = false;
-                self.hover_time = 0.0;
+                tooltip.stop_hover(&self.action);
             }
             _ => {}
         }

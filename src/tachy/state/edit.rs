@@ -314,16 +314,16 @@ impl EditGrid {
     }
 
     pub fn chip_at(&self, coords: Coords)
-                   -> Option<(ChipType, Orientation, Coords)> {
+                   -> Option<(Coords, ChipType, Orientation)> {
         match self.chips.get(&coords) {
             Some(&ChipCell::Chip(ctype, orient)) => {
-                Some((ctype, orient, coords))
+                Some((coords, ctype, orient))
             }
             Some(&ChipCell::Ref(delta)) => {
                 let new_coords = coords + delta;
                 match self.chips.get(&new_coords) {
                     Some(&ChipCell::Chip(ctype, orient)) => {
-                        Some((ctype, orient, new_coords))
+                        Some((new_coords, ctype, orient))
                     }
                     other => {
                         panic!("ChipRef({:?}) at {:?} points to {:?} at {:?}",
@@ -336,6 +336,23 @@ impl EditGrid {
             }
             None => None,
         }
+    }
+
+    pub fn interface_at(&self, coords: Coords)
+                        -> Option<(usize, &'static Interface)> {
+        for (index, interface) in self.interfaces.iter().enumerate() {
+            let rect = Rect::with_size(interface.top_left(self.bounds),
+                                       interface.size());
+            if rect.contains_point(coords) {
+                return Some((index, interface));
+            }
+        }
+        return None;
+    }
+
+    pub fn wire_index_at(&self, coords: Coords, dir: Direction)
+                         -> Option<usize> {
+        self.fragments.get(&(coords, dir)).map(|&(_, index)| index)
     }
 
     pub fn wire_shape_at(&self, coords: Coords, dir: Direction)
@@ -738,6 +755,60 @@ impl EditGrid {
             }
         }
         return None;
+    }
+
+    pub fn wire_tooltip_format(&self, index: usize) -> String {
+        if index >= self.wires.len() {
+            // This shouldn't happen.
+            return format!("ERROR: index={} num_wires={}",
+                           index,
+                           self.wires.len());
+        }
+        let wire = &self.wires[index];
+        let size = wire.size.lower_bound().unwrap_or(WireSize::One);
+        let mut fmt = match wire.color {
+            WireColor::Unknown => "$*Disconnected wire$*".to_string(),
+            WireColor::Error => {
+                if wire.size.is_empty() {
+                    format!("$*$RError$K wire$*")
+                } else {
+                    format!("$*{}-bit $Rerror$K wire$*", size.num_bits())
+                }
+            }
+            WireColor::Behavior => {
+                format!("$*{}-bit {} wire$*",
+                        size.num_bits(),
+                        PortColor::Behavior.tooltip_format())
+            }
+            WireColor::Event => {
+                format!("$*{}-bit {} wire$*",
+                        size.num_bits(),
+                        PortColor::Event.tooltip_format())
+            }
+        };
+        if let Some(ref eval) = self.eval {
+            match wire.color {
+                WireColor::Unknown | WireColor::Error => {}
+                WireColor::Behavior => {
+                    fmt.push_str(&format!("\nCurrent value: {}",
+                                          eval.wire_value(index)));
+                }
+                WireColor::Event => {
+                    if let Some(value) = eval.wire_event(index) {
+                        if size == WireSize::Zero {
+                            fmt.push_str("\nCurrently has an event.");
+                        } else {
+                            fmt.push_str(&format!("\nCurrent event value: {}",
+                                                  value));
+                        }
+                    } else {
+                        fmt.push_str("\nNo current event.");
+                    }
+                }
+            }
+        }
+        // TODO: If there are errors, show errors.
+        fmt
     }
 
     #[cfg(not(debug_assertions))]

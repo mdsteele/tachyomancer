@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::index::{IndexAtom, IndexBuffer};
 use gl;
 use gl::types::{GLenum, GLint, GLsizei, GLsizeiptr, GLuint, GLvoid};
 use num_integer::Integer;
@@ -84,6 +85,19 @@ impl VertexArray {
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
+
+    pub fn draw_elements<A: IndexAtom>(&self, primitive: Primitive,
+                                       indices: &IndexBuffer<A>,
+                                       count: usize) {
+        unsafe {
+            indices.bind();
+            gl::DrawElements(primitive.to_gl_enum(),
+                             count as GLsizei,
+                             A::gl_type(),
+                             0 as *const GLvoid);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
+        }
+    }
 }
 
 /// Deletes the underlying GL vertex array when dropped.
@@ -91,6 +105,7 @@ impl Drop for VertexArray {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteVertexArrays(1, &self.name);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
@@ -176,6 +191,7 @@ impl<A> Drop for VertexBuffer<A> {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteBuffers(1, &self.name);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
@@ -185,8 +201,6 @@ impl<A> Drop for VertexBuffer<A> {
 pub trait VertexAtom {
     fn gl_type() -> GLenum;
 }
-
-pub trait VertexIntAtom: VertexAtom {}
 
 impl VertexAtom for f32 {
     fn gl_type() -> GLenum { gl::FLOAT }

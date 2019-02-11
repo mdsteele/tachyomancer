@@ -17,20 +17,20 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod index;
-mod program;
-mod shader;
-mod stencil;
-mod texture;
-mod uniform;
-mod vertex;
+//===========================================================================//
 
-pub use self::index::IndexBuffer;
-pub use self::program::ShaderProgram;
-pub use self::shader::{Shader, ShaderType};
-pub use self::stencil::Stencil;
-pub use self::texture::{Texture1D, Texture2D};
-pub use self::uniform::ShaderUniform;
-pub use self::vertex::{Primitive, VertexArray, VertexBuffer};
+#[derive(Clone, Copy)]
+pub struct Color4 {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32,
+}
+
+impl Color4 {
+    pub fn new(r: f32, g: f32, b: f32, a: f32) -> Color4 {
+        Color4 { r, g, b, a }
+    }
+}
 
 //===========================================================================//

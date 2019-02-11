@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256">
+  <!-- Dialog -->
+  <g transform="translate(0, 0)">
+    <!-- Outline -->
+    <path d="M 2,2 H 102 L 126,26 V 126 H 40 L 2,88 z"
+          fill="#00f" stroke="#0f0" stroke-width="2"/>
+    <!-- Stripes -->
+    <g fill="none" stroke="#0f0" stroke-width="2">
+      <path d="M 32,118 H 126"/>
+      <path d="M 52,122 H 108"/>
+      <path d="M 96.343,2 L 126,31.657"/>
+    </g>
+    <!-- Hatch marks -->
+    <g transform="translate(38.5, 126) skewX(45) scale(1,12)"
+       fill="#0f0" stroke="none">
+      <rect x="8" y="-1" width="2.82842" height="1"/>
+      <rect x="16" y="-1" width="2.82842" height="1"/>
+      <rect x="24" y="-1" width="2.82842" height="1"/>
+      <rect x="72" y="-1" width="2.82842" height="1"/>
+      <rect x="80" y="-1" width="2.82842" height="1"/>
+      <rect x="88" y="-1" width="2.82842" height="0.85"/>
+    </g>
+    <!-- Corners -->
+    <g fill="none" stroke="#f00" stroke-width="4">
+      <path d="M 2,16 v -14 h 16"/>
+      <path d="M 126,112 v 14 h -16"/>
+      <path d="M 2,76 v 12 l 8.485,8.485"/>
+    </g>
+  </g>
+  <!-- Rect -->
+  <g transform="translate(128, 0)">
+    <!-- Outline -->
+    <rect x="2" y="2" width="60" height="60"
+          fill="#00f" stroke="#0f0" stroke-width="2"/>
+    <!-- Corners -->
+    <g fill="none" stroke="#f00" stroke-width="4">
+      <path d="M 2,16 v -14 h 16"/>
+      <path d="M 62,16 v -14 h -16"/>
+      <path d="M 2,48 v 14 h 16"/>
+      <path d="M 62,48 v 14 h -16"/>
+    </g>
+  </g>
+  <!-- Alt-Rect -->
+  <g transform="translate(192, 0)">
+    <!-- Outline -->
+    <rect x="2" y="2" width="60" height="60"
+          fill="#00f" stroke="#0f0" stroke-width="2"/>
+    <!-- Corners -->
+    <g fill="none" stroke="#f00" stroke-width="4">
+      <path d="M 2,16 v -14 h 16"/>
+      <path d="M 62,48 v 14 h -16"/>
+    </g>
+  </g>
+</svg>

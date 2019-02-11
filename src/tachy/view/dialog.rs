@@ -20,17 +20,36 @@
 use super::button::{TextBox, TextButton};
 use cgmath::Matrix4;
 use tachy::font::Align;
-use tachy::geom::{Rect, RectSize};
+use tachy::geom::{Color4, Rect, RectSize};
 use tachy::gui::{Event, Keycode, Resources};
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
+const DIALOG_COLOR_1: Color4 = Color4 {
+    r: 1.0,
+    g: 0.75,
+    b: 0.5,
+    a: 1.0,
+};
+const DIALOG_COLOR_2: Color4 = Color4 {
+    r: 0.5,
+    g: 1.0,
+    b: 1.0,
+    a: 1.0,
+};
+const DIALOG_COLOR_3: Color4 = Color4 {
+    r: 0.0,
+    g: 0.4,
+    b: 0.4,
+    a: 0.75,
+};
 const BUTTON_HEIGHT: i32 = 40;
 const BUTTON_INNER_MARGIN: i32 = 10;
 const BUTTON_MIN_WIDTH: i32 = 80;
 const BUTTON_SPACING: i32 = 14;
 const BUTTON_TOP_MARGIN: i32 = 16;
+
 const FONT_SIZE: f32 = 20.0;
 const LINE_HEIGHT: i32 = 24;
 const MARGIN: i32 = 24;
@@ -101,9 +120,12 @@ impl<T: Clone> ButtonDialogBox<T> {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let color = (0.9, 0.9, 0.9);
         let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.shaders().ui().draw_dialog(&matrix,
+                                             &rect,
+                                             &DIALOG_COLOR_1,
+                                             &DIALOG_COLOR_2,
+                                             &DIALOG_COLOR_3);
 
         let left = (self.rect.x + MARGIN) as f32;
         let mut top = (self.rect.y + MARGIN) as f32;
@@ -205,9 +227,12 @@ impl TextDialogBox {
     where
         F: Fn(&str) -> bool,
     {
-        let color = (0.9, 0.9, 0.9);
         let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.shaders().ui().draw_dialog(&matrix,
+                                             &rect,
+                                             &DIALOG_COLOR_1,
+                                             &DIALOG_COLOR_2,
+                                             &DIALOG_COLOR_3);
 
         let left = (self.rect.x + MARGIN) as f32;
         let mut top = (self.rect.y + MARGIN) as f32;

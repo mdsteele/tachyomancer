@@ -19,7 +19,7 @@
 
 use cgmath::{Matrix4, Point2};
 use tachy::font::Align;
-use tachy::geom::Rect;
+use tachy::geom::{Color4, Rect};
 use tachy::gui::{Event, Keycode, Resources};
 use tachy::save::Hotkey;
 use unicode_width::UnicodeWidthStr;
@@ -523,15 +523,19 @@ impl<T: Clone> TextButton<T> {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 enabled: bool) {
-        let color = if !enabled {
-            (0.4, 0.4, 0.4)
+        let bg_color = if !enabled {
+            Color4::new(1.0, 1.0, 1.0, 0.1)
         } else if self.hovering {
-            (1.0, 0.2, 0.2)
+            Color4::new(0.0, 1.0, 1.0, 0.6)
         } else {
-            (0.7, 0.1, 0.1)
+            Color4::new(0.0, 1.0, 1.0, 0.3)
         };
         let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.shaders().ui().draw_rect4(&matrix,
+                                            &rect,
+                                            &Color4::new(1.0, 0.8, 0.4, 1.0),
+                                            &Color4::new(0.0, 0.7, 0.7, 1.0),
+                                            &bg_color);
         resources.fonts().bold().draw(&matrix,
                                       TEXT_BUTTON_FONT_SIZE,
                                       Align::MidCenter,

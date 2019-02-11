@@ -21,6 +21,7 @@ use cgmath::{Matrix4, Vector2, Vector3, Vector4};
 use gl;
 use gl::types::{GLenum, GLint};
 use std::marker::PhantomData;
+use tachy::geom::{Color4, Rect};
 
 //===========================================================================//
 
@@ -50,6 +51,15 @@ pub trait UniformValue {
     fn set_uniform(&self, loc: GLint);
 }
 
+impl UniformValue for Color4 {
+    fn gl_type() -> GLenum { gl::FLOAT_VEC4 }
+    fn set_uniform(&self, loc: GLint) {
+        unsafe {
+            gl::Uniform4f(loc, self.r, self.g, self.b, self.a);
+        }
+    }
+}
+
 impl UniformValue for f32 {
     fn gl_type() -> GLenum { gl::FLOAT }
     fn set_uniform(&self, loc: GLint) {
@@ -64,6 +74,15 @@ impl UniformValue for Matrix4<f32> {
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::UniformMatrix4fv(loc, 1, gl::FALSE, &self[0][0]);
+        }
+    }
+}
+
+impl UniformValue for Rect<f32> {
+    fn gl_type() -> GLenum { gl::FLOAT_VEC4 }
+    fn set_uniform(&self, loc: GLint) {
+        unsafe {
+            gl::Uniform4f(loc, self.x, self.y, self.width, self.height);
         }
     }
 }

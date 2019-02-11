@@ -20,15 +20,14 @@
 mod enums;
 
 pub use self::enums::{Align, Font};
-use cgmath::{Matrix4, Vector2, Vector3};
+use cgmath::{Matrix4, Vector2};
 use std::rc::Rc;
-use tachy::geom::MatrixExt;
+use tachy::geom::{Color4, MatrixExt};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
-const BLACK_COLOR: (f32, f32, f32) = (0.0, 0.0, 0.0);
 const MAX_CHARS: usize = 64;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -97,18 +96,17 @@ impl FontData {
                         height,
                         alignment,
                         start,
-                        BLACK_COLOR,
+                        &Color4::WHITE,
                         0.0,
                         text);
     }
 
     pub fn draw_style(&self, matrix: &Matrix4<f32>, height: f32,
-                      alignment: Align, start: (f32, f32),
-                      color: (f32, f32, f32), slant: f32, text: &str) {
+                      alignment: Align, start: (f32, f32), color: &Color4,
+                      slant: f32, text: &str) {
         self.texture.bind();
         let size = (self.ratio * height, height);
-        self.shader
-            .draw(matrix, size, alignment, start, &color.into(), slant, text);
+        self.shader.draw(matrix, size, alignment, start, color, slant, text);
     }
 }
 
@@ -116,7 +114,7 @@ impl FontData {
 
 struct TextShader {
     program: ShaderProgram,
-    color: ShaderUniform<Vector3<f32>>,
+    color: ShaderUniform<Color4>,
     mvp: ShaderUniform<Matrix4<f32>>,
     text: ShaderUniform<[u32; MAX_CHARS]>,
     slant: ShaderUniform<f32>,
@@ -167,8 +165,8 @@ impl TextShader {
     }
 
     fn draw(&self, matrix: &Matrix4<f32>, size: (f32, f32),
-            alignment: Align, start: (f32, f32), color: &Vector3<f32>,
-            slant: f32, text: &str) {
+            alignment: Align, start: (f32, f32), color: &Color4, slant: f32,
+            text: &str) {
         self.program.bind();
         self.varray.bind();
         self.color.set(color);

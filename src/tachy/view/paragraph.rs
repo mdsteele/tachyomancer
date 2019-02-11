@@ -21,6 +21,7 @@ use cgmath::Matrix4;
 use std::mem;
 use std::str::{Chars, FromStr};
 use tachy::font::{Align, Font, Fonts};
+use tachy::geom::Color4;
 use tachy::gui::Resources;
 use tachy::save::{Hotkey, Prefs};
 use unicode_width::UnicodeWidthStr;
@@ -45,11 +46,9 @@ impl Paragraph {
     /// * `$>` aligns text to the right.
     /// * `$*` toggles bold text (default off).
     /// * `$/` toggles italic text (default off).
-    /// * `$B` switches the text color to blue.
     /// * `$C` switches the text color to cyan.
     /// * `$G` switches the text color to green.
     /// * `$K` switches the text color to black (the default).
-    /// * `$M` switches the text color to magenta.
     /// * `$O` switches the text color to orange.
     /// * `$P` switches the text color to purple.
     /// * `$R` switches the text color to red.
@@ -82,16 +81,14 @@ impl Paragraph {
                     Some('>') => parser.set_align(ParserAlign::Right),
                     Some('*') => parser.toggle_bold(),
                     Some('/') => parser.toggle_italic(),
-                    Some('B') => parser.set_color((0.0, 0.0, 1.0)),
-                    Some('C') => parser.set_color((0.0, 1.0, 1.0)),
-                    Some('G') => parser.set_color((0.0, 1.0, 0.0)),
-                    Some('K') => parser.set_color((0.0, 0.0, 0.0)),
-                    Some('M') => parser.set_color((1.0, 0.0, 1.0)),
-                    Some('O') => parser.set_color((1.0, 0.5, 0.0)),
-                    Some('P') => parser.set_color((0.5, 0.0, 1.0)),
-                    Some('R') => parser.set_color((1.0, 0.0, 0.0)),
-                    Some('W') => parser.set_color((1.0, 1.0, 1.0)),
-                    Some('Y') => parser.set_color((1.0, 1.0, 0.0)),
+                    Some('C') => parser.set_color(Color4::CYAN3),
+                    Some('G') => parser.set_color((0.0, 1.0, 0.0).into()),
+                    Some('K') => parser.set_color(Color4::BLACK),
+                    Some('O') => parser.set_color(Color4::ORANGE3),
+                    Some('P') => parser.set_color(Color4::PURPLE3),
+                    Some('R') => parser.set_color((1.0, 0.0, 0.0).into()),
+                    Some('W') => parser.set_color(Color4::WHITE),
+                    Some('Y') => parser.set_color(Color4::YELLOW3),
                     Some('{') => parser.set_font(&parse_arg(&mut chars, '}')),
                     Some('[') => {
                         parser.push_key(&parse_arg(&mut chars, ']'), prefs)
@@ -164,7 +161,7 @@ impl CompiledLine {
 struct CompiledPiece {
     offset: f32,
     font: Font,
-    color: (f32, f32, f32),
+    color: Color4,
     slant: f32,
     text: String,
 }
@@ -176,7 +173,7 @@ impl CompiledPiece {
                                         font_size,
                                         Align::TopLeft,
                                         (left + self.offset, top),
-                                        self.color,
+                                        &self.color,
                                         self.slant,
                                         &self.text);
     }
@@ -186,7 +183,7 @@ impl CompiledPiece {
 
 struct Parser {
     current_align: ParserAlign,
-    current_color: (f32, f32, f32),
+    current_color: Color4,
     current_font: Font,
     current_italic: bool,
     current_line: ParserLine,
@@ -198,7 +195,7 @@ impl Parser {
     fn new() -> Parser {
         Parser {
             current_align: ParserAlign::Left,
-            current_color: (0.0, 0.0, 0.0),
+            current_color: Color4::BLACK,
             current_font: Font::Roman,
             current_italic: false,
             current_line: ParserLine::new(),
@@ -261,10 +258,10 @@ impl Parser {
         }
     }
 
-    fn set_color(&mut self, color: (f32, f32, f32)) {
+    fn set_color(&mut self, color: Color4) {
         if color != self.current_color {
             self.shift_piece();
-            self.current_color = color;
+            self.current_color = color.into();
         }
     }
 
@@ -471,7 +468,7 @@ impl ParserLine {
 
 struct ParserPiece {
     font: Font,
-    color: (f32, f32, f32),
+    color: Color4,
     slant: f32,
     text: String,
 }

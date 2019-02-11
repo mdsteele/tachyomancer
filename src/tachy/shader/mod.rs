@@ -369,7 +369,7 @@ impl UiShader {
 pub struct WireShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
-    wire_color: ShaderUniform<Vector3<f32>>,
+    wire_color: ShaderUniform<Color4>,
 }
 
 impl WireShader {
@@ -385,8 +385,8 @@ impl WireShader {
 
     pub fn bind(&self) { self.program.bind(); }
 
-    pub fn set_wire_color(&self, color: (f32, f32, f32)) {
-        self.wire_color.set(&color.into());
+    pub fn set_wire_color(&self, color: &Color4) {
+        self.wire_color.set(color);
     }
 
     pub fn set_mvp(&self, mvp: &Matrix4<f32>) { self.mvp.set(mvp); }

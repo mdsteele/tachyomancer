@@ -26,24 +26,10 @@ use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
-const DIALOG_COLOR_1: Color4 = Color4 {
-    r: 1.0,
-    g: 0.75,
-    b: 0.5,
-    a: 1.0,
-};
-const DIALOG_COLOR_2: Color4 = Color4 {
-    r: 0.5,
-    g: 1.0,
-    b: 1.0,
-    a: 1.0,
-};
-const DIALOG_COLOR_3: Color4 = Color4 {
-    r: 0.0,
-    g: 0.4,
-    b: 0.4,
-    a: 0.75,
-};
+const DIALOG_COLOR_1: Color4 = Color4::CYAN4;
+const DIALOG_COLOR_2: Color4 = Color4::ORANGE5;
+const DIALOG_COLOR_3: Color4 = Color4::PURPLE0.with_alpha(0.8);
+
 const BUTTON_HEIGHT: i32 = 40;
 const BUTTON_INNER_MARGIN: i32 = 10;
 const BUTTON_MIN_WIDTH: i32 = 80;

@@ -398,14 +398,12 @@ impl TextBox {
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         // Text:
         let font = resources.fonts().roman();
-        font.draw_style(&matrix,
-                        TEXT_BOX_FONT_SIZE,
-                        Align::MidLeft,
-                        (rect.x + TEXT_BOX_INNER_MARGIN,
-                         rect.y + 0.5 * rect.height),
-                        (1.0, 1.0, 1.0),
-                        0.0,
-                        &self.string);
+        font.draw(&matrix,
+                  TEXT_BOX_FONT_SIZE,
+                  Align::MidLeft,
+                  (rect.x + TEXT_BOX_INNER_MARGIN,
+                   rect.y + 0.5 * rect.height),
+                  &self.string);
         // Cursor:
         if self.cursor_blink < 0.5 * TEXT_BOX_CURSOR_BLINK_PERIOD {
             let color = (0.5, 0.5, 0.0);
@@ -526,15 +524,15 @@ impl<T: Clone> TextButton<T> {
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
         } else if self.hovering {
-            Color4::new(0.0, 1.0, 1.0, 0.6)
+            Color4::PURPLE2.with_alpha(0.8)
         } else {
-            Color4::new(0.0, 1.0, 1.0, 0.3)
+            Color4::PURPLE0.with_alpha(0.8)
         };
         let rect = self.rect.as_f32();
         resources.shaders().ui().draw_rect4(&matrix,
                                             &rect,
-                                            &Color4::new(1.0, 0.8, 0.4, 1.0),
-                                            &Color4::new(0.0, 0.7, 0.7, 1.0),
+                                            &Color4::ORANGE5,
+                                            &Color4::CYAN3,
                                             &bg_color);
         resources.fonts().bold().draw(&matrix,
                                       TEXT_BUTTON_FONT_SIZE,

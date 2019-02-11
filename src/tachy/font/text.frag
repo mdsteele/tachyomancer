@@ -2,12 +2,12 @@
 
 in vec2 textureUV;
 
-uniform vec3 Color;
+uniform vec4 Color;
 uniform sampler2D Font;
 
 out vec4 color;
 
 void main() {
-  float alpha = texture(Font, textureUV).r;
-  color = vec4(Color, alpha);
+  color = Color;
+  color.a *= texture(Font, textureUV).r;
 }

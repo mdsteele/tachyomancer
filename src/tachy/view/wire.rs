@@ -18,11 +18,15 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::Matrix4;
+use tachy::geom::Color4;
 use tachy::gl::{Primitive, VertexArray, VertexBuffer};
 use tachy::gui::Resources;
 use tachy::state::{WireColor, WireSize};
 
 //===========================================================================//
+
+const WIRE_COLOR_ERROR: Color4 = Color4::new(1.0, 0.0, 0.0, 1.0);
+const WIRE_COLOR_UNKNOWN: Color4 = Color4::new(0.65, 0.65, 0.65, 1.0);
 
 const VERTICES_PER_WIRE_SIZE: usize = 57;
 
@@ -224,12 +228,12 @@ impl WireModel {
     }
 }
 
-fn wire_color(color: WireColor) -> (f32, f32, f32) {
+fn wire_color(color: WireColor) -> &'static Color4 {
     match color {
-        WireColor::Unknown => (0.65, 0.65, 0.65),
-        WireColor::Error => (1.0, 0.0, 0.0),
-        WireColor::Behavior => (1.0, 0.5, 0.0),
-        WireColor::Event => (0.0, 1.0, 1.0),
+        WireColor::Unknown => &WIRE_COLOR_UNKNOWN,
+        WireColor::Error => &WIRE_COLOR_ERROR,
+        WireColor::Behavior => &Color4::ORANGE3,
+        WireColor::Event => &Color4::CYAN3,
     }
 }
 

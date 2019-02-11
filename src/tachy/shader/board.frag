@@ -11,5 +11,7 @@ void main() {
   float yDist = abs(fract(fragCoords.y + 0.5) - 0.5);
   float dist = min(xDist, yDist);
   float param = 1.0 - smoothstep(0.0, gridThreshold, dist);
-  color = vec4(0.0, 0.4 * param + 0.05, 0.0, 1.0);
+  color = mix(vec4(0.118, 0.039, 0.180, 1.0),
+              vec4(0.235, 0.078, 0.361, 1.0),
+              param);
 }

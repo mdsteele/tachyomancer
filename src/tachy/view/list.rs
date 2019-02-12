@@ -21,7 +21,7 @@ use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use std::borrow::Borrow;
 use tachy::font::Align;
-use tachy::geom::Rect;
+use tachy::geom::{Color4, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 
@@ -33,7 +33,7 @@ const ITEM_HEIGHT: i32 = 50;
 const ITEM_SPACING: i32 = 10;
 const ITEM_INNER_MARGIN: i32 = 10;
 
-const SCROLLBAR_WIDTH: i32 = 15;
+const SCROLLBAR_WIDTH: i32 = 18;
 const SCROLLBAR_MARGIN: i32 = 5;
 
 //===========================================================================//
@@ -77,7 +77,7 @@ impl<T: Clone + Eq> ListView<T> {
             resources
                 .shaders()
                 .solid()
-                .fill_rect(&matrix, color, self.rect.as_f32());
+                .fill_rect(matrix, color, self.rect.as_f32());
         }
         stencil.enable_clipping();
 
@@ -99,9 +99,9 @@ impl<T: Clone + Eq> ListView<T> {
                                  top as f32,
                                  item_width as f32,
                                  ITEM_HEIGHT as f32);
-            resources.shaders().solid().fill_rect(&matrix, color, rect);
+            resources.shaders().solid().fill_rect(matrix, color, rect);
             let font = resources.fonts().roman();
-            font.draw(&matrix,
+            font.draw(matrix,
                       FONT_SIZE,
                       Align::MidLeft,
                       ((self.rect.x + ITEM_INNER_MARGIN) as f32,
@@ -111,21 +111,26 @@ impl<T: Clone + Eq> ListView<T> {
 
         // Draw scrollbar:
         if let Some(handle_rect) = self.scroll_handle_rect() {
-            let color = (0.3, 0.1, 0.3);
+            let ui = resources.shaders().ui();
             let rect = Rect::new((self.rect.right() - SCROLLBAR_WIDTH) as f32,
                                  self.rect.y as f32,
                                  SCROLLBAR_WIDTH as f32,
                                  self.rect.height as f32);
-            resources.shaders().solid().fill_rect(&matrix, color, rect);
-            let color = if self.drag.is_some() {
-                (0.9, 0.6, 0.9)
+            ui.draw_scroll_bar(matrix,
+                               &rect,
+                               &Color4::ORANGE3,
+                               &Color4::CYAN2,
+                               &Color4::PURPLE0);
+            let (fg_color, bg_color) = if self.drag.is_some() {
+                (&Color4::ORANGE4, &Color4::PURPLE3)
             } else {
-                (0.9, 0.1, 0.9)
+                (&Color4::ORANGE3, &Color4::PURPLE1)
             };
-            resources
-                .shaders()
-                .solid()
-                .fill_rect(&matrix, color, handle_rect.as_f32());
+            ui.draw_scroll_handle(matrix,
+                                  &handle_rect.as_f32(),
+                                  fg_color,
+                                  &Color4::CYAN2,
+                                  bg_color);
         }
     }
 

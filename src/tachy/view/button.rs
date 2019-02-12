@@ -303,17 +303,22 @@ impl Slider {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let color = (0.0, 0.2, 0.2);
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
-
-        let color = if self.drag.is_some() {
-            (0.2, 0.8, 0.8)
+        let ui = resources.shaders().ui();
+        ui.draw_scroll_bar(matrix,
+                           &self.rect.as_f32(),
+                           &Color4::ORANGE3,
+                           &Color4::CYAN2,
+                           &Color4::PURPLE0);
+        let (fg_color, bg_color) = if self.drag.is_some() {
+            (&Color4::ORANGE4, &Color4::PURPLE3)
         } else {
-            (0.1, 0.6, 0.6)
+            (&Color4::ORANGE3, &Color4::PURPLE1)
         };
-        let rect = self.handle_rect().as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        ui.draw_scroll_handle(matrix,
+                              &self.handle_rect().as_f32(),
+                              fg_color,
+                              &Color4::CYAN2,
+                              bg_color);
     }
 
     pub fn on_event(&mut self, event: &Event) -> Option<SliderAction> {

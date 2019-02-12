@@ -42,14 +42,24 @@
     </g>
   </g>
   <!-- Alt-Rect -->
-  <g transform="translate(192, 0)">
+  <g transform="translate(192, 32)">
     <!-- Outline -->
-    <rect x="2" y="2" width="60" height="60"
+    <rect x="2" y="2" width="60" height="28"
           fill="#00f" stroke="#0f0" stroke-width="2"/>
     <!-- Corners -->
     <g fill="none" stroke="#f00" stroke-width="4">
       <path d="M 2,16 v -14 h 16"/>
-      <path d="M 62,48 v 14 h -16"/>
+      <path d="M 62,16 v 14 h -16"/>
     </g>
+  </g>
+  <!-- Scrollbar handle -->
+  <g transform="translate(192, 0)">
+    <path d="M 2,5 l 3,-3 h 22 l 3,3 v 22 l -3,3 h -22 l -3,-3 z"
+          fill="#00f" stroke="#f00" stroke-width="4"/>
+  </g>
+  <!-- Scrollbar bar -->
+  <g transform="translate(224, 0)">
+    <path d="M 2,5 l 3,-3 h 22 l 3,3 v 22 l -3,3 h -22 l -3,-3 z"
+          fill="#00f" stroke="#0f0" stroke-width="2"/>
   </g>
 </svg>

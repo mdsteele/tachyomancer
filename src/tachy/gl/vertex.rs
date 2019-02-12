@@ -87,12 +87,11 @@ impl VertexArray {
     }
 
     pub fn draw_elements<A: IndexAtom>(&self, primitive: Primitive,
-                                       indices: &IndexBuffer<A>,
-                                       count: usize) {
+                                       indices: &IndexBuffer<A>) {
+        indices.bind();
         unsafe {
-            indices.bind();
             gl::DrawElements(primitive.to_gl_enum(),
-                             count as GLsizei,
+                             indices.len() as GLsizei,
                              A::gl_type(),
                              0 as *const GLvoid);
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);

@@ -39,6 +39,12 @@ const HOTKEY_BOX_SPACING: i32 = 8;
 const HOTKEY_BOX_FONT_SIZE: f32 = 20.0;
 const HOTKEY_LABEL_FONT_SIZE: f32 = 20.0;
 
+const HOVER_PULSE_CLICK: f64 = 1.0;
+const HOVER_PULSE_DECAY_RATE: f64 = HOVER_PULSE_CLICK / 0.7;
+const HOVER_PULSE_MAX: f64 = 0.55;
+const HOVER_PULSE_MIN: f64 = 0.35;
+const HOVER_PULSE_PERIOD: f64 = 1.0;
+
 const TEXT_BOX_CURSOR_BLINK_PERIOD: f64 = 1.0;
 const TEXT_BOX_FONT_SIZE: f32 = 20.0;
 const TEXT_BOX_INNER_MARGIN: f32 = 5.0;
@@ -500,6 +506,8 @@ pub struct TextButton<T> {
     value: T,
     keycode: Option<Keycode>,
     hovering: bool,
+    hover_pulse: f64,
+    hover_timer: f64,
 }
 
 impl<T: Clone> TextButton<T> {
@@ -516,6 +524,8 @@ impl<T: Clone> TextButton<T> {
             value,
             keycode,
             hovering: false,
+            hover_pulse: 0.0,
+            hover_timer: 0.0,
         }
     }
 
@@ -523,10 +533,10 @@ impl<T: Clone> TextButton<T> {
                 enabled: bool) {
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
-        } else if self.hovering {
-            Color4::PURPLE2.with_alpha(0.8)
         } else {
-            Color4::PURPLE0.with_alpha(0.8)
+            Color4::PURPLE0
+                .mix(Color4::PURPLE3, self.hover_pulse as f32)
+                .with_alpha(0.8)
         };
         let rect = self.rect.as_f32();
         resources.shaders().ui().draw_rect4(&matrix,
@@ -544,8 +554,35 @@ impl<T: Clone> TextButton<T> {
 
     pub fn on_event(&mut self, event: &Event, enabled: bool) -> Option<T> {
         match event {
+            Event::ClockTick(tick) => {
+                if self.hovering {
+                    if self.hover_pulse > HOVER_PULSE_MAX {
+                        self.hover_pulse = (self.hover_pulse -
+                                                tick.elapsed *
+                                                    HOVER_PULSE_DECAY_RATE)
+                            .max(HOVER_PULSE_MAX);
+                        self.hover_timer = 0.0;
+                    } else {
+                        self.hover_timer = (self.hover_timer + tick.elapsed) %
+                            HOVER_PULSE_PERIOD;
+                        let mut param = 2.0 * self.hover_timer /
+                            HOVER_PULSE_PERIOD;
+                        if param > 1.0 {
+                            param = 2.0 - param;
+                        }
+                        self.hover_pulse = HOVER_PULSE_MAX -
+                            param * (HOVER_PULSE_MAX - HOVER_PULSE_MIN);
+                    }
+                } else {
+                    self.hover_pulse = (self.hover_pulse -
+                                            tick.elapsed *
+                                                HOVER_PULSE_DECAY_RATE)
+                        .max(0.0);
+                }
+            }
             Event::KeyDown(key) => {
                 if enabled && Some(key.code) == self.keycode {
+                    self.hover_pulse = HOVER_PULSE_CLICK;
                     // TODO: play sound
                     return Some(self.value.clone());
                 }
@@ -554,12 +591,23 @@ impl<T: Clone> TextButton<T> {
                 if enabled && mouse.left &&
                     self.rect.contains_point(mouse.pt)
                 {
+                    self.hover_pulse = HOVER_PULSE_CLICK;
                     // TODO: play sound
                     return Some(self.value.clone());
                 }
             }
             Event::MouseMove(mouse) => {
-                self.hovering = self.rect.contains_point(mouse.pt);
+                if self.rect.contains_point(mouse.pt) {
+                    if !self.hovering {
+                        self.hovering = true;
+                        self.hover_pulse = self.hover_pulse
+                            .max(HOVER_PULSE_MAX);
+                        self.hover_timer = 0.0;
+                        // TODO: play sound
+                    }
+                } else {
+                    self.hovering = false;
+                }
             }
             Event::Unfocus => self.hovering = false,
             _ => {}

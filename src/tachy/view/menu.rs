@@ -156,7 +156,9 @@ impl MenuView {
                 Some(None) => {}
                 None => self.confirmation_dialog = Some(dialog),
             }
-            return None;
+            if !event.is_clock_tick() {
+                return None;
+            }
         }
 
         if let Some(mut dialog) = self.rename_dialog.take() {
@@ -169,7 +171,9 @@ impl MenuView {
                 Some(None) => {}
                 None => self.rename_dialog = Some(dialog),
             }
-            return None;
+            if !event.is_clock_tick() {
+                return None;
+            }
         }
 
         if let Some(action) = self.on_section_event(event, state, audio) {

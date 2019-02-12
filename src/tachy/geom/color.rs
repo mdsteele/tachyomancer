@@ -42,6 +42,15 @@ impl Color4 {
         }
     }
 
+    pub fn mix(&self, other: Color4, param: f32) -> Color4 {
+        Color4 {
+            r: self.r + param * (other.r - self.r),
+            g: self.g + param * (other.g - self.g),
+            b: self.b + param * (other.b - self.b),
+            a: self.a + param * (other.a - self.a),
+        }
+    }
+
     pub const BLACK: Color4 = Color4::new(0.0, 0.0, 0.0, 1.0);
     pub const WHITE: Color4 = Color4::new(1.0, 1.0, 1.0, 1.0);
 

@@ -130,6 +130,13 @@ impl Event {
         }
     }
 
+    pub fn is_clock_tick(&self) -> bool {
+        match self {
+            Event::ClockTick(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn relative_to(&self, origin: Point2<i32>) -> Event {
         match self {
             Event::MouseDown(mouse) => {

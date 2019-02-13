@@ -278,6 +278,112 @@ impl<T: Clone + PartialEq> RadioCheckbox<T> {
 
 //===========================================================================//
 
+pub struct Scrollbar {
+    rect: Rect<i32>,
+    scroll_top: i32,
+    scroll_max: i32,
+    drag: Option<i32>,
+}
+
+impl Scrollbar {
+    pub fn new(rect: Rect<i32>) -> Scrollbar {
+        Scrollbar {
+            rect,
+            scroll_top: 0,
+            scroll_max: 0,
+            drag: None,
+        }
+    }
+
+    pub fn is_visible(&self) -> bool { self.scroll_max != 0 }
+
+    pub fn scroll_top(&self) -> i32 { self.scroll_top }
+
+    pub fn set_total_height(&mut self, total_height: i32) {
+        self.scroll_max = (total_height - self.rect.height).max(0);
+        self.scroll_top = self.scroll_top.min(self.scroll_max);
+    }
+
+    pub fn scroll_by(&mut self, delta: i32) {
+        let new_scroll_top = self.scroll_top + delta;
+        self.scroll_top = new_scroll_top.max(0).min(self.scroll_max);
+    }
+
+    pub fn scroll_to(&mut self, middle: i32) {
+        self.scroll_top =
+            (middle - self.rect.height / 2).max(0).min(self.scroll_max);
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        if let Some(handle_rect) = self.handle_rect() {
+            let ui = resources.shaders().ui();
+            ui.draw_scroll_bar(matrix,
+                               &self.rect.as_f32(),
+                               &Color4::ORANGE3,
+                               &Color4::CYAN2,
+                               &Color4::PURPLE0);
+            let (fg_color, bg_color) = if self.drag.is_some() {
+                (&Color4::ORANGE4, &Color4::PURPLE3)
+            } else {
+                (&Color4::ORANGE3, &Color4::PURPLE1)
+            };
+            ui.draw_scroll_handle(matrix,
+                                  &handle_rect.as_f32(),
+                                  fg_color,
+                                  &Color4::CYAN2,
+                                  bg_color);
+        }
+    }
+
+    pub fn on_event(&mut self, event: &Event) {
+        match event {
+            Event::MouseDown(mouse) if mouse.left => {
+                if let Some(handle_rect) = self.handle_rect() {
+                    if handle_rect.contains_point(mouse.pt) {
+                        self.drag = Some(mouse.pt.y - handle_rect.y);
+                    }
+                    // TODO: support jumping up/down page
+                }
+            }
+            Event::MouseMove(mouse) => {
+                if let Some(drag_offset) = self.drag {
+                    let new_handle_y = mouse.pt.y - drag_offset - self.rect.y;
+                    let total_height = self.scroll_max + self.rect.height;
+                    let new_scroll_top = div_round(total_height *
+                                                       new_handle_y,
+                                                   self.rect.height);
+                    self.scroll_top =
+                        new_scroll_top.max(0).min(self.scroll_max);
+                }
+            }
+            Event::MouseUp(mouse) if mouse.left => {
+                self.drag = None;
+            }
+            Event::Unfocus => {
+                self.drag = None;
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_rect(&self) -> Option<Rect<i32>> {
+        if self.scroll_max != 0 {
+            let total_height = self.scroll_max + self.rect.height;
+            Some(Rect::new(self.rect.x,
+                           self.rect.y +
+                               div_round(self.rect.height * self.scroll_top,
+                                         total_height),
+                           self.rect.width,
+                           div_round(self.rect.height * self.rect.height,
+                                     total_height)))
+        } else {
+            None
+        }
+    }
+}
+
+//===========================================================================//
+
 pub enum SliderAction {
     Update(i32),
     Release,

@@ -17,11 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::button::Scrollbar;
 use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use std::borrow::Borrow;
 use tachy::font::Align;
-use tachy::geom::{Color4, Rect};
+use tachy::geom::Rect;
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 
@@ -41,9 +42,7 @@ const SCROLLBAR_MARGIN: i32 = 5;
 pub struct ListView<T> {
     rect: Rect<i32>,
     items: Vec<(T, String)>, // TODO: icons
-    scroll_top: i32,
-    scroll_max: i32,
-    drag: Option<i32>,
+    scrollbar: Scrollbar,
 }
 
 impl<T: Clone + Eq> ListView<T> {
@@ -53,12 +52,14 @@ impl<T: Clone + Eq> ListView<T> {
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
+        let scrollbar_rect = Rect::new(rect.right() - SCROLLBAR_WIDTH,
+                                       rect.y,
+                                       SCROLLBAR_WIDTH,
+                                       rect.height);
         let mut list = ListView {
             rect,
             items: Vec::new(),
-            scroll_top: 0,
-            scroll_max: 0,
-            drag: None,
+            scrollbar: Scrollbar::new(scrollbar_rect),
         };
         list.set_items(current, items);
         list
@@ -86,7 +87,7 @@ impl<T: Clone + Eq> ListView<T> {
         for (index, &(ref value, ref label)) in self.items.iter().enumerate() {
             let top = self.rect.y +
                 (index as i32) * (ITEM_HEIGHT + ITEM_SPACING) -
-                self.scroll_top;
+                self.scrollbar.scroll_top();
             if top >= self.rect.bottom() || top + ITEM_HEIGHT <= self.rect.y {
                 continue;
             }
@@ -110,28 +111,7 @@ impl<T: Clone + Eq> ListView<T> {
         }
 
         // Draw scrollbar:
-        if let Some(handle_rect) = self.scroll_handle_rect() {
-            let ui = resources.shaders().ui();
-            let rect = Rect::new((self.rect.right() - SCROLLBAR_WIDTH) as f32,
-                                 self.rect.y as f32,
-                                 SCROLLBAR_WIDTH as f32,
-                                 self.rect.height as f32);
-            ui.draw_scroll_bar(matrix,
-                               &rect,
-                               &Color4::ORANGE3,
-                               &Color4::CYAN2,
-                               &Color4::PURPLE0);
-            let (fg_color, bg_color) = if self.drag.is_some() {
-                (&Color4::ORANGE4, &Color4::PURPLE3)
-            } else {
-                (&Color4::ORANGE3, &Color4::PURPLE1)
-            };
-            ui.draw_scroll_handle(matrix,
-                                  &handle_rect.as_f32(),
-                                  fg_color,
-                                  &Color4::CYAN2,
-                                  bg_color);
-        }
+        self.scrollbar.draw(resources, matrix);
     }
 
     pub fn on_event<Q>(&mut self, event: &Event, current: &Q) -> Option<T>
@@ -139,19 +119,14 @@ impl<T: Clone + Eq> ListView<T> {
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
+        self.scrollbar.on_event(event);
         match event {
             Event::MouseDown(mouse)
                 if mouse.left && self.rect.contains_point(mouse.pt) => {
-                if let Some(handle_rect) = self.scroll_handle_rect() {
-                    if handle_rect.contains_point(mouse.pt) {
-                        self.drag = Some(mouse.pt.y - handle_rect.y);
-                    }
-                    // TODO: support jumping up/down page
-                }
                 if mouse.pt.x - self.rect.x < self.item_width() {
                     let (index, rel_y) =
                         div_mod_floor(mouse.pt.y - self.rect.y +
-                                          self.scroll_top,
+                                          self.scrollbar.scroll_top(),
                                       ITEM_HEIGHT + ITEM_SPACING);
                     if rel_y < ITEM_HEIGHT && index >= 0 &&
                         (index as usize) < self.items.len()
@@ -164,26 +139,8 @@ impl<T: Clone + Eq> ListView<T> {
                     }
                 }
             }
-            Event::MouseMove(mouse) => {
-                if let Some(drag_offset) = self.drag {
-                    let new_handle_y = mouse.pt.y - drag_offset - self.rect.y;
-                    let total_height = self.scroll_max + self.rect.height;
-                    let new_scroll_top = div_round(total_height *
-                                                       new_handle_y,
-                                                   self.rect.height);
-                    self.scroll_top =
-                        new_scroll_top.max(0).min(self.scroll_max);
-                }
-            }
-            Event::MouseUp(mouse) if mouse.left => {
-                self.drag = None;
-            }
             Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
-                let new_scroll_top = self.scroll_top + scroll.delta.y;
-                self.scroll_top = new_scroll_top.max(0).min(self.scroll_max);
-            }
-            Event::Unfocus => {
-                self.drag = None;
+                self.scrollbar.scroll_by(scroll.delta.y);
             }
             _ => {}
         }
@@ -198,7 +155,7 @@ impl<T: Clone + Eq> ListView<T> {
         let num_items = items.len() as i32;
         let total_height = num_items * (ITEM_HEIGHT + ITEM_SPACING) -
             ITEM_SPACING;
-        self.scroll_max = (total_height - self.rect.height).max(0);
+        self.scrollbar.set_total_height(total_height);
         let current_index = items
             .iter()
             .position(|(value, _)| value.borrow() == current)
@@ -206,41 +163,17 @@ impl<T: Clone + Eq> ListView<T> {
         let mid_current = (current_index as i32) *
             (ITEM_HEIGHT + ITEM_SPACING) +
             ITEM_HEIGHT / 2;
-        self.scroll_top =
-            (mid_current - self.rect.height / 2).max(0).min(self.scroll_max);
+        self.scrollbar.scroll_to(mid_current);
         self.items = items;
     }
 
-    fn has_scrollbar(&self) -> bool { self.scroll_max != 0 }
-
-    fn scroll_handle_rect(&self) -> Option<Rect<i32>> {
-        if self.scroll_max != 0 {
-            let total_height = self.scroll_max + self.rect.height;
-            Some(Rect::new(self.rect.right() - SCROLLBAR_WIDTH,
-                           self.rect.y +
-                               div_round(self.rect.height * self.scroll_top,
-                                         total_height),
-                           SCROLLBAR_WIDTH,
-                           div_round(self.rect.height * self.rect.height,
-                                     total_height)))
-        } else {
-            None
-        }
-    }
-
     fn item_width(&self) -> i32 {
-        if self.has_scrollbar() {
+        if self.scrollbar.is_visible() {
             self.rect.width - (SCROLLBAR_MARGIN + SCROLLBAR_WIDTH)
         } else {
             self.rect.width
         }
     }
-}
-
-//===========================================================================//
-
-fn div_round(a: i32, b: i32) -> i32 {
-    ((a as f64) / (b as f64)).round() as i32
 }
 
 //===========================================================================//

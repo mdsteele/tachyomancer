@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::button::Scrollbar;
 use super::list::ListView;
 use cgmath::{Matrix4, Point2, vec2};
 use num_integer::{div_floor, div_mod_floor};
@@ -48,7 +49,7 @@ const PORTRAIT_WIDTH: i32 = 60;
 
 const PUZZLE_BUBBLE_HEIGHT: i32 = 50;
 
-const SCROLLBAR_WIDTH: i32 = 15;
+const SCROLLBAR_WIDTH: i32 = 18;
 const SCROLLBAR_MARGIN: i32 = 5;
 
 //===========================================================================//
@@ -140,22 +141,22 @@ struct BubblesListView {
     bubbles: Vec<Box<BubbleView>>,
     num_bubbles_shown: usize,
     more_button: Option<MoreButton>,
-    scroll_top: i32,
-    scroll_max: i32,
-    drag: Option<i32>,
+    scrollbar: Scrollbar,
 }
 
 impl BubblesListView {
     fn new(rect: Rect<i32>, state: &GameState) -> BubblesListView {
+        let scrollbar_rect = Rect::new(rect.right() - SCROLLBAR_WIDTH,
+                                       rect.y,
+                                       SCROLLBAR_WIDTH,
+                                       rect.height);
         let mut view = BubblesListView {
             rect,
             conv: Conversation::first(),
             bubbles: Vec::new(),
             num_bubbles_shown: 0,
             more_button: None,
-            scroll_top: 0,
-            scroll_max: 0,
-            drag: None,
+            scrollbar: Scrollbar::new(scrollbar_rect),
         };
         view.update_conversation(state);
         view
@@ -174,83 +175,45 @@ impl BubblesListView {
         stencil.enable_clipping();
 
         // Draw conversation bubbles:
+        let scroll_top = self.scrollbar.scroll_top();
         let bubble_matrix = matrix *
             Matrix4::trans2(self.rect.x as f32,
-                            (self.rect.y - self.scroll_top) as f32);
+                            (self.rect.y - scroll_top) as f32);
         for bubble in self.bubbles.iter().take(self.num_bubbles_shown) {
             let rect = bubble.rect();
-            if rect.bottom() > self.scroll_top &&
-                rect.y < self.scroll_top + self.rect.height
+            if rect.bottom() > scroll_top &&
+                rect.y < scroll_top + self.rect.height
             {
                 bubble.draw(resources, &bubble_matrix);
             }
         }
         if let Some(ref button) = self.more_button {
             let rect = button.rect;
-            if rect.bottom() > self.scroll_top &&
-                rect.y < self.scroll_top + self.rect.height
+            if rect.bottom() > scroll_top &&
+                rect.y < scroll_top + self.rect.height
             {
                 button.draw(resources, &bubble_matrix);
             }
         }
 
         // Draw scrollbar:
-        if let Some(handle_rect) = self.scroll_handle_rect() {
-            let color = (0.3, 0.1, 0.3);
-            let rect = Rect::new((self.rect.right() - SCROLLBAR_WIDTH) as f32,
-                                 self.rect.y as f32,
-                                 SCROLLBAR_WIDTH as f32,
-                                 self.rect.height as f32);
-            resources.shaders().solid().fill_rect(&matrix, color, rect);
-            let color = if self.drag.is_some() {
-                (0.9, 0.6, 0.9)
-            } else {
-                (0.9, 0.1, 0.9)
-            };
-            resources
-                .shaders()
-                .solid()
-                .fill_rect(&matrix, color, handle_rect.as_f32());
-        }
+        self.scrollbar.draw(resources, matrix);
     }
 
     fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
         // Handle scrollbar events:
+        self.scrollbar.on_event(event);
         match event {
-            Event::MouseDown(mouse)
-                if mouse.left && self.rect.contains_point(mouse.pt) => {
-                if let Some(handle_rect) = self.scroll_handle_rect() {
-                    if handle_rect.contains_point(mouse.pt) {
-                        self.drag = Some(mouse.pt.y - handle_rect.y);
-                    }
-                    // TODO: support jumping up/down page
-                }
-            }
-            Event::MouseMove(mouse) => {
-                if let Some(drag_offset) = self.drag {
-                    let new_handle_y = mouse.pt.y - drag_offset - self.rect.y;
-                    let total_height = self.scroll_max + self.rect.height;
-                    let new_scroll_top = div_round(total_height *
-                                                       new_handle_y,
-                                                   self.rect.height);
-                    self.scroll_top =
-                        new_scroll_top.max(0).min(self.scroll_max);
-                }
-            }
-            Event::MouseUp(mouse) if mouse.left => {
-                self.drag = None;
-            }
             Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
-                let new_scroll_top = self.scroll_top + scroll.delta.y;
-                self.scroll_top = new_scroll_top.max(0).min(self.scroll_max);
+                self.scrollbar.scroll_by(scroll.delta.y);
             }
-            Event::Unfocus => self.drag = None,
             _ => {}
         }
 
         // Handle conversation bubble events:
         let bubble_event =
-            event.relative_to(self.rect.top_left() - vec2(0, self.scroll_top));
+            event.relative_to(self.rect.top_left() -
+                                  vec2(0, self.scrollbar.scroll_top()));
         for bubble in self.bubbles.iter_mut().take(self.num_bubbles_shown) {
             if let Some(action) = bubble.on_event(&bubble_event) {
                 return Some(action);
@@ -304,8 +267,8 @@ impl BubblesListView {
         } else {
             0
         };
-        self.scroll_max = (total_height - self.rect.height).max(0);
-        self.scroll_top = self.scroll_max;
+        self.scrollbar.set_total_height(total_height);
+        self.scrollbar.scroll_to(total_height);
     }
 
     fn rebuild_bubbles(&mut self, profile: &Profile, conv: Conversation) {
@@ -344,21 +307,6 @@ impl BubblesListView {
             bubble_views.push(bubble_view);
         }
         self.bubbles = bubble_views;
-    }
-
-    fn scroll_handle_rect(&self) -> Option<Rect<i32>> {
-        if self.scroll_max != 0 {
-            let total_height = self.scroll_max + self.rect.height;
-            Some(Rect::new(self.rect.right() - SCROLLBAR_WIDTH,
-                           self.rect.y +
-                               div_round(self.rect.height * self.scroll_top,
-                                         total_height),
-                           SCROLLBAR_WIDTH,
-                           div_round(self.rect.height * self.rect.height,
-                                     total_height)))
-        } else {
-            None
-        }
     }
 }
 
@@ -690,12 +638,6 @@ impl BubbleView for YouSpeechBubbleView {
             top += BUBBLE_LINE_HEIGHT;
         }
     }
-}
-
-//===========================================================================//
-
-fn div_round(a: i32, b: i32) -> i32 {
-    ((a as f64) / (b as f64)).round() as i32
 }
 
 //===========================================================================//

@@ -74,4 +74,17 @@
     <path d="M 10,10 l 12,12 M 10,22 l 12,-12"
           stroke="#0f0" stroke-width="4" stroke-linecap="round"/>
   </g>
+  <!-- List frame -->
+  <g transform="translate(192, 64)">
+    <path d="M 1,5 l 4,-4 h 22 l 4,4 v 22 l -4,4 h -22 l -4,-4 z"
+          fill="none" stroke="#f00" stroke-width="2"/>
+  </g>
+  <!-- List item -->
+  <g transform="translate(224, 64)">
+    <rect x="0" y="1" width="32" height="30" fill="#00f" stroke="none"/>
+    <g fill="none" stroke="#f00" stroke-width="1">
+      <path d="M 0,0.5 h 32"/>
+      <path d="M 0,31.5 h 32"/>
+    </g>
+  </g>
 </svg>

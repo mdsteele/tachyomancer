@@ -218,6 +218,22 @@ impl UiShader {
         self.dialog_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
+    pub fn draw_list_frame(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
+                           color1: &Color4, color2: &Color4, color3: &Color4) {
+        let tex_rect = Rect::new(0.75, 0.25, 0.125, 0.125);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.scroll_varray.bind();
+        self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn draw_list_item(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
+                          color1: &Color4, color2: &Color4, color3: &Color4) {
+        let tex_rect = Rect::new(0.875, 0.25, 0.125, 0.125);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.scroll_varray.bind();
+        self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
     pub fn draw_rect4(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
                       color1: &Color4, color2: &Color4, color3: &Color4) {
         let tex_rect = Rect::new(0.0, 0.0, 1.0, 1.0);

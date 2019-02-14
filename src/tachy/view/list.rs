@@ -22,7 +22,7 @@ use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use std::borrow::Borrow;
 use tachy::font::Align;
-use tachy::geom::Rect;
+use tachy::geom::{Color4, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 
@@ -31,11 +31,11 @@ use tachy::gui::{Event, Resources};
 const FONT_SIZE: f32 = 20.0;
 
 const ITEM_HEIGHT: i32 = 50;
-const ITEM_SPACING: i32 = 10;
+const ITEM_SPACING: i32 = -1;
 const ITEM_INNER_MARGIN: i32 = 10;
 
 const SCROLLBAR_WIDTH: i32 = 18;
-const SCROLLBAR_MARGIN: i32 = 5;
+const SCROLLBAR_MARGIN: i32 = 3;
 
 //===========================================================================//
 
@@ -71,19 +71,32 @@ impl<T: Clone + Eq> ListView<T> {
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
-        // Draw background and define clipping area:
-        let stencil = Stencil::new();
         {
-            let color = (0.1, 0.1, 0.1);
-            resources
-                .shaders()
-                .solid()
-                .fill_rect(matrix, color, self.rect.as_f32());
+            let stencil = Stencil::new();
+            self.draw_background(resources, matrix);
+            stencil.enable_clipping();
+            self.draw_items(resources, matrix, current);
         }
-        stencil.enable_clipping();
+        self.draw_frame(resources, matrix);
+        self.scrollbar.draw(resources, matrix);
+    }
 
-        // Draw list items:
-        let item_width = self.item_width();
+    fn draw_background(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let mut rect = self.rect.as_f32();
+        rect.width = self.item_width() as f32;
+        rect = rect.shrink(2.0, 2.0);
+        let solid = resources.shaders().solid();
+        solid.fill_rect(matrix, Color4::PURPLE0.rgb(), rect);
+    }
+
+    fn draw_items<Q>(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                     current: &Q)
+    where
+        Q: PartialEq + ?Sized,
+        T: Borrow<Q>,
+    {
+        let item_width = self.item_width() as f32;
+        let ui = resources.shaders().ui();
         for (index, &(ref value, ref label)) in self.items.iter().enumerate() {
             let top = self.rect.y +
                 (index as i32) * (ITEM_HEIGHT + ITEM_SPACING) -
@@ -91,16 +104,20 @@ impl<T: Clone + Eq> ListView<T> {
             if top >= self.rect.bottom() || top + ITEM_HEIGHT <= self.rect.y {
                 continue;
             }
-            let color = if value.borrow() == current {
-                (0.6, 0.1, 0.1)
+            let bg_color = if value.borrow() == current {
+                Color4::PURPLE3
             } else {
-                (0.1, 0.1, 0.6)
+                Color4::PURPLE0
             };
             let rect = Rect::new(self.rect.x as f32,
                                  top as f32,
-                                 item_width as f32,
+                                 item_width,
                                  ITEM_HEIGHT as f32);
-            resources.shaders().solid().fill_rect(matrix, color, rect);
+            ui.draw_list_item(matrix,
+                              &rect,
+                              &Color4::CYAN2,
+                              &Color4::ORANGE2,
+                              &bg_color);
             let font = resources.fonts().roman();
             font.draw(matrix,
                       FONT_SIZE,
@@ -109,9 +126,17 @@ impl<T: Clone + Eq> ListView<T> {
                        (top + ITEM_HEIGHT / 2) as f32),
                       label.as_str());
         }
+    }
 
-        // Draw scrollbar:
-        self.scrollbar.draw(resources, matrix);
+    fn draw_frame(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let mut rect = self.rect.as_f32();
+        rect.width = self.item_width() as f32;
+        let ui = resources.shaders().ui();
+        ui.draw_list_frame(matrix,
+                           &rect,
+                           &Color4::CYAN2,
+                           &Color4::ORANGE2,
+                           &Color4::PURPLE0);
     }
 
     pub fn on_event<Q>(&mut self, event: &Event, current: &Q) -> Option<T>

@@ -91,6 +91,13 @@ impl<T: BaseNum> Rect<T> {
             rect.x + rect.width <= self.x + self.width &&
             rect.y + rect.height <= self.y + self.height
     }
+
+    pub fn shrink(&self, horz: T, vert: T) -> Rect<T> {
+        Rect::new(self.x + horz,
+                  self.y + vert,
+                  self.width - (horz + horz),
+                  self.height - (vert + vert))
+    }
 }
 
 impl Rect<i32> {

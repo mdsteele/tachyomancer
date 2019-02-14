@@ -42,6 +42,8 @@ impl Color4 {
         }
     }
 
+    pub const fn rgb(&self) -> (f32, f32, f32) { (self.r, self.g, self.b) }
+
     pub fn mix(&self, other: Color4, param: f32) -> Color4 {
         Color4 {
             r: self.r + param * (other.r - self.r),

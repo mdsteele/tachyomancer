@@ -54,6 +54,21 @@ const CORNERS_DATA: &[u8] = &[
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+const CHECKBOX_DATA: &[f32] = &[
+    0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0,
+    1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0,
+
+    0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0,
+    1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0,
+
+    0.0, 1.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,
+    1.0, 1.0, 0.0, 0.0,  1.0, 1.0, 0.0, 0.0,
+
+    0.0, 1.0, 0.0, 0.0,  0.0, 1.0, 0.0, 0.0,
+    1.0, 1.0, 0.0, 0.0,  1.0, 1.0, 0.0, 0.0,
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 const DIALOG_DATA: &[f32] = &[
     0.0, 0.0, 0.0, 0.0,  0.25, 0.0, 64.0, 0.0,
     0.375, 0.0, -32.0, 0.0,  0.5, 0.0, 0.0, 0.0,
@@ -111,6 +126,8 @@ pub struct UiShader {
     color3: ShaderUniform<Color4>,
     ibuffer: IndexBuffer<u8>,
     _corners_vbuffer: VertexBuffer<u8>,
+    _checkbox_vbuffer: VertexBuffer<f32>,
+    checkbox_varray: VertexArray,
     _dialog_vbuffer: VertexBuffer<f32>,
     dialog_varray: VertexArray,
     _rect4_vbuffer: VertexBuffer<f32>,
@@ -134,6 +151,8 @@ impl UiShader {
         let ibuffer = IndexBuffer::new(INDEX_DATA);
         let corners_vbuffer = VertexBuffer::new(CORNERS_DATA);
 
+        let (checkbox_varray, checkbox_vbuffer) =
+            make_vertices(&corners_vbuffer, CHECKBOX_DATA);
         let (dialog_varray, dialog_vbuffer) = make_vertices(&corners_vbuffer,
                                                             DIALOG_DATA);
         let (rect4_varray, rect4_vbuffer) = make_vertices(&corners_vbuffer,
@@ -152,6 +171,8 @@ impl UiShader {
             color3,
             ibuffer,
             _corners_vbuffer: corners_vbuffer,
+            _checkbox_vbuffer: checkbox_vbuffer,
+            checkbox_varray,
             _dialog_vbuffer: dialog_vbuffer,
             dialog_varray,
             _rect4_vbuffer: rect4_vbuffer,
@@ -173,6 +194,20 @@ impl UiShader {
         self.color1.set(color1);
         self.color2.set(color2);
         self.color3.set(color3);
+    }
+
+    pub fn draw_checkbox(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
+                         color1: &Color4, color2: &Color4, color3: &Color4,
+                         checked: bool) {
+        let tex_rect = if checked {
+            Rect::new(0.875, 0.125, 0.125, 0.125)
+        } else {
+            Rect::new(0.75, 0.125, 0.125, 0.125)
+        };
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.checkbox_varray.bind();
+        self.checkbox_varray
+            .draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
     pub fn draw_dialog(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,

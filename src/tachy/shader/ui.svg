@@ -42,7 +42,7 @@
     </g>
   </g>
   <!-- Alt-Rect -->
-  <g transform="translate(192, 32)">
+  <g transform="translate(128, 64)">
     <!-- Outline -->
     <rect x="2" y="2" width="60" height="28"
           fill="#00f" stroke="#0f0" stroke-width="2"/>
@@ -61,5 +61,17 @@
   <g transform="translate(224, 0)">
     <path d="M 2,5 l 3,-3 h 22 l 3,3 v 22 l -3,3 h -22 l -3,-3 z"
           fill="#00f" stroke="#0f0" stroke-width="2"/>
+  </g>
+  <!-- Unchecked box -->
+  <g transform="translate(192, 32)">
+    <path d="M 2,16 C 2,2 2,2 16,2 S 30,2 30,16 S 30,30 16,30 S 2,30 2,16"
+          fill="#00f" stroke="#f00" stroke-width="4"/>
+  </g>
+  <!-- Checked box -->
+  <g transform="translate(224, 32)">
+    <path d="M 2,16 C 2,2 2,2 16,2 S 30,2 30,16 S 30,30 16,30 S 2,30 2,16"
+          fill="#00f" stroke="#f00" stroke-width="4"/>
+    <path d="M 10,10 l 12,12 M 10,22 l 12,-12"
+          stroke="#0f0" stroke-width="4" stroke-linecap="round"/>
   </g>
 </svg>

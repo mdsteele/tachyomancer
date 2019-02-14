@@ -20,7 +20,7 @@
 use cgmath::{Matrix4, Point2};
 use tachy::font::Align;
 use tachy::geom::{Color4, Rect};
-use tachy::gui::{Event, Keycode, Resources};
+use tachy::gui::{ClockEventData, Event, Keycode, Resources};
 use tachy::save::Hotkey;
 use unicode_width::UnicodeWidthStr;
 
@@ -28,9 +28,6 @@ use unicode_width::UnicodeWidthStr;
 
 const CHECKBOX_BOX_SIZE: i32 = 28;
 const CHECKBOX_BOX_SPACING: i32 = 8;
-const CHECKBOX_CHECK_PADDING: i32 = 4;
-const CHECKBOX_CHECK_SIZE: i32 = CHECKBOX_BOX_SIZE -
-    2 * CHECKBOX_CHECK_PADDING;
 const CHECKBOX_FONT_SIZE: f32 = 20.0;
 
 const HOTKEY_BOX_HEIGHT: i32 = 28;
@@ -56,7 +53,7 @@ const TEXT_BUTTON_FONT_SIZE: f32 = 20.0;
 pub struct Checkbox {
     rect: Rect<i32>,
     label: String,
-    hovering: bool,
+    hover_pulse: HoverPulse,
 }
 
 impl Checkbox {
@@ -67,62 +64,62 @@ impl Checkbox {
         Checkbox {
             rect: Rect::new(mid_left.x, top, width, CHECKBOX_BOX_SIZE),
             label: label.to_string(),
-            hovering: false,
+            hover_pulse: HoverPulse::new(),
         }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 checked: bool, enabled: bool) {
+        let ui = resources.shaders().ui();
         let box_rect = Rect::new(self.rect.x,
                                  self.rect.y,
                                  CHECKBOX_BOX_SIZE,
                                  CHECKBOX_BOX_SIZE);
-        let (box_color, check_color) = if !enabled {
-            ((0.4, 0.4, 0.4), (0.8, 0.8, 0.8))
-        } else if self.hovering {
-            ((1.0, 0.2, 0.2), (1.0, 0.8, 0.8))
+        let bg_color = if !enabled {
+            Color4::new(1.0, 1.0, 1.0, 0.1)
         } else {
-            ((0.7, 0.1, 0.1), (1.0, 0.5, 0.5))
+            Color4::PURPLE0
+                .mix(Color4::PURPLE3, self.hover_pulse.brightness())
+                .with_alpha(0.8)
         };
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(&matrix, box_color, box_rect.as_f32());
-        if checked {
-            let check_rect = Rect::new(box_rect.x + CHECKBOX_CHECK_PADDING,
-                                       box_rect.y + CHECKBOX_CHECK_PADDING,
-                                       CHECKBOX_CHECK_SIZE,
-                                       CHECKBOX_CHECK_SIZE);
-            resources
-                .shaders()
-                .solid()
-                .fill_rect(&matrix, check_color, check_rect.as_f32());
-        }
-        resources.fonts().roman().draw(&matrix,
-                                       CHECKBOX_FONT_SIZE,
-                                       Align::MidLeft,
-                                       ((box_rect.x + CHECKBOX_BOX_SIZE +
-                                             CHECKBOX_BOX_SPACING) as
-                                            f32,
-                                        (box_rect.y + CHECKBOX_BOX_SIZE / 2) as
-                                            f32),
-                                       &self.label);
+        ui.draw_checkbox(matrix,
+                         &box_rect.as_f32(),
+                         &Color4::ORANGE4,
+                         &Color4::CYAN5,
+                         &bg_color,
+                         checked);
+        let font = resources.fonts().roman();
+        font.draw(&matrix,
+                  CHECKBOX_FONT_SIZE,
+                  Align::MidLeft,
+                  ((box_rect.x + CHECKBOX_BOX_SIZE +
+                        CHECKBOX_BOX_SPACING) as f32,
+                   (box_rect.y + CHECKBOX_BOX_SIZE / 2) as f32),
+                  &self.label);
     }
 
     pub fn on_event(&mut self, event: &Event, checked: bool, enabled: bool)
                     -> Option<bool> {
         match event {
+            Event::ClockTick(tick) => {
+                self.hover_pulse.on_clock_tick(tick);
+            }
             Event::MouseDown(mouse) => {
                 if enabled && mouse.left &&
                     self.rect.contains_point(mouse.pt)
                 {
+                    self.hover_pulse.on_click();
+                    // TOOD: play sound
                     return Some(!checked);
                 }
             }
             Event::MouseMove(mouse) => {
-                self.hovering = self.rect.contains_point(mouse.pt);
+                let hovering = self.rect.contains_point(mouse.pt);
+                if self.hover_pulse.set_hovering(hovering) {
+                    // TODO: play sound
+                }
             }
-            Event::Unfocus => self.hovering = false,
+            Event::Unfocus => self.hover_pulse.unfocus(),
             _ => {}
         }
         return None;
@@ -140,7 +137,7 @@ pub struct HotkeyBox {
     rect: Rect<i32>,
     hotkey: Hotkey,
     listening: bool,
-    hovering: bool,
+    hover_pulse: HoverPulse,
 }
 
 impl HotkeyBox {
@@ -154,7 +151,7 @@ impl HotkeyBox {
             rect: Rect::new(mid_left.x, top, width, HOTKEY_BOX_HEIGHT),
             hotkey,
             listening: false,
-            hovering: false,
+            hover_pulse: HoverPulse::new(),
         }
     }
 
@@ -162,21 +159,23 @@ impl HotkeyBox {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 keycode: Keycode) {
+        let ui = resources.shaders().ui();
         let box_rect = Rect::new(self.rect.x,
                                  self.rect.y,
                                  HOTKEY_BOX_WIDTH,
                                  HOTKEY_BOX_HEIGHT);
-        let box_color = if self.listening {
-            (1.0, 1.0, 0.4)
-        } else if self.hovering {
-            (1.0, 0.2, 0.2)
+        let bg_color = if self.listening {
+            Color4::PURPLE5
         } else {
-            (0.7, 0.1, 0.1)
+            Color4::PURPLE0
+                .mix(Color4::PURPLE3, self.hover_pulse.brightness())
+                .with_alpha(0.8)
         };
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(&matrix, box_color, box_rect.as_f32());
+        ui.draw_scroll_handle(matrix,
+                              &box_rect.as_f32(),
+                              &Color4::ORANGE4,
+                              &Color4::CYAN5,
+                              &bg_color);
         let font = resources.fonts().roman();
         if !self.listening {
             font.draw(&matrix,
@@ -196,6 +195,9 @@ impl HotkeyBox {
 
     pub fn on_event(&mut self, event: &Event) -> Option<HotkeyBoxAction> {
         match event {
+            Event::ClockTick(tick) => {
+                self.hover_pulse.on_clock_tick(tick);
+            }
             Event::KeyDown(key) => {
                 if self.listening && Hotkey::is_valid_keycode(key.code) {
                     self.listening = false;
@@ -203,7 +205,8 @@ impl HotkeyBox {
                 }
             }
             Event::MouseDown(mouse) if mouse.left => {
-                if self.rect.contains_point(mouse.pt) {
+                if self.rect.contains_point(mouse.pt) && !self.listening {
+                    self.hover_pulse.on_click();
                     self.listening = true;
                     return Some(HotkeyBoxAction::Listening);
                 } else {
@@ -211,15 +214,84 @@ impl HotkeyBox {
                 }
             }
             Event::MouseMove(mouse) => {
-                self.hovering = self.rect.contains_point(mouse.pt);
+                let hovering = self.rect.contains_point(mouse.pt);
+                if self.hover_pulse.set_hovering(hovering) {
+                    if !self.listening {
+                        // TODO: play sound
+                    }
+                }
             }
             Event::Unfocus => {
                 self.listening = false;
-                self.hovering = false;
+                self.hover_pulse.unfocus();
             }
             _ => {}
         }
         return None;
+    }
+}
+
+//===========================================================================//
+
+struct HoverPulse {
+    hovering: bool,
+    timer: f64,
+    brightness: f64,
+}
+
+impl HoverPulse {
+    pub fn new() -> HoverPulse {
+        HoverPulse {
+            hovering: false,
+            timer: 0.0,
+            brightness: 0.0,
+        }
+    }
+
+    pub fn brightness(&self) -> f32 { self.brightness as f32 }
+
+    pub fn on_click(&mut self) { self.brightness = HOVER_PULSE_CLICK; }
+
+    pub fn on_clock_tick(&mut self, tick: &ClockEventData) {
+        if self.hovering {
+            if self.brightness > HOVER_PULSE_MAX {
+                self.brightness = (self.brightness -
+                                       tick.elapsed * HOVER_PULSE_DECAY_RATE)
+                    .max(HOVER_PULSE_MAX);
+                self.timer = 0.0;
+            } else {
+                self.timer = (self.timer + tick.elapsed) % HOVER_PULSE_PERIOD;
+                let mut param = 2.0 * self.timer / HOVER_PULSE_PERIOD;
+                if param > 1.0 {
+                    param = 2.0 - param;
+                }
+                self.brightness = HOVER_PULSE_MAX -
+                    param * (HOVER_PULSE_MAX - HOVER_PULSE_MIN);
+            }
+        } else {
+            self.brightness = (self.brightness -
+                                   tick.elapsed * HOVER_PULSE_DECAY_RATE)
+                .max(0.0);
+        }
+    }
+
+    pub fn set_hovering(&mut self, hovering: bool) -> bool {
+        if hovering == self.hovering {
+            false
+        } else if hovering {
+            self.hovering = true;
+            self.brightness = self.brightness.max(HOVER_PULSE_MAX);
+            self.timer = 0.0;
+            true
+        } else {
+            self.unfocus();
+            false
+        }
+    }
+
+    pub fn unfocus(&mut self) {
+        self.hovering = false;
+        self.timer = 0.0;
     }
 }
 
@@ -394,6 +466,7 @@ pub struct Slider {
     value: i32,
     maximum: i32,
     drag: Option<(i32, i32)>,
+    hover_pulse: HoverPulse,
 }
 
 impl Slider {
@@ -405,6 +478,7 @@ impl Slider {
             value: value.max(0).min(maximum),
             maximum,
             drag: None,
+            hover_pulse: HoverPulse::new(),
         }
     }
 
@@ -416,21 +490,27 @@ impl Slider {
                            &Color4::CYAN2,
                            &Color4::PURPLE0);
         let (fg_color, bg_color) = if self.drag.is_some() {
-            (&Color4::ORANGE4, &Color4::PURPLE3)
+            (&Color4::ORANGE5, Color4::PURPLE3)
         } else {
-            (&Color4::ORANGE3, &Color4::PURPLE1)
+            (&Color4::ORANGE4,
+             Color4::PURPLE1
+                 .mix(Color4::PURPLE3, self.hover_pulse.brightness()))
         };
         ui.draw_scroll_handle(matrix,
                               &self.handle_rect().as_f32(),
                               fg_color,
                               &Color4::CYAN2,
-                              bg_color);
+                              &bg_color);
     }
 
     pub fn on_event(&mut self, event: &Event) -> Option<SliderAction> {
         match event {
+            Event::ClockTick(tick) => {
+                self.hover_pulse.on_clock_tick(tick);
+            }
             Event::MouseDown(mouse) => {
                 if mouse.left && self.handle_rect().contains_point(mouse.pt) {
+                    self.hover_pulse.on_click();
                     self.drag = Some((mouse.pt.x, 0));
                 }
             }
@@ -453,6 +533,11 @@ impl Slider {
                     } else {
                         self.drag = Some((start, delta));
                     }
+                } else {
+                    let hovering = self.handle_rect().contains_point(mouse.pt);
+                    if self.hover_pulse.set_hovering(hovering) {
+                        // TODO: play sound
+                    }
                 }
             }
             Event::MouseUp(_) => {
@@ -460,7 +545,10 @@ impl Slider {
                     return Some(SliderAction::Release);
                 }
             }
-            Event::Unfocus => self.drag = None,
+            Event::Unfocus => {
+                self.drag = None;
+                self.hover_pulse.unfocus();
+            }
             _ => {}
         }
         return None;
@@ -616,9 +704,7 @@ pub struct TextButton<T> {
     label: String,
     value: T,
     keycode: Option<Keycode>,
-    hovering: bool,
-    hover_pulse: f64,
-    hover_timer: f64,
+    hover_pulse: HoverPulse,
 }
 
 impl<T: Clone> TextButton<T> {
@@ -634,9 +720,7 @@ impl<T: Clone> TextButton<T> {
             label: label.to_string(),
             value,
             keycode,
-            hovering: false,
-            hover_pulse: 0.0,
-            hover_timer: 0.0,
+            hover_pulse: HoverPulse::new(),
         }
     }
 
@@ -646,7 +730,7 @@ impl<T: Clone> TextButton<T> {
             Color4::new(1.0, 1.0, 1.0, 0.1)
         } else {
             Color4::PURPLE0
-                .mix(Color4::PURPLE3, self.hover_pulse as f32)
+                .mix(Color4::PURPLE3, self.hover_pulse.brightness())
                 .with_alpha(0.8)
         };
         let rect = self.rect.as_f32();
@@ -666,34 +750,11 @@ impl<T: Clone> TextButton<T> {
     pub fn on_event(&mut self, event: &Event, enabled: bool) -> Option<T> {
         match event {
             Event::ClockTick(tick) => {
-                if self.hovering {
-                    if self.hover_pulse > HOVER_PULSE_MAX {
-                        self.hover_pulse = (self.hover_pulse -
-                                                tick.elapsed *
-                                                    HOVER_PULSE_DECAY_RATE)
-                            .max(HOVER_PULSE_MAX);
-                        self.hover_timer = 0.0;
-                    } else {
-                        self.hover_timer = (self.hover_timer + tick.elapsed) %
-                            HOVER_PULSE_PERIOD;
-                        let mut param = 2.0 * self.hover_timer /
-                            HOVER_PULSE_PERIOD;
-                        if param > 1.0 {
-                            param = 2.0 - param;
-                        }
-                        self.hover_pulse = HOVER_PULSE_MAX -
-                            param * (HOVER_PULSE_MAX - HOVER_PULSE_MIN);
-                    }
-                } else {
-                    self.hover_pulse = (self.hover_pulse -
-                                            tick.elapsed *
-                                                HOVER_PULSE_DECAY_RATE)
-                        .max(0.0);
-                }
+                self.hover_pulse.on_clock_tick(tick);
             }
             Event::KeyDown(key) => {
                 if enabled && Some(key.code) == self.keycode {
-                    self.hover_pulse = HOVER_PULSE_CLICK;
+                    self.hover_pulse.on_click();
                     // TODO: play sound
                     return Some(self.value.clone());
                 }
@@ -702,25 +763,18 @@ impl<T: Clone> TextButton<T> {
                 if enabled && mouse.left &&
                     self.rect.contains_point(mouse.pt)
                 {
-                    self.hover_pulse = HOVER_PULSE_CLICK;
+                    self.hover_pulse.on_click();
                     // TODO: play sound
                     return Some(self.value.clone());
                 }
             }
             Event::MouseMove(mouse) => {
-                if self.rect.contains_point(mouse.pt) {
-                    if !self.hovering {
-                        self.hovering = true;
-                        self.hover_pulse = self.hover_pulse
-                            .max(HOVER_PULSE_MAX);
-                        self.hover_timer = 0.0;
-                        // TODO: play sound
-                    }
-                } else {
-                    self.hovering = false;
+                let hovering = self.rect.contains_point(mouse.pt);
+                if self.hover_pulse.set_hovering(hovering) {
+                    // TODO: play sound
                 }
             }
-            Event::Unfocus => self.hovering = false,
+            Event::Unfocus => self.hover_pulse.unfocus(),
             _ => {}
         }
         return None;

@@ -309,6 +309,7 @@ impl CircuitView {
                     ];
                 self.victory_dialog =
                     Some(ButtonDialogBox::new(size, &text, buttons));
+                // TODO: Unfocus other views
             }
             EvalResult::Failure => {
                 debug_log!("Failure!");

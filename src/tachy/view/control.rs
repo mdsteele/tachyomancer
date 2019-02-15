@@ -19,7 +19,7 @@
 
 use super::tooltip::Tooltip;
 use cgmath::Matrix4;
-use tachy::geom::{Rect, RectSize};
+use tachy::geom::{Color4, Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::{Hotkey, Prefs, Puzzle};
 
@@ -33,23 +33,23 @@ const TRAY_MARGIN: i32 = 12;
 const TRAY_HEIGHT: i32 = 2 * TRAY_MARGIN + BUTTON_HEIGHT;
 
 const TOOLTIP_RESET: &str = "\
-    $*Reset simulation$* $>$P$*$[EvalReset]$*$K$<\n\
+    $*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
     Resets the simulation back to the beginning and returns to edit mode.";
 const TOOLTIP_RUN_PAUSE: &str = "\
-    $*Run/pause$* $>$P$*$[EvalRunPause]$*$K$<\n\
+    $*Run/pause$* $>$G$*$[EvalRunPause]$*$D$<\n\
     Runs or pauses the simulation.";
 const TOOLTIP_STEP_SUBCYCLE: &str = "\
-    $*Step forward one subcycle$* $>$P$*$[EvalStepSubcycle]$*$K$<\n\
+    $*Step forward one subcycle$* $>$G$*$[EvalStepSubcycle]$*$D$<\n\
     Runs the simulation forward by a single subcycle, then pauses.  This \
     allows you to see how data is flowing through your circuit, one chip at \
     a time.";
 const TOOLTIP_STEP_CYCLE: &str = "\
-    $*Step forward one cycle$* $>$P$*$[EvalStepCycle]$*$K$<\n\
+    $*Step forward one cycle$* $>$G$*$[EvalStepCycle]$*$D$<\n\
     Runs the simulation forward until the end of the current cycle, then \
     pauses.  This allows you to see event loops in your circuit, running \
     one iteration at a time.";
 const TOOLTIP_STEP_TIME: &str = "\
-    $*Step forward one time step$* $>$P$*$[EvalStepTime]$*$K$<\n\
+    $*Step forward one time step$* $>$G$*$[EvalStepTime]$*$D$<\n\
     Runs the simulation forward until the end of the current time step, \
     then pauses.";
 
@@ -126,8 +126,12 @@ impl ControlsTray {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(matrix, (0.0, 0.5, 0.0), rect);
+        let ui = resources.shaders().ui();
+        ui.draw_box2(matrix,
+                     &self.rect.as_f32(),
+                     &Color4::ORANGE2,
+                     &Color4::CYAN2,
+                     &Color4::PURPLE0.with_alpha(0.8));
         for button in self.buttons.iter() {
             button.draw(resources, matrix);
         }

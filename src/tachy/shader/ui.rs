@@ -54,6 +54,21 @@ const CORNERS_DATA: &[u8] = &[
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+const BOX_DATA: &[f32] = &[
+    0.0, 0.0, 0.0, 0.0,  0.3125, 0.0, 20.0, 0.0,
+    0.6875, 0.0, -20.0, 0.0,  1.0, 0.0, 0.0, 0.0,
+
+    0.0, 0.5, 0.0, 16.0,  0.3125, 0.5, 20.0, 16.0,
+    0.6875, 0.5, -20.0, 16.0,  1.0, 0.5, 0.0, 16.0,
+
+    0.0, 0.5, 0.0, -16.0,  0.3125, 0.5, 20.0, -16.0,
+    0.6875, 0.5, -20.0, -16.0,  1.0, 0.5, 0.0, -16.0,
+
+    0.0, 1.0, 0.0, 0.0,  0.3125, 1.0, 20.0, 0.0,
+    0.6875, 1.0, -20.0, 0.0,  1.0, 1.0, 0.0, 0.0,
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 const CHECKBOX_DATA: &[f32] = &[
     0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0,
     1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0,
@@ -84,21 +99,6 @@ const DIALOG_DATA: &[f32] = &[
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-const RECT4_DATA: &[f32] = &[
-    0.5, 0.0, 0.0, 0.0,  0.575, 0.0, 19.2, 0.0,
-    0.675, 0.0, -19.2, 0.0,  0.75, 0.0, 0.0, 0.0,
-
-    0.5, 0.075, 0.0, 19.2,  0.575, 0.075, 19.2, 19.2,
-    0.675, 0.075, -19.2, 19.2,  0.75, 0.075, 0.0, 19.2,
-
-    0.5, 0.175, 0.0, -19.2,  0.575, 0.175, 19.2, -19.2,
-    0.675, 0.175, -19.2, -19.2,  0.75, 0.175, 0.0, -19.2,
-
-    0.5, 0.25, 0.0, 0.0,  0.575, 0.25, 19.2, 0.0,
-    0.675, 0.25, -19.2, 0.0,  0.75, 0.25, 0.0, 0.0,
-];
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
 const SCROLL_DATA: &[f32] = &[
     0.0, 0.0, 0.0, 0.0,  0.25, 0.0, 8.0, 0.0,
     0.75, 0.0, -8.0, 0.0,  1.0, 0.0, 0.0, 0.0,
@@ -126,12 +126,12 @@ pub struct UiShader {
     color3: ShaderUniform<Color4>,
     ibuffer: IndexBuffer<u8>,
     _corners_vbuffer: VertexBuffer<u8>,
+    _box_vbuffer: VertexBuffer<f32>,
+    box_varray: VertexArray,
     _checkbox_vbuffer: VertexBuffer<f32>,
     checkbox_varray: VertexArray,
     _dialog_vbuffer: VertexBuffer<f32>,
     dialog_varray: VertexArray,
-    _rect4_vbuffer: VertexBuffer<f32>,
-    rect4_varray: VertexArray,
     _scroll_vbuffer: VertexBuffer<f32>,
     scroll_varray: VertexArray,
 }
@@ -151,12 +151,12 @@ impl UiShader {
         let ibuffer = IndexBuffer::new(INDEX_DATA);
         let corners_vbuffer = VertexBuffer::new(CORNERS_DATA);
 
+        let (box_varray, box_vbuffer) = make_vertices(&corners_vbuffer,
+                                                      BOX_DATA);
         let (checkbox_varray, checkbox_vbuffer) =
             make_vertices(&corners_vbuffer, CHECKBOX_DATA);
         let (dialog_varray, dialog_vbuffer) = make_vertices(&corners_vbuffer,
                                                             DIALOG_DATA);
-        let (rect4_varray, rect4_vbuffer) = make_vertices(&corners_vbuffer,
-                                                          RECT4_DATA);
         let (scroll_varray, scroll_vbuffer) = make_vertices(&corners_vbuffer,
                                                             SCROLL_DATA);
 
@@ -171,12 +171,12 @@ impl UiShader {
             color3,
             ibuffer,
             _corners_vbuffer: corners_vbuffer,
+            _box_vbuffer: box_vbuffer,
+            box_varray,
             _checkbox_vbuffer: checkbox_vbuffer,
             checkbox_varray,
             _dialog_vbuffer: dialog_vbuffer,
             dialog_varray,
-            _rect4_vbuffer: rect4_vbuffer,
-            rect4_varray,
             _scroll_vbuffer: scroll_vbuffer,
             scroll_varray,
         };
@@ -194,6 +194,22 @@ impl UiShader {
         self.color1.set(color1);
         self.color2.set(color2);
         self.color3.set(color3);
+    }
+
+    pub fn draw_box2(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
+                     color1: &Color4, color2: &Color4, color3: &Color4) {
+        let tex_rect = Rect::new(0.5, 0.125, 0.25, 0.125);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.box_varray.bind();
+        self.box_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn draw_box4(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
+                     color1: &Color4, color2: &Color4, color3: &Color4) {
+        let tex_rect = Rect::new(0.5, 0.0, 0.25, 0.125);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.box_varray.bind();
+        self.box_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
     pub fn draw_checkbox(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
@@ -232,14 +248,6 @@ impl UiShader {
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.scroll_varray.bind();
         self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
-    }
-
-    pub fn draw_rect4(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                      color1: &Color4, color2: &Color4, color3: &Color4) {
-        let tex_rect = Rect::new(0.0, 0.0, 1.0, 1.0);
-        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
-        self.rect4_varray.bind();
-        self.rect4_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
     pub fn draw_scroll_bar(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,

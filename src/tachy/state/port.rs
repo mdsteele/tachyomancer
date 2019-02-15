@@ -39,8 +39,8 @@ pub enum PortColor {
 impl PortColor {
     pub fn tooltip_format(self) -> &'static str {
         match self {
-            PortColor::Behavior => "$OBvr$K",
-            PortColor::Event => "$CEvt$K",
+            PortColor::Behavior => "$OBvr$D",
+            PortColor::Event => "$CEvt$D",
         }
     }
 }

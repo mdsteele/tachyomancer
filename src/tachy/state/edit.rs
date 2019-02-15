@@ -770,9 +770,9 @@ impl EditGrid {
             WireColor::Unknown => "$*Disconnected wire$*".to_string(),
             WireColor::Error => {
                 if wire.size.is_empty() {
-                    format!("$*$RError$K wire$*")
+                    format!("$*$RError$D wire$*")
                 } else {
-                    format!("$*{}-bit $Rerror$K wire$*", size.num_bits())
+                    format!("$*{}-bit $Rerror$D wire$*", size.num_bits())
                 }
             }
             WireColor::Behavior => {

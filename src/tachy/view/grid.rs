@@ -23,8 +23,8 @@ use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec4};
 use num_integer::{div_floor, mod_floor};
 use std::u32;
-use tachy::geom::{Coords, CoordsRect, Direction, MatrixExt, Orientation,
-                  Rect, RectSize};
+use tachy::geom::{Color4, Coords, CoordsRect, Direction, MatrixExt,
+                  Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::{Hotkey, Prefs, WireShape};
 use tachy::state::{ChipType, EditGrid, GridChange};
@@ -95,7 +95,7 @@ impl EditGridView {
         let height = (bounds.height * GRID_CELL_SIZE) as f32;
         let thick = BOUNDS_MARGIN as f32;
         let color = if acceptable {
-            (0.0, 1.0, 0.0)
+            Color4::PURPLE2.rgb()
         } else {
             (1.0, 0.0, 0.0)
         };

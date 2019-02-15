@@ -21,7 +21,7 @@ use cgmath::Matrix4;
 use std::collections::HashSet;
 use std::u32;
 use tachy::font::Align;
-use tachy::geom::{Rect, RectSize};
+use tachy::geom::{Color4, Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::{Puzzle, PuzzleKind};
 use tachy::state::EvalError;
@@ -80,8 +80,12 @@ impl VerificationTray {
         if self.rect.is_empty() {
             return;
         }
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(matrix, (0.0, 0.5, 0.0), rect);
+        let ui = resources.shaders().ui();
+        ui.draw_box2(matrix,
+                     &self.rect.as_f32(),
+                     &Color4::ORANGE2,
+                     &Color4::CYAN2,
+                     &Color4::PURPLE0.with_alpha(0.8));
         self.subview.draw(resources, matrix, time_step, puzzle_data, errors);
     }
 

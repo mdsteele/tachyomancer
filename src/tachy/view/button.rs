@@ -734,11 +734,11 @@ impl<T: Clone> TextButton<T> {
                 .with_alpha(0.8)
         };
         let rect = self.rect.as_f32();
-        resources.shaders().ui().draw_rect4(&matrix,
-                                            &rect,
-                                            &Color4::ORANGE5,
-                                            &Color4::CYAN3,
-                                            &bg_color);
+        resources.shaders().ui().draw_box4(&matrix,
+                                           &rect,
+                                           &Color4::ORANGE5,
+                                           &Color4::CYAN3,
+                                           &bg_color);
         resources.fonts().bold().draw(&matrix,
                                       TEXT_BUTTON_FONT_SIZE,
                                       Align::MidCenter,

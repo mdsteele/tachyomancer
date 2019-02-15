@@ -23,7 +23,7 @@ use super::paragraph::Paragraph;
 use cgmath::{Deg, Matrix4};
 use std::cell::RefCell;
 use tachy::font::Align;
-use tachy::geom::{MatrixExt, Rect};
+use tachy::geom::{Color4, MatrixExt, Rect};
 use tachy::gui::{Event, Resources};
 use tachy::save::{Prefs, Puzzle};
 use tachy::state::GameState;
@@ -35,7 +35,8 @@ const ELEMENT_SPACING: i32 = 18;
 const PUZZLE_LIST_WIDTH: i32 = 250;
 
 const DESCRIPTION_FONT_SIZE: f32 = 20.0;
-const DESCRIPTION_INNER_MARGIN: i32 = 10;
+const DESCRIPTION_INNER_MARGIN_HORZ: i32 = 14;
+const DESCRIPTION_INNER_MARGIN_VERT: i32 = 10;
 const DESCRIPTION_LINE_HEIGHT: f32 = 22.0;
 
 const GRAPH_LABEL_FONT_SIZE: f32 = 14.0;
@@ -237,9 +238,11 @@ impl DescriptionView {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 puzzle: Puzzle, prefs: &Prefs) {
-        let color = (0.7, 0.7, 0.9);
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.shaders().ui().draw_box2(matrix,
+                                           &self.rect.as_f32(),
+                                           &Color4::ORANGE2,
+                                           &Color4::CYAN2,
+                                           &Color4::PURPLE0.with_alpha(0.8));
 
         let mut cached = self.cache.borrow_mut();
         match cached.as_ref() {
@@ -251,7 +254,8 @@ impl DescriptionView {
         }
 
         debug_log!("Recompiling description paragraph");
-        let width = (self.rect.width - 2 * DESCRIPTION_INNER_MARGIN) as f32;
+        let width = (self.rect.width - 2 * DESCRIPTION_INNER_MARGIN_HORZ) as
+            f32;
         let paragraph = Paragraph::compile(DESCRIPTION_FONT_SIZE,
                                            DESCRIPTION_LINE_HEIGHT,
                                            width,
@@ -263,8 +267,8 @@ impl DescriptionView {
 
     fn draw_text(&self, resources: &Resources, matrix: &Matrix4<f32>,
                  paragraph: &Paragraph) {
-        let left = (self.rect.x + DESCRIPTION_INNER_MARGIN) as f32;
-        let top = (self.rect.y + DESCRIPTION_INNER_MARGIN) as f32;
+        let left = (self.rect.x + DESCRIPTION_INNER_MARGIN_HORZ) as f32;
+        let top = (self.rect.y + DESCRIPTION_INNER_MARGIN_VERT) as f32;
         paragraph.draw(resources, matrix, (left, top));
     }
 }

@@ -20,7 +20,7 @@
 use cgmath::{Matrix4, Point2};
 use num_integer::div_mod_floor;
 use tachy::font::Align;
-use tachy::geom::{MatrixExt, Rect, RectSize};
+use tachy::geom::{Color4, MatrixExt, Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::Puzzle;
 use tachy::state::ChipType;
@@ -96,8 +96,13 @@ impl PartsTray {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let ui = resources.shaders().ui();
         let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(matrix, (0.0, 0.5, 0.0), rect);
+        ui.draw_box2(matrix,
+                     &rect,
+                     &Color4::ORANGE2,
+                     &Color4::CYAN2,
+                     &Color4::PURPLE0.with_alpha(0.8));
         let matrix = matrix * Matrix4::trans2(rect.x, rect.y);
         for part in self.parts.iter() {
             part.draw(resources, &matrix);

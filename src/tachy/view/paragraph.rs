@@ -28,6 +28,12 @@ use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
+const DEFAULT_ALIGN: ParserAlign = ParserAlign::Left;
+const DEFAULT_COLOR: Color4 = Color4::WHITE;
+const DEFAULT_FONT: Font = Font::Roman;
+
+//===========================================================================//
+
 pub struct Paragraph {
     lines: Vec<CompiledLine>,
     font_size: f32,
@@ -47,8 +53,9 @@ impl Paragraph {
     /// * `$*` toggles bold text (default off).
     /// * `$/` toggles italic text (default off).
     /// * `$C` switches the text color to cyan.
+    /// * `$D` switches the text color back to the default (white).
     /// * `$G` switches the text color to green.
-    /// * `$K` switches the text color to black (the default).
+    /// * `$K` switches the text color to black.
     /// * `$O` switches the text color to orange.
     /// * `$P` switches the text color to purple.
     /// * `$R` switches the text color to red.
@@ -82,6 +89,7 @@ impl Paragraph {
                     Some('*') => parser.toggle_bold(),
                     Some('/') => parser.toggle_italic(),
                     Some('C') => parser.set_color(Color4::CYAN3),
+                    Some('D') => parser.set_color(DEFAULT_COLOR),
                     Some('G') => parser.set_color((0.0, 1.0, 0.0).into()),
                     Some('K') => parser.set_color(Color4::BLACK),
                     Some('O') => parser.set_color(Color4::ORANGE3),
@@ -194,9 +202,9 @@ struct Parser {
 impl Parser {
     fn new() -> Parser {
         Parser {
-            current_align: ParserAlign::Left,
-            current_color: Color4::BLACK,
-            current_font: Font::Roman,
+            current_align: DEFAULT_ALIGN,
+            current_color: DEFAULT_COLOR,
+            current_font: DEFAULT_FONT,
             current_italic: false,
             current_line: ParserLine::new(),
             current_piece: String::new(),

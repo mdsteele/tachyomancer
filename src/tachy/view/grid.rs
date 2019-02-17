@@ -27,7 +27,7 @@ use tachy::geom::{Color4, Coords, CoordsRect, Direction, MatrixExt,
                   Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
 use tachy::save::{Hotkey, Prefs, WireShape};
-use tachy::state::{ChipType, EditGrid, GridChange};
+use tachy::state::{ChipType, EditGrid, GridChange, WireColor};
 
 //===========================================================================//
 
@@ -132,7 +132,14 @@ impl EditGridView {
 
         // Draw wires:
         let matrix = self.vp_matrix();
-        for (coords, dir, shape, size, color) in grid.wire_fragments() {
+        for (coords, dir, shape, size, color, has_error) in
+            grid.wire_fragments()
+        {
+            let color = if has_error {
+                WireColor::Ambiguous
+            } else {
+                color
+            };
             match (shape, dir) {
                 (WireShape::Stub, _) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
@@ -478,6 +485,9 @@ impl EditGridView {
             }
         };
         if let Some(index) = grid.wire_index_at(coords, dir) {
+            // TODO: When hovering over a wire with an error, we should hilight
+            //   the causes of the error (e.g. the two sender ports, or the
+            //   wire loop, or whatever).
             return Some(GridTooltipTag::Wire(index));
         }
         return None;

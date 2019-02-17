@@ -33,7 +33,7 @@ pub enum WireColor {
     /// A wire not connected to any ports (or not yet typechecked).
     Unknown,
     /// A wire connected to ports of different types.
-    Error,
+    Ambiguous,
     /// A behavior wire.
     Behavior,
     /// An event wire.
@@ -47,7 +47,7 @@ pub enum WireError {
     MultipleSenders(usize),
     PortColorMismatch(usize),
     NoValidSize(usize),
-    UnbrokenLoop(Vec<usize>),
+    UnbrokenLoop(Vec<usize>, bool),
 }
 
 //===========================================================================//
@@ -58,6 +58,7 @@ pub struct WireInfo {
     pub ports: HashMap<(Coords, Direction), (PortFlow, PortColor)>,
     pub color: WireColor,
     pub size: WireSizeInterval,
+    pub has_error: bool,
 }
 
 impl WireInfo {
@@ -69,6 +70,7 @@ impl WireInfo {
             ports,
             color: WireColor::Unknown,
             size: WireSizeInterval::full(),
+            has_error: false,
         }
     }
 }
@@ -174,14 +176,11 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
                 PortColor::Event => has_event = true,
             }
         }
-        if num_senders > 1 {
-            errors.push(WireError::MultipleSenders(index));
-            wire.color = WireColor::Error;
-            wire.size = WireSizeInterval::empty();
-        } else if has_behavior && has_event {
+        if has_behavior && has_event {
+            wire.color = WireColor::Ambiguous;
+            wire.size = WireSizeInterval::at_least(WireSize::One);
+            wire.has_error = true;
             errors.push(WireError::PortColorMismatch(index));
-            wire.color = WireColor::Error;
-            wire.size = WireSizeInterval::empty();
         } else if has_behavior {
             wire.color = WireColor::Behavior;
             wire.size = WireSizeInterval::at_least(WireSize::One);
@@ -191,6 +190,10 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
         } else {
             wire.color = WireColor::Unknown;
             wire.size = WireSizeInterval::empty();
+        }
+        if num_senders > 1 {
+            wire.has_error = true;
+            errors.push(WireError::MultipleSenders(index));
         }
     }
     errors
@@ -284,14 +287,9 @@ pub fn determine_wire_sizes(wires: &mut Vec<WireInfo>,
 
     let mut errors = Vec::<WireError>::new();
     for (index, wire) in wires.iter_mut().enumerate() {
-        match wire.color {
-            WireColor::Behavior | WireColor::Event => {
-                if wire.size.is_empty() {
-                    wire.color = WireColor::Error;
-                    errors.push(WireError::NoValidSize(index));
-                }
-            }
-            WireColor::Unknown | WireColor::Error => {}
+        if wire.color != WireColor::Unknown && wire.size.is_empty() {
+            wire.has_error = true;
+            errors.push(WireError::NoValidSize(index));
         }
     }
     errors
@@ -332,10 +330,12 @@ pub fn detect_loops(wires: &mut Vec<WireInfo>,
                         continue; // This wire doesn't have a self-loop.
                     }
                 }
+                let mut contains_events = false;
                 for &index in comp.iter() {
-                    wires[index].color = WireColor::Error;
+                    contains_events |= wires[index].color == WireColor::Event;
+                    wires[index].has_error = true;
                 }
-                errors.push(WireError::UnbrokenLoop(comp))
+                errors.push(WireError::UnbrokenLoop(comp, contains_events))
             }
             Err(errors)
         }
@@ -413,6 +413,7 @@ mod tests {
                 ports,
                 color: WireColor::Event,
                 size: WireSizeInterval::full(),
+                has_error: false,
             },
         ];
         let constraints = vec![
@@ -439,6 +440,7 @@ mod tests {
                 ports,
                 color: WireColor::Event,
                 size: WireSizeInterval::full(),
+                has_error: false,
             },
         ];
         let constraints = vec![
@@ -468,12 +470,14 @@ mod tests {
                 ports: ports0,
                 color: WireColor::Event,
                 size: WireSizeInterval::full(),
+                has_error: false,
             },
             WireInfo {
                 fragments: HashSet::new(),
                 ports: ports1,
                 color: WireColor::Event,
                 size: WireSizeInterval::full(),
+                has_error: false,
             },
         ];
         let constraints = vec![

@@ -231,7 +231,7 @@ impl WireModel {
 fn wire_color(color: WireColor) -> &'static Color4 {
     match color {
         WireColor::Unknown => &WIRE_COLOR_UNKNOWN,
-        WireColor::Error => &WIRE_COLOR_ERROR,
+        WireColor::Ambiguous => &WIRE_COLOR_ERROR,
         WireColor::Behavior => &Color4::ORANGE3,
         WireColor::Event => &Color4::CYAN3,
     }

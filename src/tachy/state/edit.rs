@@ -703,7 +703,7 @@ impl EditGrid {
                 .map(|port| {
                          let wire_index = wires_for_ports[&port.loc()];
                          let wire = &self.wires[wire_index];
-                         debug_assert!(wire.color != WireColor::Error);
+                         debug_assert!(!wire.has_error);
                          debug_assert!(!wire.size.is_empty());
                          (wire_index, wire.size.lower_bound().unwrap())
                      })
@@ -765,37 +765,27 @@ impl EditGrid {
                            self.wires.len());
         }
         let wire = &self.wires[index];
-        let size = wire.size.lower_bound().unwrap_or(WireSize::One);
+        let size = if let Some(size) = wire.size.lower_bound() {
+            format!("{}-bit", size.num_bits())
+        } else {
+            "Unsized".to_string()
+        };
         let mut fmt = match wire.color {
             WireColor::Unknown => "$*Disconnected wire$*".to_string(),
-            WireColor::Error => {
-                if wire.size.is_empty() {
-                    format!("$*$RError$D wire$*")
-                } else {
-                    format!("$*{}-bit $Rerror$D wire$*", size.num_bits())
-                }
-            }
-            WireColor::Behavior => {
-                format!("$*{}-bit {} wire$*",
-                        size.num_bits(),
-                        PortColor::Behavior.tooltip_format())
-            }
-            WireColor::Event => {
-                format!("$*{}-bit {} wire$*",
-                        size.num_bits(),
-                        PortColor::Event.tooltip_format())
-            }
+            WireColor::Ambiguous => format!("$*{} $Rambiguous$D wire$*", size),
+            WireColor::Behavior => format!("$*{} $Obehavior$D wire$*", size),
+            WireColor::Event => format!("$*{} $Cevent$D wire$*", size),
         };
         if let Some(ref eval) = self.eval {
             match wire.color {
-                WireColor::Unknown | WireColor::Error => {}
+                WireColor::Unknown | WireColor::Ambiguous => {}
                 WireColor::Behavior => {
                     fmt.push_str(&format!("\nCurrent value: {}",
                                           eval.wire_value(index)));
                 }
                 WireColor::Event => {
                     if let Some(value) = eval.wire_event(index) {
-                        if size == WireSize::Zero {
+                        if wire.size.lower_bound() == Some(WireSize::Zero) {
                             fmt.push_str("\nCurrently has an event.");
                         } else {
                             fmt.push_str(&format!("\nCurrent event value: {}",
@@ -807,7 +797,46 @@ impl EditGrid {
                 }
             }
         }
-        // TODO: If there are errors, show errors.
+        for error in self.errors.iter() {
+            match *error {
+                WireError::MultipleSenders(idx) if idx == index => {
+                    fmt.push_str("\n\n$RError:$D This wire is connected to \
+                                  multiple send ports.  Disconnect it from \
+                                  all but one of those ports.");
+                }
+                WireError::PortColorMismatch(idx) if idx == index => {
+                    fmt.push_str("\n\n$RError:$D This wire is connected to \
+                                  both a $Obehavior$D and an $Cevent$D \
+                                  port.  Wires may only connect ports of the \
+                                  same type.");
+                }
+                WireError::NoValidSize(idx) if idx == index => {
+                    // TODO: Make this message more helpful.  For example, if
+                    //   the wire must be exactly 2 bits on one side and 4 bits
+                    //   on the other, we should give those values.
+                    fmt.push_str("\n\n$RError:$D This wire is connecting \
+                                  mismatching bit sizes.");
+                }
+                WireError::UnbrokenLoop(ref indices, contains_events)
+                    if indices.contains(&index) => {
+                    fmt.push_str("\n\n$RError:$D This wire forms a closed \
+                                  loop");
+                    if contains_events {
+                        fmt.push_str(".  $CEvent$D wire loops can be broken \
+                                      with a $*Clock$* or $*Delay$* chip.");
+                    } else if self.puzzle.allows_events() {
+                        fmt.push_str(".  $OBehavior$D wires may not form \
+                                      loops, but loops with $Cevent$D wires \
+                                      can be broken with a $*Clock$* or \
+                                      $*Delay$* chip.");
+                    } else {
+                        fmt.push_str(", and $Obehavior$D circuits must be \
+                                      acyclic.");
+                    }
+                }
+                _ => {}
+            }
+        }
         fmt
     }
 
@@ -936,14 +965,15 @@ pub struct WireFragmentsIter<'a> {
 }
 
 impl<'a> Iterator for WireFragmentsIter<'a> {
-    type Item = (Coords, Direction, WireShape, WireSize, WireColor);
+    type Item = (Coords, Direction, WireShape, WireSize, WireColor, bool);
 
-    fn next(&mut self)
-            -> Option<(Coords, Direction, WireShape, WireSize, WireColor)> {
+    fn next(
+        &mut self)
+        -> Option<(Coords, Direction, WireShape, WireSize, WireColor, bool)> {
         if let Some((&(coords, dir), &(shape, index))) = self.inner.next() {
             let wire = &self.wires[index];
             let size = wire.size.lower_bound().unwrap_or(WireSize::One);
-            Some((coords, dir, shape, size, wire.color))
+            Some((coords, dir, shape, size, wire.color, wire.has_error))
         } else {
             None
         }

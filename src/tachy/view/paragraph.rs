@@ -347,14 +347,17 @@ impl Parser {
                             next_piece = Some(pp2);
                         }
                         ParserPieceSplit::NoneFits(pp1, opt_pp2) => {
-                            if !compiler.pieces.is_empty() {
+                            let line_was_empty = compiler.pieces.is_empty();
+                            if !line_was_empty {
                                 compiler.fix_offsets(align);
                                 compiler.newline();
                             }
                             if !pp1.text.is_empty() {
                                 compiler.push(pp1);
                                 compiler.fix_offsets(align);
-                                compiler.newline();
+                                if line_was_empty {
+                                    compiler.newline();
+                                }
                             }
                             next_piece = opt_pp2.or_else(|| pieces.next());
                         }
@@ -513,7 +516,7 @@ impl ParserPiece {
                 font: self.font,
                 color: self.color,
                 slant: self.slant,
-                text: self.text[index..].trim_start().to_string(),
+                text: self.text[index..].trim_start_matches(' ').to_string(),
             };
             self.text.truncate(index);
             return ParserPieceSplit::SomeFits(self, rest);
@@ -532,7 +535,7 @@ impl ParserPiece {
                 font: self.font,
                 color: self.color,
                 slant: self.slant,
-                text: self.text[index..].trim_start().to_string(),
+                text: self.text[index..].trim_start_matches(' ').to_string(),
             };
             self.text.truncate(index);
             return ParserPieceSplit::NoneFits(self, Some(rest));
@@ -585,7 +588,7 @@ mod tests {
                      for piece in line.pieces.iter() {
                          text.push_str(&piece.text);
                      }
-                     text
+                     text.trim_end_matches(' ').to_string()
                  })
             .collect()
     }
@@ -638,6 +641,23 @@ mod tests {
                 "Consectetur",
                 "adipiscing",
                 "elit.",
+            ]
+        );
+    }
+
+    #[test]
+    fn multiple_styles() {
+        let size = 20.0;
+        let width = (38.0 * size * Font::Roman.ratio()).ceil();
+        let prefs = Prefs::for_testing();
+        let format = "$CEvent$D wire loops can be broken with \
+                      a $*Clock$* or $*Delay$* chip.";
+        let paragraph = Paragraph::compile(size, size, width, &prefs, format);
+        assert_eq!(
+            get_lines(&paragraph),
+            vec![
+                "Event wire loops can be broken with a",
+                "Clock or Delay chip.",
             ]
         );
     }

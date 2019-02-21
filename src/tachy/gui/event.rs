@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Point2, Vector2};
+use cgmath::{Point2, Rad, Vector2};
 use sdl2;
 pub use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
@@ -26,6 +26,8 @@ use std::time::Duration;
 //===========================================================================//
 
 const MAX_CLOCK_TICK_SECONDS: f64 = 1.0 / 30.0;
+
+const MULTITOUCH_SCALE_BASE: f32 = 5.0;
 
 const SCROLL_DELTA_MULTIPLIER: i32 = 5;
 
@@ -38,6 +40,7 @@ pub enum Event {
     MouseDown(MouseEventData),
     MouseMove(MouseEventData),
     MouseUp(MouseEventData),
+    Multitouch(MultitouchEventData),
     Quit,
     Scroll(ScrollEventData),
     TextInput(String),
@@ -105,6 +108,15 @@ impl Event {
                 };
                 Some(Event::Scroll(data))
             }
+            sdl2::event::Event::MultiGesture { d_dist, d_theta, .. } => {
+                let mouse = pump.mouse_state();
+                let data = MultitouchEventData {
+                    pt: Point2::new(mouse.x(), mouse.y()),
+                    scale: MULTITOUCH_SCALE_BASE.powf(d_dist),
+                    rotate: Rad(d_theta),
+                };
+                Some(Event::Multitouch(data))
+            }
             sdl2::event::Event::Quit { .. } => Some(Event::Quit),
             sdl2::event::Event::TextInput { text, .. } => {
                 Some(Event::TextInput(text))
@@ -146,6 +158,9 @@ impl Event {
                 Event::MouseMove(mouse.relative_to(origin))
             }
             Event::MouseUp(mouse) => Event::MouseUp(mouse.relative_to(origin)),
+            Event::Multitouch(touch) => {
+                Event::Multitouch(touch.relative_to(origin))
+            }
             Event::Scroll(scroll) => Event::Scroll(scroll.relative_to(origin)),
             _ => self.clone(),
         }
@@ -211,6 +226,28 @@ impl MouseEventData {
             },
             left: self.left,
             right: self.right,
+        }
+    }
+}
+
+//===========================================================================//
+
+#[derive(Clone)]
+pub struct MultitouchEventData {
+    pub pt: Point2<i32>,
+    pub scale: f32,
+    pub rotate: Rad<f32>,
+}
+
+impl MultitouchEventData {
+    fn relative_to(&self, origin: Point2<i32>) -> MultitouchEventData {
+        MultitouchEventData {
+            pt: Point2 {
+                x: self.pt.x - origin.x,
+                y: self.pt.y - origin.y,
+            },
+            scale: self.scale,
+            rotate: self.rotate,
         }
     }
 }

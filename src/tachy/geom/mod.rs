@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod cast;
 mod color;
 mod coords;
 mod dir;
@@ -24,6 +25,7 @@ mod matrix;
 mod orient;
 mod rect;
 
+pub use self::cast::{AsFloat, AsInt};
 pub use self::color::Color4;
 pub use self::coords::{Coords, CoordsDelta, CoordsRect, CoordsSize};
 pub use self::dir::{AllDirectionsIter, Direction};

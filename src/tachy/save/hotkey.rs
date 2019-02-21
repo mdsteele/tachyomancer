@@ -39,6 +39,8 @@ pub enum Hotkey {
     ScrollLeft,
     ScrollRight,
     ScrollUp,
+    ZoomIn,
+    ZoomOut,
 }
 
 const ALL_HOTKEYS: &[Hotkey] = &[
@@ -55,6 +57,8 @@ const ALL_HOTKEYS: &[Hotkey] = &[
     Hotkey::ScrollLeft,
     Hotkey::ScrollRight,
     Hotkey::ScrollUp,
+    Hotkey::ZoomIn,
+    Hotkey::ZoomOut,
 ];
 
 impl Hotkey {
@@ -76,6 +80,8 @@ impl Hotkey {
             Hotkey::ScrollLeft => "Scroll left",
             Hotkey::ScrollRight => "Scroll right",
             Hotkey::ScrollUp => "Scroll up",
+            Hotkey::ZoomIn => "Zoom in",
+            Hotkey::ZoomOut => "Zoom out",
         }
     }
 
@@ -94,6 +100,8 @@ impl Hotkey {
             Hotkey::ScrollLeft => Keycode::Left,
             Hotkey::ScrollRight => Keycode::Right,
             Hotkey::ScrollUp => Keycode::Up,
+            Hotkey::ZoomIn => Keycode::Equals,
+            Hotkey::ZoomOut => Keycode::Minus,
         }
     }
 
@@ -109,7 +117,9 @@ impl Hotkey {
             Keycode::T => Some(Hotkey::EvalReset),
             Keycode::W => Some(Hotkey::FlipVert),
             Keycode::Down => Some(Hotkey::ScrollDown),
+            Keycode::Equals => Some(Hotkey::ZoomIn),
             Keycode::Left => Some(Hotkey::ScrollLeft),
+            Keycode::Minus => Some(Hotkey::ZoomOut),
             Keycode::Right => Some(Hotkey::ScrollRight),
             Keycode::Up => Some(Hotkey::ScrollUp),
             _ => None,
@@ -142,6 +152,8 @@ impl FromStr for Hotkey {
             "ScrollLeft" => Ok(Hotkey::ScrollLeft),
             "ScrollRight" => Ok(Hotkey::ScrollRight),
             "ScrollUp" => Ok(Hotkey::ScrollUp),
+            "ZoomIn" => Ok(Hotkey::ZoomIn),
+            "ZoomOut" => Ok(Hotkey::ZoomOut),
             _ => Err(()),
         }
     }

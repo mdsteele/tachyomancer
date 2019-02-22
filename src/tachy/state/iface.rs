@@ -133,7 +133,7 @@ impl Interface {
         } else {
             let mut fmt = format!("$*{}$*\n{}\n", self.name, self.description);
             for port in self.ports.iter() {
-                fmt.push_str(&format!("\n$*{}$>({}-bit {} {:?})$<$*\n  {}",
+                fmt.push_str(&format!("\n$*{}$>({}-bit {} {:?})$<$*\n  $!{}",
                                       port.name,
                                       port.size.num_bits(),
                                       port.color.tooltip_format(),
@@ -302,7 +302,8 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
                         },
                         InterfacePort {
                             name: "Metronome",
-                            description: "Sends an event on each time step.",
+                            description: "Sends an event at the beginning of \
+                                          each time step.",
                             flow: PortFlow::Send,
                             color: PortColor::Event,
                             size: WireSize::Zero,

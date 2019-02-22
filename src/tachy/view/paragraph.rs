@@ -50,6 +50,7 @@ impl Paragraph {
     /// * `$<` aligns text to the left (the default).
     /// * `$=` aligns text to the center.
     /// * `$>` aligns text to the right.
+    /// * `$!` sets the wrap indent position for the current line.
     /// * `$*` toggles bold text (default off).
     /// * `$/` toggles italic text (default off).
     /// * `$C` switches the text color to cyan.
@@ -86,6 +87,7 @@ impl Paragraph {
                     Some('<') => parser.set_align(ParserAlign::Left),
                     Some('=') => parser.set_align(ParserAlign::Center),
                     Some('>') => parser.set_align(ParserAlign::Right),
+                    Some('!') => parser.set_wrap_indent_to_here(font_size),
                     Some('*') => parser.toggle_bold(),
                     Some('/') => parser.toggle_italic(),
                     Some('C') => parser.set_color(Color4::CYAN3),
@@ -286,6 +288,17 @@ impl Parser {
         }
     }
 
+    fn set_wrap_indent_to_here(&mut self, font_size: f32) {
+        self.shift_piece();
+        let pieces = match self.current_align {
+            ParserAlign::Left => &self.current_line.left,
+            ParserAlign::Center => &self.current_line.center,
+            ParserAlign::Right => &self.current_line.right,
+        };
+        self.current_line.wrap_indent =
+            pieces.iter().map(|piece| piece.width(font_size)).sum();
+    }
+
     fn toggle_bold(&mut self) {
         let next_font = match self.current_font {
             Font::Bold => Font::Roman,
@@ -328,6 +341,7 @@ impl Parser {
         }
         let mut compiler = Compiler::new(font_size, line_height, max_width);
         for line in self.lines {
+            let wrap_indent = line.wrap_indent;
             for (align, pieces) in line.columns() {
                 let mut pieces = pieces.into_iter();
                 let mut next_piece = pieces.next();
@@ -343,20 +357,20 @@ impl Parser {
                                 compiler.push(pp1);
                             }
                             compiler.fix_offsets(align);
-                            compiler.newline();
+                            compiler.newline(wrap_indent);
                             next_piece = Some(pp2);
                         }
                         ParserPieceSplit::NoneFits(pp1, opt_pp2) => {
                             let line_was_empty = compiler.pieces.is_empty();
                             if !line_was_empty {
                                 compiler.fix_offsets(align);
-                                compiler.newline();
+                                compiler.newline(wrap_indent);
                             }
                             if !pp1.text.is_empty() {
                                 compiler.push(pp1);
                                 compiler.fix_offsets(align);
                                 if line_was_empty {
-                                    compiler.newline();
+                                    compiler.newline(wrap_indent);
                                 }
                             }
                             next_piece = opt_pp2.or_else(|| pieces.next());
@@ -365,7 +379,7 @@ impl Parser {
                 }
                 compiler.fix_offsets(align);
             }
-            compiler.newline();
+            compiler.newline(0.0);
         }
         compiler.finish()
     }
@@ -404,12 +418,12 @@ impl Compiler {
         self.offset += piece_width;
     }
 
-    fn newline(&mut self) {
+    fn newline(&mut self, indent: f32) {
         let pieces = mem::replace(&mut self.pieces, Vec::new());
         self.lines.push(CompiledLine::new(pieces));
         self.actual_width = self.actual_width.max(self.offset);
         self.align_start = 0;
-        self.offset = 0.0;
+        self.offset = indent;
     }
 
     fn fix_offsets(&mut self, align: ParserAlign) {
@@ -451,6 +465,7 @@ struct ParserLine {
     left: Vec<ParserPiece>,
     center: Vec<ParserPiece>,
     right: Vec<ParserPiece>,
+    wrap_indent: f32,
 }
 
 impl ParserLine {
@@ -459,6 +474,7 @@ impl ParserLine {
             left: Vec::new(),
             center: Vec::new(),
             right: Vec::new(),
+            wrap_indent: 0.0,
         }
     }
 

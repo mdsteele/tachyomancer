@@ -21,7 +21,8 @@ use cgmath::{Matrix4, vec2};
 use tachy::font::Align;
 use tachy::geom::{Coords, CoordsSize, MatrixExt, Orientation, Rect};
 use tachy::gui::Resources;
-use tachy::state::{ChipType, EditGrid, Interface, PortColor, PortFlow,
+use tachy::save::ChipType;
+use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
                    PortSpec};
 
 //===========================================================================//

@@ -18,19 +18,18 @@
 // +--------------------------------------------------------------------------+
 
 use super::check::{self, WireColor, WireError, WireInfo};
-use super::chip::ChipType;
+use super::chip::{ChipExt, new_chip_evals};
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
 use super::iface::{Interface, puzzle_interfaces};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::new_puzzle_eval;
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
-use std::i32;
 use std::mem;
 use std::usize;
 use tachy::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
                   Orientation, Rect};
-use tachy::save::{CircuitData, Puzzle, WireShape};
+use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
 
 //===========================================================================//
 
@@ -122,95 +121,80 @@ impl EditGrid {
         };
 
         // Chips:
-        for (coords_str, chip_str) in data.chips.iter() {
-            if let Some(coords) = key_string_coords(coords_str) {
-                let mut items = chip_str.splitn(2, '-');
-                if let Some(orient_str) = items.next() {
-                    if let Ok(orient) = orient_str.parse::<Orientation>() {
-                        if let Some(ctype_str) = items.next() {
-                            if let Ok(ctype) = ctype_str.parse::<ChipType>() {
-                                let change = GridChange::ToggleChip(coords,
-                                                                    orient,
-                                                                    ctype);
-                                grid.mutate_one(&change);
-                            }
-                        }
-                    }
-                }
-            }
+        for (coords, ctype, orient) in data.chips.iter() {
+            let change = GridChange::ToggleChip(coords, orient, ctype);
+            grid.mutate_one(&change);
         }
 
         // Wires:
-        for (loc_str, &shape) in data.wires.iter() {
-            if let Some((coords, dir)) = key_string_location(loc_str) {
-                if grid.has_frag(coords, dir) {
-                    continue;
+        for (coords, dir, shape) in data.wires.iter() {
+            if grid.has_frag(coords, dir) {
+                continue;
+            }
+            match shape {
+                WireShape::Stub => {
+                    grid.set_frag(coords, dir, WireShape::Stub);
                 }
-                match shape {
-                    WireShape::Stub => {
-                        grid.set_frag(coords, dir, WireShape::Stub);
+                WireShape::Straight => {
+                    if !grid.has_frag(coords, -dir) {
+                        grid.set_frag(coords, dir, WireShape::Straight);
+                        grid.set_frag(coords, -dir, WireShape::Straight);
                     }
-                    WireShape::Straight => {
-                        if !grid.has_frag(coords, -dir) {
-                            grid.set_frag(coords, dir, WireShape::Straight);
-                            grid.set_frag(coords, -dir, WireShape::Straight);
-                        }
+                }
+                WireShape::TurnLeft => {
+                    let dir2 = dir.rotate_cw();
+                    if !grid.has_frag(coords, dir2) {
+                        grid.set_frag(coords, dir, WireShape::TurnLeft);
+                        grid.set_frag(coords, dir2, WireShape::TurnRight);
                     }
-                    WireShape::TurnLeft => {
-                        let dir2 = dir.rotate_cw();
-                        if !grid.has_frag(coords, dir2) {
-                            grid.set_frag(coords, dir, WireShape::TurnLeft);
-                            grid.set_frag(coords, dir2, WireShape::TurnRight);
-                        }
+                }
+                WireShape::TurnRight => {
+                    let dir2 = dir.rotate_ccw();
+                    if !grid.has_frag(coords, dir2) {
+                        grid.set_frag(coords, dir, WireShape::TurnRight);
+                        grid.set_frag(coords, dir2, WireShape::TurnLeft);
                     }
-                    WireShape::TurnRight => {
-                        let dir2 = dir.rotate_ccw();
-                        if !grid.has_frag(coords, dir2) {
-                            grid.set_frag(coords, dir, WireShape::TurnRight);
-                            grid.set_frag(coords, dir2, WireShape::TurnLeft);
-                        }
+                }
+                WireShape::SplitTee => {
+                    let dir2 = dir.rotate_cw();
+                    let dir3 = dir.rotate_ccw();
+                    if !grid.has_frag(coords, dir2) &&
+                        !grid.has_frag(coords, dir3)
+                    {
+                        grid.set_frag(coords, dir, WireShape::SplitTee);
+                        grid.set_frag(coords, dir2, WireShape::SplitRight);
+                        grid.set_frag(coords, dir3, WireShape::SplitLeft);
                     }
-                    WireShape::SplitTee => {
-                        let dir2 = dir.rotate_cw();
-                        let dir3 = dir.rotate_ccw();
-                        if !grid.has_frag(coords, dir2) &&
-                            !grid.has_frag(coords, dir3)
-                        {
-                            grid.set_frag(coords, dir, WireShape::SplitTee);
-                            grid.set_frag(coords, dir2, WireShape::SplitRight);
-                            grid.set_frag(coords, dir3, WireShape::SplitLeft);
-                        }
+                }
+                WireShape::SplitLeft => {
+                    let dir2 = dir.rotate_cw();
+                    let dir3 = -dir;
+                    if !grid.has_frag(coords, dir2) &&
+                        !grid.has_frag(coords, dir3)
+                    {
+                        grid.set_frag(coords, dir, WireShape::SplitLeft);
+                        grid.set_frag(coords, dir2, WireShape::SplitTee);
+                        grid.set_frag(coords, dir3, WireShape::SplitRight);
                     }
-                    WireShape::SplitLeft => {
-                        let dir2 = dir.rotate_cw();
-                        let dir3 = -dir;
-                        if !grid.has_frag(coords, dir2) &&
-                            !grid.has_frag(coords, dir3)
-                        {
-                            grid.set_frag(coords, dir, WireShape::SplitLeft);
-                            grid.set_frag(coords, dir2, WireShape::SplitTee);
-                            grid.set_frag(coords, dir3, WireShape::SplitRight);
-                        }
+                }
+                WireShape::SplitRight => {
+                    let dir2 = dir.rotate_ccw();
+                    let dir3 = -dir;
+                    if !grid.has_frag(coords, dir2) &&
+                        !grid.has_frag(coords, dir3)
+                    {
+                        grid.set_frag(coords, dir, WireShape::SplitRight);
+                        grid.set_frag(coords, dir2, WireShape::SplitTee);
+                        grid.set_frag(coords, dir3, WireShape::SplitLeft);
                     }
-                    WireShape::SplitRight => {
-                        let dir2 = dir.rotate_ccw();
-                        let dir3 = -dir;
-                        if !grid.has_frag(coords, dir2) &&
-                            !grid.has_frag(coords, dir3)
-                        {
-                            grid.set_frag(coords, dir, WireShape::SplitRight);
-                            grid.set_frag(coords, dir2, WireShape::SplitTee);
-                            grid.set_frag(coords, dir3, WireShape::SplitLeft);
-                        }
-                    }
-                    WireShape::Cross => {
-                        if !grid.has_frag(coords, -dir) &&
-                            !grid.has_frag(coords, dir.rotate_cw()) &&
-                            !grid.has_frag(coords, dir.rotate_ccw())
-                        {
-                            for d in Direction::all() {
-                                grid.set_frag(coords, d, WireShape::Cross);
-                            }
+                }
+                WireShape::Cross => {
+                    if !grid.has_frag(coords, -dir) &&
+                        !grid.has_frag(coords, dir.rotate_cw()) &&
+                        !grid.has_frag(coords, dir.rotate_ccw())
+                    {
+                        for d in Direction::all() {
+                            grid.set_frag(coords, d, WireShape::Cross);
                         }
                     }
                 }
@@ -239,8 +223,7 @@ impl EditGrid {
                                         self.bounds.width,
                                         self.bounds.height);
         for (coords, ctype, orient) in self.chips() {
-            data.chips.insert(coords_key_string(coords),
-                              format!("{}-{:?}", orient, ctype));
+            data.chips.insert(coords, ctype, orient);
         }
         for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
             match (shape, dir) {
@@ -269,7 +252,7 @@ impl EditGrid {
                 (WireShape::SplitRight, _) |
                 (WireShape::Cross, _) => continue,
             }
-            data.wires.insert(location_key_string(coords, dir), shape);
+            data.wires.insert(coords, dir, shape);
         }
         data
     }
@@ -709,7 +692,7 @@ impl EditGrid {
                      })
                 .collect();
             for (port_index, chip_eval) in
-                ctype.chip_evals(coords, &wires, &interact)
+                new_chip_evals(ctype, coords, &wires, &interact)
             {
                 let port = &ports[port_index];
                 let group_index = groups_for_ports[&port.loc()];
@@ -984,80 +967,6 @@ impl<'a> Iterator for WireFragmentsIter<'a> {
 
 impl<'a> ExactSizeIterator for WireFragmentsIter<'a> {
     fn len(&self) -> usize { self.inner.len() }
-}
-
-//===========================================================================//
-
-fn coords_key_string(coords: Coords) -> String {
-    let xsign = if coords.x < 0 { 'm' } else { 'p' };
-    let ysign = if coords.y < 0 { 'm' } else { 'p' };
-    format!("{}{}{}{}", xsign, coords.x.abs(), ysign, coords.y.abs())
-}
-
-fn key_string_coords(key: &str) -> Option<Coords> {
-    let mut chars = key.chars();
-    let xsign_chr = chars.next();
-    let xsign: i32 = match xsign_chr {
-        Some('m') => -1,
-        Some('p') => 1,
-        _ => return None,
-    };
-    let mut ysign_chr = None;
-    let mut x: u64 = 0;
-    while let Some(chr) = chars.next() {
-        if let Some(digit) = chr.to_digit(10) {
-            x = 10 * x + (digit as u64);
-            if x > (i32::MAX as u64) {
-                return None;
-            }
-        } else {
-            ysign_chr = Some(chr);
-            break;
-        }
-    }
-    let ysign: i32 = match ysign_chr {
-        Some('m') => -1,
-        Some('p') => 1,
-        _ => return None,
-    };
-    let mut y: u64 = 0;
-    while let Some(chr) = chars.next() {
-        if let Some(digit) = chr.to_digit(10) {
-            y = 10 * y + (digit as u64);
-            if y > (i32::MAX as u64) {
-                return None;
-            }
-        } else {
-            return None;
-        }
-    }
-    return Some(Coords::new(xsign * (x as i32), ysign * (y as i32)));
-}
-
-fn location_key_string(coords: Coords, dir: Direction) -> String {
-    let dir_chr = match dir {
-        Direction::East => 'e',
-        Direction::South => 's',
-        Direction::West => 'w',
-        Direction::North => 'n',
-    };
-    format!("{}{}", coords_key_string(coords), dir_chr)
-}
-
-fn key_string_location(key: &str) -> Option<(Coords, Direction)> {
-    let mut string = key.to_string();
-    let dir = match string.pop() {
-        Some('e') => Direction::East,
-        Some('s') => Direction::South,
-        Some('w') => Direction::West,
-        Some('n') => Direction::North,
-        _ => return None,
-    };
-    if let Some(coords) = key_string_coords(&string) {
-        Some((coords, dir))
-    } else {
-        None
-    }
 }
 
 //===========================================================================//

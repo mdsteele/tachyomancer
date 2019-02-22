@@ -24,8 +24,8 @@ use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsDelta, CoordsRect,
                   Direction, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
-use tachy::save::{Hotkey, Prefs, WireShape};
-use tachy::state::{ChipType, EditGrid, GridChange, WireColor};
+use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
+use tachy::state::{EditGrid, GridChange, WireColor};
 
 //===========================================================================//
 

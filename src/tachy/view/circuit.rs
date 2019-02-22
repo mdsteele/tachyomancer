@@ -26,8 +26,8 @@ use cgmath;
 use std::u32;
 use tachy::geom::{Coords, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
-use tachy::save::{Prefs, Puzzle};
-use tachy::state::{ChipType, EditGrid, EvalResult, EvalScore, GridChange};
+use tachy::save::{ChipType, Prefs, Puzzle};
+use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange};
 
 //===========================================================================//
 

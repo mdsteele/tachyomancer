@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod chip;
 mod circuit;
 mod converse;
 mod dir;
@@ -29,6 +30,7 @@ mod progress;
 mod puzzle;
 mod wire;
 
+pub use self::chip::ChipType;
 pub use self::circuit::CircuitData;
 pub use self::converse::{AllConversationsIter, Conversation,
                          ConversationProgress};

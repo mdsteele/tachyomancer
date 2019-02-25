@@ -17,98 +17,83 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::eval::{CircuitState, EvalError, EvalScore, NullPuzzleEval,
-                  PuzzleEval};
+use super::iface::{Interface, InterfacePort, InterfacePosition};
+use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use cgmath::Point2;
 use num_integer::Roots;
 use tachy::geom::{Coords, Direction};
-use tachy::save::Puzzle;
+use tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
-pub fn new_puzzle_eval(puzzle: Puzzle,
-                       slots: Vec<Vec<((Coords, Direction), usize)>>)
-                       -> Box<PuzzleEval> {
-    match puzzle {
-        Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
-        Puzzle::AutomateHeliostat => {
-            Box::new(AutomateHeliostatEval::new(slots))
-        }
-        Puzzle::SandboxEvent => Box::new(SandboxEventEval::new(slots)),
-        _ => Box::new(NullPuzzleEval()), // TODO other puzzles
-    }
-}
+pub const INTERFACES: &[Interface] = &[
+    Interface {
+        name: "Sensor Interface",
+        description: "\
+            Connects to a photosensor array that determines the \
+            ideal position for the heliostat mirror.  Use the \
+            motor interface to move the mirror to this position.",
+        side: Direction::South,
+        pos: InterfacePosition::Left(0),
+        ports: &[
+            InterfacePort {
+                name: "XGoal",
+                description: "Outputs ideal X position.",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+            InterfacePort {
+                name: "YGoal",
+                description: "Outputs ideal Y position.",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+        ],
+    },
+    Interface {
+        name: "Motor Interface",
+        description: "\
+            Connects to a stepper motor that controls the \
+            position of the heliostat mirror.",
+        side: Direction::South,
+        pos: InterfacePosition::Right(0),
+        ports: &[
+            InterfacePort {
+                name: "XPos",
+                description: "Outputs current X position.",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+            InterfacePort {
+                name: "YPos",
+                description: "Outputs current Y position.",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+            InterfacePort {
+                name: "Motor",
+                description: "\
+                    Receives motor commands.\n    \
+                    Send 8 to move up.\n    \
+                    Send 4 to move down.\n    \
+                    Send 2 to move left.\n    \
+                    Send 1 to move right.\n  \
+                    Send any other value to not move.",
+                flow: PortFlow::Recv,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+        ],
+    },
+];
 
 //===========================================================================//
 
-struct TutorialOrEval {
-    verification: Vec<u64>,
-    input1_wire: usize,
-    input2_wire: usize,
-    output_wire: usize,
-    output_port: (Coords, Direction),
-}
-
-impl TutorialOrEval {
-    fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> TutorialOrEval {
-        debug_assert_eq!(slots.len(), 3);
-        debug_assert_eq!(slots[0].len(), 1);
-        debug_assert_eq!(slots[1].len(), 1);
-        debug_assert_eq!(slots[2].len(), 1);
-        TutorialOrEval {
-            verification: Puzzle::TutorialOr
-                .static_verification_data()
-                .to_vec(),
-            input1_wire: slots[0][0].1,
-            input2_wire: slots[1][0].1,
-            output_wire: slots[2][0].1,
-            output_port: slots[2][0].0,
-        }
-    }
-}
-
-impl PuzzleEval for TutorialOrEval {
-    fn verification_data(&self) -> &[u64] { &self.verification }
-
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
-        if time_step >= 4 {
-            Some(EvalScore::WireLength)
-        } else {
-            state.send_behavior(self.input1_wire, time_step & 0x1);
-            state.send_behavior(self.input2_wire, (time_step & 0x2) >> 1);
-            None
-        }
-    }
-
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
-        let input1 = state.recv_behavior(self.input1_wire).0;
-        let input2 = state.recv_behavior(self.input2_wire).0;
-        let expected = input1 | input2;
-        let actual = state.recv_behavior(self.output_wire).0;
-        self.verification[3 * (time_step as usize) + 2] = actual as u64;
-        if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!("Expected output {} for inputs {} and {}, \
-                                  but output was {}",
-                                 expected,
-                                 input1,
-                                 input2,
-                                 actual),
-            };
-            vec![error]
-        } else {
-            vec![]
-        }
-    }
-}
-
-//===========================================================================//
-
-struct AutomateHeliostatEval {
+pub struct AutomateHeliostatEval {
     verification: [u64; 5],
     opt_x_wire: usize,
     opt_y_wire: usize,
@@ -122,8 +107,8 @@ struct AutomateHeliostatEval {
 }
 
 impl AutomateHeliostatEval {
-    fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-           -> AutomateHeliostatEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
+               -> AutomateHeliostatEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 3);
@@ -189,35 +174,6 @@ impl PuzzleEval for AutomateHeliostatEval {
         }
         self.update_verification();
         Vec::new()
-    }
-}
-
-//===========================================================================//
-
-struct SandboxEventEval {
-    metronome: usize,
-    timer: usize,
-}
-
-impl SandboxEventEval {
-    fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> SandboxEventEval {
-        debug_assert_eq!(slots.len(), 1);
-        debug_assert_eq!(slots[0].len(), 2);
-        SandboxEventEval {
-            metronome: slots[0][0].1,
-            timer: slots[0][1].1,
-        }
-    }
-}
-
-impl PuzzleEval for SandboxEventEval {
-    fn verification_data(&self) -> &[u64] { &[] }
-
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
-        state.send_event(self.metronome, 0);
-        state.send_behavior(self.timer, time_step & 0xff);
-        None
     }
 }
 

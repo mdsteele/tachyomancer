@@ -294,6 +294,7 @@ pub trait PuzzleEval {
     }
 }
 
+#[allow(dead_code)]
 pub struct NullPuzzleEval();
 
 impl PuzzleEval for NullPuzzleEval {

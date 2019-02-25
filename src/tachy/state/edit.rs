@@ -20,9 +20,8 @@
 use super::check::{self, WireColor, WireError, WireInfo};
 use super::chip::{ChipExt, new_chip_evals};
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
-use super::iface::{Interface, puzzle_interfaces};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
-use super::puzzle::new_puzzle_eval;
+use super::puzzle::{Interface, new_puzzle_eval, puzzle_interfaces};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
 use std::mem;

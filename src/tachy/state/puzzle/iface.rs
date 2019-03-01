@@ -132,12 +132,14 @@ impl Interface {
         } else {
             let mut fmt = format!("$*{}$*\n{}\n", self.name, self.description);
             for port in self.ports.iter() {
-                fmt.push_str(&format!("\n$*{}$>({}-bit {} {:?})$<$*\n  $!{}",
+                fmt.push_str(&format!("\n$*{}$>({}-bit {} {:?})$<$*",
                                       port.name,
                                       port.size.num_bits(),
                                       port.color.tooltip_format(),
-                                      port.flow,
-                                      port.description));
+                                      port.flow));
+                if !port.description.is_empty() {
+                    fmt.push_str(&format!("\n  $!{}", port.description));
+                }
             }
             fmt
         }

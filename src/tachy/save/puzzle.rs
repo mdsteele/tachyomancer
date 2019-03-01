@@ -35,6 +35,7 @@ pub enum PuzzleKind {
 pub enum Puzzle {
     TutorialOr,
     AutomateHeliostat,
+    AutomateReactor,
     SandboxBehavior,
     SandboxEvent,
 }
@@ -42,6 +43,7 @@ pub enum Puzzle {
 const ALL_PUZZLES: &[Puzzle] = &[
     Puzzle::TutorialOr,
     Puzzle::AutomateHeliostat,
+    Puzzle::AutomateReactor,
     Puzzle::SandboxBehavior,
     Puzzle::SandboxEvent,
 ];
@@ -105,6 +107,20 @@ impl Puzzle {
                     instructions: "\
                         Move the heliostat towards the optimal position.",
                     verification: &[3, 7, 15, 15, 1000],
+                }
+            }
+            Puzzle::AutomateReactor => {
+                &PuzzleData {
+                    title: "Backup Reactor",
+                    kind: PuzzleKind::Automate,
+                    allow_events: false,
+                    score_units: "Time",
+                    graph_bounds: (150, 150),
+                    description: "\
+                        Manipulate the reactor's control rods to regulate \
+                        the power output to the desired level.",
+                    instructions: "",
+                    verification: &[0, 0, 0, 0, 0],
                 }
             }
             Puzzle::SandboxBehavior => {

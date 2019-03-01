@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::iface::{Interface, InterfacePort, InterfacePosition};
+use super::rng::SimpleRng;
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use cgmath::Point2;
 use num_integer::Roots;
@@ -175,37 +176,6 @@ impl PuzzleEval for AutomateHeliostatEval {
         self.update_verification();
         Vec::new()
     }
-}
-
-//===========================================================================//
-
-/// A simple, not-very-good pseudo-random number generator.  We use this
-/// instead of the rand crate because (1) we don't need a very good RNG, but
-/// (2) we do need the random sequence to be deterministic and guaranteed
-/// stable across compiles and crate versions.
-struct SimpleRng {
-    z: u32,
-    w: u32,
-}
-
-impl SimpleRng {
-    fn new(seed: u64) -> SimpleRng {
-        SimpleRng {
-            z: 0x159a55e5 ^ ((seed & 0xffffffff) as u32),
-            w: 0x1f123bb5 ^ ((seed >> 32) as u32),
-        }
-    }
-
-    fn rand_u32(&mut self) -> u32 {
-        // This RNG is based on the MWC algorithm from George Marsaglia's post
-        // to sci.stat.math on 12 Jan 1999, which can be found here:
-        //   https://groups.google.com/forum/#!topic/sci.stat.math/5yb0jwf1stw
-        self.z = 36969 * (self.z & 0xffff) + (self.z >> 16);
-        self.w = 18000 * (self.w & 0xffff) + (self.w >> 16);
-        (self.z << 16) | (self.w & 0xffff)
-    }
-
-    fn rand_u4(&mut self) -> u32 { self.rand_u32() & 0xf }
 }
 
 //===========================================================================//

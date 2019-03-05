@@ -39,6 +39,7 @@ pub enum ChipType {
     // Logic:
     Not,
     And,
+    Or,
     Mux,
     // Events:
     Clock,
@@ -74,6 +75,7 @@ impl str::FromStr for ChipType {
             "Latest" => Ok(ChipType::Latest),
             "Mux" => Ok(ChipType::Mux),
             "Not" => Ok(ChipType::Not),
+            "Or" => Ok(ChipType::Or),
             "Pack" => Ok(ChipType::Pack),
             "Ram" => Ok(ChipType::Ram),
             "Sample" => Ok(ChipType::Sample),
@@ -166,6 +168,7 @@ mod tests {
             ChipType::Latest,
             ChipType::Mux,
             ChipType::Not,
+            ChipType::Or,
             ChipType::Pack,
             ChipType::Ram,
             ChipType::Sample,

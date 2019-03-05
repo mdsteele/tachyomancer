@@ -156,6 +156,39 @@ impl ChipEval for NotChipEval {
 
 //===========================================================================//
 
+pub const OR_CHIP_DATA: &ChipData = AND_CHIP_DATA;
+
+pub struct OrChipEval {
+    input1: usize,
+    input2: usize,
+    output: usize,
+}
+
+impl OrChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), OR_CHIP_DATA.ports.len());
+        let chip_eval = OrChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for OrChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input1, changed1) = state.recv_behavior(self.input1);
+        let (input2, changed2) = state.recv_behavior(self.input2);
+        if changed1 || changed2 {
+            state.send_behavior(self.output, input1 | input2);
+        }
+    }
+}
+
+//===========================================================================//
+
 #[cfg(test)]
 mod tests {
     use super::{AndChipEval, NotChipEval};

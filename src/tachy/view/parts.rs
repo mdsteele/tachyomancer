@@ -40,6 +40,7 @@ const ALL_CHIP_TYPES: &[ChipType] = &[
     ChipType::Const(1),
     ChipType::Not,
     ChipType::And,
+    ChipType::Or,
     ChipType::Pack,
     ChipType::Unpack,
     ChipType::Add,

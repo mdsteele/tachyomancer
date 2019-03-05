@@ -44,6 +44,7 @@ enum ChipIcon {
     Eq,
     Mux,
     Not,
+    Or,
     Pack1,
     Pack2,
     Sub1,
@@ -134,6 +135,7 @@ impl ChipModel {
             ChipType::Eq => ChipIcon::Eq,
             ChipType::Mux => ChipIcon::Mux,
             ChipType::Not => ChipIcon::Not,
+            ChipType::Or => ChipIcon::Or,
             ChipType::Pack => {
                 if orient.is_mirrored() {
                     ChipIcon::Pack2

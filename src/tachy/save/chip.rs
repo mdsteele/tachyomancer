@@ -25,16 +25,20 @@ use tachy::geom::CoordsSize;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChipType {
+    // Values:
     Const(u32),
-    // Bitwise:
-    Not,
-    And,
     Pack,
     Unpack,
     // Arithmetic:
     Add,
     Sub,
-    Compare,
+    // Comparison:
+    Cmp,
+    CmpEq,
+    Eq,
+    // Logic:
+    Not,
+    And,
     Mux,
     // Events:
     Clock,
@@ -60,10 +64,12 @@ impl str::FromStr for ChipType {
             "Break" => Ok(ChipType::Break),
             "Button" => Ok(ChipType::Button),
             "Clock" => Ok(ChipType::Clock),
-            "Compare" => Ok(ChipType::Compare),
+            "Cmp" => Ok(ChipType::Cmp),
+            "CmpEq" => Ok(ChipType::CmpEq),
             "Delay" => Ok(ChipType::Delay),
             "Discard" => Ok(ChipType::Discard),
             "Display" => Ok(ChipType::Display),
+            "Eq" => Ok(ChipType::Eq),
             "Join" => Ok(ChipType::Join),
             "Latest" => Ok(ChipType::Latest),
             "Mux" => Ok(ChipType::Mux),
@@ -147,13 +153,15 @@ mod tests {
             ChipType::Break,
             ChipType::Button,
             ChipType::Clock,
-            ChipType::Compare,
+            ChipType::Cmp,
+            ChipType::CmpEq,
             ChipType::Const(0),
             ChipType::Const(13),
             ChipType::Const(0xffffffff),
             ChipType::Delay,
             ChipType::Discard,
             ChipType::Display,
+            ChipType::Eq,
             ChipType::Join,
             ChipType::Latest,
             ChipType::Mux,

@@ -27,46 +27,105 @@ use tachy::state::{PortColor, PortFlow, WireSize};
 pub const CMP_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::East),
         (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::North),
     ],
     constraints: &[
         AbstractConstraint::Equal(0, 1),
         AbstractConstraint::Exact(2, WireSize::One),
-        AbstractConstraint::Exact(3, WireSize::One),
     ],
-    dependencies: &[(0, 2), (1, 2), (0, 3), (1, 3)],
+    dependencies: &[(0, 2), (1, 2)],
 };
 
-pub struct CompareChipEval {
+pub struct CmpChipEval {
     input1: usize,
     input2: usize,
-    output1: usize,
-    output2: usize,
+    output: usize,
 }
 
-impl CompareChipEval {
+impl CmpChipEval {
     pub fn new_evals(slots: &[(usize, WireSize)])
                      -> Vec<(usize, Box<ChipEval>)> {
         debug_assert_eq!(slots.len(), CMP_CHIP_DATA.ports.len());
-        let chip_eval = CompareChipEval {
+        let chip_eval = CmpChipEval {
             input1: slots[0].0,
             input2: slots[1].0,
-            output1: slots[2].0,
-            output2: slots[3].0,
+            output: slots[2].0,
         };
         vec![(2, Box::new(chip_eval))]
     }
 }
 
-impl ChipEval for CompareChipEval {
+impl ChipEval for CmpChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         let input1 = state.recv_behavior(self.input1).0;
         let input2 = state.recv_behavior(self.input2).0;
-        let (output1, output2) = if input1 < input2 { (1, 0) } else { (0, 1) };
-        state.send_behavior(self.output1, output1);
-        state.send_behavior(self.output2, output2);
+        let output = if input1 < input2 { 1 } else { 0 };
+        state.send_behavior(self.output, output);
+    }
+}
+
+//===========================================================================//
+
+pub const CMPEQ_CHIP_DATA: &ChipData = CMP_CHIP_DATA;
+
+pub struct CmpEqChipEval {
+    input1: usize,
+    input2: usize,
+    output: usize,
+}
+
+impl CmpEqChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), CMPEQ_CHIP_DATA.ports.len());
+        let chip_eval = CmpEqChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for CmpEqChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let input1 = state.recv_behavior(self.input1).0;
+        let input2 = state.recv_behavior(self.input2).0;
+        let output = if input1 <= input2 { 1 } else { 0 };
+        state.send_behavior(self.output, output);
+    }
+}
+
+//===========================================================================//
+
+pub const EQ_CHIP_DATA: &ChipData = CMP_CHIP_DATA;
+
+pub struct EqChipEval {
+    input1: usize,
+    input2: usize,
+    output: usize,
+}
+
+impl EqChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), EQ_CHIP_DATA.ports.len());
+        let chip_eval = EqChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for EqChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let input1 = state.recv_behavior(self.input1).0;
+        let input2 = state.recv_behavior(self.input2).0;
+        let output = if input1 == input2 { 1 } else { 0 };
+        state.send_behavior(self.output, output);
     }
 }
 

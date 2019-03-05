@@ -19,7 +19,7 @@
 
 use cgmath::{Matrix4, vec2};
 use tachy::font::Align;
-use tachy::geom::{Coords, CoordsSize, MatrixExt, Orientation, Rect};
+use tachy::geom::{Coords, CoordsSize, Direction, MatrixExt, Orientation, Rect};
 use tachy::gui::Resources;
 use tachy::save::ChipType;
 use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
@@ -38,7 +38,10 @@ const MARGIN: f32 = 0.1;
 enum ChipIcon {
     Add = 0,
     And,
-    Compare,
+    Cmp,
+    CmpEq1,
+    CmpEq2,
+    Eq,
     Mux,
     Not,
     Pack1,
@@ -116,7 +119,19 @@ impl ChipModel {
         match ctype {
             ChipType::Add => ChipIcon::Add,
             ChipType::And => ChipIcon::And,
-            ChipType::Compare => ChipIcon::Compare,
+            ChipType::Cmp => ChipIcon::Cmp,
+            ChipType::CmpEq => {
+                let flip = match orient * Direction::North {
+                    Direction::North | Direction::East => false,
+                    Direction::South | Direction::West => true,
+                };
+                if flip {
+                    ChipIcon::CmpEq2
+                } else {
+                    ChipIcon::CmpEq1
+                }
+            }
+            ChipType::Eq => ChipIcon::Eq,
             ChipType::Mux => ChipIcon::Mux,
             ChipType::Not => ChipIcon::Not,
             ChipType::Pack => {

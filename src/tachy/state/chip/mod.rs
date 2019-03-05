@@ -100,11 +100,13 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Break => self::special::BREAK_CHIP_DATA,
         ChipType::Button => self::special::BUTTON_CHIP_DATA,
         ChipType::Clock => self::event::CLOCK_CHIP_DATA,
-        ChipType::Compare => self::compare::CMP_CHIP_DATA,
+        ChipType::Cmp => self::compare::CMP_CHIP_DATA,
+        ChipType::CmpEq => self::compare::CMPEQ_CHIP_DATA,
         ChipType::Const(value) => self::value::const_chip_data(value),
         ChipType::Delay => self::event::DELAY_CHIP_DATA,
         ChipType::Discard => self::event::DISCARD_CHIP_DATA,
         ChipType::Display => self::special::DISPLAY_CHIP_DATA,
+        ChipType::Eq => self::compare::EQ_CHIP_DATA,
         ChipType::Join => self::event::JOIN_CHIP_DATA,
         ChipType::Latest => self::event::LATEST_CHIP_DATA,
         ChipType::Mux => self::logic::MUX_CHIP_DATA,
@@ -136,13 +138,15 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
                                                      interact.clone())
         }
         ChipType::Clock => self::event::ClockChipEval::new_evals(slots),
-        ChipType::Compare => self::compare::CompareChipEval::new_evals(slots),
+        ChipType::Cmp => self::compare::CmpChipEval::new_evals(slots),
+        ChipType::CmpEq => self::compare::CmpEqChipEval::new_evals(slots),
         ChipType::Const(value) => {
             self::value::ConstChipEval::new_evals(value, slots)
         }
         ChipType::Delay => self::event::DelayChipEval::new_evals(slots),
         ChipType::Discard => self::event::DiscardChipEval::new_evals(slots),
         ChipType::Display => vec![],
+        ChipType::Eq => self::compare::EqChipEval::new_evals(slots),
         ChipType::Join => self::event::JoinChipEval::new_evals(slots),
         ChipType::Latest => self::event::LatestChipEval::new_evals(slots),
         ChipType::Mux => self::logic::MuxChipEval::new_evals(slots),

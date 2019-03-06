@@ -122,7 +122,9 @@ impl EditGrid {
         // Chips:
         for (coords, ctype, orient) in data.chips.iter() {
             let change = GridChange::ToggleChip(coords, orient, ctype);
-            grid.mutate_one(&change);
+            if !grid.mutate_one(&change) {
+                debug_log!("from_circuit_data: {:?} had no effect", change);
+            }
         }
 
         // Wires:
@@ -360,7 +362,9 @@ impl EditGrid {
     pub fn undo(&mut self) {
         if let Some(changes) = self.undo_stack.pop() {
             for change in changes.iter().rev() {
-                self.mutate_one(change);
+                if !self.mutate_one(change) {
+                    debug_log!("undo: {:?} had no effect", change);
+                }
             }
             self.redo_stack.push(changes);
             self.typecheck_wires();
@@ -371,7 +375,9 @@ impl EditGrid {
     pub fn redo(&mut self) {
         if let Some(changes) = self.redo_stack.pop() {
             for change in changes.iter() {
-                self.mutate_one(change);
+                if !self.mutate_one(change) {
+                    debug_log!("redo: {:?} had no effect", change);
+                }
             }
             self.undo_stack.push(changes);
             self.typecheck_wires();
@@ -381,7 +387,9 @@ impl EditGrid {
 
     pub fn mutate(&mut self, changes: Vec<GridChange>) {
         for change in changes.iter() {
-            self.mutate_one(change);
+            if !self.mutate_one(change) {
+                debug_log!("mutate: {:?} had no effect", change);
+            }
         }
         self.redo_stack.clear();
         // TODO: When dragging to create a multi-fragment wire, allow undoing
@@ -391,33 +399,34 @@ impl EditGrid {
         self.modified = true;
     }
 
-    fn mutate_one(&mut self, change: &GridChange) {
+    #[must_use = "should debug_log if mutate_one returns false"]
+    fn mutate_one(&mut self, change: &GridChange) -> bool {
         match *change {
-            // TODO: enforce wires must be in bounds
             GridChange::ToggleStubWire(coords, dir) => {
-                let loc1 = (coords, dir);
-                let loc2 = (coords + dir, -dir);
-                match self.fragments.get(&loc1) {
-                    Some(&(WireShape::Stub, _)) => {
-                        if let Some(&(WireShape::Stub, _)) =
-                            self.fragments.get(&loc2)
-                        {
-                            self.fragments.remove(&loc1);
-                            self.fragments.remove(&loc2);
-                        }
+                let coords2 = coords + dir;
+                let dir2 = -dir;
+                if !self.bounds.contains_point(coords) &&
+                    !self.bounds.contains_point(coords2)
+                {
+                    return false;
+                }
+                match (self.wire_shape_at(coords, dir),
+                         self.wire_shape_at(coords2, dir2)) {
+                    (Some(WireShape::Stub), Some(WireShape::Stub)) => {
+                        self.fragments.remove(&(coords, dir));
+                        self.fragments.remove(&(coords2, dir2));
                     }
-                    None => {
-                        if self.fragments.get(&loc2).is_none() {
-                            self.fragments
-                                .insert(loc1, (WireShape::Stub, usize::MAX));
-                            self.fragments
-                                .insert(loc2, (WireShape::Stub, usize::MAX));
-                        }
+                    (None, None) => {
+                        self.set_frag(coords, dir, WireShape::Stub);
+                        self.set_frag(coords2, dir2, WireShape::Stub);
                     }
-                    _ => debug_log!("{:?} had no effect", change),
+                    _ => return false,
                 }
             }
             GridChange::ToggleCenterWire(coords, dir1, dir2) => {
+                if !self.bounds.contains_point(coords) {
+                    return false;
+                }
                 match (self.wire_shape_at(coords, dir1),
                          self.wire_shape_at(coords, dir2)) {
                     (Some(WireShape::Stub), Some(WireShape::Stub)) => {
@@ -452,10 +461,13 @@ impl EditGrid {
                             self.set_frag(coords, dir2, WireShape::Stub);
                         }
                     }
-                    (_, _) => debug_log!("{:?} had no effect", change),
+                    (_, _) => return false,
                 }
             }
             GridChange::ToggleSplitWire(coords, dir) => {
+                if !self.bounds.contains_point(coords) {
+                    return false;
+                }
                 match (self.wire_shape_at(coords, dir),
                          self.wire_shape_at(coords, -dir),
                          self.wire_shape_at(coords, dir.rotate_cw())) {
@@ -520,10 +532,13 @@ impl EditGrid {
                                       dir.rotate_ccw(),
                                       WireShape::Straight);
                     }
-                    (_, _, _) => debug_log!("{:?} had no effect", change),
+                    (_, _, _) => return false,
                 }
             }
             GridChange::ToggleCrossWire(coords) => {
+                if !self.bounds.contains_point(coords) {
+                    return false;
+                }
                 match self.wire_shape_at(coords, Direction::East) {
                     Some(WireShape::Cross) => {
                         for dir in Direction::all() {
@@ -539,7 +554,7 @@ impl EditGrid {
                             }
                         }
                     }
-                    _ => debug_log!("{:?} had no effect", change),
+                    _ => return false,
                 }
             }
             GridChange::ToggleChip(coords, orient, ctype) => {
@@ -557,7 +572,7 @@ impl EditGrid {
                             let cell = ChipCell::Chip(ctype, orient);
                             self.chips.insert(coords, cell);
                         } else {
-                            debug_log!("{:?} had no effect", change);
+                            return false;
                         }
                     }
                     Some(&ChipCell::Chip(ctype2, orient2))
@@ -570,7 +585,7 @@ impl EditGrid {
                             }
                         }
                     }
-                    _ => debug_log!("{:?} had no effect", change),
+                    _ => return false,
                 }
             }
             GridChange::SwapBounds(mut old_bounds, mut new_bounds) => {
@@ -582,10 +597,11 @@ impl EditGrid {
                 {
                     self.bounds = new_bounds;
                 } else {
-                    debug_log!("{:?} had no effect", change);
+                    return false;
                 }
             }
         }
+        return true;
     }
 
     fn has_frag(&self, coords: Coords, dir: Direction) -> bool {

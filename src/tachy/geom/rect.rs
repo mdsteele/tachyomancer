@@ -112,6 +112,13 @@ impl AsFloat for Rect<i32> {
     }
 }
 
+impl IntoIterator for Rect<i32> {
+    type Item = Point2<i32>;
+    type IntoIter = RectPointsIter<i32>;
+
+    fn into_iter(self) -> RectPointsIter<i32> { RectPointsIter::new(self) }
+}
+
 impl<T: BaseNum> ops::Mul<T> for Rect<T> {
     type Output = Rect<T>;
 
@@ -122,6 +129,57 @@ impl<T: BaseNum> ops::Mul<T> for Rect<T> {
                   self.height * other)
     }
 }
+
+//===========================================================================//
+
+pub struct RectPointsIter<T> {
+    x: T,
+    x_lo: T,
+    x_hi: T,
+    y: T,
+    y_hi: T,
+}
+
+impl<T: BaseNum> RectPointsIter<T> {
+    fn new(rect: Rect<T>) -> RectPointsIter<T> {
+        RectPointsIter {
+            x: rect.x,
+            x_lo: rect.x,
+            x_hi: rect.right(),
+            y: rect.y,
+            y_hi: rect.bottom(),
+        }
+    }
+}
+
+impl Iterator for RectPointsIter<i32> {
+    type Item = Point2<i32>;
+
+    fn next(&mut self) -> Option<Point2<i32>> {
+        if self.y < self.y_hi {
+            if self.x < self.x_hi {
+                let point = Point2::new(self.x, self.y);
+                self.x += 1;
+                if self.x == self.x_hi {
+                    self.x = self.x_lo;
+                    self.y += 1;
+                }
+                return Some(point);
+            }
+        }
+        return None;
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let width = self.x_hi - self.x_lo;
+        let height = self.y_hi - self.y;
+        let size = width * height - (self.x - self.x_lo);
+        let size = size.max(0) as usize;
+        (size, Some(size))
+    }
+}
+
+impl ExactSizeIterator for RectPointsIter<i32> {}
 
 //===========================================================================//
 
@@ -150,6 +208,27 @@ mod tests {
         assert!(!rect.contains_rect(Rect::new(1, 1, 2, 2)));
         assert!(!rect.contains_rect(Rect::new(3, 2, 2, 2)));
         assert!(!rect.contains_rect(Rect::new(1, 5, 2, 2)));
+    }
+
+    #[test]
+    fn rect_iter() {
+        let rect = Rect::new(4, 1, 2, 3);
+        let points: Vec<(i32, i32)> =
+            rect.into_iter().map(|pt| (pt.x, pt.y)).collect();
+        assert_eq!(points,
+                   vec![(4, 1), (5, 1), (4, 2), (5, 2), (4, 3), (5, 3)]);
+    }
+
+    #[test]
+    fn rect_iter_exact_size() {
+        let rect = Rect::new(1, 4, 3, 2);
+        let mut iter = rect.into_iter();
+        for index in 0..6 {
+            assert_eq!(iter.len(), 6 - index);
+            assert!(iter.next().is_some());
+        }
+        assert_eq!(iter.len(), 0);
+        assert!(iter.next().is_none());
     }
 }
 

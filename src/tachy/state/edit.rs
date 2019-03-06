@@ -351,14 +351,11 @@ impl EditGrid {
             return false;
         }
         let old_rect = old_rect.unwrap_or_else(|| Rect::new(0, 0, 0, 0));
-        for row in new_rect.y..new_rect.bottom() {
-            for col in new_rect.x..new_rect.right() {
-                let coords = Coords::new(col, row);
-                if !old_rect.contains_point(coords) &&
-                    self.chips.contains_key(&coords)
-                {
-                    return false;
-                }
+        for coords in new_rect {
+            if !old_rect.contains_point(coords) &&
+                self.chips.contains_key(&coords)
+            {
+                return false;
             }
         }
         return true;
@@ -563,32 +560,40 @@ impl EditGrid {
                 }
             }
             GridChange::ToggleChip(coords, orient, ctype) => {
+                let size = orient * ctype.size();
+                let rect = CoordsRect::with_size(coords, size);
                 match self.chips.get(&coords) {
                     None => {
-                        let size = orient * ctype.size();
-                        let rect = CoordsRect::with_size(coords, size);
+                        // Fail if there's a chip in the way.
                         if !self.can_move_chip(None, rect) {
                             return false;
                         }
-                        // TODO: enforce no wires under chip
-                        for row in 0..size.height {
-                            for col in 0..size.width {
-                                let delta = CoordsDelta::new(col, row);
-                                let cell = ChipCell::Ref(-delta);
-                                self.chips.insert(coords + delta, cell);
+                        // Fail if there's any wires in the way.
+                        for coords2 in rect {
+                            for dir in Direction::all() {
+                                match self.wire_shape_at(coords2, dir) {
+                                    None => {}
+                                    Some(WireShape::Stub) => {
+                                        if rect.contains_point(coords2 + dir) {
+                                            return false;
+                                        }
+                                    }
+                                    _ => return false,
+                                }
                             }
+                        }
+                        // Insert the chip.
+                        for coords2 in rect {
+                            let cell = ChipCell::Ref(coords - coords2);
+                            self.chips.insert(coords2, cell);
                         }
                         let cell = ChipCell::Chip(ctype, orient);
                         self.chips.insert(coords, cell);
                     }
                     Some(&ChipCell::Chip(ctype2, orient2))
                         if ctype2 == ctype && orient2 == orient => {
-                        let size = orient * ctype.size();
-                        for row in 0..size.height {
-                            for col in 0..size.width {
-                                let delta = CoordsDelta::new(col, row);
-                                self.chips.remove(&(coords + delta));
-                            }
+                        for coords2 in rect {
+                            self.chips.remove(&coords2);
                         }
                     }
                     _ => return false,

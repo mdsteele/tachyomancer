@@ -31,6 +31,6 @@ pub use self::coords::{Coords, CoordsDelta, CoordsRect, CoordsSize};
 pub use self::dir::{AllDirectionsIter, Direction};
 pub use self::matrix::MatrixExt;
 pub use self::orient::Orientation;
-pub use self::rect::{Rect, RectSize};
+pub use self::rect::{Rect, RectPointsIter, RectSize};
 
 //===========================================================================//

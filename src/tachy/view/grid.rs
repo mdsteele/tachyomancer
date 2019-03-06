@@ -675,12 +675,16 @@ impl ChipDrag {
     }
 
     pub fn drop_onto_board(self, grid: &mut EditGrid) {
+        let old_size = self.old_orient * self.chip_type.size();
+        let old_rect =
+            self.old_coords
+                .map(|coords| CoordsRect::with_size(coords, old_size));
         let new_coords: Coords = self.chip_topleft().as_i32_round();
-        let new_size = self.reorient * self.old_orient * self.chip_type.size();
-        // TODO: Allow moving a large-size chip onto a position that overlaps
-        //   its old position.
-        if grid.can_place_chip(new_coords, new_size) {
+        let new_size = self.reorient * old_size;
+        let new_rect = CoordsRect::with_size(new_coords, new_size);
+        if grid.can_move_chip(old_rect, new_rect) {
             let mut changes = Vec::<GridChange>::new();
+            // TODO: Remove wires from under new chip location
             if let Some(old_coords) = self.old_coords {
                 changes.push(GridChange::ToggleChip(old_coords,
                                                     self.old_orient,

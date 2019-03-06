@@ -26,8 +26,8 @@ use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
 use std::mem;
 use std::usize;
-use tachy::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
-                  Orientation, Rect};
+use tachy::geom::{Coords, CoordsDelta, CoordsRect, Direction, Orientation,
+                  Rect};
 use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
 
 //===========================================================================//
@@ -344,14 +344,19 @@ impl EditGrid {
         self.fragments.get(&(coords, dir)).map(|&(shape, _)| shape)
     }
 
-    pub fn can_place_chip(&self, coords: Coords, size: CoordsSize) -> bool {
-        if !self.bounds.contains_rect(Rect::with_size(coords, size)) {
+    pub fn can_move_chip(&self, old_rect: Option<CoordsRect>,
+                         new_rect: CoordsRect)
+                         -> bool {
+        if !self.bounds.contains_rect(new_rect) {
             return false;
         }
-        for row in 0..size.height {
-            for col in 0..size.width {
-                let delta = CoordsDelta::new(col, row);
-                if self.chips.contains_key(&(coords + delta)) {
+        let old_rect = old_rect.unwrap_or_else(|| Rect::new(0, 0, 0, 0));
+        for row in new_rect.y..new_rect.bottom() {
+            for col in new_rect.x..new_rect.right() {
+                let coords = Coords::new(col, row);
+                if !old_rect.contains_point(coords) &&
+                    self.chips.contains_key(&coords)
+                {
                     return false;
                 }
             }
@@ -561,19 +566,20 @@ impl EditGrid {
                 match self.chips.get(&coords) {
                     None => {
                         let size = orient * ctype.size();
-                        if self.can_place_chip(coords, size) {
-                            for row in 0..size.height {
-                                for col in 0..size.width {
-                                    let delta = CoordsDelta::new(col, row);
-                                    let cell = ChipCell::Ref(-delta);
-                                    self.chips.insert(coords + delta, cell);
-                                }
-                            }
-                            let cell = ChipCell::Chip(ctype, orient);
-                            self.chips.insert(coords, cell);
-                        } else {
+                        let rect = CoordsRect::with_size(coords, size);
+                        if !self.can_move_chip(None, rect) {
                             return false;
                         }
+                        // TODO: enforce no wires under chip
+                        for row in 0..size.height {
+                            for col in 0..size.width {
+                                let delta = CoordsDelta::new(col, row);
+                                let cell = ChipCell::Ref(-delta);
+                                self.chips.insert(coords + delta, cell);
+                            }
+                        }
+                        let cell = ChipCell::Chip(ctype, orient);
+                        self.chips.insert(coords, cell);
                     }
                     Some(&ChipCell::Chip(ctype2, orient2))
                         if ctype2 == ctype && orient2 == orient => {

@@ -23,7 +23,7 @@ use super::paragraph::Paragraph;
 use cgmath::{Deg, Matrix4};
 use std::cell::RefCell;
 use tachy::font::Align;
-use tachy::geom::{Color4, MatrixExt, Rect};
+use tachy::geom::{AsFloat, Color4, MatrixExt, Rect};
 use tachy::gui::{Event, Resources};
 use tachy::save::{Prefs, Puzzle};
 use tachy::state::GameState;

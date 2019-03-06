@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::cast::AsFloat;
 use cgmath::{BaseNum, Point2};
 use std::ops;
 
@@ -100,8 +101,10 @@ impl<T: BaseNum> Rect<T> {
     }
 }
 
-impl Rect<i32> {
-    pub fn as_f32(&self) -> Rect<f32> {
+impl AsFloat for Rect<i32> {
+    type Output32 = Rect<f32>;
+
+    fn as_f32(&self) -> Rect<f32> {
         Rect::new(self.x as f32,
                   self.y as f32,
                   self.width as f32,

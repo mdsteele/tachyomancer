@@ -20,7 +20,7 @@
 use super::button::{TextBox, TextButton};
 use cgmath::Matrix4;
 use tachy::font::Align;
-use tachy::geom::{Color4, Rect, RectSize};
+use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::gui::{Event, Keycode, Resources};
 use unicode_width::UnicodeWidthStr;
 

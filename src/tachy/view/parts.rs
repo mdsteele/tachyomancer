@@ -20,7 +20,7 @@
 use cgmath::{Matrix4, Point2};
 use num_integer::div_mod_floor;
 use tachy::font::Align;
-use tachy::geom::{Color4, MatrixExt, Rect, RectSize};
+use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::{ChipType, Puzzle};
 

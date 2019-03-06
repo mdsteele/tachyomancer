@@ -19,7 +19,7 @@
 
 use super::tooltip::Tooltip;
 use cgmath::Matrix4;
-use tachy::geom::{Color4, Rect, RectSize};
+use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::{Hotkey, Prefs, Puzzle};
 

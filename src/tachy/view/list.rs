@@ -22,7 +22,7 @@ use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use std::borrow::Borrow;
 use tachy::font::Align;
-use tachy::geom::{Color4, Rect};
+use tachy::geom::{AsFloat, Color4, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 

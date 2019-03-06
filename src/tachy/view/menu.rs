@@ -23,7 +23,7 @@ use super::prefs::{PrefsAction, PrefsView};
 use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
-use tachy::geom::{Rect, RectSize};
+use tachy::geom::{AsFloat, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound, Window,
                  WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};

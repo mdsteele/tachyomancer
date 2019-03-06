@@ -19,7 +19,7 @@
 
 use cgmath::{Matrix4, Point2};
 use tachy::font::Align;
-use tachy::geom::{Color4, Rect};
+use tachy::geom::{AsFloat, Color4, Rect};
 use tachy::gui::{ClockEventData, Event, Keycode, Resources};
 use tachy::save::Hotkey;
 use unicode_width::UnicodeWidthStr;

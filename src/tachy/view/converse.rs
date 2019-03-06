@@ -23,7 +23,7 @@ use cgmath::{Matrix4, Point2, vec2};
 use num_integer::{div_floor, div_mod_floor};
 use std::borrow::Cow;
 use tachy::font::Align;
-use tachy::geom::{MatrixExt, Rect};
+use tachy::geom::{AsFloat, MatrixExt, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 use tachy::save::{Conversation, Profile, Puzzle};

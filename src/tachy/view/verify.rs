@@ -21,7 +21,7 @@ use cgmath::Matrix4;
 use std::collections::HashSet;
 use std::u32;
 use tachy::font::Align;
-use tachy::geom::{Color4, Rect, RectSize};
+use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::gui::{Event, Resources};
 use tachy::save::{Puzzle, PuzzleKind};
 use tachy::state::EvalError;

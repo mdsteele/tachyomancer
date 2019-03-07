@@ -407,11 +407,20 @@ impl EditGrid {
             GridChange::ToggleStubWire(coords, dir) => {
                 let coords2 = coords + dir;
                 let dir2 = -dir;
+                // Don't allow creating a stub outside of the bounds.
                 if !self.bounds.contains_point(coords) &&
                     !self.bounds.contains_point(coords2)
                 {
                     return false;
                 }
+                // Don't allow creating a stub completely under a large chip.
+                match (self.chip_at(coords), self.chip_at(coords2)) {
+                    (Some((c1, _, _)), Some((c2, _, _))) if c1 == c2 => {
+                        return false;
+                    }
+                    _ => {}
+                }
+                // Toggle the stub.
                 match (self.wire_shape_at(coords, dir),
                          self.wire_shape_at(coords2, dir2)) {
                     (Some(WireShape::Stub), Some(WireShape::Stub)) => {
@@ -426,7 +435,9 @@ impl EditGrid {
                 }
             }
             GridChange::ToggleCenterWire(coords, dir1, dir2) => {
-                if !self.bounds.contains_point(coords) {
+                if !self.bounds.contains_point(coords) ||
+                    self.chips.contains_key(&coords)
+                {
                     return false;
                 }
                 match (self.wire_shape_at(coords, dir1),
@@ -467,7 +478,9 @@ impl EditGrid {
                 }
             }
             GridChange::ToggleSplitWire(coords, dir) => {
-                if !self.bounds.contains_point(coords) {
+                if !self.bounds.contains_point(coords) ||
+                    self.chips.contains_key(&coords)
+                {
                     return false;
                 }
                 match (self.wire_shape_at(coords, dir),
@@ -538,7 +551,9 @@ impl EditGrid {
                 }
             }
             GridChange::ToggleCrossWire(coords) => {
-                if !self.bounds.contains_point(coords) {
+                if !self.bounds.contains_point(coords) ||
+                    self.chips.contains_key(&coords)
+                {
                     return false;
                 }
                 match self.wire_shape_at(coords, Direction::East) {

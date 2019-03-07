@@ -21,6 +21,7 @@ use super::chip::ChipModel;
 use super::tooltip::Tooltip;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
+use std::collections::HashMap;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsDelta, CoordsRect,
                   Direction, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
@@ -684,11 +685,25 @@ impl ChipDrag {
         let new_rect = CoordsRect::with_size(new_coords, new_size);
         if grid.can_move_chip(old_rect, new_rect) {
             let mut changes = Vec::<GridChange>::new();
-            // TODO: Remove wires from under new chip location
             if let Some(old_coords) = self.old_coords {
                 changes.push(GridChange::ToggleChip(old_coords,
                                                     self.old_orient,
                                                     self.chip_type));
+            }
+            let mut needs_mass_toggle = false;
+            let mut wires = HashMap::<(Coords, Direction), WireShape>::new();
+            for coords in new_rect {
+                for dir in Direction::all() {
+                    if let Some(shape) = grid.wire_shape_at(coords, dir) {
+                        wires.insert((coords, dir), shape);
+                        needs_mass_toggle = needs_mass_toggle ||
+                            shape != WireShape::Stub ||
+                            new_rect.contains_point(coords + dir);
+                    }
+                }
+            }
+            if needs_mass_toggle {
+                changes.push(GridChange::MassToggleWires(new_rect, wires));
             }
             changes.push(GridChange::ToggleChip(new_coords,
                                                 self.reorient *
@@ -720,6 +735,7 @@ struct WireDrag {
 }
 
 // TODO: enforce wires must be in bounds
+// TODO: enforce wires can't be created under chips
 impl WireDrag {
     pub fn new() -> WireDrag {
         WireDrag {

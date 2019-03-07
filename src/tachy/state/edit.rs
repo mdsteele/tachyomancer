@@ -54,6 +54,8 @@ pub enum GridChange {
     ToggleSplitWire(Coords, Direction),
     /// Toggles a cell between a four-way split and an overpass/underpass.
     ToggleCrossWire(Coords),
+    /// Toggles all wires in a rectangle (leaving stubs at the edges).
+    MassToggleWires(CoordsRect, HashMap<(Coords, Direction), WireShape>),
     /// Places or removes a chip on the board.
     ToggleChip(Coords, Orientation, ChipType),
     /// Change the bounds rect from one rect to the other.
@@ -572,6 +574,49 @@ impl EditGrid {
                         }
                     }
                     _ => return false,
+                }
+            }
+            GridChange::MassToggleWires(rect, ref wires) => {
+                let mut stubs =
+                    HashMap::<(Coords, Direction), WireShape>::new();
+                for &(coords, dir) in wires.keys() {
+                    if !rect.contains_point(coords + dir) {
+                        stubs.insert((coords, dir), WireShape::Stub);
+                    }
+                }
+                let mut current =
+                    HashMap::<(Coords, Direction), WireShape>::new();
+                for coords in rect {
+                    for dir in Direction::all() {
+                        if let Some(shape) = self.wire_shape_at(coords, dir) {
+                            current.insert((coords, dir), shape);
+                        }
+                    }
+                }
+                if current == stubs {
+                    // Verify that wires is well-formed, then do the toggle.
+                    for &(coords, dir) in wires.keys() {
+                        let coords2 = coords + dir;
+                        if rect.contains_point(coords2) &&
+                            !wires.contains_key(&(coords2, -dir))
+                        {
+                            return false;
+                        }
+                    }
+                    for (&(coords, dir), &shape) in wires.iter() {
+                        self.set_frag(coords, dir, shape);
+                    }
+                } else if current == *wires {
+                    // Wires must be well-formed because it matches our current
+                    // state, so we can go ahead and do the toggle.
+                    for loc in current.keys() {
+                        self.fragments.remove(loc);
+                    }
+                    for ((coords, dir), shape) in stubs.into_iter() {
+                        self.set_frag(coords, dir, shape);
+                    }
+                } else {
+                    return false;
                 }
             }
             GridChange::ToggleChip(coords, orient, ctype) => {

@@ -335,13 +335,9 @@ impl EditGridView {
                     {
                         return Some(EditGridAction::EditConst(coords, value));
                     }
-                    let east = grid.wire_shape_at(coords, Direction::East);
-                    if east == Some(WireShape::Cross) ||
-                        (east == Some(WireShape::Straight) &&
-                             grid.wire_shape_at(coords, Direction::South) ==
-                                 Some(WireShape::Straight))
-                    {
-                        grid.mutate(vec![GridChange::ToggleCrossWire(coords)]);
+                    let change = GridChange::ToggleCrossWire(coords);
+                    if grid.try_mutate(vec![change]) {
+                        // TODO: Play sound.
                     }
                 }
             }
@@ -622,7 +618,9 @@ impl BoundsDrag {
         debug_assert_eq!(self.acceptable, grid.can_have_bounds(self.bounds));
         if self.acceptable {
             let old_bounds = grid.bounds();
-            grid.mutate(vec![GridChange::SwapBounds(old_bounds, self.bounds)]);
+            grid.do_mutate(
+                vec![GridChange::SwapBounds(old_bounds, self.bounds)],
+            );
         }
     }
 }
@@ -709,13 +707,13 @@ impl ChipDrag {
                                                 self.reorient *
                                                     self.old_orient,
                                                 self.chip_type));
-            grid.mutate(changes);
+            grid.do_mutate(changes);
         }
     }
 
     pub fn drop_into_parts_tray(self, grid: &mut EditGrid) {
         if let Some(old_coords) = self.old_coords {
-            grid.mutate(vec![
+            grid.do_mutate(vec![
                 GridChange::ToggleChip(
                     old_coords,
                     self.old_orient,
@@ -869,7 +867,7 @@ impl WireDrag {
         match (grid.wire_shape_at(coords, dir),
                  grid.wire_shape_at(coords + dir, -dir)) {
             (None, _) => {
-                grid.mutate(vec![GridChange::ToggleStubWire(coords, dir)]);
+                grid.do_mutate(vec![GridChange::ToggleStubWire(coords, dir)]);
                 self.changed = true;
                 true
             }
@@ -884,7 +882,7 @@ impl WireDrag {
         match (grid.wire_shape_at(coords, dir),
                  grid.wire_shape_at(coords + dir, -dir)) {
             (Some(WireShape::Stub), Some(WireShape::Stub)) => {
-                grid.mutate(vec![GridChange::ToggleStubWire(coords, dir)]);
+                grid.do_mutate(vec![GridChange::ToggleStubWire(coords, dir)]);
                 self.changed = true;
             }
             (_, _) => {}
@@ -896,7 +894,7 @@ impl WireDrag {
                  grid.wire_shape_at(coords, Direction::South)) {
             (Some(WireShape::Straight), Some(WireShape::Straight)) |
             (Some(WireShape::Cross), _) => {
-                grid.mutate(vec![GridChange::ToggleCrossWire(coords)]);
+                grid.do_mutate(vec![GridChange::ToggleCrossWire(coords)]);
                 self.changed = true;
             }
             (_, _) => {}
@@ -906,114 +904,73 @@ impl WireDrag {
     fn try_straight(&mut self, coords: Coords, dir: Direction,
                     grid: &mut EditGrid)
                     -> bool {
-        match (grid.wire_shape_at(coords, dir),
-                 grid.wire_shape_at(coords, -dir)) {
-            (None, Some(WireShape::Stub)) => {
-                grid.mutate(vec![
-                    GridChange::ToggleStubWire(coords, dir),
-                    GridChange::ToggleCenterWire(coords, dir, -dir),
-                ]);
-                self.changed = true;
-                true
-            }
-            (Some(WireShape::Stub), Some(WireShape::Stub)) => {
-                grid.mutate(
-                    vec![GridChange::ToggleCenterWire(coords, dir, -dir)],
-                );
-                self.changed = true;
-                true
-            }
-            (Some(WireShape::Straight), Some(WireShape::Straight)) => {
-                if grid.wire_shape_at(coords - dir, dir) ==
-                    Some(WireShape::Stub)
-                {
-                    grid.mutate(vec![
-                        GridChange::ToggleCenterWire(coords, dir, -dir),
-                        GridChange::ToggleStubWire(coords, -dir),
-                    ]);
-                } else {
-                    grid.mutate(
-                        vec![GridChange::ToggleCenterWire(coords, dir, -dir)],
-                    );
-                }
-                self.changed = true;
-                true
-            }
-            (_, _) => false,
+        let mut changes = Vec::<GridChange>::new();
+        if grid.wire_shape_at(coords, dir).is_none() {
+            changes.push(GridChange::ToggleStubWire(coords, dir));
         }
+        if grid.wire_shape_at(coords, -dir).is_none() {
+            changes.push(GridChange::ToggleStubWire(coords, -dir));
+        }
+        changes.push(GridChange::ToggleCenterWire(coords, dir, -dir));
+        if grid.wire_shape_at(coords, dir) == Some(WireShape::Straight) &&
+            grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub)
+        {
+            changes.push(GridChange::ToggleStubWire(coords, dir));
+        }
+        if grid.wire_shape_at(coords, -dir) == Some(WireShape::Straight) &&
+            grid.wire_shape_at(coords - dir, dir) == Some(WireShape::Stub)
+        {
+            changes.push(GridChange::ToggleStubWire(coords, -dir));
+        }
+        let success = grid.try_mutate(changes);
+        self.changed |= success;
+        success
     }
 
     fn try_turn_left(&mut self, coords: Coords, dir: Direction,
                      grid: &mut EditGrid)
                      -> bool {
         let dir2 = dir.rotate_cw();
-        match (grid.wire_shape_at(coords, dir),
-                 grid.wire_shape_at(coords, dir2)) {
-            (Some(WireShape::Stub), Some(WireShape::Stub)) => {
-                grid.mutate(
-                    vec![GridChange::ToggleCenterWire(coords, dir, dir2)],
-                );
-                self.changed = true;
-                true
-            }
-            (Some(WireShape::Stub), None) => {
-                grid.mutate(vec![
-                    GridChange::ToggleStubWire(coords, dir2),
-                    GridChange::ToggleCenterWire(coords, dir, dir2),
-                ]);
-                self.changed = true;
-                true
-            }
-            (None, Some(WireShape::Stub)) => {
-                grid.mutate(vec![
-                    GridChange::ToggleStubWire(coords, dir),
-                    GridChange::ToggleCenterWire(coords, dir, dir2),
-                ]);
-                self.changed = true;
-                true
-            }
-            (Some(WireShape::TurnLeft), Some(WireShape::TurnRight)) => {
-                grid.mutate(
-                    vec![GridChange::ToggleCenterWire(coords, dir, dir2)],
-                );
-                self.changed = true;
-                true
-            }
-            (_, _) => false,
+        let mut changes = Vec::<GridChange>::new();
+        if grid.wire_shape_at(coords, dir).is_none() {
+            changes.push(GridChange::ToggleStubWire(coords, dir));
         }
+        if grid.wire_shape_at(coords, dir2).is_none() {
+            changes.push(GridChange::ToggleStubWire(coords, dir2));
+        }
+        changes.push(GridChange::ToggleCenterWire(coords, dir, dir2));
+        if grid.wire_shape_at(coords, dir) == Some(WireShape::TurnLeft) &&
+            grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub)
+        {
+            changes.push(GridChange::ToggleStubWire(coords, dir));
+        }
+        if grid.wire_shape_at(coords, dir2) == Some(WireShape::TurnRight) &&
+            grid.wire_shape_at(coords + dir2, -dir2) == Some(WireShape::Stub)
+        {
+            changes.push(GridChange::ToggleStubWire(coords, dir2));
+        }
+        let success = grid.try_mutate(changes);
+        self.changed |= success;
+        success
     }
 
     fn try_split(&mut self, coords: Coords, dir: Direction,
                  grid: &mut EditGrid)
                  -> bool {
-        match (grid.wire_shape_at(coords, dir),
-                 grid.wire_shape_at(coords, -dir),
-                 grid.wire_shape_at(coords, dir.rotate_cw())) {
-            (Some(WireShape::SplitLeft), _, _) |
-            (Some(WireShape::SplitRight), _, _) |
-            (Some(WireShape::SplitTee), _, _) |
-            (Some(WireShape::Cross), _, _) |
-            (Some(WireShape::Stub), Some(WireShape::TurnLeft), _) |
-            (Some(WireShape::Stub), Some(WireShape::TurnRight), _) |
-            (Some(WireShape::Stub), Some(WireShape::SplitTee), _) |
-            (Some(WireShape::Stub), _, Some(WireShape::Straight)) => {
-                grid.mutate(vec![GridChange::ToggleSplitWire(coords, dir)]);
-                self.changed = true;
-                true
-            }
-            (None, Some(WireShape::TurnLeft), _) |
-            (None, Some(WireShape::TurnRight), _) |
-            (None, Some(WireShape::SplitTee), _) |
-            (None, _, Some(WireShape::Straight)) => {
-                grid.mutate(vec![
-                    GridChange::ToggleStubWire(coords, dir),
-                    GridChange::ToggleSplitWire(coords, dir),
-                ]);
-                self.changed = true;
-                true
-            }
-            (_, _, _) => false,
+        let mut changes = Vec::<GridChange>::new();
+        let shape = grid.wire_shape_at(coords, dir);
+        if shape.is_none() {
+            changes.push(GridChange::ToggleStubWire(coords, dir));
         }
+        changes.push(GridChange::ToggleSplitWire(coords, dir));
+        if shape.is_some() && shape != Some(WireShape::Stub) &&
+            grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub)
+        {
+            changes.push(GridChange::ToggleStubWire(coords, dir));
+        }
+        let success = grid.try_mutate(changes);
+        self.changed |= success;
+        success
     }
 }
 

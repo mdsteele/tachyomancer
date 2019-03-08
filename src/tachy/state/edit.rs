@@ -367,7 +367,7 @@ impl EditGrid {
         if let Some(changes) = self.undo_stack.pop() {
             for change in changes.iter().rev() {
                 if !self.mutate_one(change) {
-                    debug_log!("undo: {:?} had no effect", change);
+                    debug_log!("WARNING: undo {:?} had no effect", change);
                 }
             }
             self.redo_stack.push(changes);
@@ -380,7 +380,7 @@ impl EditGrid {
         if let Some(changes) = self.redo_stack.pop() {
             for change in changes.iter() {
                 if !self.mutate_one(change) {
-                    debug_log!("redo: {:?} had no effect", change);
+                    debug_log!("WARNING: redo {:?} had no effect", change);
                 }
             }
             self.undo_stack.push(changes);
@@ -389,21 +389,40 @@ impl EditGrid {
         }
     }
 
-    pub fn mutate(&mut self, changes: Vec<GridChange>) {
-        for change in changes.iter() {
-            if !self.mutate_one(change) {
-                debug_log!("mutate: {:?} had no effect", change);
-            }
+    pub fn do_mutate(&mut self, changes: Vec<GridChange>) {
+        if !self.try_mutate(changes) {
+            debug_log!("WARNING: do_mutate failed to apply all changes");
         }
-        self.redo_stack.clear();
-        // TODO: When dragging to create a multi-fragment wire, allow undoing
-        //   the whole wire at once (instead of one visible change at a time).
-        self.undo_stack.push(changes);
-        self.typecheck_wires();
-        self.modified = true;
     }
 
-    #[must_use = "should debug_log if mutate_one returns false"]
+    #[must_use = "must not ignore try_mutate failure"]
+    pub fn try_mutate(&mut self, changes: Vec<GridChange>) -> bool {
+        let mut success = true;
+        for (index, change) in changes.iter().enumerate() {
+            if !self.mutate_one(change) {
+                for change in changes[0..index].iter().rev() {
+                    if !self.mutate_one(change) {
+                        debug_log!("WARNING: mutate failed to roll back {:?}",
+                                   change);
+                    }
+                }
+                success = false;
+                break;
+            }
+        }
+        if success {
+            self.redo_stack.clear();
+            // TODO: When dragging to create a multi-fragment wire, allow
+            //   undoing the whole wire at once (instead of one visible change
+            //   at a time).
+            self.undo_stack.push(changes);
+            self.modified = true;
+        }
+        self.typecheck_wires();
+        return success;
+    }
+
+    #[must_use = "must not ignore mutate_one failure"]
     fn mutate_one(&mut self, change: &GridChange) -> bool {
         match *change {
             GridChange::ToggleStubWire(coords, dir) => {

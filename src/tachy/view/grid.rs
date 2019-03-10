@@ -22,6 +22,7 @@ use super::tooltip::Tooltip;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, MetricSpace, Point2, Vector2, vec2, vec4};
 use std::collections::{HashMap, HashSet};
+use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsDelta, CoordsRect,
                   Direction, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
@@ -71,11 +72,7 @@ pub struct EditGridView {
     zoom: f32,
     chip_model: ChipModel,
     wire_model: WireModel,
-    bounds_drag: Option<BoundsDrag>,
-    chip_drag: Option<ChipDrag>,
-    selecting_drag: Option<SelectingDrag>,
-    selected_rect: Option<CoordsRect>,
-    wire_drag: Option<WireDrag>,
+    interaction: Interaction,
     tooltip: Tooltip<GridTooltipTag>,
 }
 
@@ -88,11 +85,7 @@ impl EditGridView {
             zoom: ZOOM_MAX,
             chip_model: ChipModel::new(),
             wire_model: WireModel::new(),
-            bounds_drag: None,
-            chip_drag: None,
-            selecting_drag: None,
-            selected_rect: None,
-            wire_drag: None,
+            interaction: Interaction::Nothing,
             tooltip: Tooltip::new(window_size),
         }
     }
@@ -111,10 +104,11 @@ impl EditGridView {
 
     fn draw_bounds(&self, resources: &Resources, grid: &EditGrid) {
         let matrix = self.vp_matrix();
-        let (bounds, acceptable) = if let Some(ref drag) = self.bounds_drag {
-            (drag.bounds, drag.acceptable)
-        } else {
-            (grid.bounds(), true)
+        let (bounds, acceptable) = match self.interaction {
+            Interaction::DraggingBounds(ref drag) => {
+                (drag.bounds, drag.acceptable)
+            }
+            _ => (grid.bounds(), true),
         };
         let x = (bounds.x * GRID_CELL_SIZE) as f32;
         let y = (bounds.y * GRID_CELL_SIZE) as f32;
@@ -138,10 +132,9 @@ impl EditGridView {
 
     fn draw_interfaces(&self, resources: &Resources, matrix: &Matrix4<f32>,
                        grid: &EditGrid) {
-        let bounds = if let Some(ref drag) = self.bounds_drag {
-            drag.bounds
-        } else {
-            grid.bounds()
+        let bounds = match self.interaction {
+            Interaction::DraggingBounds(ref drag) => drag.bounds,
+            _ => grid.bounds(),
         };
         for interface in grid.interfaces() {
             let coords = interface.top_left(bounds);
@@ -210,11 +203,13 @@ impl EditGridView {
         self.draw_interfaces(resources, &matrix, grid);
 
         // Draw chips (except the one being dragged, if any):
+        let dragged_chip_coords = match self.interaction {
+            Interaction::DraggingChip(ref drag) => drag.old_coords,
+            _ => None,
+        };
         for (coords, ctype, orient) in grid.chips() {
-            if let Some(ref drag) = self.chip_drag {
-                if Some(coords) == drag.old_coords {
-                    continue;
-                }
+            if Some(coords) == dragged_chip_coords {
+                continue;
             }
             let x = (coords.x * GRID_CELL_SIZE) as f32;
             let y = (coords.y * GRID_CELL_SIZE) as f32;
@@ -227,16 +222,19 @@ impl EditGridView {
                                       Some((coords, grid)));
         }
 
-        if let Some(rect) = self.selected_rect {
-            self.draw_selection_box(resources, &matrix, rect);
-        }
-        if let Some(ref drag) = self.selecting_drag {
-            self.draw_selection_box(resources, &matrix, drag.rect);
+        match self.interaction {
+            Interaction::RectSelected(rect) => {
+                self.draw_selection_box(resources, &matrix, rect);
+            }
+            Interaction::SelectingRect(ref drag) => {
+                self.draw_selection_box(resources, &matrix, drag.rect);
+            }
+            _ => {}
         }
     }
 
     pub fn draw_dragged(&self, resources: &Resources) {
-        if let Some(ref drag) = self.chip_drag {
+        if let Interaction::DraggingChip(ref drag) = self.interaction {
             let pt = drag.chip_topleft();
             let matrix = self.vp_matrix() *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32) *
@@ -272,9 +270,16 @@ impl EditGridView {
                 self.tooltip.stop_hover_all();
                 if key.command {
                     match key.code {
+                        Keycode::A => {
+                            self.interaction =
+                                Interaction::RectSelected(grid.bounds());
+                        }
                         Keycode::X => {
-                            if let Some(rect) = self.selected_rect.take() {
+                            if let Interaction::RectSelected(rect) =
+                                self.interaction
+                            {
                                 self.cut_region(grid, rect);
+                                self.interaction = Interaction::Nothing;
                             }
                         }
                         Keycode::Z if key.shift => grid.redo(),
@@ -302,7 +307,9 @@ impl EditGridView {
                             self.zoom_by(1.0 / ZOOM_PER_KEYDOWN);
                         }
                         Some(hotkey) => {
-                            if let Some(ref mut drag) = self.chip_drag {
+                            if let Interaction::DraggingChip(ref mut drag) =
+                                self.interaction
+                            {
                                 match hotkey {
                                     Hotkey::FlipHorz => drag.flip_horz(),
                                     Hotkey::FlipVert => drag.flip_vert(),
@@ -318,7 +325,9 @@ impl EditGridView {
             }
             Event::MouseDown(mouse) => {
                 self.tooltip.stop_hover_all();
-                self.selected_rect = None;
+                if let Interaction::RectSelected(_) = self.interaction {
+                    self.interaction = Interaction::Nothing;
+                }
                 if grid.eval().is_some() {
                     if mouse.left {
                         if let Some((coords, ctype, _)) =
@@ -337,9 +346,9 @@ impl EditGridView {
                 if mouse.left {
                     let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
                     if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
-                        self.selecting_drag =
-                            Some(SelectingDrag::new(grid.bounds(),
-                                                    grid_pt.as_i32_round()));
+                        let drag = SelectingDrag::new(grid.bounds(),
+                                                      grid_pt.as_i32_round());
+                        self.interaction = Interaction::SelectingRect(drag);
                         return None;
                     }
                     let mouse_coords = grid_pt.as_i32_floor();
@@ -347,23 +356,26 @@ impl EditGridView {
                         if let Some(octant) =
                             self.bounds_octant_for_screen_pt(mouse.pt, grid)
                         {
-                            self.bounds_drag =
-                                Some(BoundsDrag::new(octant, grid_pt, grid));
+                            let drag = BoundsDrag::new(octant, grid_pt, grid);
+                            self.interaction =
+                                Interaction::DraggingBounds(drag);
                         }
                     } else if let Some((coords, ctype, orient)) =
                         grid.chip_at(mouse_coords)
                     {
                         // TODO: If mouse is within chip cell but near edge of
                         //   chip, allow for wire dragging.
-                        self.chip_drag = Some(ChipDrag::new(ctype,
-                                                            orient,
-                                                            Some(coords),
-                                                            grid_pt));
+                        let drag = ChipDrag::new(ctype,
+                                                 orient,
+                                                 Some(coords),
+                                                 grid_pt);
+                        self.interaction = Interaction::DraggingChip(drag);
                         audio.play_sound(Sound::GrabChip);
                     } else {
                         let mut drag = WireDrag::new();
-                        if drag.move_to(self.zone_for_grid_pt(grid_pt), grid) {
-                            self.wire_drag = Some(drag);
+                        if drag.move_to(Zone::from_grid_pt(grid_pt), grid) {
+                            self.interaction =
+                                Interaction::DraggingWires(drag);
                         } else {
                             debug_log!("wire drag done (down)");
                         }
@@ -383,44 +395,63 @@ impl EditGridView {
             }
             Event::MouseMove(mouse) => {
                 let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
-                if let Some(ref mut drag) = self.bounds_drag {
-                    drag.move_to(grid_pt, grid);
-                } else if let Some(ref mut drag) = self.chip_drag {
-                    drag.move_to(grid_pt);
-                } else if let Some(ref mut drag) = self.selecting_drag {
-                    drag.move_to(grid_pt);
-                } else if let Some(mut drag) = self.wire_drag.take() {
-                    if drag.move_to(self.zone_for_grid_pt(grid_pt), grid) {
-                        self.wire_drag = Some(drag);
-                    } else {
-                        debug_log!("wire drag done (move)");
+                let mut should_stop_interaction = false;
+                match self.interaction {
+                    Interaction::Nothing |
+                    Interaction::RectSelected(_) => {
+                        if !mouse.left && !mouse.right {
+                            if let Some(tag) =
+                                self.tooltip_tag_for_grid_pt(grid, grid_pt)
+                            {
+                                self.tooltip.start_hover(tag, mouse.pt);
+                            } else {
+                                self.tooltip.stop_hover_all();
+                            }
+                        }
                     }
-                } else if !mouse.left && !mouse.right {
-                    if let Some(tag) =
-                        self.tooltip_tag_for_grid_pt(grid, grid_pt)
-                    {
-                        self.tooltip.start_hover(tag, mouse.pt);
-                    } else {
-                        self.tooltip.stop_hover_all();
+                    Interaction::DraggingBounds(ref mut drag) => {
+                        drag.move_to(grid_pt, grid);
                     }
+                    Interaction::DraggingChip(ref mut drag) => {
+                        drag.move_to(grid_pt);
+                    }
+                    Interaction::SelectingRect(ref mut drag) => {
+                        drag.move_to(grid_pt);
+                    }
+                    Interaction::DraggingWires(ref mut drag) => {
+                        if !drag.move_to(Zone::from_grid_pt(grid_pt), grid) {
+                            debug_log!("wire drag done (move)");
+                            should_stop_interaction = true;
+                        }
+                    }
+                }
+                if should_stop_interaction {
+                    self.interaction = Interaction::Nothing;
                 }
             }
             Event::MouseUp(mouse) => {
                 if mouse.left {
-                    if let Some(drag) = self.bounds_drag.take() {
-                        drag.finish(grid);
-                    }
-                    if let Some(drag) = self.chip_drag.take() {
-                        drag.drop_onto_board(grid);
-                        audio.play_sound(Sound::DropChip);
-                    }
-                    if let Some(drag) = self.selecting_drag.take() {
-                        if !drag.rect.is_empty() {
-                            self.selected_rect = Some(drag.rect);
+                    match self.interaction.take() {
+                        Interaction::Nothing => {}
+                        Interaction::DraggingBounds(drag) => {
+                            drag.finish(grid);
                         }
-                    }
-                    if let Some(drag) = self.wire_drag.take() {
-                        drag.finish(grid);
+                        Interaction::DraggingChip(drag) => {
+                            drag.drop_onto_board(grid);
+                            audio.play_sound(Sound::DropChip);
+                        }
+                        Interaction::SelectingRect(drag) => {
+                            if !drag.rect.is_empty() {
+                                self.interaction =
+                                    Interaction::RectSelected(drag.rect);
+                            }
+                        }
+                        Interaction::RectSelected(rect) => {
+                            self.interaction = Interaction::RectSelected(rect);
+                        }
+                        Interaction::DraggingWires(drag) => {
+                            drag.finish(grid);
+                        }
                     }
                 }
             }
@@ -447,12 +478,15 @@ impl EditGridView {
         let mut drag =
             ChipDrag::new(ctype, Orientation::default(), None, start);
         drag.move_to(self.screen_pt_to_grid_pt(screen_pt));
-        self.chip_drag = Some(drag);
+        self.interaction = Interaction::DraggingChip(drag);
     }
 
     pub fn drop_into_parts_tray(&mut self, grid: &mut EditGrid) {
-        if let Some(drag) = self.chip_drag.take() {
-            drag.drop_into_parts_tray(grid);
+        match self.interaction.take() {
+            Interaction::DraggingChip(drag) => {
+                drag.drop_into_parts_tray(grid);
+            }
+            other => self.interaction = other,
         }
     }
 
@@ -557,29 +591,6 @@ impl EditGridView {
         self.screen_pt_to_grid_pt(screen_pt).as_i32_floor()
     }
 
-    fn zone_for_grid_pt(&self, grid_pt: Point2<f32>) -> Zone {
-        let coords: Coords = grid_pt.as_i32_floor();
-        let x = grid_pt.x - (coords.x as f32) - 0.5;
-        let y = grid_pt.y - (coords.y as f32) - 0.5;
-        if x.abs() <= ZONE_CENTER_SEMI_SIZE &&
-            y.abs() <= ZONE_CENTER_SEMI_SIZE
-        {
-            Zone::Center(coords)
-        } else if x.abs() > y.abs() {
-            Zone::East(if x > 0.0 {
-                           coords
-                       } else {
-                           coords + Direction::West
-                       })
-        } else {
-            Zone::South(if y > 0.0 {
-                            coords
-                        } else {
-                            coords + Direction::North
-                        })
-        }
-    }
-
     fn tooltip_tag_for_grid_pt(&self, grid: &EditGrid, grid_pt: Point2<f32>)
                                -> Option<GridTooltipTag> {
         let coords: Coords = grid_pt.as_i32_floor();
@@ -632,6 +643,23 @@ fn tooltip_format(grid: &EditGrid, tag: &GridTooltipTag) -> String {
             grid.interfaces()[index].tooltip_format()
         }
         GridTooltipTag::Wire(index) => grid.wire_tooltip_format(index),
+    }
+}
+
+//===========================================================================//
+
+enum Interaction {
+    Nothing,
+    DraggingBounds(BoundsDrag),
+    DraggingChip(ChipDrag),
+    SelectingRect(SelectingDrag),
+    RectSelected(CoordsRect),
+    DraggingWires(WireDrag),
+}
+
+impl Interaction {
+    fn take(&mut self) -> Interaction {
+        mem::replace(self, Interaction::Nothing)
     }
 }
 
@@ -1108,6 +1136,33 @@ enum Zone {
     East(Coords),
     South(Coords),
 }
+
+impl Zone {
+    fn from_grid_pt(grid_pt: Point2<f32>) -> Zone {
+        let coords: Coords = grid_pt.as_i32_floor();
+        let x = grid_pt.x - (coords.x as f32) - 0.5;
+        let y = grid_pt.y - (coords.y as f32) - 0.5;
+        if x.abs() <= ZONE_CENTER_SEMI_SIZE &&
+            y.abs() <= ZONE_CENTER_SEMI_SIZE
+        {
+            Zone::Center(coords)
+        } else if x.abs() > y.abs() {
+            Zone::East(if x > 0.0 {
+                           coords
+                       } else {
+                           coords + Direction::West
+                       })
+        } else {
+            Zone::South(if y > 0.0 {
+                            coords
+                        } else {
+                            coords + Direction::North
+                        })
+        }
+    }
+}
+
+//===========================================================================//
 
 #[derive(Eq, PartialEq)]
 enum GridTooltipTag {

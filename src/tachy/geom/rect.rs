@@ -93,11 +93,33 @@ impl<T: BaseNum> Rect<T> {
             rect.y + rect.height <= self.y + self.height
     }
 
-    pub fn shrink(&self, horz: T, vert: T) -> Rect<T> {
-        Rect::new(self.x + horz,
-                  self.y + vert,
-                  self.width - (horz + horz),
-                  self.height - (vert + vert))
+    pub fn expand(&self, margin: T) -> Rect<T> {
+        let margin2 = margin + margin;
+        Rect::new(self.x - margin,
+                  self.y - margin,
+                  self.width + margin2,
+                  self.height + margin2)
+    }
+
+    pub fn intersection(&self, other: Rect<T>) -> Rect<T> {
+        if self.x > other.right() || self.y > other.bottom() ||
+            self.right() < other.x || self.bottom() < other.y
+        {
+            return Rect::new(self.x, self.y, T::zero(), T::zero());
+        }
+        let left = if self.x >= other.x { self.x } else { other.x };
+        let right = if self.right() <= other.right() {
+            self.right()
+        } else {
+            other.right()
+        };
+        let top = if self.y >= other.y { self.y } else { other.y };
+        let bottom = if self.bottom() <= other.bottom() {
+            self.bottom()
+        } else {
+            other.bottom()
+        };
+        return Rect::new(left, top, right - left, bottom - top);
     }
 }
 
@@ -142,12 +164,17 @@ pub struct RectPointsIter<T> {
 
 impl<T: BaseNum> RectPointsIter<T> {
     fn new(rect: Rect<T>) -> RectPointsIter<T> {
+        let (x_hi, y_hi) = if rect.is_empty() {
+            (rect.x, rect.y)
+        } else {
+            (rect.right(), rect.bottom())
+        };
         RectPointsIter {
             x: rect.x,
             x_lo: rect.x,
-            x_hi: rect.right(),
+            x_hi,
             y: rect.y,
-            y_hi: rect.bottom(),
+            y_hi,
         }
     }
 }
@@ -199,6 +226,16 @@ mod tests {
     }
 
     #[test]
+    fn negative_rects_do_not_contain_any_points() {
+        assert!(!Rect::new(0, 0, 2, -2).contains_point(Point2::new(1, -1)));
+        assert!(!Rect::new(0, 0, 2, -2).contains_point(Point2::new(1, 1)));
+        assert!(!Rect::new(0, 0, -2, 2).contains_point(Point2::new(-1, 1)));
+        assert!(!Rect::new(0, 0, -2, 2).contains_point(Point2::new(1, 1)));
+        assert!(!Rect::new(0, 0, -2, -2).contains_point(Point2::new(-1, -1)));
+        assert!(!Rect::new(0, 0, -2, -2).contains_point(Point2::new(1, 1)));
+    }
+
+    #[test]
     fn rect_contains_rect() {
         let rect = Rect::new(1, 2, 3, 4);
         assert!(rect.contains_rect(rect));
@@ -208,6 +245,25 @@ mod tests {
         assert!(!rect.contains_rect(Rect::new(1, 1, 2, 2)));
         assert!(!rect.contains_rect(Rect::new(3, 2, 2, 2)));
         assert!(!rect.contains_rect(Rect::new(1, 5, 2, 2)));
+    }
+
+    #[test]
+    fn rect_intersection() {
+        let rect = Rect::new(1, 2, 3, 4);
+        assert_eq!(rect.intersection(Rect::new(2, 3, 3, 4)),
+                   Rect::new(2, 3, 2, 3));
+        assert_eq!(rect.intersection(Rect::new(-1, 4, 4, 4)),
+                   Rect::new(1, 4, 2, 2));
+        assert_eq!(rect.intersection(Rect::new(0, 1, 2, 2)),
+                   Rect::new(1, 2, 1, 1));
+        assert_eq!(rect.intersection(Rect::new(2, 1, 5, 3)),
+                   Rect::new(2, 2, 2, 2));
+        assert_eq!(rect.intersection(Rect::new(0, 0, 10, 10)),
+                   Rect::new(1, 2, 3, 4));
+        assert_eq!(rect.intersection(Rect::new(2, 3, 1, 1)),
+                   Rect::new(2, 3, 1, 1));
+        assert_eq!(rect.intersection(Rect::new(10, 20, 4, 4)).area(), 0);
+        assert_eq!(rect.intersection(Rect::new(-10, -20, 4, 4)).area(), 0);
     }
 
     #[test]
@@ -227,6 +283,24 @@ mod tests {
             assert_eq!(iter.len(), 6 - index);
             assert!(iter.next().is_some());
         }
+        assert_eq!(iter.len(), 0);
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn negative_rect_iter() {
+        let rect = Rect::new(1, 2, -3, 4);
+        let mut iter = rect.into_iter();
+        assert_eq!(iter.len(), 0);
+        assert!(iter.next().is_none());
+
+        let rect = Rect::new(1, 2, 3, -4);
+        let mut iter = rect.into_iter();
+        assert_eq!(iter.len(), 0);
+        assert!(iter.next().is_none());
+
+        let rect = Rect::new(1, 2, -3, -4);
+        let mut iter = rect.into_iter();
         assert_eq!(iter.len(), 0);
         assert!(iter.next().is_none());
     }

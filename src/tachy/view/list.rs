@@ -84,7 +84,7 @@ impl<T: Clone + Eq> ListView<T> {
     fn draw_background(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let mut rect = self.rect.as_f32();
         rect.width = self.item_width() as f32;
-        rect = rect.shrink(2.0, 2.0);
+        rect = rect.expand(-2.0);
         let solid = resources.shaders().solid();
         solid.fill_rect(matrix, Color4::PURPLE0.rgb(), rect);
     }

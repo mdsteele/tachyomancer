@@ -20,8 +20,8 @@
 use super::chip::ChipModel;
 use super::tooltip::Tooltip;
 use super::wire::WireModel;
-use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
-use std::collections::HashMap;
+use cgmath::{self, Matrix4, MetricSpace, Point2, Vector2, vec2, vec4};
+use std::collections::{HashMap, HashSet};
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsDelta, CoordsRect,
                   Direction, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
@@ -38,6 +38,14 @@ const GRID_CELL_SIZE: i32 = 64;
 
 // Number of screen pixels to scroll by when pressing a scroll hotkey:
 const SCROLL_PER_KEYDOWN: i32 = 40;
+
+// How close, in grid cells, the mouse must be to a grid vertex to start a
+// selection rect.
+const SELECTING_VERTEX_MAX_DIST: f32 = 0.2;
+
+const SELECTION_BOX_COLOR1: Color4 = Color4::CYAN5.with_alpha(0.75);
+const SELECTION_BOX_COLOR2: Color4 = Color4::CYAN4.with_alpha(0.75);
+const SELECTION_BOX_COLOR3: Color4 = Color4::CYAN4.with_alpha(0.1);
 
 const ZONE_CENTER_SEMI_SIZE: f32 = 0.1875;
 
@@ -65,6 +73,8 @@ pub struct EditGridView {
     wire_model: WireModel,
     bounds_drag: Option<BoundsDrag>,
     chip_drag: Option<ChipDrag>,
+    selecting_drag: Option<SelectingDrag>,
+    selected_rect: Option<CoordsRect>,
     wire_drag: Option<WireDrag>,
     tooltip: Tooltip<GridTooltipTag>,
 }
@@ -80,6 +90,8 @@ impl EditGridView {
             wire_model: WireModel::new(),
             bounds_drag: None,
             chip_drag: None,
+            selecting_drag: None,
+            selected_rect: None,
             wire_drag: None,
             tooltip: Tooltip::new(window_size),
         }
@@ -139,6 +151,17 @@ impl EditGridView {
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
             self.chip_model.draw_interface(resources, &mat, interface);
         }
+    }
+
+    fn draw_selection_box(&self, resources: &Resources,
+                          matrix: &Matrix4<f32>, selected_rect: CoordsRect) {
+        let ui = resources.shaders().ui();
+        let rect = (selected_rect * GRID_CELL_SIZE).expand(4).as_f32();
+        ui.draw_selection_box(matrix,
+                              &rect,
+                              &SELECTION_BOX_COLOR1,
+                              &SELECTION_BOX_COLOR2,
+                              &SELECTION_BOX_COLOR3);
     }
 
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
@@ -203,6 +226,13 @@ impl EditGridView {
                                       orient,
                                       Some((coords, grid)));
         }
+
+        if let Some(rect) = self.selected_rect {
+            self.draw_selection_box(resources, &matrix, rect);
+        }
+        if let Some(ref drag) = self.selecting_drag {
+            self.draw_selection_box(resources, &matrix, drag.rect);
+        }
     }
 
     pub fn draw_dragged(&self, resources: &Resources) {
@@ -242,6 +272,11 @@ impl EditGridView {
                 self.tooltip.stop_hover_all();
                 if key.command {
                     match key.code {
+                        Keycode::X => {
+                            if let Some(rect) = self.selected_rect.take() {
+                                self.cut_region(grid, rect);
+                            }
+                        }
                         Keycode::Z if key.shift => grid.redo(),
                         Keycode::Z => grid.undo(),
                         _ => {}
@@ -283,6 +318,7 @@ impl EditGridView {
             }
             Event::MouseDown(mouse) => {
                 self.tooltip.stop_hover_all();
+                self.selected_rect = None;
                 if grid.eval().is_some() {
                     if mouse.left {
                         if let Some((coords, ctype, _)) =
@@ -299,28 +335,32 @@ impl EditGridView {
                     return None;
                 }
                 if mouse.left {
-                    let mouse_coords = self.coords_for_screen_pt(mouse.pt);
+                    let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
+                    if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
+                        self.selecting_drag =
+                            Some(SelectingDrag::new(grid.bounds(),
+                                                    grid_pt.as_i32_round()));
+                        return None;
+                    }
+                    let mouse_coords = grid_pt.as_i32_floor();
                     if !grid.bounds().contains_point(mouse_coords) {
                         if let Some(octant) =
                             self.bounds_octant_for_screen_pt(mouse.pt, grid)
                         {
-                            let start = self.screen_pt_to_grid_pt(mouse.pt);
                             self.bounds_drag =
-                                Some(BoundsDrag::new(octant, start, grid));
+                                Some(BoundsDrag::new(octant, grid_pt, grid));
                         }
                     } else if let Some((coords, ctype, orient)) =
                         grid.chip_at(mouse_coords)
                     {
                         // TODO: If mouse is within chip cell but near edge of
                         //   chip, allow for wire dragging.
-                        let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
                         self.chip_drag = Some(ChipDrag::new(ctype,
                                                             orient,
                                                             Some(coords),
                                                             grid_pt));
                         audio.play_sound(Sound::GrabChip);
                     } else {
-                        let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
                         let mut drag = WireDrag::new();
                         if drag.move_to(self.zone_for_grid_pt(grid_pt), grid) {
                             self.wire_drag = Some(drag);
@@ -347,6 +387,8 @@ impl EditGridView {
                     drag.move_to(grid_pt, grid);
                 } else if let Some(ref mut drag) = self.chip_drag {
                     drag.move_to(grid_pt);
+                } else if let Some(ref mut drag) = self.selecting_drag {
+                    drag.move_to(grid_pt);
                 } else if let Some(mut drag) = self.wire_drag.take() {
                     if drag.move_to(self.zone_for_grid_pt(grid_pt), grid) {
                         self.wire_drag = Some(drag);
@@ -371,6 +413,11 @@ impl EditGridView {
                     if let Some(drag) = self.chip_drag.take() {
                         drag.drop_onto_board(grid);
                         audio.play_sound(Sound::DropChip);
+                    }
+                    if let Some(drag) = self.selecting_drag.take() {
+                        if !drag.rect.is_empty() {
+                            self.selected_rect = Some(drag.rect);
+                        }
                     }
                     if let Some(drag) = self.wire_drag.take() {
                         drag.finish(grid);
@@ -409,6 +456,49 @@ impl EditGridView {
         }
     }
 
+    fn cut_region(&mut self, grid: &mut EditGrid, selected_rect: CoordsRect) {
+        let mut changes = Vec::<GridChange>::new();
+        let mut needs_mass_toggle = false;
+        let mut wires = HashMap::<(Coords, Direction), WireShape>::new();
+        let mut extra_stubs = HashSet::<(Coords, Direction)>::new();
+        for coords in selected_rect {
+            if let Some((chip_coords, ctype, orient)) = grid.chip_at(coords) {
+                if chip_coords == coords {
+                    let chip_size = orient * ctype.size();
+                    let chip_rect = Rect::with_size(chip_coords, chip_size);
+                    if selected_rect.contains_rect(chip_rect) {
+                        changes.push(GridChange::ToggleChip(chip_coords,
+                                                            orient,
+                                                            ctype));
+                    }
+                }
+            }
+            for dir in Direction::all() {
+                if let Some(shape) = grid.wire_shape_at(coords, dir) {
+                    wires.insert((coords, dir), shape);
+                    let coords2 = coords + dir;
+                    let dir2 = -dir;
+                    let on_edge = !selected_rect.contains_point(coords2);
+                    needs_mass_toggle = needs_mass_toggle || !on_edge ||
+                        shape != WireShape::Stub;
+                    if on_edge &&
+                        grid.wire_shape_at(coords2, dir2) ==
+                            Some(WireShape::Stub)
+                    {
+                        extra_stubs.insert((coords2, dir2));
+                    }
+                }
+            }
+        }
+        if needs_mass_toggle {
+            changes.push(GridChange::MassToggleWires(selected_rect, wires));
+        }
+        for (coords, dir) in extra_stubs {
+            changes.push(GridChange::ToggleStubWire(coords, dir));
+        }
+        grid.do_mutate(changes);
+    }
+
     fn zoom_by(&mut self, factor: f32) {
         self.zoom = ZOOM_MIN.max(self.zoom * factor).min(ZOOM_MAX);
     }
@@ -432,7 +522,7 @@ impl EditGridView {
         if inner.contains_point(grid_pt) {
             return None;
         }
-        let outer = inner.shrink(-BOUNDS_MARGIN, -BOUNDS_MARGIN);
+        let outer = inner.expand(BOUNDS_MARGIN);
         if !outer.contains_point(grid_pt) {
             return None;
         }
@@ -721,6 +811,42 @@ impl ChipDrag {
                 ),
             ]);
         }
+    }
+}
+
+//===========================================================================//
+
+struct SelectingDrag {
+    bounds: CoordsRect,
+    start: Coords,
+    rect: CoordsRect,
+}
+
+impl SelectingDrag {
+    fn is_near_vertex(grid_pt: Point2<f32>, bounds: CoordsRect) -> bool {
+        let coords = grid_pt.as_i32_round();
+        let expanded =
+            Rect::new(bounds.x, bounds.y, bounds.width + 1, bounds.height + 1);
+        expanded.contains_point(coords) &&
+            grid_pt.distance(coords.as_f32()) <= SELECTING_VERTEX_MAX_DIST
+    }
+
+    fn new(bounds: CoordsRect, start: Coords) -> SelectingDrag {
+        let rect = Rect::new(start.x, start.y, 0, 0);
+        SelectingDrag {
+            bounds,
+            start,
+            rect,
+        }
+    }
+
+    fn move_to(&mut self, grid_pt: Point2<f32>) {
+        let coords = grid_pt.as_i32_round();
+        self.rect = Rect::new(self.start.x.min(coords.x),
+                              self.start.y.min(coords.y),
+                              (self.start.x - coords.x).abs(),
+                              (self.start.y - coords.y).abs());
+        self.rect = self.rect.intersection(self.bounds);
     }
 }
 

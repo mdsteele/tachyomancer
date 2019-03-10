@@ -113,6 +113,21 @@ const SCROLL_DATA: &[f32] = &[
     0.75, 1.0, -8.0, 0.0,  1.0, 1.0, 0.0, 0.0,
 ];
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const SELECTION_BOX_DATA: &[f32] = &[
+    0.0, 0.0, 0.0, 0.0,  0.25, 0.0, 8.0, 0.0,
+    0.75, 0.0, -8.0, 0.0,  1.0, 0.0, 0.0, 0.0,
+
+    0.0, 0.25, 0.0, 8.0,  0.25, 0.25, 8.0, 8.0,
+    0.75, 0.25, -8.0, 8.0,  1.0, 0.25, 0.0, 8.0,
+
+    0.0, 0.75, 0.0, -8.0,  0.25, 0.75, 8.0, -8.0,
+    0.75, 0.75, -8.0, -8.0,  1.0, 0.75, 0.0, -8.0,
+
+    0.0, 1.0, 0.0, 0.0,  0.25, 1.0, 8.0, 0.0,
+    0.75, 1.0, -8.0, 0.0,  1.0, 1.0, 0.0, 0.0,
+];
+
 //===========================================================================//
 
 pub struct UiShader {
@@ -134,6 +149,8 @@ pub struct UiShader {
     dialog_varray: VertexArray,
     _scroll_vbuffer: VertexBuffer<f32>,
     scroll_varray: VertexArray,
+    _selection_box_vbuffer: VertexBuffer<f32>,
+    selection_box_varray: VertexArray,
 }
 
 impl UiShader {
@@ -159,6 +176,8 @@ impl UiShader {
                                                             DIALOG_DATA);
         let (scroll_varray, scroll_vbuffer) = make_vertices(&corners_vbuffer,
                                                             SCROLL_DATA);
+        let (selection_box_varray, selection_box_vbuffer) =
+            make_vertices(&corners_vbuffer, SELECTION_BOX_DATA);
 
         let shader = UiShader {
             program,
@@ -179,6 +198,8 @@ impl UiShader {
             dialog_varray,
             _scroll_vbuffer: scroll_vbuffer,
             scroll_varray,
+            _selection_box_vbuffer: selection_box_vbuffer,
+            selection_box_varray,
         };
         Ok(shader)
     }
@@ -265,6 +286,16 @@ impl UiShader {
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.scroll_varray.bind();
         self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn draw_selection_box(&self, matrix: &Matrix4<f32>,
+                              rect: &Rect<f32>, color1: &Color4,
+                              color2: &Color4, color3: &Color4) {
+        let tex_rect = Rect::new(0.875, 0.375, 0.125, 0.125);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.selection_box_varray.bind();
+        self.selection_box_varray
+            .draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 }
 

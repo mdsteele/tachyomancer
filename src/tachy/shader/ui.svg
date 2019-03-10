@@ -87,4 +87,17 @@
       <path d="M 0,31.5 h 32"/>
     </g>
   </g>
+  <!-- Selection box -->
+  <g transform="translate(224, 96)">
+    <!-- Outline -->
+    <rect x="2" y="2" width="28" height="28"
+          fill="#00f" stroke="#0f0" stroke-width="2"/>
+    <!-- Corners -->
+    <g fill="none" stroke="#f00" stroke-width="4">
+      <path d="M 2,8 v -6 h 6"/>
+      <path d="M 30,8 v -6 h -6"/>
+      <path d="M 2,24 v 6 h 6"/>
+      <path d="M 30,24 v 6 h -6"/>
+    </g>
+  </g>
 </svg>

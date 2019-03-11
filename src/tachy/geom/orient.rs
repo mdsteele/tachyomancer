@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::coords::{CoordsDelta, CoordsSize};
+use super::coords::{Coords, CoordsDelta, CoordsRect, CoordsSize};
 use super::dir::Direction;
 use super::matrix::MatrixExt;
 use super::rect::RectSize;
@@ -48,7 +48,13 @@ impl Orientation {
         }
     }
 
-    pub fn transform_in_rect(&self, delta: CoordsDelta, size: CoordsSize)
+    pub fn transform_in_rect(&self, coords: Coords, rect: CoordsRect)
+                             -> Coords {
+        let top_left = rect.top_left();
+        top_left + self.transform_in_size(coords - top_left, rect.size())
+    }
+
+    pub fn transform_in_size(&self, delta: CoordsDelta, size: CoordsSize)
                              -> CoordsDelta {
         let x = delta.x;
         let y = if self.mirror {

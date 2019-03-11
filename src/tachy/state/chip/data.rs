@@ -38,7 +38,7 @@ pub fn localize(coords: Coords, orient: Orientation, size: CoordsSize,
                 port: &AbstractPort)
                 -> (Coords, Direction) {
     let &(_, _, delta, dir) = port;
-    (coords + orient.transform_in_rect(delta.into(), size), orient * dir)
+    (coords + orient.transform_in_size(delta.into(), size), orient * dir)
 }
 
 //===========================================================================//

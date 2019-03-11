@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::cast::AsFloat;
-use cgmath::{BaseNum, Point2};
+use cgmath::{BaseNum, Point2, Vector2};
 use std::ops;
 
 //===========================================================================//
@@ -80,6 +80,10 @@ impl<T: BaseNum> Rect<T> {
 
     pub fn bottom(&self) -> T { self.y + self.height }
 
+    pub fn size(&self) -> RectSize<T> {
+        RectSize::new(self.width, self.height)
+    }
+
     pub fn area(&self) -> T { self.width * self.height }
 
     pub fn contains_point(&self, pt: Point2<T>) -> bool {
@@ -139,6 +143,14 @@ impl IntoIterator for Rect<i32> {
     type IntoIter = RectPointsIter<i32>;
 
     fn into_iter(self) -> RectPointsIter<i32> { RectPointsIter::new(self) }
+}
+
+impl<T: BaseNum> ops::Add<Vector2<T>> for Rect<T> {
+    type Output = Rect<T>;
+
+    fn add(self, other: Vector2<T>) -> Rect<T> {
+        Rect::new(self.x + other.x, self.y + other.y, self.width, self.height)
+    }
 }
 
 impl<T: BaseNum> ops::Mul<T> for Rect<T> {

@@ -424,16 +424,36 @@ impl EditGrid {
     }
 
     #[must_use = "must not ignore try_mutate failure"]
-    pub fn try_mutate(&mut self, mut changes: Vec<GridChange>) -> bool {
-        let mut succeeded: usize = 0;
+    pub fn try_mutate(&mut self, changes: Vec<GridChange>) -> bool {
+        self.try_mutate_then(changes, |_| Vec::new())
+    }
+
+    #[must_use = "must not ignore try_mutate_then failure"]
+    pub fn try_mutate_then<F>(&mut self, mut changes: Vec<GridChange>, func: F)
+                              -> bool
+    where
+        F: FnOnce(&EditGrid) -> Vec<GridChange>,
+    {
+        let mut num_changes: usize = changes.len();
+        let mut num_succeeded: usize = 0;
         for change in changes.iter() {
-            if self.mutate_one(change) {
-                succeeded += 1;
-            } else {
+            if !self.mutate_one(change) {
                 break;
             }
+            num_succeeded += 1;
         }
-        let success = if succeeded == changes.len() {
+        if num_succeeded == num_changes {
+            let more_changes = func(self);
+            num_changes += more_changes.len();
+            for change in more_changes {
+                if !self.mutate_one(&change) {
+                    break;
+                }
+                changes.push(change);
+                num_succeeded += 1;
+            }
+        }
+        let success = if num_succeeded == num_changes {
             self.redo_stack.clear();
             // TODO: When dragging to create a multi-fragment wire, allow
             //   undoing the whole wire at once (instead of one visible change
@@ -443,11 +463,10 @@ impl EditGrid {
             true
         } else {
             // A change failed, so roll back the successful changes.
-            changes.truncate(succeeded);
+            changes.truncate(num_succeeded);
             for change in GridChange::invert_group(changes) {
                 if !self.mutate_one(&change) {
-                    debug_log!("WARNING: mutate failed to roll back {:?}",
-                               change);
+                    debug_log!("WARNING: failed to roll back {:?}", change);
                 }
             }
             false

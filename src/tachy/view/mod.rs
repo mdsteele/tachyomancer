@@ -31,6 +31,7 @@ mod paragraph;
 mod parts;
 mod prefs;
 mod puzzle;
+mod select;
 mod tooltip;
 mod verify;
 mod wire;

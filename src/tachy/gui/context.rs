@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::audio::{AudioMixer, AudioQueue};
+use super::cursor::Cursors;
 use sdl2;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
@@ -32,6 +33,7 @@ pub struct GuiContext {
     _audio_subsystem: sdl2::AudioSubsystem,
     _audio_device: sdl2::audio::AudioDevice<AudioMixer>,
     pub(super) audio_queue: Arc<Mutex<AudioQueue>>,
+    pub(super) cursors: Cursors,
 }
 
 impl GuiContext {
@@ -42,6 +44,7 @@ impl GuiContext {
         }
         let video_subsystem = sdl_context.video()?;
         let event_pump = sdl_context.event_pump()?;
+        let cursors = Cursors::new()?;
 
         let audio_subsystem = sdl_context.audio()?;
         let mut audio_queue = AudioQueue::new();
@@ -58,6 +61,7 @@ impl GuiContext {
                _audio_subsystem: audio_subsystem,
                _audio_device: audio_device,
                audio_queue,
+               cursors,
            })
     }
 

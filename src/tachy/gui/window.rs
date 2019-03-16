@@ -19,6 +19,7 @@
 
 use super::audio::AudioQueue;
 use super::context::GuiContext;
+use super::cursor::Cursors;
 use super::event::Event;
 use super::resource::Resources;
 use gl;
@@ -174,6 +175,8 @@ impl<'a> Window<'a> {
         let mut audio_queue = self.gui_context.audio_queue.lock().unwrap();
         audio_queue.merge(mem::replace(audio, AudioQueue::new()));
     }
+
+    pub fn cursors(&mut self) -> &mut Cursors { &mut self.gui_context.cursors }
 }
 
 //===========================================================================//

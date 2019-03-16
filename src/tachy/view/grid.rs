@@ -26,7 +26,8 @@ use std::collections::HashMap;
 use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsDelta, CoordsRect,
                   Direction, MatrixExt, Orientation, Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound};
+use tachy::gui::{AudioQueue, Cursor, Event, Keycode, NextCursor, Resources,
+                 Sound};
 use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
 use tachy::state::{EditGrid, GridChange, WireColor};
 
@@ -270,6 +271,59 @@ impl EditGridView {
             Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
     }
 
+    pub fn request_interaction_cursor(&self, event: &Event,
+                                      next_cursor: &mut NextCursor) {
+        match event {
+            Event::MouseUp(mouse) if mouse.left => return,
+            _ => {}
+        }
+        match self.interaction {
+            Interaction::DraggingBounds(ref drag) => {
+                drag.request_cursor(next_cursor);
+            }
+            Interaction::DraggingChip(_) |
+            Interaction::DraggingSelection(_) => {
+                next_cursor.request(Cursor::HandClosed);
+            }
+            Interaction::DraggingWires(_) => {
+                next_cursor.request(Cursor::Wire);
+            }
+            Interaction::SelectingRect(_) => {
+                next_cursor.request(Cursor::Crosshair);
+            }
+            Interaction::Nothing |
+            Interaction::RectSelected(_) => {}
+        }
+    }
+
+    fn cursor_for_grid_pt(&self, grid_pt: Point2<f32>, grid: &EditGrid)
+                          -> Cursor {
+        let coords = grid_pt.as_i32_floor();
+        match self.interaction {
+            Interaction::Nothing => {
+                // TODO: Check whether evaluation is active
+                if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
+                    return Cursor::Crosshair;
+                } else if let Some(octant) =
+                    self.bounds_octant_for_grid_pt(grid_pt, grid)
+                {
+                    return octant.cursor();
+                } else if grid.chip_at(coords).is_some() {
+                    return Cursor::HandOpen;
+                } else if grid.bounds().contains_point(coords) {
+                    return Cursor::Wire;
+                }
+            }
+            Interaction::RectSelected(rect) => {
+                if rect.contains_point(grid_pt.as_i32_floor()) {
+                    return Cursor::HandOpen;
+                }
+            }
+            _ => {}
+        }
+        return Cursor::default();
+    }
+
     fn on_hotkey(&mut self, hotkey: Hotkey) {
         match hotkey {
             Hotkey::ScrollUp => {
@@ -317,7 +371,8 @@ impl EditGridView {
     }
 
     pub fn on_event(&mut self, event: &Event, grid: &mut EditGrid,
-                    prefs: &Prefs, audio: &mut AudioQueue)
+                    prefs: &Prefs, audio: &mut AudioQueue,
+                    next_cursor: &mut NextCursor)
                     -> Option<EditGridAction> {
         match event {
             Event::ClockTick(tick) => {
@@ -387,7 +442,7 @@ impl EditGridView {
                     let mouse_coords = grid_pt.as_i32_floor();
                     if !grid.bounds().contains_point(mouse_coords) {
                         if let Some(octant) =
-                            self.bounds_octant_for_screen_pt(mouse.pt, grid)
+                            self.bounds_octant_for_grid_pt(grid_pt, grid)
                         {
                             let drag = BoundsDrag::new(octant, grid_pt, grid);
                             self.interaction =
@@ -428,6 +483,7 @@ impl EditGridView {
             }
             Event::MouseMove(mouse) => {
                 let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
+                next_cursor.request(self.cursor_for_grid_pt(grid_pt, grid));
                 let mut should_stop_interaction = false;
                 match self.interaction {
                     Interaction::Nothing |
@@ -494,6 +550,9 @@ impl EditGridView {
                             drag.finish(grid);
                         }
                     }
+                    let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
+                    let cursor = self.cursor_for_grid_pt(grid_pt, grid);
+                    next_cursor.request(cursor);
                 }
             }
             Event::Multitouch(touch) => {
@@ -546,10 +605,9 @@ impl EditGridView {
             .as_f32() / (GRID_CELL_SIZE as f32)
     }
 
-    fn bounds_octant_for_screen_pt(&self, screen_pt: Point2<i32>,
-                                   grid: &EditGrid)
-                                   -> Option<Octant> {
-        let grid_pt = self.screen_pt_to_grid_pt(screen_pt);
+    fn bounds_octant_for_grid_pt(&self, grid_pt: Point2<f32>,
+                                 grid: &EditGrid)
+                                 -> Option<Octant> {
         let inner = grid.bounds().as_f32();
         if inner.contains_point(grid_pt) {
             return None;
@@ -676,6 +734,21 @@ enum Octant {
     TopRight,
 }
 
+impl Octant {
+    fn cursor(self) -> Cursor {
+        match self {
+            Octant::Right | Octant::Left => Cursor::ResizeEastWest,
+            Octant::Top | Octant::Bottom => Cursor::ResizeNorthSouth,
+            Octant::TopRight | Octant::BottomLeft => {
+                Cursor::ResizeNortheastSouthwest
+            }
+            Octant::TopLeft | Octant::BottomRight => {
+                Cursor::ResizeNorthwestSoutheast
+            }
+        }
+    }
+}
+
 //===========================================================================//
 
 struct BoundsDrag {
@@ -697,6 +770,10 @@ impl BoundsDrag {
             bounds: grid.bounds(),
             acceptable: true,
         }
+    }
+
+    pub fn request_cursor(&self, next_cursor: &mut NextCursor) {
+        next_cursor.request(self.octant.cursor());
     }
 
     pub fn move_to(&mut self, grid_pt: Point2<f32>, grid: &EditGrid) {

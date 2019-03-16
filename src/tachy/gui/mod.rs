@@ -19,12 +19,14 @@
 
 mod audio;
 mod context;
+mod cursor;
 mod event;
 mod resource;
 mod window;
 
 pub use self::audio::{AudioQueue, Sound};
 pub use self::context::GuiContext;
+pub use self::cursor::{Cursor, Cursors, NextCursor};
 pub use self::event::{ClockEventData, Event, KeyEventData, Keycode,
                       MouseEventData, MultitouchEventData, ScrollEventData};
 pub use self::resource::Resources;

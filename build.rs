@@ -36,6 +36,9 @@ fn main() {
     converter.font_to_texture("inconsolata-bold");
     converter.font_to_texture("inconsolata-regular");
     converter.generate_chip_icons();
+    converter.svg_to_png(&PathBuf::from("src/tachy/gui/cursor.svg"),
+                         &PathBuf::from("texture/cursor.png"),
+                         icns::PixelFormat::RGBA);
     converter.svg_to_png(&PathBuf::from("src/tachy/shader/ui.svg"),
                          &PathBuf::from("texture/ui.png"),
                          icns::PixelFormat::RGBA);

@@ -18,10 +18,15 @@
 // +--------------------------------------------------------------------------+
 
 use super::edit::EditGrid;
+use std::time::Duration;
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Prefs,
                   Profile, ProfileNamesIter, Puzzle, SaveDir};
 use unicase;
 use unicode_width::UnicodeWidthStr;
+
+//===========================================================================//
+
+const AUTOSAVE_DURATION: Duration = Duration::from_secs(60);
 
 //===========================================================================//
 
@@ -71,6 +76,27 @@ impl GameState {
         }
         self.savedir.save()?;
         Ok(())
+    }
+
+    pub fn maybe_autosave_circuit(&mut self) {
+        if let Some(ref mut grid) = self.edit_grid {
+            if grid.has_been_modified_for_at_least(AUTOSAVE_DURATION) {
+                grid.mark_unmodified();
+                if let Some(ref mut profile) = self.profile {
+                    let puzzle = profile.current_puzzle();
+                    let circuit_data = grid.to_circuit_data();
+                    match profile.save_circuit(puzzle,
+                                                 &self.circuit_name,
+                                                 &circuit_data) {
+                        Ok(()) => return,
+                        Err(err) => debug_log!("Failed to autosave: {}", err),
+                    }
+                } else {
+                    debug_log!("Failed to autosave: no profile!");
+                }
+                grid.mark_modified();
+            }
+        }
     }
 
     pub fn prefs(&self) -> &Prefs { self.savedir.prefs() }

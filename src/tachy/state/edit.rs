@@ -24,6 +24,7 @@ use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::{Interface, new_puzzle_eval, puzzle_interfaces};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
+use std::time::{Duration, Instant};
 use std::usize;
 use tachy::geom::{Coords, CoordsDelta, CoordsRect, Direction, Orientation,
                   Rect};
@@ -105,7 +106,7 @@ pub struct EditGrid {
     eval: Option<CircuitEval>,
     undo_stack: Vec<Vec<GridChange>>,
     redo_stack: Vec<Vec<GridChange>>,
-    modified: bool,
+    modified_since: Option<Instant>,
 }
 
 impl EditGrid {
@@ -123,7 +124,7 @@ impl EditGrid {
             eval: None,
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
-            modified: false,
+            modified_since: None,
         };
         grid.typecheck_wires();
         grid
@@ -146,7 +147,7 @@ impl EditGrid {
             eval: None,
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
-            modified: false,
+            modified_since: None,
         };
 
         // Chips:
@@ -288,9 +289,22 @@ impl EditGrid {
         data
     }
 
-    pub fn is_modified(&self) -> bool { self.modified }
+    pub fn is_modified(&self) -> bool { self.modified_since.is_some() }
 
-    pub fn mark_unmodified(&mut self) { self.modified = false; }
+    pub fn has_been_modified_for_at_least(&self, duration: Duration) -> bool {
+        match self.modified_since {
+            None => false,
+            Some(instant) => instant.elapsed() >= duration,
+        }
+    }
+
+    pub fn mark_modified(&mut self) {
+        if self.modified_since.is_none() {
+            self.modified_since = Some(Instant::now());
+        }
+    }
+
+    pub fn mark_unmodified(&mut self) { self.modified_since = None; }
 
     pub fn puzzle(&self) -> Puzzle { self.puzzle }
 
@@ -400,7 +414,7 @@ impl EditGrid {
             }
             self.redo_stack.push(GridChange::invert_group(changes));
             self.typecheck_wires();
-            self.modified = true;
+            self.mark_modified();
         }
     }
 
@@ -413,7 +427,7 @@ impl EditGrid {
             }
             self.undo_stack.push(GridChange::invert_group(changes));
             self.typecheck_wires();
-            self.modified = true;
+            self.mark_modified();
         }
     }
 
@@ -459,7 +473,7 @@ impl EditGrid {
             //   undoing the whole wire at once (instead of one visible change
             //   at a time).
             self.undo_stack.push(GridChange::invert_group(changes));
-            self.modified = true;
+            self.mark_modified();
             true
         } else {
             // A change failed, so roll back the successful changes.

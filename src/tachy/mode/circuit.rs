@@ -78,6 +78,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 window.pump_audio(&mut audio);
                 view.draw(window.resources(), state.edit_grid().unwrap());
                 window.swap();
+                state.maybe_autosave_circuit();
             }
         }
     }

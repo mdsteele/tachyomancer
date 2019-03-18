@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::bounds::{BOUNDS_MARGIN, BoundsDrag, BoundsHandle};
 use super::chip::ChipModel;
 use super::select::{self, SelectingDrag, SelectionDrag};
 use super::tooltip::Tooltip;
@@ -24,17 +25,14 @@ use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
 use std::collections::HashMap;
 use std::mem;
-use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsDelta, CoordsRect,
-                  Direction, MatrixExt, Orientation, Rect, RectSize};
+use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsRect, Direction,
+                  MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Cursor, Event, Keycode, NextCursor, Resources,
                  Sound};
 use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
 use tachy::state::{EditGrid, GridChange, WireColor};
 
 //===========================================================================//
-
-// The thickness, in grid cells, of the bounds margin:
-const BOUNDS_MARGIN: f32 = 0.45;
 
 // The size, in screen pixels, of a grid cell at 1x zoom:
 const GRID_CELL_SIZE: i32 = 64;
@@ -102,9 +100,9 @@ impl EditGridView {
 
     fn draw_bounds(&self, resources: &Resources, grid: &EditGrid) {
         let matrix = self.vp_matrix();
-        let (bounds, acceptable) = match self.interaction {
+        let (bounds, is_acceptable) = match self.interaction {
             Interaction::DraggingBounds(ref drag) => {
-                (drag.bounds, drag.acceptable)
+                (drag.bounds(), drag.is_acceptable())
             }
             _ => (grid.bounds(), true),
         };
@@ -113,7 +111,7 @@ impl EditGridView {
         let width = (bounds.width * GRID_CELL_SIZE) as f32;
         let height = (bounds.height * GRID_CELL_SIZE) as f32;
         let thick = BOUNDS_MARGIN * (GRID_CELL_SIZE as f32);
-        let color = if acceptable {
+        let color = if is_acceptable {
             Color4::PURPLE2.rgb()
         } else {
             (1.0, 0.0, 0.0)
@@ -131,7 +129,7 @@ impl EditGridView {
     fn draw_interfaces(&self, resources: &Resources, matrix: &Matrix4<f32>,
                        grid: &EditGrid) {
         let bounds = match self.interaction {
-            Interaction::DraggingBounds(ref drag) => drag.bounds,
+            Interaction::DraggingBounds(ref drag) => drag.bounds(),
             _ => grid.bounds(),
         };
         for interface in grid.interfaces() {
@@ -304,10 +302,10 @@ impl EditGridView {
                 // TODO: Check whether evaluation is active
                 if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
                     return Cursor::Crosshair;
-                } else if let Some(octant) =
-                    self.bounds_octant_for_grid_pt(grid_pt, grid)
+                } else if let Some(handle) =
+                    BoundsHandle::for_grid_pt(grid_pt, grid)
                 {
-                    return octant.cursor();
+                    return handle.cursor();
                 } else if grid.chip_at(coords).is_some() {
                     return Cursor::HandOpen;
                 } else if grid.bounds().contains_point(coords) {
@@ -441,10 +439,10 @@ impl EditGridView {
                     }
                     let mouse_coords = grid_pt.as_i32_floor();
                     if !grid.bounds().contains_point(mouse_coords) {
-                        if let Some(octant) =
-                            self.bounds_octant_for_grid_pt(grid_pt, grid)
+                        if let Some(handle) =
+                            BoundsHandle::for_grid_pt(grid_pt, grid)
                         {
-                            let drag = BoundsDrag::new(octant, grid_pt, grid);
+                            let drag = BoundsDrag::new(handle, grid_pt, grid);
                             self.interaction =
                                 Interaction::DraggingBounds(drag);
                         }
@@ -605,44 +603,6 @@ impl EditGridView {
             .as_f32() / (GRID_CELL_SIZE as f32)
     }
 
-    fn bounds_octant_for_grid_pt(&self, grid_pt: Point2<f32>,
-                                 grid: &EditGrid)
-                                 -> Option<Octant> {
-        let inner = grid.bounds().as_f32();
-        if inner.contains_point(grid_pt) {
-            return None;
-        }
-        let outer = inner.expand(BOUNDS_MARGIN);
-        if !outer.contains_point(grid_pt) {
-            return None;
-        }
-        let at_top = grid_pt.y < inner.y;
-        let at_bottom = grid_pt.y >= inner.bottom();
-        if grid_pt.x < inner.x {
-            if at_top {
-                Some(Octant::TopLeft)
-            } else if at_bottom {
-                Some(Octant::BottomLeft)
-            } else {
-                Some(Octant::Left)
-            }
-        } else if grid_pt.x >= inner.right() {
-            if at_top {
-                Some(Octant::TopRight)
-            } else if at_bottom {
-                Some(Octant::BottomRight)
-            } else {
-                Some(Octant::Right)
-            }
-        } else if at_top {
-            Some(Octant::Top)
-        } else if at_bottom {
-            Some(Octant::Bottom)
-        } else {
-            None
-        }
-    }
-
     fn coords_for_screen_pt(&self, screen_pt: Point2<i32>) -> Coords {
         self.screen_pt_to_grid_pt(screen_pt).as_i32_floor()
     }
@@ -717,105 +677,6 @@ enum Interaction {
 impl Interaction {
     fn take(&mut self) -> Interaction {
         mem::replace(self, Interaction::Nothing)
-    }
-}
-
-//===========================================================================//
-
-#[derive(Clone, Copy)]
-enum Octant {
-    Right,
-    BottomRight,
-    Bottom,
-    BottomLeft,
-    Left,
-    TopLeft,
-    Top,
-    TopRight,
-}
-
-impl Octant {
-    fn cursor(self) -> Cursor {
-        match self {
-            Octant::Right | Octant::Left => Cursor::ResizeEastWest,
-            Octant::Top | Octant::Bottom => Cursor::ResizeNorthSouth,
-            Octant::TopRight | Octant::BottomLeft => {
-                Cursor::ResizeNortheastSouthwest
-            }
-            Octant::TopLeft | Octant::BottomRight => {
-                Cursor::ResizeNorthwestSoutheast
-            }
-        }
-    }
-}
-
-//===========================================================================//
-
-struct BoundsDrag {
-    octant: Octant,
-    drag_start_grid_pt: Point2<f32>,
-    drag_current_grid_pt: Point2<f32>,
-    bounds: CoordsRect,
-    acceptable: bool,
-}
-
-impl BoundsDrag {
-    pub fn new(octant: Octant, start_grid_pt: Point2<f32>,
-               grid: &mut EditGrid)
-               -> BoundsDrag {
-        BoundsDrag {
-            octant,
-            drag_start_grid_pt: start_grid_pt,
-            drag_current_grid_pt: start_grid_pt,
-            bounds: grid.bounds(),
-            acceptable: true,
-        }
-    }
-
-    pub fn request_cursor(&self, next_cursor: &mut NextCursor) {
-        next_cursor.request(self.octant.cursor());
-    }
-
-    pub fn move_to(&mut self, grid_pt: Point2<f32>, grid: &EditGrid) {
-        self.drag_current_grid_pt = grid_pt;
-        let delta: CoordsDelta = (self.drag_current_grid_pt -
-                                      self.drag_start_grid_pt)
-            .as_i32_round();
-        let old_bounds = grid.bounds();
-        let mut left = old_bounds.x;
-        let mut right = old_bounds.x + old_bounds.width;
-        match self.octant {
-            Octant::TopLeft | Octant::Left | Octant::BottomLeft => {
-                left = (left + delta.x).min(right - 1);
-            }
-            Octant::TopRight | Octant::Right | Octant::BottomRight => {
-                right = (right + delta.x).max(left + 1);
-            }
-            Octant::Top | Octant::Bottom => {}
-        }
-        let mut top = old_bounds.y;
-        let mut bottom = old_bounds.y + old_bounds.height;
-        match self.octant {
-            Octant::TopLeft | Octant::Top | Octant::TopRight => {
-                top = (top + delta.y).min(bottom - 1);
-            }
-            Octant::BottomLeft | Octant::Bottom | Octant::BottomRight => {
-                bottom = (bottom + delta.y).max(top + 1);
-            }
-            Octant::Left | Octant::Right => {}
-        }
-        self.bounds = Rect::new(left, top, right - left, bottom - top);
-        self.acceptable = grid.can_have_bounds(self.bounds);
-    }
-
-    pub fn finish(self, grid: &mut EditGrid) {
-        debug_assert_eq!(self.acceptable, grid.can_have_bounds(self.bounds));
-        if self.acceptable {
-            let old_bounds = grid.bounds();
-            grid.do_mutate(
-                vec![GridChange::SetBounds(old_bounds, self.bounds)],
-            );
-        }
     }
 }
 

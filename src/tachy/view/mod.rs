@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 mod begin;
+mod bounds;
 mod button;
 mod chip;
 mod circuit;

@@ -149,6 +149,15 @@ impl Event {
         }
     }
 
+    pub fn is_mouse(&self) -> bool {
+        match self {
+            Event::MouseDown(_) |
+            Event::MouseMove(_) |
+            Event::MouseUp(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn relative_to(&self, origin: Point2<i32>) -> Event {
         match self {
             Event::MouseDown(mouse) => {

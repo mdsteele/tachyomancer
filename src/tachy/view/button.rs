@@ -18,9 +18,10 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{Matrix4, Point2};
-use tachy::font::Align;
+use tachy::font::{Align, Font};
 use tachy::geom::{AsFloat, Color4, Rect};
-use tachy::gui::{ClockEventData, Event, Keycode, Resources};
+use tachy::gui::{ClockEventData, Cursor, Event, Keycode, NextCursor,
+                 Resources};
 use tachy::save::Hotkey;
 use unicode_width::UnicodeWidthStr;
 
@@ -43,6 +44,7 @@ const HOVER_PULSE_MIN: f64 = 0.35;
 const HOVER_PULSE_PERIOD: f64 = 1.0;
 
 const TEXT_BOX_CURSOR_BLINK_PERIOD: f64 = 1.0;
+const TEXT_BOX_FONT: Font = Font::Roman;
 const TEXT_BOX_FONT_SIZE: f32 = 20.0;
 const TEXT_BOX_INNER_MARGIN: f32 = 5.0;
 
@@ -602,7 +604,7 @@ impl TextBox {
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
         // Text:
-        let font = resources.fonts().roman();
+        let font = resources.fonts().get(TEXT_BOX_FONT);
         font.draw(&matrix,
                   TEXT_BOX_FONT_SIZE,
                   Align::MidLeft,
@@ -614,7 +616,7 @@ impl TextBox {
             let color = (0.5, 0.5, 0.0);
             let cursor_rect =
                 Rect::new(rect.x + TEXT_BOX_INNER_MARGIN +
-                              0.5 * TEXT_BOX_FONT_SIZE *
+                              TEXT_BOX_FONT.ratio() * TEXT_BOX_FONT_SIZE *
                                   self.cursor_char as f32,
                           rect.y + 0.5 * (rect.height - TEXT_BOX_FONT_SIZE),
                           1.0,
@@ -623,7 +625,7 @@ impl TextBox {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event) {
+    pub fn on_event(&mut self, event: &Event, next_cursor: &mut NextCursor) {
         match event {
             Event::ClockTick(tick) => {
                 self.cursor_blink = (self.cursor_blink + tick.elapsed) %
@@ -674,6 +676,32 @@ impl TextBox {
                         }
                     }
                     _ => {}
+                }
+            }
+            Event::MouseDown(mouse) => {
+                if self.rect.contains_point(mouse.pt) {
+                    next_cursor.request(Cursor::Text);
+                    let rel_x = ((mouse.pt.x - self.rect.x) as f32) -
+                        TEXT_BOX_INNER_MARGIN;
+                    let char_index =
+                        ((rel_x /
+                              (TEXT_BOX_FONT.ratio() * TEXT_BOX_FONT_SIZE))
+                             .round()
+                             .max(0.0) as usize)
+                            .min(self.string.width());
+                    self.cursor_byte = self.string
+                        .chars()
+                        .take(char_index)
+                        .map(|chr| chr.len_utf8())
+                        .sum();
+                    self.cursor_char = char_index;
+                    self.cursor_blink = 0.0;
+                }
+            }
+            Event::MouseMove(mouse) |
+            Event::MouseUp(mouse) => {
+                if self.rect.contains_point(mouse.pt) {
+                    next_cursor.request(Cursor::Text);
                 }
             }
             Event::TextInput(text) => {

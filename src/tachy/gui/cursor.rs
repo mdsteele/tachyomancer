@@ -37,6 +37,7 @@ const NUM_CURSOR_ROWS: usize = 4;
 const CURSORS: &[(Cursor, (usize, usize), (i32, i32))] = &[
     (Cursor::Arrow,                    (0, 0), (1, 1)),
     (Cursor::Crosshair,                (1, 0), (7, 7)),
+    (Cursor::Text,                     (2, 0), (7, 7)),
     (Cursor::ResizeEastWest,           (0, 1), (7, 7)),
     (Cursor::ResizeNorthSouth,         (1, 1), (7, 7)),
     (Cursor::ResizeNortheastSouthwest, (2, 1), (7, 7)),
@@ -154,8 +155,6 @@ impl Cursors {
                        mouse::Cursor::from_system(SystemCursor::Hand)?);
         cursors.insert(Cursor::HandPointing,
                        mouse::Cursor::from_system(SystemCursor::Hand)?);
-        cursors.insert(Cursor::Text,
-                       mouse::Cursor::from_system(SystemCursor::IBeam)?);
         cursors.insert(Cursor::Wire,
                        mouse::Cursor::from_system(SystemCursor::Arrow)?);
         let current_cursor = Cursor::default();

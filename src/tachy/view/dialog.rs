@@ -21,7 +21,7 @@ use super::button::{TextBox, TextButton};
 use cgmath::Matrix4;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
-use tachy::gui::{Event, Keycode, Resources};
+use tachy::gui::{Cursor, Event, Keycode, NextCursor, Resources};
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -236,12 +236,13 @@ impl TextDialogBox {
         self.cancel_button.draw(resources, matrix, true);
     }
 
-    pub fn on_event<F>(&mut self, event: &Event, is_valid: F)
+    pub fn on_event<F>(&mut self, event: &Event, next_cursor: &mut NextCursor,
+                       is_valid: F)
                        -> Option<Option<String>>
     where
         F: Fn(&str) -> bool,
     {
-        self.textbox.on_event(event);
+        self.textbox.on_event(event, next_cursor);
         let string = self.textbox.string();
         let valid = is_valid(string);
         if let Some(()) = self.ok_button.on_event(event, valid) {
@@ -249,6 +250,9 @@ impl TextDialogBox {
         }
         if let Some(()) = self.cancel_button.on_event(event, true) {
             return Some(None);
+        }
+        if event.is_mouse() {
+            next_cursor.request(Cursor::default());
         }
         return None;
     }

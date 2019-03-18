@@ -24,8 +24,8 @@ use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound, Window,
-                 WindowOptions};
+use tachy::gui::{AudioQueue, Event, Keycode, NextCursor, Resources, Sound,
+                 Window, WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::GameState;
 use textwrap;
@@ -148,7 +148,7 @@ impl MenuView {
     }
 
     pub fn on_event(&mut self, event: &Event, state: &mut GameState,
-                    audio: &mut AudioQueue)
+                    audio: &mut AudioQueue, next_cursor: &mut NextCursor)
                     -> Option<MenuAction> {
         if let Some(mut dialog) = self.confirmation_dialog.take() {
             match dialog.on_event(event) {
@@ -162,7 +162,7 @@ impl MenuView {
         }
 
         if let Some(mut dialog) = self.rename_dialog.take() {
-            match dialog.on_event(event, |name| {
+            match dialog.on_event(event, next_cursor, |name| {
                 state.is_valid_circuit_rename(name)
             }) {
                 Some(Some(name)) => {

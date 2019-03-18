@@ -19,7 +19,7 @@
 
 use super::common::ModeChange;
 use std::time::Instant;
-use tachy::gui::{AudioQueue, Event, Window};
+use tachy::gui::{AudioQueue, Event, NextCursor, Window};
 use tachy::state::GameState;
 use tachy::view::{MenuAction, MenuView};
 
@@ -31,10 +31,11 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     let mut last_tick = Instant::now();
     let mut audio = AudioQueue::new();
     loop {
+        let mut cursor = NextCursor::new();
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
-                match view.on_event(&event, state, &mut audio) {
+                match view.on_event(&event, state, &mut audio, &mut cursor) {
                     Some(MenuAction::GoToPuzzle(puzzle)) => {
                         match state.unlock_puzzle(puzzle) {
                             Ok(()) => {
@@ -128,13 +129,16 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     Some(MenuAction::QuitGame) => return ModeChange::Quit,
                     None => {}
                 }
+                window.cursors().set(cursor);
             }
             None => {
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
                 view.on_event(&Event::new_clock_tick(elapsed),
                               state,
-                              &mut audio);
+                              &mut audio,
+                              &mut cursor);
+                window.cursors().set(cursor);
                 last_tick = now;
                 window.pump_audio(&mut audio);
                 view.draw(window.resources(), state);

@@ -109,7 +109,7 @@ impl CircuitView {
                     audio: &mut AudioQueue, cursor: &mut NextCursor)
                     -> Option<CircuitAction> {
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
-            match dialog.on_event(event, is_valid_const) {
+            match dialog.on_event(event, cursor, is_valid_const) {
                 Some(Some(text)) => {
                     if let Ok(new_value) = text.parse::<u32>() {
                         if let Some((coords,

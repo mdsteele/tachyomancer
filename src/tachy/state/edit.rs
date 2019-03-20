@@ -56,10 +56,8 @@ pub enum GridChange {
     ToggleSplitWire(Coords, Direction),
     /// Toggles a cell between a four-way split and an overpass/underpass.
     ToggleCrossWire(Coords),
-    /// Adds wires within a rectangle (assuming stubs exist at the edges).
-    MassAddWires(CoordsRect, HashMap<(Coords, Direction), WireShape>),
-    /// Removes wires from within a rectangle (leaving stubs at the edges).
-    MassRemoveWires(CoordsRect, HashMap<(Coords, Direction), WireShape>),
+    ReplaceWires(HashMap<(Coords, Direction), WireShape>,
+                 HashMap<(Coords, Direction), WireShape>),
     /// Places a chip onto the board.
     AddChip(Coords, ChipType, Orientation),
     /// Removes a chip from the board.
@@ -77,11 +75,8 @@ impl GridChange {
         match self {
             GridChange::AddStubWire(c, d) => GridChange::RemoveStubWire(c, d),
             GridChange::RemoveStubWire(c, d) => GridChange::AddStubWire(c, d),
-            GridChange::MassAddWires(rect, wires) => {
-                GridChange::MassRemoveWires(rect, wires)
-            }
-            GridChange::MassRemoveWires(rect, wires) => {
-                GridChange::MassAddWires(rect, wires)
+            GridChange::ReplaceWires(old, new) => {
+                GridChange::ReplaceWires(new, old)
             }
             GridChange::AddChip(c, t, o) => GridChange::RemoveChip(c, t, o),
             GridChange::RemoveChip(c, t, o) => GridChange::AddChip(c, t, o),
@@ -667,80 +662,141 @@ impl EditGrid {
                     _ => return false,
                 }
             }
-            GridChange::MassAddWires(rect, ref wires) => {
-                for (&(coords, dir), &shape) in wires.iter() {
-                    let coords2 = coords + dir;
-                    if !rect.contains_point(coords2) {
-                        if self.wire_shape_at(coords, dir) !=
-                            Some(WireShape::Stub)
-                        {
-                            return false;
-                        }
-                    } else {
-                        if self.has_frag(coords, dir) {
-                            return false;
-                        }
-                        if !wires.contains_key(&(coords2, -dir)) {
-                            return false;
-                        }
-                        let ok = match shape {
-                            WireShape::Stub => true,
-                            WireShape::Straight => {
-                                wires.get(&(coords, -dir)) ==
-                                    Some(&WireShape::Straight)
-                            }
-                            WireShape::TurnLeft => {
-                                wires.get(&(coords, dir.rotate_cw())) ==
-                                    Some(&WireShape::TurnRight)
-                            }
-                            WireShape::TurnRight => {
-                                wires.get(&(coords, dir.rotate_ccw())) ==
-                                    Some(&WireShape::TurnLeft)
-                            }
-                            WireShape::SplitTee => {
-                                wires.get(&(coords, dir.rotate_cw())) ==
-                                    Some(&WireShape::SplitRight)
-                            }
-                            WireShape::SplitRight => {
-                                wires.get(&(coords, -dir)) ==
-                                    Some(&WireShape::SplitLeft)
-                            }
-                            WireShape::SplitLeft => {
-                                wires.get(&(coords, dir.rotate_cw())) ==
-                                    Some(&WireShape::SplitTee)
-                            }
-                            WireShape::Cross => {
-                                wires.get(&(coords, dir.rotate_cw())) ==
-                                    Some(&WireShape::Cross)
-                            }
-                        };
-                        if !ok {
-                            return false;
-                        }
-                    }
-                }
-                for (&(coords, dir), &shape) in wires.iter() {
-                    self.set_frag(coords, dir, shape);
-                }
-            }
-            GridChange::MassRemoveWires(rect, ref wires) => {
-                for (&(coords, dir), &shape) in wires.iter() {
+            GridChange::ReplaceWires(ref old_wires, ref new_wires) => {
+                for (&loc, &shape) in old_wires.iter() {
+                    // If we're removing a wire fragment, that exact fragment
+                    // must currently be there.
+                    let (coords, dir) = loc;
                     if self.wire_shape_at(coords, dir) != Some(shape) {
                         return false;
                     }
-                    let coords2 = coords + dir;
-                    if rect.contains_point(coords2) &&
-                        !wires.contains_key(&(coords2, -dir))
+                    // If we're removing a wire fragment, then we must either
+                    // (1) also remove the fragment in the adjacent cell, or
+                    // (2) add a new fragment in place of the removed one.
+                    let loc2 = (coords + dir, -dir);
+                    if !(old_wires.contains_key(&loc2) ||
+                             new_wires.contains_key(&loc))
                     {
                         return false;
                     }
-                }
-                for &(coords, dir) in wires.keys() {
-                    if rect.contains_point(coords + dir) {
-                        self.fragments.remove(&(coords, dir));
-                    } else {
-                        self.set_frag(coords, dir, WireShape::Stub);
+                    // If we're removing a wire fragment (and we're not just
+                    // adding the same one back), then we must also be removing
+                    // the other connected fragments in the grid cell.
+                    match shape {
+                        _ if new_wires.get(&loc) == Some(&shape) => {}
+                        WireShape::Stub => {}
+                        WireShape::Straight | WireShape::SplitRight => {
+                            if !old_wires.contains_key(&(coords, -dir)) {
+                                return false;
+                            }
+                        }
+                        WireShape::TurnLeft | WireShape::SplitLeft |
+                        WireShape::SplitTee | WireShape::Cross => {
+                            if !old_wires
+                                .contains_key(&(coords, dir.rotate_cw()))
+                            {
+                                return false;
+                            }
+                        }
+                        WireShape::TurnRight => {
+                            if !old_wires
+                                .contains_key(&(coords, dir.rotate_ccw()))
+                            {
+                                return false;
+                            }
+                        }
                     }
+                }
+                for (&loc, &shape) in new_wires.iter() {
+                    // If we're adding a wire fragment, it must be in bounds.
+                    let (coords, dir) = loc;
+                    if !(self.bounds.contains_point(coords) ||
+                             (shape == WireShape::Stub &&
+                                  self.bounds.contains_point(coords + dir)))
+                    {
+                        return false;
+                    }
+                    // If we're adding a wire fragment, then we must be
+                    // removing the fragment that's currently there, if any.
+                    if self.fragments.contains_key(&loc) &&
+                        !old_wires.contains_key(&loc)
+                    {
+                        return false;
+                    }
+                    // If we're adding a wire fragment, then either (1) we must
+                    // also add a fragment in the adjacent cell, or (2) there
+                    // must be an existing fragment in the adjacent cell that
+                    // we're not removing.
+                    let loc2 = (coords + dir, -dir);
+                    if !(new_wires.contains_key(&loc2) ||
+                             (self.fragments.contains_key(&loc2) &&
+                                  !old_wires.contains_key(&loc2)))
+                    {
+                        return false;
+                    }
+                    // If we're adding a wire fragment (and we didn't just
+                    // remove the exact same one), then we must also be adding
+                    // the other connected fragments in the grid cell.
+                    match shape {
+                        _ if old_wires.get(&loc) == Some(&shape) => {}
+                        WireShape::Stub => {}
+                        WireShape::Straight => {
+                            if new_wires.get(&(coords, -dir)) !=
+                                Some(&WireShape::Straight)
+                            {
+                                return false;
+                            }
+                        }
+                        WireShape::TurnLeft => {
+                            if new_wires.get(&(coords, dir.rotate_cw())) !=
+                                Some(&WireShape::TurnRight)
+                            {
+                                return false;
+                            }
+                        }
+                        WireShape::TurnRight => {
+                            if new_wires.get(&(coords, dir.rotate_ccw())) !=
+                                Some(&WireShape::TurnLeft)
+                            {
+                                return false;
+                            }
+                        }
+                        WireShape::SplitTee => {
+                            if new_wires.get(&(coords, dir.rotate_cw())) !=
+                                Some(&WireShape::SplitRight)
+                            {
+                                return false;
+                            }
+                        }
+                        WireShape::SplitLeft => {
+                            if new_wires.get(&(coords, dir.rotate_cw())) !=
+                                Some(&WireShape::SplitTee)
+                            {
+                                return false;
+                            }
+                        }
+                        WireShape::SplitRight => {
+                            if new_wires.get(&(coords, -dir)) !=
+                                Some(&WireShape::SplitLeft)
+                            {
+                                return false;
+                            }
+                        }
+                        WireShape::Cross => {
+                            if new_wires.get(&(coords, dir.rotate_cw())) !=
+                                Some(&WireShape::Cross)
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                // Perform the replacement:
+                for (loc, _) in old_wires.iter() {
+                    self.fragments.remove(loc);
+                }
+                for (&(coords, dir), &shape) in new_wires.iter() {
+                    self.set_frag(coords, dir, shape);
                 }
             }
             GridChange::AddChip(coords, ctype, orient) => {

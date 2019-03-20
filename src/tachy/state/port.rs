@@ -50,7 +50,7 @@ impl PortColor {
 pub struct PortSpec {
     pub flow: PortFlow,
     pub color: PortColor,
-    pub pos: Coords,
+    pub pos: Coords, // TODO: rename this field to `coords`
     pub dir: Direction,
 }
 

@@ -23,14 +23,14 @@ use super::select::{self, SelectingDrag, SelectionDrag};
 use super::tooltip::Tooltip;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsRect, Direction,
                   MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Cursor, Event, Keycode, NextCursor, Resources,
                  Sound};
 use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
-use tachy::state::{EditGrid, GridChange, WireColor};
+use tachy::state::{ChipExt, EditGrid, GridChange, WireColor};
 
 //===========================================================================//
 
@@ -393,8 +393,14 @@ impl EditGridView {
                                 self.interaction = Interaction::Nothing;
                             }
                         }
-                        Keycode::Z if key.shift => grid.redo(),
-                        Keycode::Z => grid.undo(),
+                        Keycode::Z if key.shift => {
+                            self.cancel_interaction();
+                            grid.redo();
+                        }
+                        Keycode::Z => {
+                            self.cancel_interaction();
+                            grid.undo();
+                        }
                         _ => {}
                     }
                 } else if let Some(hotkey) = prefs.hotkey_for_code(key.code) {
@@ -588,6 +594,10 @@ impl EditGridView {
         }
     }
 
+    fn cancel_interaction(&mut self) {
+        self.interaction = Interaction::Nothing;
+    }
+
     fn zoom_by(&mut self, factor: f32) {
         self.zoom = ZOOM_MIN.max(self.zoom * factor).min(ZOOM_MAX);
     }
@@ -734,31 +744,45 @@ impl ChipDrag {
             self.old_coords
                 .map(|coords| CoordsRect::with_size(coords, old_size));
         let new_coords: Coords = self.chip_topleft().as_i32_round();
+        let new_orient = self.reorient * self.old_orient;
         let new_size = self.reorient * old_size;
         let new_rect = CoordsRect::with_size(new_coords, new_size);
         if grid.can_move_chip(old_rect, new_rect) {
+            let new_ports: HashSet<(Coords, Direction)> = self.chip_type
+                .ports(new_coords, new_orient)
+                .into_iter()
+                .map(|port| (port.pos, port.dir))
+                .collect();
             let mut changes = Vec::<GridChange>::new();
             if let Some(old_coords) = self.old_coords {
                 changes.push(GridChange::RemoveChip(old_coords,
                                                     self.chip_type,
                                                     self.old_orient));
             }
-            let mut needs_mass_remove = false;
-            let mut wires = HashMap::<(Coords, Direction), WireShape>::new();
+            let mut old_wires = HashMap::new();
+            let mut new_wires = HashMap::new();
             for coords in new_rect {
                 for dir in Direction::all() {
                     if let Some(shape) = grid.wire_shape_at(coords, dir) {
-                        wires.insert((coords, dir), shape);
-                        needs_mass_remove = needs_mass_remove ||
-                            shape != WireShape::Stub ||
-                            new_rect.contains_point(coords + dir);
+                        let coords2 = coords + dir;
+                        if new_rect.contains_point(coords2) {
+                            old_wires.insert((coords, dir), shape);
+                        } else if grid.wire_shape_at(coords2, -dir) ==
+                                   Some(WireShape::Stub) &&
+                                   !new_ports.contains(&(coords, dir))
+                        {
+                            old_wires.insert((coords, dir), shape);
+                            old_wires.insert((coords2, -dir), WireShape::Stub);
+                        } else if shape != WireShape::Stub {
+                            old_wires.insert((coords, dir), shape);
+                            new_wires.insert((coords, dir), WireShape::Stub);
+                        }
                     }
                 }
             }
-            if needs_mass_remove {
-                changes.push(GridChange::MassRemoveWires(new_rect, wires));
+            if !old_wires.is_empty() {
+                changes.push(GridChange::ReplaceWires(old_wires, new_wires));
             }
-            // TODO: Remove edge stubs that don't line up with ports.
             changes.push(GridChange::AddChip(new_coords,
                                              self.chip_type,
                                              self.reorient * self.old_orient));

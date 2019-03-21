@@ -27,8 +27,8 @@ use std::collections::{HashMap, HashSet};
 use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsRect, Direction,
                   MatrixExt, Orientation, Rect, RectSize};
-use tachy::gui::{AudioQueue, Cursor, Event, Keycode, NextCursor, Resources,
-                 Sound};
+use tachy::gui::{AudioQueue, Clipboard, Cursor, Event, Keycode, NextCursor,
+                 Resources, Sound};
 use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
 use tachy::state::{ChipExt, EditGrid, GridChange, WireColor};
 
@@ -370,7 +370,7 @@ impl EditGridView {
 
     pub fn on_event(&mut self, event: &Event, grid: &mut EditGrid,
                     prefs: &Prefs, audio: &mut AudioQueue,
-                    next_cursor: &mut NextCursor)
+                    clipboard: &Clipboard, next_cursor: &mut NextCursor)
                     -> Option<EditGridAction> {
         match event {
             Event::ClockTick(tick) => {
@@ -385,11 +385,18 @@ impl EditGridView {
                             self.interaction =
                                 Interaction::RectSelected(grid.bounds());
                         }
+                        Keycode::C => {
+                            if let Interaction::RectSelected(rect) =
+                                self.interaction
+                            {
+                                select::copy(grid, rect, clipboard);
+                            }
+                        }
                         Keycode::X => {
                             if let Interaction::RectSelected(rect) =
                                 self.interaction
                             {
-                                select::cut(grid, rect);
+                                select::cut(grid, rect, clipboard);
                                 self.interaction = Interaction::Nothing;
                             }
                         }

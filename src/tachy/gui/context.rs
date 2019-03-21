@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::audio::{AudioMixer, AudioQueue};
+use super::clipboard::Clipboard;
 use super::cursor::Cursors;
 use sdl2;
 use std::collections::HashSet;
@@ -29,6 +30,7 @@ use tachy::geom::RectSize;
 pub struct GuiContext {
     _sdl_context: sdl2::Sdl,
     pub(super) video_subsystem: sdl2::VideoSubsystem,
+    pub(super) clipboard: Clipboard,
     pub(super) event_pump: sdl2::EventPump,
     _audio_subsystem: sdl2::AudioSubsystem,
     _audio_device: sdl2::audio::AudioDevice<AudioMixer>,
@@ -43,6 +45,7 @@ impl GuiContext {
             sdl2::hint::set("SDL_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK", "1");
         }
         let video_subsystem = sdl_context.video()?;
+        let clipboard = Clipboard::new(&video_subsystem);
         let event_pump = sdl_context.event_pump()?;
         let cursors = Cursors::new()?;
 
@@ -57,6 +60,7 @@ impl GuiContext {
         Ok(GuiContext {
                _sdl_context: sdl_context,
                video_subsystem,
+               clipboard,
                event_pump,
                _audio_subsystem: audio_subsystem,
                _audio_device: audio_device,

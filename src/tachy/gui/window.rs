@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::audio::AudioQueue;
+use super::clipboard::Clipboard;
 use super::context::GuiContext;
 use super::cursor::Cursors;
 use super::event::Event;
@@ -119,7 +120,7 @@ impl<'a> Window<'a> {
                       });
         gui_context
             .video_subsystem
-            .gl_set_swap_interval(sdl2::video::SwapInterval::VSync);
+            .gl_set_swap_interval(sdl2::video::SwapInterval::VSync)?;
         unsafe {
             gl::Enable(gl::BLEND);
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
@@ -150,6 +151,8 @@ impl<'a> Window<'a> {
     }
 
     pub fn options(&self) -> &WindowOptions { &self.options }
+
+    pub fn clipboard(&self) -> &Clipboard { &self.gui_context.clipboard }
 
     pub fn resources(&self) -> &Resources { &self.resources }
 

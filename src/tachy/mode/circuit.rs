@@ -40,6 +40,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 match view.on_event(&event,
                                       state.edit_grid_mut_and_prefs().unwrap(),
                                       &mut audio,
+                                      window.clipboard(),
                                       &mut cursor) {
                     Some(CircuitAction::BackToMenu) => {
                         match state.save() {
@@ -66,6 +67,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 match view.on_event(&Event::new_clock_tick(elapsed),
                                       state.edit_grid_mut_and_prefs().unwrap(),
                                       &mut audio,
+                                      window.clipboard(),
                                       &mut cursor) {
                     Some(CircuitAction::Victory(area, score)) => {
                         record_score(state, area, score);

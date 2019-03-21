@@ -21,7 +21,8 @@ use cgmath::{MetricSpace, Point2, Vector2, vec2};
 use std::collections::HashMap;
 use tachy::geom::{AsFloat, AsInt, Coords, CoordsDelta, CoordsRect,
                   CoordsSize, Direction, Orientation, Rect};
-use tachy::save::{ChipType, WireShape};
+use tachy::gui::Clipboard;
+use tachy::save::{ChipType, CircuitData, WireShape};
 use tachy::state::{EditGrid, GridChange};
 
 //===========================================================================//
@@ -159,13 +160,44 @@ impl Selection {
             wires,
         }
     }
+
+    fn to_clipboard_text(&self) -> Result<String, String> {
+        let origin = Coords::new(0, 0);
+        let mut data = CircuitData::new(origin.x,
+                                        origin.y,
+                                        self.size.width,
+                                        self.size.height);
+        for (&delta, &(ctype, orient)) in self.chips.iter() {
+            data.chips.insert(origin + delta, ctype, orient);
+        }
+        for (&(delta, dir), &shape) in self.wires.iter() {
+            data.wires.insert(origin + delta, dir, shape);
+        }
+        data.serialize_to_string()
+    }
+
+    fn copy_to_clipboard(&self, clipboard: &Clipboard) {
+        match self.to_clipboard_text() {
+            Ok(text) => clipboard.set(&text),
+            Err(err) => {
+                debug_log!("Could not serialize selection: {}", err);
+            }
+        }
+    }
 }
 
 //===========================================================================//
 
-pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect) {
-    let (changes, _selection) = changes_for_cut(grid, selected_rect);
-    // TODO: save selection to clipboard
+pub fn copy(grid: &EditGrid, selected_rect: CoordsRect,
+            clipboard: &Clipboard) {
+    let (_, selection) = changes_for_cut(grid, selected_rect);
+    selection.copy_to_clipboard(clipboard);
+}
+
+pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect,
+           clipboard: &Clipboard) {
+    let (changes, selection) = changes_for_cut(grid, selected_rect);
+    selection.copy_to_clipboard(clipboard);
     grid.do_mutate(changes);
 }
 

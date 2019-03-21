@@ -17,21 +17,39 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod audio;
-mod clipboard;
-mod context;
-mod cursor;
-mod event;
-mod resource;
-mod window;
+use sdl2;
+use sdl2::clipboard::ClipboardUtil;
 
-pub use self::audio::{AudioQueue, Sound};
-pub use self::clipboard::Clipboard;
-pub use self::context::GuiContext;
-pub use self::cursor::{Cursor, Cursors, NextCursor};
-pub use self::event::{ClockEventData, Event, KeyEventData, Keycode,
-                      MouseEventData, MultitouchEventData, ScrollEventData};
-pub use self::resource::Resources;
-pub use self::window::{Window, WindowOptions};
+//===========================================================================//
+
+pub struct Clipboard {
+    util: ClipboardUtil,
+}
+
+impl Clipboard {
+    pub(super) fn new(video_subsystem: &sdl2::VideoSubsystem) -> Clipboard {
+        Clipboard { util: video_subsystem.clipboard() }
+    }
+
+    #[allow(dead_code)]
+    pub fn get(&self) -> Option<String> {
+        match self.util.clipboard_text() {
+            Ok(text) => Some(text),
+            Err(err) => {
+                debug_log!("Cannot get clipboard text: {}", err);
+                None
+            }
+        }
+    }
+
+    pub fn set(&self, text: &str) {
+        match self.util.set_clipboard_text(text) {
+            Ok(()) => {}
+            Err(err) => {
+                debug_log!("Cannot set clipboard text: {}", err);
+            }
+        }
+    }
+}
 
 //===========================================================================//

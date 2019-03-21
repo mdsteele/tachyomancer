@@ -195,11 +195,12 @@ pub struct KeyEventData {
 
 impl KeyEventData {
     fn new(keycode: Keycode, keymod: sdl2::keyboard::Mod) -> KeyEventData {
-        let shift = sdl2::keyboard::LSHIFTMOD | sdl2::keyboard::RSHIFTMOD;
+        let shift = sdl2::keyboard::Mod::LSHIFTMOD |
+            sdl2::keyboard::Mod::RSHIFTMOD;
         let command = if cfg!(any(target_os = "ios", target_os = "macos")) {
-            sdl2::keyboard::LGUIMOD | sdl2::keyboard::RGUIMOD
+            sdl2::keyboard::Mod::LGUIMOD | sdl2::keyboard::Mod::RGUIMOD
         } else {
-            sdl2::keyboard::LCTRLMOD | sdl2::keyboard::RCTRLMOD
+            sdl2::keyboard::Mod::LCTRLMOD | sdl2::keyboard::Mod::RCTRLMOD
         };
         KeyEventData {
             code: keycode,

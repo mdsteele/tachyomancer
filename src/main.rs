@@ -60,7 +60,7 @@ fn main() {
                         std::env::consts::OS,
                         std::env::consts::ARCH);
             let result = sdl2::messagebox::show_simple_message_box(
-                sdl2::messagebox::MESSAGEBOX_ERROR,
+                sdl2::messagebox::MessageBoxFlag::ERROR,
                 "Tachyomancer Error", &message.replace('\0', ""), None);
             if let Err(message_box_error) = result {
                 eprintln!("ERROR: Failed to show message box: {:?}",

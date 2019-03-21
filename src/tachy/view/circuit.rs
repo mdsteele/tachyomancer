@@ -25,7 +25,8 @@ use super::verify::VerificationTray;
 use cgmath;
 use std::u32;
 use tachy::geom::{Coords, RectSize};
-use tachy::gui::{AudioQueue, Event, Keycode, NextCursor, Resources, Sound};
+use tachy::gui::{AudioQueue, Clipboard, Event, Keycode, NextCursor,
+                 Resources, Sound};
 use tachy::save::{ChipType, Prefs, Puzzle};
 use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange};
 
@@ -106,7 +107,8 @@ impl CircuitView {
 
     pub fn on_event(&mut self, event: &Event,
                     (grid, prefs): (&mut EditGrid, &Prefs),
-                    audio: &mut AudioQueue, cursor: &mut NextCursor)
+                    audio: &mut AudioQueue, clipboard: &Clipboard,
+                    cursor: &mut NextCursor)
                     -> Option<CircuitAction> {
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
             match dialog.on_event(event, cursor, is_valid_const) {
@@ -260,7 +262,8 @@ impl CircuitView {
             return action;
         }
 
-        match self.edit_grid.on_event(event, grid, prefs, audio, cursor) {
+        match self.edit_grid
+            .on_event(event, grid, prefs, audio, clipboard, cursor) {
             Some(EditGridAction::EditConst(coords, value)) => {
                 let size = RectSize::new(self.width as i32,
                                          self.height as i32);

@@ -71,6 +71,11 @@ impl CircuitData {
                      })?;
         Ok(())
     }
+
+    pub fn serialize_to_string(&self) -> Result<String, String> {
+        toml::to_string(self)
+            .map_err(|err| format!("Could not serialize circuit: {}", err))
+    }
 }
 
 //===========================================================================//

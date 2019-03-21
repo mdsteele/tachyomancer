@@ -42,6 +42,12 @@ fn main() {
     converter.svg_to_png(&PathBuf::from("src/tachy/shader/ui.svg"),
                          &PathBuf::from("texture/ui.png"),
                          icns::PixelFormat::RGBA);
+
+    let target = env::var("TARGET").unwrap();
+    if target.ends_with("-apple-darwin") {
+        println!("cargo:rustc-link-search=framework=/Library/Frameworks");
+        println!("cargo:rustc-link-lib=framework=Foundation");
+    }
 }
 
 //===========================================================================//

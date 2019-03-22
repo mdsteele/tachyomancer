@@ -21,6 +21,7 @@ mod begin;
 mod bounds;
 mod button;
 mod chip;
+mod chipdrag;
 mod circuit;
 mod control;
 mod converse;

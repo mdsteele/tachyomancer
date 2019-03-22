@@ -19,18 +19,18 @@
 
 use super::bounds::{BOUNDS_MARGIN, BoundsDrag, BoundsHandle};
 use super::chip::ChipModel;
+use super::chipdrag::ChipDrag;
 use super::select::{self, SelectingDrag, Selection, SelectionDrag};
 use super::tooltip::Tooltip;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
-use std::collections::{HashMap, HashSet};
 use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsRect, Direction,
                   MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{AudioQueue, Clipboard, Cursor, Event, Keycode, NextCursor,
                  Resources, Sound};
 use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
-use tachy::state::{ChipExt, EditGrid, GridChange, WireColor};
+use tachy::state::{EditGrid, GridChange, WireColor};
 
 //===========================================================================//
 
@@ -202,7 +202,7 @@ impl EditGridView {
 
         // Draw chips (except the one being dragged, if any):
         let dragged_chip_coords = match self.interaction {
-            Interaction::DraggingChip(ref drag) => drag.old_coords,
+            Interaction::DraggingChip(ref drag) => drag.old_coords(),
             _ => None,
         };
         for (coords, ctype, orient) in grid.chips() {
@@ -252,8 +252,8 @@ impl EditGridView {
                 Matrix4::trans2(pt.x, pt.y);
             self.chip_model.draw_chip(resources,
                                       &matrix,
-                                      drag.chip_type,
-                                      drag.reorient * drag.old_orient,
+                                      drag.chip_type(),
+                                      drag.new_orient(),
                                       None);
         }
     }
@@ -478,6 +478,8 @@ impl EditGridView {
                     return None;
                 }
                 if mouse.left {
+                    // TODO: Don't allow starting selection on a vertex that is
+                    //   e.g. the center of a 2x2 chip.
                     if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
                         let drag = SelectingDrag::new(grid.bounds(),
                                                       grid_pt.as_i32_round());
@@ -498,12 +500,16 @@ impl EditGridView {
                     {
                         // TODO: If mouse is within chip cell but near edge of
                         //   chip, allow for wire dragging.
-                        let drag = ChipDrag::new(ctype,
-                                                 orient,
-                                                 Some(coords),
-                                                 grid_pt);
-                        self.interaction = Interaction::DraggingChip(drag);
-                        audio.play_sound(Sound::GrabChip);
+                        let change =
+                            GridChange::RemoveChip(coords, ctype, orient);
+                        if grid.try_mutate_provisionally(vec![change]) {
+                            let drag = ChipDrag::new(ctype,
+                                                     orient,
+                                                     Some(coords),
+                                                     grid_pt);
+                            self.interaction = Interaction::DraggingChip(drag);
+                            audio.play_sound(Sound::GrabChip);
+                        }
                     } else {
                         let mut drag = WireDrag::new();
                         if drag.move_to(Zone::from_grid_pt(grid_pt), grid) {
@@ -639,6 +645,7 @@ impl EditGridView {
 
     fn cancel_interaction(&mut self, grid: &mut EditGrid) -> bool {
         match self.interaction.take() {
+            Interaction::DraggingChip(drag) => drag.cancel(grid),
             Interaction::DraggingSelection(drag) => drag.cancel(grid),
             _ => false,
         }
@@ -733,119 +740,6 @@ enum Interaction {
 impl Interaction {
     fn take(&mut self) -> Interaction {
         mem::replace(self, Interaction::Nothing)
-    }
-}
-
-//===========================================================================//
-
-struct ChipDrag {
-    chip_type: ChipType,
-    old_orient: Orientation,
-    old_coords: Option<Coords>,
-    drag_start: Point2<f32>, // grid space
-    drag_current: Point2<f32>, // grid space
-    reorient: Orientation,
-}
-
-impl ChipDrag {
-    pub fn new(chip_type: ChipType, old_orient: Orientation,
-               old_coords: Option<Coords>, drag_start: Point2<f32>)
-               -> ChipDrag {
-        ChipDrag {
-            chip_type,
-            old_orient,
-            old_coords,
-            drag_start,
-            drag_current: drag_start,
-            reorient: Orientation::default(),
-        }
-    }
-
-    pub fn chip_topleft(&self) -> Point2<f32> {
-        let old_coords = if let Some(coords) = self.old_coords {
-            coords
-        } else {
-            Point2::new(0, 0)
-        };
-        old_coords.as_f32() + (self.drag_current - self.drag_start)
-    }
-
-    pub fn flip_horz(&mut self) { self.reorient = self.reorient.flip_horz(); }
-
-    pub fn flip_vert(&mut self) { self.reorient = self.reorient.flip_vert(); }
-
-    pub fn rotate_cw(&mut self) { self.reorient = self.reorient.rotate_cw(); }
-
-    pub fn rotate_ccw(&mut self) {
-        self.reorient = self.reorient.rotate_ccw();
-    }
-
-    pub fn move_to(&mut self, grid_pt: Point2<f32>) {
-        self.drag_current = grid_pt;
-    }
-
-    pub fn drop_onto_board(self, grid: &mut EditGrid) {
-        let old_size = self.old_orient * self.chip_type.size();
-        let old_rect =
-            self.old_coords
-                .map(|coords| CoordsRect::with_size(coords, old_size));
-        let new_coords: Coords = self.chip_topleft().as_i32_round();
-        let new_orient = self.reorient * self.old_orient;
-        let new_size = self.reorient * old_size;
-        let new_rect = CoordsRect::with_size(new_coords, new_size);
-        if grid.can_move_chip(old_rect, new_rect) {
-            let new_ports: HashSet<(Coords, Direction)> = self.chip_type
-                .ports(new_coords, new_orient)
-                .into_iter()
-                .map(|port| (port.pos, port.dir))
-                .collect();
-            let mut changes = Vec::<GridChange>::new();
-            if let Some(old_coords) = self.old_coords {
-                changes.push(GridChange::RemoveChip(old_coords,
-                                                    self.chip_type,
-                                                    self.old_orient));
-            }
-            let mut old_wires = HashMap::new();
-            let mut new_wires = HashMap::new();
-            for coords in new_rect {
-                for dir in Direction::all() {
-                    if let Some(shape) = grid.wire_shape_at(coords, dir) {
-                        let coords2 = coords + dir;
-                        if new_rect.contains_point(coords2) {
-                            old_wires.insert((coords, dir), shape);
-                        } else if grid.wire_shape_at(coords2, -dir) ==
-                                   Some(WireShape::Stub) &&
-                                   !new_ports.contains(&(coords, dir))
-                        {
-                            old_wires.insert((coords, dir), shape);
-                            old_wires.insert((coords2, -dir), WireShape::Stub);
-                        } else if shape != WireShape::Stub {
-                            old_wires.insert((coords, dir), shape);
-                            new_wires.insert((coords, dir), WireShape::Stub);
-                        }
-                    }
-                }
-            }
-            if !old_wires.is_empty() {
-                changes.push(GridChange::ReplaceWires(old_wires, new_wires));
-            }
-            changes.push(GridChange::AddChip(new_coords,
-                                             self.chip_type,
-                                             self.reorient * self.old_orient));
-            grid.do_mutate(changes);
-        }
-    }
-
-    pub fn drop_into_parts_tray(self, grid: &mut EditGrid) {
-        if let Some(old_coords) = self.old_coords {
-            grid.do_mutate(vec![
-                GridChange::RemoveChip(
-                    old_coords,
-                    self.chip_type,
-                    self.old_orient
-                ),
-            ]);
-        }
     }
 }
 

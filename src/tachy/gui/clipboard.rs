@@ -31,7 +31,6 @@ impl Clipboard {
         Clipboard { util: video_subsystem.clipboard() }
     }
 
-    #[allow(dead_code)]
     pub fn get(&self) -> Option<String> {
         match self.util.clipboard_text() {
             Ok(text) => Some(text),

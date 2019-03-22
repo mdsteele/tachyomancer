@@ -19,7 +19,7 @@
 
 use super::bounds::{BOUNDS_MARGIN, BoundsDrag, BoundsHandle};
 use super::chip::ChipModel;
-use super::select::{self, SelectingDrag, SelectionDrag};
+use super::select::{self, SelectingDrag, Selection, SelectionDrag};
 use super::tooltip::Tooltip;
 use super::wire::WireModel;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
@@ -235,10 +235,10 @@ impl EditGridView {
                                         vec2(0.0, 0.0));
             }
             Interaction::DraggingSelection(ref drag) => {
-                self.draw_selection_box(resources,
-                                        &matrix,
-                                        drag.reoriented_selected_rect(),
-                                        drag.delta());
+                let rect = Rect::with_size(Coords::new(0, 0),
+                                           drag.selection_size());
+                let offset = drag.top_left_grid_pt() - Point2::new(0.0, 0.0);
+                self.draw_selection_box(resources, &matrix, rect, offset);
             }
             _ => {}
         }
@@ -392,6 +392,23 @@ impl EditGridView {
                                 select::copy(grid, rect, clipboard);
                             }
                         }
+                        Keycode::V => {
+                            if let Some(selection) =
+                                Selection::from_clipboard(clipboard)
+                            {
+                                self.cancel_interaction(grid);
+                                let size = selection.size().as_f32();
+                                let rel = vec2(size.width, size.height) * 0.5;
+                                let grid_pt =
+                                    self.screen_pt_to_grid_pt(key.mouse_pt);
+                                let drag = SelectionDrag::new(selection,
+                                                              rel,
+                                                              grid_pt,
+                                                              None);
+                                self.interaction =
+                                    Interaction::DraggingSelection(drag);
+                            }
+                        }
                         Keycode::X => {
                             if let Interaction::RectSelected(rect) =
                                 self.interaction
@@ -401,11 +418,11 @@ impl EditGridView {
                             }
                         }
                         Keycode::Z if key.shift => {
-                            self.cancel_interaction();
+                            self.cancel_interaction(grid);
                             grid.redo();
                         }
                         Keycode::Z => {
-                            self.cancel_interaction();
+                            self.cancel_interaction(grid);
                             grid.undo();
                         }
                         _ => {}
@@ -417,16 +434,31 @@ impl EditGridView {
             Event::MouseDown(mouse) => {
                 let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
                 self.tooltip.stop_hover_all();
-                if let Interaction::RectSelected(rect) = self.interaction {
-                    if mouse.left &&
-                        rect.contains_point(grid_pt.as_i32_floor())
-                    {
-                        let drag = SelectionDrag::new(rect, grid_pt);
-                        self.interaction =
-                            Interaction::DraggingSelection(drag);
+                match self.interaction.take() {
+                    Interaction::RectSelected(rect) => {
+                        if mouse.left &&
+                            rect.contains_point(grid_pt.as_i32_floor())
+                        {
+                            let selection = select::take(grid, rect);
+                            let grab_rel = grid_pt - rect.top_left().as_f32();
+                            let drag = SelectionDrag::new(selection,
+                                                          grab_rel,
+                                                          grid_pt,
+                                                          Some(rect));
+                            self.interaction =
+                                Interaction::DraggingSelection(drag);
+                            return None;
+                        } else {
+                            self.interaction = Interaction::RectSelected(rect);
+                        }
+                    }
+                    Interaction::DraggingSelection(drag) => {
+                        if let Some(rect) = drag.finish(grid) {
+                            self.interaction = Interaction::RectSelected(rect);
+                        }
                         return None;
                     }
-                    self.interaction = Interaction::Nothing;
+                    _ => {}
                 }
                 if grid.eval().is_some() {
                     if mouse.left {
@@ -554,8 +586,10 @@ impl EditGridView {
                             self.interaction = Interaction::RectSelected(rect);
                         }
                         Interaction::DraggingSelection(drag) => {
-                            let rect = drag.finish(grid);
-                            self.interaction = Interaction::RectSelected(rect);
+                            if let Some(rect) = drag.finish(grid) {
+                                self.interaction =
+                                    Interaction::RectSelected(rect);
+                            }
                         }
                         Interaction::DraggingWires(drag) => {
                             drag.finish(grid);
@@ -601,8 +635,11 @@ impl EditGridView {
         }
     }
 
-    fn cancel_interaction(&mut self) {
-        self.interaction = Interaction::Nothing;
+    fn cancel_interaction(&mut self, grid: &mut EditGrid) {
+        match self.interaction.take() {
+            Interaction::DraggingSelection(drag) => drag.cancel(grid),
+            _ => {}
+        }
     }
 
     fn zoom_by(&mut self, factor: f32) {

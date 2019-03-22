@@ -35,6 +35,14 @@ impl<T> RectSize<T> {
     }
 }
 
+impl AsFloat for RectSize<i32> {
+    type Output32 = RectSize<f32>;
+
+    fn as_f32(&self) -> RectSize<f32> {
+        RectSize::new(self.width as f32, self.height as f32)
+    }
+}
+
 impl<T> From<(T, T)> for RectSize<T> {
     fn from((width, height): (T, T)) -> RectSize<T> {
         RectSize { width, height }

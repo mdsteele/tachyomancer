@@ -62,7 +62,9 @@ impl Event {
         match sdl_event {
             sdl2::event::Event::KeyDown { keycode, keymod, .. } => {
                 if let Some(code) = keycode {
-                    let data = KeyEventData::new(code, keymod);
+                    let mouse = pump.mouse_state();
+                    let mouse_pt = Point2::new(mouse.x(), mouse.y());
+                    let data = KeyEventData::new(code, keymod, mouse_pt);
                     if data.code == Keycode::Q && data.command {
                         Some(Event::Quit)
                     } else {
@@ -191,10 +193,13 @@ pub struct KeyEventData {
     pub code: Keycode,
     pub command: bool,
     pub shift: bool,
+    pub mouse_pt: Point2<i32>,
 }
 
 impl KeyEventData {
-    fn new(keycode: Keycode, keymod: sdl2::keyboard::Mod) -> KeyEventData {
+    fn new(keycode: Keycode, keymod: sdl2::keyboard::Mod,
+           mouse_pt: Point2<i32>)
+           -> KeyEventData {
         let shift = sdl2::keyboard::Mod::LSHIFTMOD |
             sdl2::keyboard::Mod::RSHIFTMOD;
         let command = if cfg!(any(target_os = "ios", target_os = "macos")) {
@@ -206,6 +211,7 @@ impl KeyEventData {
             code: keycode,
             shift: keymod.intersects(shift),
             command: keymod.intersects(command),
+            mouse_pt,
         }
     }
 }

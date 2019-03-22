@@ -115,26 +115,24 @@ impl SelectionDrag {
         self.selection.reorient(Orientation::default().rotate_ccw());
     }
 
-    pub fn cancel(self, grid: &mut EditGrid) {
-        if self.original_selected_rect.is_some() {
-            grid.undo(); // TODO: we don't want this to be redoable
-        }
+    pub fn cancel(self, grid: &mut EditGrid) -> bool {
+        grid.roll_back_provisional_changes()
     }
 
     pub fn finish(self, grid: &mut EditGrid) -> Option<CoordsRect> {
         let top_left_coords = self.top_left_grid_pt().as_i32_round();
         let changes =
             changes_for_paste(grid, &self.selection, top_left_coords);
-        if grid.try_mutate(changes) {
+        if grid.try_mutate_provisionally(changes) {
+            grid.commit_provisional_changes();
             if self.original_selected_rect.is_some() {
                 Some(Rect::with_size(top_left_coords, self.selection.size()))
             } else {
                 None
             }
         } else {
-            let rect = self.original_selected_rect;
-            self.cancel(grid);
-            rect
+            grid.roll_back_provisional_changes();
+            self.original_selected_rect
         }
     }
 }
@@ -276,13 +274,17 @@ pub fn copy(grid: &EditGrid, selected_rect: CoordsRect,
 
 pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect,
            clipboard: &Clipboard) {
-    let selection = take(grid, selected_rect);
+    let (changes, selection) = changes_for_cut(grid, selected_rect);
+    grid.do_mutate(changes);
     selection.copy_to_clipboard(clipboard);
 }
 
-pub fn take(grid: &mut EditGrid, selected_rect: CoordsRect) -> Selection {
+pub fn cut_provisionally(grid: &mut EditGrid, selected_rect: CoordsRect)
+                         -> Selection {
     let (changes, selection) = changes_for_cut(grid, selected_rect);
-    grid.do_mutate(changes);
+    if !grid.try_mutate_provisionally(changes) {
+        debug_log!("WARNING: cut_provisionally mutation failed");
+    }
     selection
 }
 

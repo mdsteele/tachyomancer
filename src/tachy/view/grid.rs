@@ -422,8 +422,9 @@ impl EditGridView {
                             grid.redo();
                         }
                         Keycode::Z => {
-                            self.cancel_interaction(grid);
-                            grid.undo();
+                            if !self.cancel_interaction(grid) {
+                                grid.undo();
+                            }
                         }
                         _ => {}
                     }
@@ -439,7 +440,8 @@ impl EditGridView {
                         if mouse.left &&
                             rect.contains_point(grid_pt.as_i32_floor())
                         {
-                            let selection = select::take(grid, rect);
+                            let selection = select::cut_provisionally(grid,
+                                                                      rect);
                             let grab_rel = grid_pt - rect.top_left().as_f32();
                             let drag = SelectionDrag::new(selection,
                                                           grab_rel,
@@ -635,10 +637,10 @@ impl EditGridView {
         }
     }
 
-    fn cancel_interaction(&mut self, grid: &mut EditGrid) {
+    fn cancel_interaction(&mut self, grid: &mut EditGrid) -> bool {
         match self.interaction.take() {
             Interaction::DraggingSelection(drag) => drag.cancel(grid),
-            _ => {}
+            _ => false,
         }
     }
 

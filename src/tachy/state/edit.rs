@@ -24,6 +24,7 @@ use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::{Interface, new_puzzle_eval, puzzle_interfaces};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
+use std::mem;
 use std::time::{Duration, Instant};
 use std::usize;
 use tachy::geom::{Coords, CoordsDelta, CoordsRect, Direction, Orientation,
@@ -101,6 +102,7 @@ pub struct EditGrid {
     eval: Option<CircuitEval>,
     undo_stack: Vec<Vec<GridChange>>,
     redo_stack: Vec<Vec<GridChange>>,
+    provisional_changes: Vec<GridChange>,
     modified_since: Option<Instant>,
 }
 
@@ -119,6 +121,7 @@ impl EditGrid {
             eval: None,
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
+            provisional_changes: Vec::new(),
             modified_since: None,
         };
         grid.typecheck_wires();
@@ -142,6 +145,7 @@ impl EditGrid {
             eval: None,
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
+            provisional_changes: Vec::new(),
             modified_since: None,
         };
 
@@ -401,6 +405,7 @@ impl EditGrid {
     }
 
     pub fn undo(&mut self) {
+        self.roll_back_provisional_changes();
         if let Some(changes) = self.undo_stack.pop() {
             for change in changes.iter() {
                 if !self.mutate_one(change) {
@@ -415,6 +420,7 @@ impl EditGrid {
 
     pub fn redo(&mut self) {
         if let Some(changes) = self.redo_stack.pop() {
+            debug_assert!(self.provisional_changes.is_empty());
             for change in changes.iter() {
                 if !self.mutate_one(change) {
                     debug_log!("WARNING: redo {:?} had no effect", change);
@@ -443,6 +449,7 @@ impl EditGrid {
     where
         F: FnOnce(&EditGrid) -> Vec<GridChange>,
     {
+        self.commit_provisional_changes();
         let mut num_changes: usize = changes.len();
         let mut num_succeeded: usize = 0;
         for change in changes.iter() {
@@ -482,6 +489,60 @@ impl EditGrid {
         };
         self.typecheck_wires();
         success
+    }
+
+    #[must_use = "must not ignore try_mutate_provisionally failure"]
+    pub fn try_mutate_provisionally(&mut self, mut changes: Vec<GridChange>)
+                                    -> bool {
+        let num_changes: usize = changes.len();
+        let mut num_succeeded: usize = 0;
+        for change in changes.iter() {
+            if !self.mutate_one(change) {
+                break;
+            }
+            num_succeeded += 1;
+        }
+        let success = if num_succeeded < num_changes {
+            changes.truncate(num_succeeded);
+            for change in GridChange::invert_group(changes) {
+                if !self.mutate_one(&change) {
+                    debug_log!("WARNING: failed to roll back {:?}", change);
+                }
+            }
+            false
+        } else {
+            self.redo_stack.clear();
+            self.provisional_changes.append(&mut changes);
+            self.mark_modified();
+            true
+        };
+        self.typecheck_wires();
+        success
+    }
+
+    pub fn commit_provisional_changes(&mut self) -> bool {
+        if self.provisional_changes.is_empty() {
+            return false;
+        }
+        debug_assert!(self.redo_stack.is_empty());
+        let changes = mem::replace(&mut self.provisional_changes, Vec::new());
+        self.undo_stack.push(GridChange::invert_group(changes));
+        return true;
+    }
+
+    pub fn roll_back_provisional_changes(&mut self) -> bool {
+        if self.provisional_changes.is_empty() {
+            return false;
+        }
+        debug_assert!(self.redo_stack.is_empty());
+        let changes = mem::replace(&mut self.provisional_changes, Vec::new());
+        for change in GridChange::invert_group(changes) {
+            if !self.mutate_one(&change) {
+                debug_log!("WARNING: failed to roll back {:?}", change);
+            }
+        }
+        self.typecheck_wires();
+        return true;
     }
 
     #[must_use = "must not ignore mutate_one failure"]
@@ -715,6 +776,19 @@ impl EditGrid {
                                   self.bounds.contains_point(coords + dir)))
                     {
                         return false;
+                    }
+                    // If we're adding a wire fragment, it must not be
+                    // completely under a chip.
+                    if let Some((chip_coords, ctype, orient)) =
+                        self.chip_at(coords)
+                    {
+                        if shape != WireShape::Stub ||
+                            Rect::with_size(chip_coords,
+                                            orient * ctype.size())
+                                .contains_point(coords + dir)
+                        {
+                            return false;
+                        }
                     }
                     // If we're adding a wire fragment, then we must be
                     // removing the fragment that's currently there, if any.

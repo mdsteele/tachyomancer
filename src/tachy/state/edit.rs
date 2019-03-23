@@ -387,17 +387,12 @@ impl EditGrid {
         self.fragments.get(&(coords, dir)).map(|&(shape, _)| shape)
     }
 
-    pub fn can_move_chip(&self, old_rect: Option<CoordsRect>,
-                         new_rect: CoordsRect)
-                         -> bool {
+    pub fn can_place_chip(&self, new_rect: CoordsRect) -> bool {
         if !self.bounds.contains_rect(new_rect) {
             return false;
         }
-        let old_rect = old_rect.unwrap_or_else(|| Rect::new(0, 0, 0, 0));
         for coords in new_rect {
-            if !old_rect.contains_point(coords) &&
-                self.chips.contains_key(&coords)
-            {
+            if self.chips.contains_key(&coords) {
                 return false;
             }
         }
@@ -845,7 +840,7 @@ impl EditGrid {
                 let size = orient * ctype.size();
                 let rect = CoordsRect::with_size(coords, size);
                 // Fail if there's a chip in the way.
-                if !self.can_move_chip(None, rect) {
+                if !self.can_place_chip(rect) {
                     return false;
                 }
                 // Fail if there's any wires in the way.

@@ -86,7 +86,7 @@ impl ChipDrag {
         let new_orient = self.reorient * self.old_orient;
         let new_size = new_orient * self.chip_type.size();
         let new_rect = CoordsRect::with_size(new_coords, new_size);
-        if !grid.can_move_chip(None, new_rect) {
+        if !grid.can_place_chip(new_rect) {
             grid.roll_back_provisional_changes();
             return;
         }

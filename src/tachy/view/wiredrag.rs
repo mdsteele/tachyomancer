@@ -195,12 +195,14 @@ impl WireDrag {
             }
             (_, _, _) => {}
         }
+        grid.commit_provisional_changes();
     }
 
     fn try_start_stub(&mut self, coords: Coords, dir: Direction,
                       grid: &mut EditGrid)
                       -> bool {
-        if grid.try_mutate(vec![GridChange::AddStubWire(coords, dir)]) {
+        let changes = vec![GridChange::AddStubWire(coords, dir)];
+        if grid.try_mutate_provisionally(changes) {
             self.changed = true;
         }
         true
@@ -208,7 +210,8 @@ impl WireDrag {
 
     fn try_remove_stub(&mut self, coords: Coords, dir: Direction,
                        grid: &mut EditGrid) {
-        if grid.try_mutate(vec![GridChange::RemoveStubWire(coords, dir)]) {
+        let changes = vec![GridChange::RemoveStubWire(coords, dir)];
+        if grid.try_mutate_provisionally(changes) {
             self.changed = true;
         }
     }
@@ -218,7 +221,10 @@ impl WireDrag {
                  grid.wire_shape_at(coords, Direction::South)) {
             (Some(WireShape::Straight), Some(WireShape::Straight)) |
             (Some(WireShape::Cross), _) => {
-                grid.do_mutate(vec![GridChange::ToggleCrossWire(coords)]);
+                let changes = vec![GridChange::ToggleCrossWire(coords)];
+                if !grid.try_mutate_provisionally(changes) {
+                    debug_log!("WARNING: try_toggle_cross mutation failed");
+                }
                 self.changed = true;
             }
             (_, _) => {}
@@ -246,7 +252,7 @@ impl WireDrag {
         {
             changes.push(GridChange::RemoveStubWire(coords, -dir));
         }
-        let success = grid.try_mutate(changes);
+        let success = grid.try_mutate_provisionally(changes);
         self.changed |= success;
         success
     }
@@ -273,7 +279,7 @@ impl WireDrag {
         {
             changes.push(GridChange::RemoveStubWire(coords, dir2));
         }
-        let success = grid.try_mutate(changes);
+        let success = grid.try_mutate_provisionally(changes);
         self.changed |= success;
         success
     }
@@ -292,7 +298,7 @@ impl WireDrag {
         {
             changes.push(GridChange::RemoveStubWire(coords, dir));
         }
-        let success = grid.try_mutate(changes);
+        let success = grid.try_mutate_provisionally(changes);
         self.changed |= success;
         success
     }

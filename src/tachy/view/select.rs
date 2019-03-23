@@ -275,7 +275,9 @@ pub fn copy(grid: &EditGrid, selected_rect: CoordsRect,
 pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect,
            clipboard: &Clipboard) {
     let (changes, selection) = changes_for_cut(grid, selected_rect);
-    grid.do_mutate(changes);
+    if !grid.try_mutate(changes) {
+        debug_log!("WARNING: cut mutation failed");
+    }
     selection.copy_to_clipboard(clipboard);
 }
 

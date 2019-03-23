@@ -427,12 +427,6 @@ impl EditGrid {
         }
     }
 
-    pub fn do_mutate(&mut self, changes: Vec<GridChange>) {
-        if !self.try_mutate(changes) {
-            debug_log!("WARNING: do_mutate failed to apply all changes");
-        }
-    }
-
     #[must_use = "must not ignore try_mutate failure"]
     pub fn try_mutate(&mut self, changes: Vec<GridChange>) -> bool {
         self.commit_provisional_changes();

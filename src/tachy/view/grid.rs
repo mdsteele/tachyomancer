@@ -644,10 +644,16 @@ impl EditGridView {
         }
     }
 
+    /// Ceases the current interaction (if any) and sets `self.interaction` to
+    /// `Nothing`.  Returns true if any provisional changes were rolled back.
     fn cancel_interaction(&mut self, grid: &mut EditGrid) -> bool {
         match self.interaction.take() {
             Interaction::DraggingChip(drag) => drag.cancel(grid),
             Interaction::DraggingSelection(drag) => drag.cancel(grid),
+            Interaction::DraggingWires(drag) => {
+                drag.finish(grid);
+                false
+            }
             _ => false,
         }
     }

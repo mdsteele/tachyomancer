@@ -167,9 +167,10 @@ impl BoundsDrag {
         debug_assert_eq!(self.acceptable, grid.can_have_bounds(self.bounds));
         if self.acceptable {
             let old_bounds = grid.bounds();
-            grid.do_mutate(
-                vec![GridChange::SetBounds(old_bounds, self.bounds)],
-            );
+            let changes = vec![GridChange::SetBounds(old_bounds, self.bounds)];
+            if !grid.try_mutate(changes) {
+                debug_log!("WARNING: BoundsDrag mutation failed");
+            }
         }
     }
 }

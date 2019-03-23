@@ -114,23 +114,7 @@ impl CircuitView {
             match dialog.on_event(event, cursor, is_valid_const) {
                 Some(Some(text)) => {
                     if let Ok(new_value) = text.parse::<u32>() {
-                        if let Some((coords,
-                                     ChipType::Const(old_value),
-                                     orient)) = grid.chip_at(coords)
-                        {
-                            grid.do_mutate(vec![
-                                GridChange::RemoveChip(
-                                    coords,
-                                    ChipType::Const(old_value),
-                                    orient
-                                ),
-                                GridChange::AddChip(
-                                    coords,
-                                    ChipType::Const(new_value),
-                                    orient
-                                ),
-                            ]);
-                        }
+                        change_const_chip_value(grid, coords, new_value);
                     }
                 }
                 Some(None) => {}
@@ -325,5 +309,24 @@ impl CircuitView {
 }
 
 fn is_valid_const(text: &str) -> bool { text.parse::<u32>().is_ok() }
+
+fn change_const_chip_value(grid: &mut EditGrid, coords: Coords,
+                           new_value: u32) {
+    if let Some((coords, ChipType::Const(old_value), orient)) =
+        grid.chip_at(coords)
+    {
+        let changes = vec![
+            GridChange::RemoveChip(coords,
+                                   ChipType::Const(old_value),
+                                   orient),
+            GridChange::AddChip(coords,
+                                ChipType::Const(new_value),
+                                orient),
+        ];
+        if !grid.try_mutate(changes) {
+            debug_log!("WARNING: change_const_chip_value mutation failed");
+        }
+    }
+}
 
 //===========================================================================//

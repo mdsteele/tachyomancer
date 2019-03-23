@@ -440,84 +440,24 @@ impl EditGrid {
 
     #[must_use = "must not ignore try_mutate failure"]
     pub fn try_mutate(&mut self, changes: Vec<GridChange>) -> bool {
-        self.try_mutate_then(changes, |_| Vec::new())
-    }
-
-    #[must_use = "must not ignore try_mutate_then failure"]
-    pub fn try_mutate_then<F>(&mut self, mut changes: Vec<GridChange>, func: F)
-                              -> bool
-    where
-        F: FnOnce(&EditGrid) -> Vec<GridChange>,
-    {
         self.commit_provisional_changes();
-        let mut num_changes: usize = changes.len();
-        let mut num_succeeded: usize = 0;
-        for change in changes.iter() {
-            if !self.mutate_one(change) {
-                break;
-            }
-            num_succeeded += 1;
-        }
-        if num_succeeded == num_changes {
-            let more_changes = func(self);
-            num_changes += more_changes.len();
-            for change in more_changes {
-                if !self.mutate_one(&change) {
-                    break;
-                }
-                changes.push(change);
-                num_succeeded += 1;
-            }
-        }
-        let success = if num_succeeded == num_changes {
-            self.redo_stack.clear();
-            // TODO: When dragging to create a multi-fragment wire, allow
-            //   undoing the whole wire at once (instead of one visible change
-            //   at a time).
+        if let Some(changes) = self.try_mutate_internal(changes) {
             self.undo_stack.push(GridChange::invert_group(changes));
-            self.mark_modified();
             true
         } else {
-            // A change failed, so roll back the successful changes.
-            changes.truncate(num_succeeded);
-            for change in GridChange::invert_group(changes) {
-                if !self.mutate_one(&change) {
-                    debug_log!("WARNING: failed to roll back {:?}", change);
-                }
-            }
             false
-        };
-        self.typecheck_wires();
-        success
+        }
     }
 
     #[must_use = "must not ignore try_mutate_provisionally failure"]
-    pub fn try_mutate_provisionally(&mut self, mut changes: Vec<GridChange>)
+    pub fn try_mutate_provisionally(&mut self, changes: Vec<GridChange>)
                                     -> bool {
-        let num_changes: usize = changes.len();
-        let mut num_succeeded: usize = 0;
-        for change in changes.iter() {
-            if !self.mutate_one(change) {
-                break;
-            }
-            num_succeeded += 1;
-        }
-        let success = if num_succeeded < num_changes {
-            changes.truncate(num_succeeded);
-            for change in GridChange::invert_group(changes) {
-                if !self.mutate_one(&change) {
-                    debug_log!("WARNING: failed to roll back {:?}", change);
-                }
-            }
-            false
-        } else {
-            self.redo_stack.clear();
+        if let Some(mut changes) = self.try_mutate_internal(changes) {
             self.provisional_changes.append(&mut changes);
-            self.mark_modified();
             true
-        };
-        self.typecheck_wires();
-        success
+        } else {
+            false
+        }
     }
 
     pub fn commit_provisional_changes(&mut self) -> bool {
@@ -543,6 +483,34 @@ impl EditGrid {
         }
         self.typecheck_wires();
         return true;
+    }
+
+    #[must_use = "must not ignore try_mutate_internal result"]
+    fn try_mutate_internal(&mut self, mut changes: Vec<GridChange>)
+                           -> Option<Vec<GridChange>> {
+        let num_changes: usize = changes.len();
+        let mut num_succeeded: usize = 0;
+        for change in changes.iter() {
+            if !self.mutate_one(change) {
+                break;
+            }
+            num_succeeded += 1;
+        }
+        let changes = if num_succeeded < num_changes {
+            changes.truncate(num_succeeded);
+            for change in GridChange::invert_group(changes) {
+                if !self.mutate_one(&change) {
+                    debug_log!("WARNING: failed to roll back {:?}", change);
+                }
+            }
+            None
+        } else {
+            self.redo_stack.clear();
+            self.mark_modified();
+            Some(changes)
+        };
+        self.typecheck_wires();
+        changes
     }
 
     #[must_use = "must not ignore mutate_one failure"]

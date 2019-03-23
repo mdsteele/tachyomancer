@@ -37,6 +37,7 @@ mod select;
 mod tooltip;
 mod verify;
 mod wire;
+mod wiredrag;
 
 pub use self::begin::{BeginAction, BeginView};
 pub use self::circuit::{CircuitAction, CircuitView};

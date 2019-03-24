@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::button::{Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton,
-                    RadioCheckbox, Slider, SliderAction, TextButton};
 use super::list::ListView;
+use super::super::button::{Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton,
+                           RadioCheckbox, Slider, SliderAction, TextButton};
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{Rect, RectSize};
 use tachy::gui::{AudioQueue, Event, Resources, Sound, Window, WindowOptions};

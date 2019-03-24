@@ -17,10 +17,15 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::converse::{ConverseAction, ConverseView};
+mod converse;
+mod list;
+mod prefs;
+mod puzzle;
+
+use self::converse::{ConverseAction, ConverseView};
+use self::prefs::{PrefsAction, PrefsView};
+use self::puzzle::{PuzzlesAction, PuzzlesView};
 use super::dialog::{ButtonDialogBox, TextDialogBox};
-use super::prefs::{PrefsAction, PrefsView};
-use super::puzzle::{PuzzlesAction, PuzzlesView};
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Rect, RectSize};

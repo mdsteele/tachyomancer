@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::button::TextButton;
 use super::list::ListView;
-use super::paragraph::Paragraph;
+use super::super::button::TextButton;
+use super::super::paragraph::Paragraph;
 use cgmath::{Deg, Matrix4};
 use std::cell::RefCell;
 use tachy::font::Align;

@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::button::Scrollbar;
+use super::super::button::Scrollbar;
 use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use std::borrow::Borrow;

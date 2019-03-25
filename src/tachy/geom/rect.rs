@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::cast::AsFloat;
+use super::cast::{AsFloat, AsInt};
 use cgmath::{BaseNum, Point2, Vector2};
 use std::ops;
 
@@ -43,9 +43,29 @@ impl AsFloat for RectSize<i32> {
     }
 }
 
+impl AsInt for RectSize<f32> {
+    type Output32 = RectSize<i32>;
+
+    fn as_i32_floor(&self) -> RectSize<i32> {
+        RectSize::new(self.width.floor() as i32, self.height.floor() as i32)
+    }
+
+    fn as_i32_round(&self) -> RectSize<i32> {
+        RectSize::new(self.width.round() as i32, self.height.round() as i32)
+    }
+}
+
 impl<T> From<(T, T)> for RectSize<T> {
     fn from((width, height): (T, T)) -> RectSize<T> {
         RectSize { width, height }
+    }
+}
+
+impl<T: BaseNum> ops::Mul<T> for RectSize<T> {
+    type Output = RectSize<T>;
+
+    fn mul(self, other: T) -> RectSize<T> {
+        RectSize::new(self.width * other, self.height * other)
     }
 }
 
@@ -111,6 +131,13 @@ impl<T: BaseNum> Rect<T> {
                   self.y - margin,
                   self.width + margin2,
                   self.height + margin2)
+    }
+
+    pub fn expand2(&self, horz_margin: T, vert_margin: T) -> Rect<T> {
+        Rect::new(self.x - horz_margin,
+                  self.y - vert_margin,
+                  self.width + horz_margin + horz_margin,
+                  self.height + vert_margin + vert_margin)
     }
 
     pub fn intersection(&self, other: Rect<T>) -> Rect<T> {

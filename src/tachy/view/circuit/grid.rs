@@ -28,8 +28,8 @@ use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
 use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsRect, Direction,
                   MatrixExt, Orientation, Rect, RectSize};
-use tachy::gui::{AudioQueue, Clipboard, Cursor, Event, Keycode, NextCursor,
-                 Resources, Sound};
+use tachy::gui::{AudioQueue, Clipboard, ClockEventData, Cursor, Event,
+                 Keycode, NextCursor, Resources, Sound};
 use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
 use tachy::state::{EditGrid, GridChange, WireColor};
 
@@ -61,8 +61,7 @@ pub enum EditGridAction {
 //===========================================================================//
 
 pub struct EditGridView {
-    width: f32,
-    height: f32,
+    size: RectSize<f32>,
     scroll: Vector2<i32>,
     zoom: f32,
     chip_model: ChipModel,
@@ -74,8 +73,7 @@ pub struct EditGridView {
 impl EditGridView {
     pub fn new(window_size: RectSize<i32>) -> EditGridView {
         EditGridView {
-            width: window_size.width as f32,
-            height: window_size.height as f32,
+            size: window_size.as_f32(),
             scroll: Vector2::new(0, 0),
             zoom: ZOOM_MAX,
             chip_model: ChipModel::new(),
@@ -87,12 +85,11 @@ impl EditGridView {
 
     fn draw_background_grid(&self, resources: &Resources) {
         let matrix = cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
-        let width = self.width / self.zoom;
-        let height = self.height / self.zoom;
-        let pixel_rect = vec4((self.scroll.x as f32) - 0.5 * width,
-                              (self.scroll.y as f32) - 0.5 * height,
-                              width,
-                              height);
+        let size = self.size * self.zoom.recip();
+        let pixel_rect = vec4((self.scroll.x as f32) - 0.5 * size.width,
+                              (self.scroll.y as f32) - 0.5 * size.height,
+                              size.width,
+                              size.height);
         let coords_rect = pixel_rect / (GRID_CELL_SIZE as f32);
         resources.shaders().board().draw(&matrix, coords_rect);
     }
@@ -264,8 +261,8 @@ impl EditGridView {
     }
 
     fn vp_matrix(&self) -> Matrix4<f32> {
-        cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0) *
-            Matrix4::trans2(0.5 * self.width, 0.5 * self.height) *
+        cgmath::ortho(0.0, self.size.width, self.size.height, 0.0, -1.0, 1.0) *
+            Matrix4::trans2(0.5 * self.size.width, 0.5 * self.size.height) *
             Matrix4::from_scale(self.zoom) *
             Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
     }
@@ -377,6 +374,25 @@ impl EditGridView {
             Event::ClockTick(tick) => {
                 self.tooltip
                     .tick(tick, prefs, |tag| tooltip_format(grid, tag));
+                let expand = (self.size * (0.25 / self.zoom)).as_i32_round();
+                let scroll_limit = (grid.bounds() * GRID_CELL_SIZE)
+                    .expand2(expand.width, expand.height);
+                if self.scroll.x < scroll_limit.x {
+                    self.scroll.x =
+                        track_towards(self.scroll.x, scroll_limit.x, tick);
+                } else if self.scroll.x > scroll_limit.right() {
+                    self.scroll.x = track_towards(self.scroll.x,
+                                                  scroll_limit.right(),
+                                                  tick);
+                }
+                if self.scroll.y < scroll_limit.y {
+                    self.scroll.y =
+                        track_towards(self.scroll.y, scroll_limit.y, tick);
+                } else if self.scroll.y > scroll_limit.bottom() {
+                    self.scroll.y = track_towards(self.scroll.y,
+                                                  scroll_limit.bottom(),
+                                                  tick);
+                }
             }
             Event::KeyDown(key) => {
                 self.tooltip.stop_hover_all();
@@ -667,7 +683,8 @@ impl EditGridView {
     }
 
     fn screen_pt_to_grid_pt(&self, screen_pt: Point2<i32>) -> Point2<f32> {
-        (((screen_pt.as_f32() - vec2(0.5 * self.width, 0.5 * self.height)) /
+        let half_size = self.size * 0.5;
+        (((screen_pt.as_f32() - vec2(half_size.width, half_size.height)) /
               self.zoom)
              .as_i32_round() + self.scroll)
             .as_f32() / (GRID_CELL_SIZE as f32)
@@ -730,6 +747,13 @@ fn tooltip_format(grid: &EditGrid, tag: &GridTooltipTag) -> String {
         }
         GridTooltipTag::Wire(index) => grid.wire_tooltip_format(index),
     }
+}
+
+fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {
+    let tracking_base: f64 = 0.0001; // smaller = faster tracking
+    let difference = (goal - current) as f64;
+    let change = difference * (1.0 - tracking_base.powf(tick.elapsed));
+    current + (change.round() as i32)
 }
 
 //===========================================================================//

@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use tachy::geom::{AsFloat, AsInt, Coords, CoordsDelta, CoordsRect,
                   CoordsSize, Direction, Orientation, Rect};
 use tachy::gui::Clipboard;
-use tachy::save::{ChipType, CircuitData, WireShape};
+use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
 use tachy::state::{EditGrid, GridChange};
 
 //===========================================================================//
@@ -166,7 +166,8 @@ impl Selection {
         }
     }
 
-    pub fn from_clipboard(clipboard: &Clipboard) -> Option<Selection> {
+    pub fn from_clipboard(clipboard: &Clipboard, puzzle: Puzzle)
+                          -> Option<Selection> {
         if let Some(text) = clipboard.get() {
             match CircuitData::deserialize_from_string(&text) {
                 Ok(data) => {
@@ -174,6 +175,7 @@ impl Selection {
                     let origin = Coords::new(left, top);
                     let chips = data.chips
                         .iter()
+                        .filter(|(_, ctype, _)| ctype.is_allowed_in(puzzle))
                         .map(|(coords, ctype, orient)| {
                                  (coords - origin, (ctype, orient))
                              })

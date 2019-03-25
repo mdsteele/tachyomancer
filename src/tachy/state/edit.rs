@@ -831,6 +831,9 @@ impl EditGrid {
                 }
             }
             GridChange::AddChip(coords, ctype, orient) => {
+                if !ctype.is_allowed_in(self.puzzle) {
+                    return false;
+                }
                 let size = orient * ctype.size();
                 let rect = CoordsRect::with_size(coords, size);
                 // Fail if there's a chip in the way.

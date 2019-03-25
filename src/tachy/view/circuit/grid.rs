@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::bounds::{BOUNDS_MARGIN, BoundsDrag, BoundsHandle};
-use super::chip::ChipModel;
 use super::chipdrag::ChipDrag;
 use super::select::{self, SelectingDrag, Selection, SelectionDrag};
-use super::tooltip::Tooltip;
-use super::wire::WireModel;
+use super::super::chip::ChipModel;
+use super::super::tooltip::Tooltip;
+use super::super::wire::WireModel;
 use super::wiredrag::{WireDrag, Zone};
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
 use std::mem;

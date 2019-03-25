@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::tooltip::Tooltip;
+use super::super::tooltip::Tooltip;
 use cgmath::Matrix4;
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::gui::{Event, Resources};

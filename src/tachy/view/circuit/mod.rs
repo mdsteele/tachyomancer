@@ -17,11 +17,20 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::control::{ControlsAction, ControlsTray};
+mod bounds;
+mod chipdrag;
+mod control;
+mod grid;
+mod parts;
+mod select;
+mod verify;
+mod wiredrag;
+
+use self::control::{ControlsAction, ControlsTray};
+use self::grid::{EditGridAction, EditGridView};
+use self::parts::{PartsAction, PartsTray};
+use self::verify::VerificationTray;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
-use super::grid::{EditGridAction, EditGridView};
-use super::parts::{PartsAction, PartsTray};
-use super::verify::VerificationTray;
 use cgmath;
 use std::u32;
 use tachy::geom::{Coords, RectSize};

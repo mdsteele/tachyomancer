@@ -19,7 +19,7 @@
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub enum MenuSection {
     Navigation,
     Messages,

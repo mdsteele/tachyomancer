@@ -28,9 +28,9 @@ use self::puzzle::{PuzzlesAction, PuzzlesView};
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Keycode, NextCursor, Resources, Sound,
-                 Window, WindowOptions};
+use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
+use tachy::gui::{AudioQueue, ClockEventData, Event, Keycode, NextCursor,
+                 Resources, Sound, Window, WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::GameState;
 use textwrap;
@@ -68,59 +68,58 @@ pub enum MenuAction {
 //===========================================================================//
 
 pub struct MenuView {
-    width: f32,
-    height: f32,
+    size: RectSize<i32>,
+
     section_buttons: Vec<SectionButton>,
     converse_view: ConverseView,
     prefs_view: PrefsView,
     puzzles_view: PuzzlesView,
+
     confirmation_dialog: Option<ButtonDialogBox<Option<MenuAction>>>,
     rename_dialog: Option<TextDialogBox>,
+
+    left_section: MenuSection,
+    right_section: MenuSection,
+    section_anim: f32,
 }
 
 impl MenuView {
     pub fn new(window: &Window, state: &GameState) -> MenuView {
-        let window_size = window.size();
-        let section_buttons = vec![
-            SectionButton::new(window_size,
-                               0,
-                               "Navigation",
-                               MenuSection::Navigation),
-            SectionButton::new(window_size,
-                               1,
-                               "Messages",
-                               MenuSection::Messages),
-            SectionButton::new(window_size,
-                               2,
-                               "Tasks",
-                               MenuSection::Puzzles),
-            SectionButton::new(window_size,
-                               3,
-                               "Settings",
-                               MenuSection::Prefs),
-        ];
-        let section_rect =
-            Rect::new(SECTION_MARGIN_HORZ,
-                      SECTION_TOP,
-                      (window_size.width as i32) - 2 * SECTION_MARGIN_HORZ,
-                      (window_size.height as i32) - SECTION_TOP -
-                          SECTION_MARGIN_BOTTOM);
+        let size = window.size();
+        let section_buttons =
+            vec![
+                SectionButton::new(size,
+                                   0,
+                                   "Navigation",
+                                   MenuSection::Navigation),
+                SectionButton::new(size, 1, "Messages", MenuSection::Messages),
+                SectionButton::new(size, 2, "Tasks", MenuSection::Puzzles),
+                SectionButton::new(size, 3, "Settings", MenuSection::Prefs),
+            ];
+        let section_rect = Rect::new(SECTION_MARGIN_HORZ,
+                                     SECTION_TOP,
+                                     size.width - 2 * SECTION_MARGIN_HORZ,
+                                     size.height - SECTION_TOP -
+                                         SECTION_MARGIN_BOTTOM);
         MenuView {
-            width: window_size.width as f32,
-            height: window_size.height as f32,
+            size,
             section_buttons,
             converse_view: ConverseView::new(section_rect, state),
             prefs_view: PrefsView::new(section_rect, window, state),
             puzzles_view: PuzzlesView::new(section_rect, state),
             confirmation_dialog: None,
             rename_dialog: None,
+            left_section: state.menu_section(),
+            right_section: state.menu_section(),
+            section_anim: 0.0,
         }
     }
 
     pub fn draw(&self, resources: &Resources, state: &GameState) {
+        let size = self.size.as_f32();
         let projection =
-            cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
-        let rect = Rect::new(0.0, 0.0, self.width, self.height);
+            cgmath::ortho(0.0, size.width, size.height, 0.0, -1.0, 1.0);
+        let rect = Rect::new(0.0, 0.0, size.width, size.height);
         resources
             .shaders()
             .solid()
@@ -128,19 +127,18 @@ impl MenuView {
         for button in self.section_buttons.iter() {
             button.draw(resources, &projection, state.menu_section());
         }
-        match state.menu_section() {
-            MenuSection::Navigation => {
-                // TODO
-            }
-            MenuSection::Messages => {
-                self.converse_view.draw(resources, &projection, state);
-            }
-            MenuSection::Puzzles => {
-                self.puzzles_view.draw(resources, &projection, state);
-            }
-            MenuSection::Prefs => {
-                self.prefs_view.draw(resources, &projection, state);
-            }
+        if self.left_section == self.right_section {
+            self.draw_section(resources,
+                              &projection,
+                              self.left_section,
+                              state);
+        } else {
+            let matrix1 = projection *
+                Matrix4::trans2(-size.width * self.section_anim, 0.0);
+            self.draw_section(resources, &matrix1, self.left_section, state);
+            let matrix2 = projection *
+                Matrix4::trans2(size.width * (1.0 - self.section_anim), 0.0);
+            self.draw_section(resources, &matrix2, self.right_section, state);
         }
         if let Some(ref dialog) = self.rename_dialog {
             dialog.draw(resources, &projection, |name| {
@@ -152,9 +150,65 @@ impl MenuView {
         }
     }
 
+    fn draw_section(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                    section: MenuSection, state: &GameState) {
+        match section {
+            MenuSection::Navigation => {
+                // TODO
+            }
+            MenuSection::Messages => {
+                self.converse_view.draw(resources, matrix, state);
+            }
+            MenuSection::Puzzles => {
+                self.puzzles_view.draw(resources, matrix, state);
+            }
+            MenuSection::Prefs => {
+                self.prefs_view.draw(resources, matrix, state);
+            }
+        }
+    }
+
     pub fn on_event(&mut self, event: &Event, state: &mut GameState,
                     audio: &mut AudioQueue, next_cursor: &mut NextCursor)
                     -> Option<MenuAction> {
+        if let Event::ClockTick(tick) = event {
+            let goal_section = state.menu_section();
+            if self.left_section == self.right_section {
+                if goal_section < self.left_section {
+                    self.left_section = goal_section;
+                    self.section_anim = 1.0;
+                } else if goal_section > self.left_section {
+                    self.right_section = goal_section;
+                    self.section_anim = 0.0;
+                }
+            }
+            if self.left_section != self.right_section {
+                let anim_goal = if goal_section == self.left_section {
+                    0.0
+                } else if goal_section == self.right_section {
+                    1.0
+                } else if goal_section < self.left_section {
+                    self.left_section = goal_section;
+                    0.0
+                } else if goal_section > self.right_section {
+                    self.right_section = goal_section;
+                    1.0
+                } else if self.section_anim < 0.5 {
+                    self.left_section = goal_section;
+                    0.0
+                } else {
+                    self.right_section = goal_section;
+                    1.0
+                };
+                self.section_anim =
+                    track_towards(self.section_anim, anim_goal, tick);
+                if self.section_anim == anim_goal {
+                    self.left_section = goal_section;
+                    self.right_section = goal_section;
+                }
+            }
+        }
+
         if let Some(mut dialog) = self.confirmation_dialog.take() {
             match dialog.on_event(event) {
                 Some(Some(action)) => return Some(action),
@@ -181,8 +235,10 @@ impl MenuView {
             }
         }
 
-        if let Some(action) = self.on_section_event(event, state, audio) {
-            return Some(action);
+        if self.left_section == self.right_section || event.is_clock_tick() {
+            if let Some(action) = self.on_section_event(event, state, audio) {
+                return Some(action);
+            }
         }
 
         let mut next_section: Option<MenuSection> = None;
@@ -238,8 +294,6 @@ impl MenuView {
                     }
                     Some(PuzzlesAction::Delete) => {
                         self.unfocus(state);
-                        let size = RectSize::new(self.width as i32,
-                                                 self.height as i32);
                         let text = format!("Really delete {}?",
                                            state.circuit_name());
                         let cancel_button =
@@ -248,7 +302,9 @@ impl MenuView {
                             ("Delete", Some(MenuAction::DeleteCircuit), None);
                         let buttons = &[cancel_button, delete_button];
                         self.confirmation_dialog =
-                            Some(ButtonDialogBox::new(size, &text, buttons));
+                            Some(ButtonDialogBox::new(self.size,
+                                                      &text,
+                                                      buttons));
                         return None;
                     }
                     Some(PuzzlesAction::Edit) => {
@@ -259,12 +315,10 @@ impl MenuView {
                     }
                     Some(PuzzlesAction::Rename) => {
                         self.unfocus(state);
-                        let size = RectSize::new(self.width as i32,
-                                                 self.height as i32);
                         let text = "Choose new circuit name:";
                         let initial = state.circuit_name();
                         let dialog =
-                            TextDialogBox::new(size,
+                            TextDialogBox::new(self.size,
                                                text,
                                                initial,
                                                CIRCUIT_NAME_MAX_WIDTH);
@@ -287,8 +341,6 @@ impl MenuView {
                     }
                     Some(PrefsAction::DeleteProfile) => {
                         self.unfocus(state);
-                        let size = RectSize::new(self.width as i32,
-                                                 self.height as i32);
                         let text = format!("Are you sure you want \
                                             to delete all progress\n\
                                             on profile \"{}\"?\n\n\
@@ -300,7 +352,9 @@ impl MenuView {
                             ("Delete", Some(MenuAction::DeleteProfile), None);
                         let buttons = &[cancel_button, delete_button];
                         self.confirmation_dialog =
-                            Some(ButtonDialogBox::new(size, &text, buttons));
+                            Some(ButtonDialogBox::new(self.size,
+                                                      &text,
+                                                      buttons));
                         return None;
                     }
                     Some(PrefsAction::QuitGame) => {
@@ -317,11 +371,10 @@ impl MenuView {
                       error: &str) {
         debug_log!("ERROR: Unable to {}: {}", unable, error);
         self.unfocus(state);
-        let size = RectSize::new(self.width as i32, self.height as i32);
         let text = format!("ERROR: Unable to {}.\n\n{}", unable, error);
         let text = textwrap::fill(&text, 64);
         let buttons = &[("OK", None, Some(Keycode::Return))];
-        let dialog = ButtonDialogBox::new(size, &text, buttons);
+        let dialog = ButtonDialogBox::new(self.size, &text, buttons);
         self.confirmation_dialog = Some(dialog);
     }
 
@@ -353,6 +406,21 @@ impl MenuView {
         self.converse_view.on_event(&Event::Unfocus, state);
         self.prefs_view.on_event(&Event::Unfocus, state, &mut audio);
         self.puzzles_view.on_event(&Event::Unfocus, state);
+    }
+}
+
+//===========================================================================//
+
+fn track_towards(current: f32, goal: f32, tick: &ClockEventData) -> f32 {
+    let tracking_base: f64 = 0.0000001; // smaller = faster tracking
+    let threshold: f64 = 0.001; // Once we're this close, snap to goal.
+    let difference = (goal as f64) - (current as f64);
+    if difference.abs() < threshold {
+        goal
+    } else {
+        ((current as f64) +
+             difference * (1.0 - tracking_base.powf(tick.elapsed))) as
+            f32
     }
 }
 

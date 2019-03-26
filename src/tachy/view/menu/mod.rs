@@ -25,12 +25,12 @@ mod puzzle;
 use self::converse::{ConverseAction, ConverseView};
 use self::prefs::{PrefsAction, PrefsView};
 use self::puzzle::{PuzzlesAction, PuzzlesView};
+use super::button::RadioButton;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath::{self, Matrix4};
-use tachy::font::Align;
 use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
 use tachy::gui::{AudioQueue, ClockEventData, Event, Keycode, NextCursor,
-                 Resources, Sound, Window, WindowOptions};
+                 Resources, Window, WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::GameState;
 use textwrap;
@@ -70,7 +70,7 @@ pub enum MenuAction {
 pub struct MenuView {
     size: RectSize<i32>,
 
-    section_buttons: Vec<SectionButton>,
+    section_buttons: Vec<RadioButton<MenuSection>>,
     converse_view: ConverseView,
     prefs_view: PrefsView,
     puzzles_view: PuzzlesView,
@@ -88,13 +88,10 @@ impl MenuView {
         let size = window.size();
         let section_buttons =
             vec![
-                SectionButton::new(size,
-                                   0,
-                                   "Navigation",
-                                   MenuSection::Navigation),
-                SectionButton::new(size, 1, "Messages", MenuSection::Messages),
-                SectionButton::new(size, 2, "Tasks", MenuSection::Puzzles),
-                SectionButton::new(size, 3, "Settings", MenuSection::Prefs),
+                section_button(size, 0, "Navigation", MenuSection::Navigation),
+                section_button(size, 1, "Messages", MenuSection::Messages),
+                section_button(size, 2, "Tasks", MenuSection::Puzzles),
+                section_button(size, 3, "Settings", MenuSection::Prefs),
             ];
         let section_rect = Rect::new(SECTION_MARGIN_HORZ,
                                      SECTION_TOP,
@@ -125,7 +122,7 @@ impl MenuView {
             .solid()
             .fill_rect(&projection, (0.2, 0.1, 0.2), rect);
         for button in self.section_buttons.iter() {
-            button.draw(resources, &projection, state.menu_section());
+            button.draw(resources, &projection, &state.menu_section());
         }
         if self.left_section == self.right_section {
             self.draw_section(resources,
@@ -172,6 +169,7 @@ impl MenuView {
                     audio: &mut AudioQueue, next_cursor: &mut NextCursor)
                     -> Option<MenuAction> {
         if let Event::ClockTick(tick) = event {
+            debug_assert!(self.left_section <= self.right_section);
             let goal_section = state.menu_section();
             if self.left_section == self.right_section {
                 if goal_section < self.left_section {
@@ -183,25 +181,50 @@ impl MenuView {
                 }
             }
             if self.left_section != self.right_section {
-                let anim_goal = if goal_section == self.left_section {
+                let mut anim_goal = if goal_section == self.left_section {
                     0.0
                 } else if goal_section == self.right_section {
                     1.0
                 } else if goal_section < self.left_section {
-                    self.left_section = goal_section;
-                    0.0
+                    -1.0
                 } else if goal_section > self.right_section {
-                    self.right_section = goal_section;
-                    1.0
+                    2.0
                 } else if self.section_anim < 0.5 {
-                    self.left_section = goal_section;
-                    0.0
+                    -1.0
                 } else {
-                    self.right_section = goal_section;
-                    1.0
+                    2.0
                 };
                 self.section_anim =
                     track_towards(self.section_anim, anim_goal, tick);
+                if self.section_anim < 0.0 {
+                    debug_assert!(self.section_anim >= -1.0);
+                    if goal_section < self.left_section {
+                        self.right_section = self.left_section;
+                        self.left_section = goal_section;
+                        self.section_anim += 1.0;
+                        anim_goal = 0.0;
+                    } else {
+                        debug_assert!(goal_section < self.right_section);
+                        self.right_section = goal_section;
+                        self.section_anim = -self.section_anim;
+                        anim_goal = 1.0;
+                    }
+                } else if self.section_anim > 1.0 {
+                    debug_assert!(self.section_anim <= 2.0);
+                    if goal_section > self.right_section {
+                        self.left_section = self.right_section;
+                        self.right_section = goal_section;
+                        self.section_anim -= 1.0;
+                        anim_goal = 1.0;
+                    } else {
+                        debug_assert!(goal_section > self.left_section);
+                        self.left_section = goal_section;
+                        self.section_anim = 2.0 - self.section_anim;
+                        anim_goal = 0.0;
+                    }
+                }
+                debug_assert!(self.section_anim >= 0.0 &&
+                                  self.section_anim <= 1.0);
                 if self.section_anim == anim_goal {
                     self.left_section = goal_section;
                     self.right_section = goal_section;
@@ -244,7 +267,7 @@ impl MenuView {
         let mut next_section: Option<MenuSection> = None;
         for button in self.section_buttons.iter_mut() {
             if let Some(section) =
-                button.on_event(event, state.menu_section(), audio)
+                button.on_event(event, &state.menu_section())
             {
                 next_section = Some(section);
                 break;
@@ -411,6 +434,20 @@ impl MenuView {
 
 //===========================================================================//
 
+fn section_button(window_size: RectSize<i32>, index: i32, label: &str,
+                  section: MenuSection)
+                  -> RadioButton<MenuSection> {
+    let width = (window_size.width - 2 * SECTION_BUTTON_MARGIN_HORZ -
+                     3 * SECTION_BUTTON_SPACING) / 4;
+    let left = SECTION_BUTTON_MARGIN_HORZ +
+        index * (width + SECTION_BUTTON_SPACING);
+    let rect = Rect::new(left,
+                         SECTION_BUTTON_MARGIN_TOP,
+                         width,
+                         SECTION_BUTTON_HEIGHT);
+    RadioButton::new(rect, label, section)
+}
+
 fn track_towards(current: f32, goal: f32, tick: &ClockEventData) -> f32 {
     let tracking_base: f64 = 0.0000001; // smaller = faster tracking
     let threshold: f64 = 0.001; // Once we're this close, snap to goal.
@@ -421,68 +458,6 @@ fn track_towards(current: f32, goal: f32, tick: &ClockEventData) -> f32 {
         ((current as f64) +
              difference * (1.0 - tracking_base.powf(tick.elapsed))) as
             f32
-    }
-}
-
-//===========================================================================//
-
-struct SectionButton {
-    rect: Rect<i32>,
-    label: &'static str,
-    section: MenuSection,
-}
-
-impl SectionButton {
-    fn new(window_size: RectSize<i32>, index: i32, label: &'static str,
-           section: MenuSection)
-           -> SectionButton {
-        let width = (window_size.width - 2 * SECTION_BUTTON_MARGIN_HORZ -
-                         3 * SECTION_BUTTON_SPACING) / 4;
-        let left = SECTION_BUTTON_MARGIN_HORZ +
-            index * (width + SECTION_BUTTON_SPACING);
-        let rect = Rect::new(left,
-                             SECTION_BUTTON_MARGIN_TOP,
-                             width,
-                             SECTION_BUTTON_HEIGHT);
-        SectionButton {
-            rect,
-            label,
-            section,
-        }
-    }
-
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-            current_section: MenuSection) {
-        let color = if self.section == current_section {
-            (0.75, 0.0, 0.0)
-        } else {
-            (0.0, 0.25, 0.0)
-        };
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(matrix, color, rect);
-        resources.fonts().roman().draw(&matrix,
-                                       20.0,
-                                       Align::MidCenter,
-                                       (rect.x + 0.5 * rect.width,
-                                        rect.y + 0.5 * rect.height),
-                                       self.label);
-    }
-
-    fn on_event(&mut self, event: &Event, current_section: MenuSection,
-                audio: &mut AudioQueue)
-                -> Option<MenuSection> {
-        match event {
-            Event::MouseDown(mouse) => {
-                if self.section != current_section &&
-                    self.rect.contains_point(mouse.pt)
-                {
-                    audio.play_sound(Sound::Beep);
-                    return Some(self.section);
-                }
-            }
-            _ => {}
-        }
-        return None;
     }
 }
 

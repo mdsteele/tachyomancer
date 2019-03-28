@@ -233,7 +233,7 @@ impl MenuView {
         }
 
         if let Some(mut dialog) = self.confirmation_dialog.take() {
-            match dialog.on_event(event) {
+            match dialog.on_event(event, audio) {
                 Some(Some(action)) => return Some(action),
                 Some(None) => {}
                 None => self.confirmation_dialog = Some(dialog),
@@ -244,7 +244,7 @@ impl MenuView {
         }
 
         if let Some(mut dialog) = self.rename_dialog.take() {
-            match dialog.on_event(event, next_cursor, |name| {
+            match dialog.on_event(event, next_cursor, audio, |name| {
                 state.is_valid_circuit_rename(name)
             }) {
                 Some(Some(name)) => {
@@ -267,7 +267,7 @@ impl MenuView {
         let mut next_section: Option<MenuSection> = None;
         for button in self.section_buttons.iter_mut() {
             if let Some(section) =
-                button.on_event(event, &state.menu_section())
+                button.on_event(event, &state.menu_section(), audio)
             {
                 next_section = Some(section);
                 break;
@@ -311,7 +311,7 @@ impl MenuView {
                 }
             }
             MenuSection::Puzzles => {
-                match self.puzzles_view.on_event(event, state) {
+                match self.puzzles_view.on_event(event, state, audio) {
                     Some(PuzzlesAction::Copy) => {
                         return Some(MenuAction::CopyCircuit);
                     }
@@ -428,7 +428,7 @@ impl MenuView {
         let mut audio = AudioQueue::new();
         self.converse_view.on_event(&Event::Unfocus, state);
         self.prefs_view.on_event(&Event::Unfocus, state, &mut audio);
-        self.puzzles_view.on_event(&Event::Unfocus, state);
+        self.puzzles_view.on_event(&Event::Unfocus, state, &mut audio);
     }
 }
 

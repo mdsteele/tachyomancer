@@ -155,7 +155,9 @@ impl PrefsView {
 
         let mut next_pane: Option<PrefsPane> = None;
         for button in self.pane_buttons.iter_mut() {
-            if let Some(pane) = button.on_event(event, &self.current_pane) {
+            if let Some(pane) =
+                button.on_event(event, &self.current_pane, audio)
+            {
                 next_pane = Some(pane);
                 break;
             }
@@ -164,7 +166,7 @@ impl PrefsView {
             self.on_pane_event(&Event::Unfocus, state, audio);
             self.current_pane = pane;
         }
-        if let Some(action) = self.quit_button.on_event(event, true) {
+        if let Some(action) = self.quit_button.on_event(event, true, audio) {
             return Some(action);
         }
 
@@ -178,8 +180,12 @@ impl PrefsView {
             PrefsPane::AudioVideo => {
                 self.audio_video_pane.on_event(event, state, audio)
             }
-            PrefsPane::Hotkeys => self.hotkeys_pane.on_event(event, state),
-            PrefsPane::Profiles => self.profiles_pane.on_event(event, state),
+            PrefsPane::Hotkeys => {
+                self.hotkeys_pane.on_event(event, state, audio)
+            }
+            PrefsPane::Profiles => {
+                self.profiles_pane.on_event(event, state, audio)
+            }
             PrefsPane::Credits => {
                 None // TODO
             }
@@ -311,10 +317,10 @@ impl AudioVideoPane {
         }
 
         let enabled = self.new_window_options != self.current_window_options;
-        if let Some(()) = self.revert_button.on_event(event, enabled) {
+        if let Some(()) = self.revert_button.on_event(event, enabled, audio) {
             self.new_window_options = self.current_window_options.clone();
         }
-        if let Some(()) = self.apply_button.on_event(event, enabled) {
+        if let Some(()) = self.apply_button.on_event(event, enabled, audio) {
             let prefs = state.prefs_mut();
             prefs.set_antialiasing(self.new_window_options.antialiasing);
             prefs.set_fullscreen(self.new_window_options.fullscreen);
@@ -364,10 +370,11 @@ impl HotkeysPane {
         self.defaults_button.draw(resources, matrix, enabled);
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState)
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
+                    audio: &mut AudioQueue)
                     -> Option<PrefsAction> {
         let enabled = !state.prefs().hotkeys_are_defaults();
-        if let Some(()) = self.defaults_button.on_event(event, enabled) {
+        if self.defaults_button.on_event(event, enabled, audio).is_some() {
             state.prefs_mut().set_hotkeys_to_defaults();
             return None;
         }
@@ -436,7 +443,8 @@ impl ProfilesPane {
         self.delete_button.draw(resources, matrix, true);
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState)
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
+                    audio: &mut AudioQueue)
                     -> Option<PrefsAction> {
         let current_profile_name = state.profile().unwrap().name();
         if let Some(profile_name) =
@@ -444,10 +452,10 @@ impl ProfilesPane {
         {
             return Some(PrefsAction::SwitchProfile(profile_name));
         }
-        if let Some(action) = self.new_button.on_event(event, true) {
+        if let Some(action) = self.new_button.on_event(event, true, audio) {
             return Some(action);
         }
-        if let Some(action) = self.delete_button.on_event(event, true) {
+        if let Some(action) = self.delete_button.on_event(event, true, audio) {
             return Some(action);
         }
         return None;

@@ -20,8 +20,8 @@
 use cgmath::{Matrix4, Point2};
 use tachy::font::{Align, Font};
 use tachy::geom::{AsFloat, Color4, Rect};
-use tachy::gui::{ClockEventData, Cursor, Event, Keycode, NextCursor,
-                 Resources};
+use tachy::gui::{AudioQueue, ClockEventData, Cursor, Event, Keycode,
+                 NextCursor, Resources, Sound};
 use tachy::save::Hotkey;
 use unicode_width::UnicodeWidthStr;
 
@@ -277,6 +277,7 @@ impl HoverPulse {
         }
     }
 
+    /// Returns true if we just started hovering.
     pub fn set_hovering(&mut self, hovering: bool) -> bool {
         if hovering == self.hovering {
             false
@@ -313,9 +314,11 @@ impl<T: Clone + PartialEq> RadioButton<T> {
         self.inner.draw(resources, matrix, value != &self.inner.value);
     }
 
-    pub fn on_event(&mut self, event: &Event, value: &T) -> Option<T> {
+    pub fn on_event(&mut self, event: &Event, value: &T,
+                    audio: &mut AudioQueue)
+                    -> Option<T> {
         let enabled = value != &self.inner.value;
-        self.inner.on_event(event, enabled)
+        self.inner.on_event(event, enabled, audio)
     }
 }
 
@@ -775,7 +778,9 @@ impl<T: Clone> TextButton<T> {
                                       &self.label);
     }
 
-    pub fn on_event(&mut self, event: &Event, enabled: bool) -> Option<T> {
+    pub fn on_event(&mut self, event: &Event, enabled: bool,
+                    audio: &mut AudioQueue)
+                    -> Option<T> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick);
@@ -798,8 +803,8 @@ impl<T: Clone> TextButton<T> {
             }
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
-                if self.hover_pulse.set_hovering(hovering) {
-                    // TODO: play sound
+                if self.hover_pulse.set_hovering(hovering) && enabled {
+                    audio.play_sound(Sound::ButtonHover);
                 }
             }
             Event::Unfocus => self.hover_pulse.unfocus(),

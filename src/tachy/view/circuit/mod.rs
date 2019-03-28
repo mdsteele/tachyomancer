@@ -120,7 +120,7 @@ impl CircuitView {
                     cursor: &mut NextCursor)
                     -> Option<CircuitAction> {
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
-            match dialog.on_event(event, cursor, is_valid_const) {
+            match dialog.on_event(event, cursor, audio, is_valid_const) {
                 Some(Some(text)) => {
                     if let Ok(new_value) = text.parse::<u32>() {
                         change_const_chip_value(grid, coords, new_value);
@@ -133,7 +133,7 @@ impl CircuitView {
         }
 
         if let Some(mut dialog) = self.victory_dialog.take() {
-            match dialog.on_event(event) {
+            match dialog.on_event(event, audio) {
                 Some(Some(action)) => return Some(action),
                 Some(None) => {}
                 None => self.victory_dialog = Some(dialog),

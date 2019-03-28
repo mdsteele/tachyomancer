@@ -17,6 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod generate;
+
+use self::generate::{SoundSpec, WaveKind};
 use claxon::FlacReader;
 
 //===========================================================================//
@@ -34,6 +37,29 @@ pub fn beep_data() -> Result<Vec<f32>, String> {
         beep_data.push(sample);
     }
     Ok(beep_data)
+}
+
+pub fn button_hover_data() -> Result<Vec<f32>, String> {
+    let mut spec = SoundSpec::new();
+    spec.wave_kind = WaveKind::Triangle;
+    spec.env_attack = 0.0891609;
+    spec.env_sustain = 0.155;
+    spec.env_punch = 0.0656827;
+    spec.env_decay = 0.23;
+    spec.start_freq = 0.215;
+    spec.freq_slide = 0.00708617;
+    spec.freq_delta_slide = -0.0759178;
+    spec.vibrato_depth = 0.00914664;
+    spec.vibrato_speed = 0.881547;
+    spec.arp_mod = -0.67998;
+    spec.arp_speed = 0.284788;
+    spec.repeat_speed = 0.431267;
+    spec.phaser_offset = -0.0525242;
+    spec.phaser_sweep = -0.0142853;
+    spec.lpf_cutoff = 0.103765;
+    spec.lpf_ramp = 0.240105;
+    spec.lpf_resonance = 0.173952;
+    Ok(spec.generate())
 }
 
 pub fn drop_chip_data() -> Result<Vec<f32>, String> {

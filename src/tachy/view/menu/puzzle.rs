@@ -24,7 +24,7 @@ use cgmath::{Deg, Matrix4};
 use std::cell::RefCell;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, MatrixExt, Rect};
-use tachy::gui::{Event, Resources};
+use tachy::gui::{AudioQueue, Event, Resources};
 use tachy::save::{Prefs, Puzzle};
 use tachy::state::GameState;
 
@@ -154,7 +154,8 @@ impl PuzzlesView {
         self.copy_button.draw(resources, matrix, true);
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState)
+    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
+                    audio: &mut AudioQueue)
                     -> Option<PuzzlesAction> {
         if let Some(puzzle) = self.puzzle_list
             .on_event(event, &state.current_puzzle())
@@ -168,19 +169,19 @@ impl PuzzlesView {
             state.set_circuit_name(circuit_name);
         }
         // TODO: edit/delete/rename/copy buttons are not always enabled
-        if let Some(action) = self.edit_button.on_event(event, true) {
+        if let Some(action) = self.edit_button.on_event(event, true, audio) {
             return Some(action);
         }
-        if let Some(action) = self.new_button.on_event(event, true) {
+        if let Some(action) = self.new_button.on_event(event, true, audio) {
             return Some(action);
         }
-        if let Some(action) = self.delete_button.on_event(event, true) {
+        if let Some(action) = self.delete_button.on_event(event, true, audio) {
             return Some(action);
         }
-        if let Some(action) = self.rename_button.on_event(event, true) {
+        if let Some(action) = self.rename_button.on_event(event, true, audio) {
             return Some(action);
         }
-        if let Some(action) = self.copy_button.on_event(event, true) {
+        if let Some(action) = self.copy_button.on_event(event, true, audio) {
             return Some(action);
         }
         return None;

@@ -33,6 +33,7 @@ const DESIRED_NUM_CHANNELS: u8 = 1; // mono
 #[derive(Clone, Copy, Debug)]
 pub enum Sound {
     Beep = 0,
+    ButtonHover,
     DropChip,
     GrabChip,
 }
@@ -73,9 +74,10 @@ struct AudioData {
 impl AudioData {
     fn new() -> Result<AudioData, String> {
         let beep = sound::beep_data()?;
+        let button_hover = sound::button_hover_data()?;
         let drop_chip = sound::drop_chip_data()?;
         let grab_chip = sound::grab_chip_data()?;
-        let sound_data = vec![beep, drop_chip, grab_chip];
+        let sound_data = vec![beep, button_hover, drop_chip, grab_chip];
         Ok(AudioData { sound_data })
     }
 

@@ -162,7 +162,8 @@ impl<'a> Window<'a> {
     pub fn ui(&mut self) -> Ui {
         Ui::new(&mut self.audio,
                 &self.gui_context.clipboard,
-                &mut self.next_cursor)
+                &mut self.next_cursor,
+                &self.gui_context.event_pump)
     }
 
     pub fn poll_event(&mut self) -> Option<Event> {

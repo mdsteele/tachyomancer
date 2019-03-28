@@ -20,6 +20,8 @@
 use super::audio::AudioQueue;
 use super::clipboard::Clipboard;
 use super::cursor::NextCursor;
+use sdl2;
+use sdl2::keyboard::Keycode;
 
 //===========================================================================//
 
@@ -27,16 +29,19 @@ pub struct Ui<'a> {
     audio: &'a mut AudioQueue,
     clipboard: &'a Clipboard,
     cursor: &'a mut NextCursor,
+    event_pump: &'a sdl2::EventPump,
 }
 
 impl<'a> Ui<'a> {
     pub(super) fn new(audio: &'a mut AudioQueue, clipboard: &'a Clipboard,
-                      cursor: &'a mut NextCursor)
+                      cursor: &'a mut NextCursor,
+                      event_pump: &'a sdl2::EventPump)
                       -> Ui<'a> {
         Ui {
             audio,
             clipboard,
             cursor,
+            event_pump,
         }
     }
 
@@ -46,7 +51,27 @@ impl<'a> Ui<'a> {
 
     pub fn cursor(&mut self) -> &mut NextCursor { &mut self.cursor }
 
-    // TODO: Allow getting keyboard state from the event pump
+    pub fn keyboard(&self) -> Keyboard {
+        Keyboard { state: self.event_pump.keyboard_state() }
+    }
+}
+
+//===========================================================================//
+
+pub struct Keyboard<'a> {
+    state: sdl2::keyboard::KeyboardState<'a>,
+}
+
+impl<'a> Keyboard<'a> {
+    pub fn is_held(&self, keycode: Keycode) -> bool {
+        if let Some(scancode) =
+            sdl2::keyboard::Scancode::from_keycode(keycode)
+        {
+            self.state.is_scancode_pressed(scancode)
+        } else {
+            false
+        }
+    }
 }
 
 //===========================================================================//

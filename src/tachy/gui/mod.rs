@@ -33,7 +33,7 @@ pub use self::cursor::{Cursor, Cursors, NextCursor};
 pub use self::event::{ClockEventData, Event, KeyEventData, Keycode,
                       MouseEventData, MultitouchEventData, ScrollEventData};
 pub use self::resource::Resources;
-pub use self::ui::Ui;
+pub use self::ui::{Keyboard, Ui};
 pub use self::window::{Window, WindowOptions};
 
 //===========================================================================//

@@ -38,8 +38,9 @@ use tachy::state::{EditGrid, GridChange, WireColor};
 // The size, in screen pixels, of a grid cell at 1x zoom:
 const GRID_CELL_SIZE: i32 = 64;
 
-// Number of screen pixels to scroll by when pressing a scroll hotkey:
-const SCROLL_PER_KEYDOWN: i32 = 40;
+// How far we scroll per second while holding down a scroll hotkey, in grid
+// cells, at max zoom:
+const SCROLL_GRID_CELLS_PER_SECOND: f64 = 12.0;
 
 const SELECTION_BOX_COLOR1: Color4 = Color4::CYAN5.with_alpha(0.75);
 const SELECTION_BOX_COLOR2: Color4 = Color4::CYAN4.with_alpha(0.75);
@@ -321,47 +322,31 @@ impl EditGridView {
     }
 
     fn on_hotkey(&mut self, hotkey: Hotkey) {
-        match hotkey {
-            Hotkey::ScrollUp => {
-                self.scroll_by_screen_dist(0, -SCROLL_PER_KEYDOWN);
-            }
-            Hotkey::ScrollDown => {
-                self.scroll_by_screen_dist(0, SCROLL_PER_KEYDOWN);
-            }
-            Hotkey::ScrollLeft => {
-                self.scroll_by_screen_dist(-SCROLL_PER_KEYDOWN, 0);
-            }
-            Hotkey::ScrollRight => {
-                self.scroll_by_screen_dist(SCROLL_PER_KEYDOWN, 0);
-            }
-            Hotkey::ZoomIn => {
-                self.zoom_by(ZOOM_PER_KEYDOWN);
-            }
-            Hotkey::ZoomOut => {
-                self.zoom_by(1.0 / ZOOM_PER_KEYDOWN);
-            }
-            _ => {
-                match self.interaction {
-                    Interaction::DraggingChip(ref mut drag) => {
-                        match hotkey {
-                            Hotkey::FlipHorz => drag.flip_horz(),
-                            Hotkey::FlipVert => drag.flip_vert(),
-                            Hotkey::RotateCcw => drag.rotate_ccw(),
-                            Hotkey::RotateCw => drag.rotate_cw(),
-                            _ => {}
-                        }
+        if hotkey == Hotkey::ZoomIn {
+            self.zoom_by(ZOOM_PER_KEYDOWN);
+        } else if hotkey == Hotkey::ZoomOut {
+            self.zoom_by(1.0 / ZOOM_PER_KEYDOWN);
+        } else {
+            match self.interaction {
+                Interaction::DraggingChip(ref mut drag) => {
+                    match hotkey {
+                        Hotkey::FlipHorz => drag.flip_horz(),
+                        Hotkey::FlipVert => drag.flip_vert(),
+                        Hotkey::RotateCcw => drag.rotate_ccw(),
+                        Hotkey::RotateCw => drag.rotate_cw(),
+                        _ => {}
                     }
-                    Interaction::DraggingSelection(ref mut drag) => {
-                        match hotkey {
-                            Hotkey::FlipHorz => drag.flip_horz(),
-                            Hotkey::FlipVert => drag.flip_vert(),
-                            Hotkey::RotateCcw => drag.rotate_ccw(),
-                            Hotkey::RotateCw => drag.rotate_cw(),
-                            _ => {}
-                        }
-                    }
-                    _ => {}
                 }
+                Interaction::DraggingSelection(ref mut drag) => {
+                    match hotkey {
+                        Hotkey::FlipHorz => drag.flip_horz(),
+                        Hotkey::FlipVert => drag.flip_vert(),
+                        Hotkey::RotateCcw => drag.rotate_ccw(),
+                        Hotkey::RotateCw => drag.rotate_cw(),
+                        _ => {}
+                    }
+                }
+                _ => {}
             }
         }
     }
@@ -373,6 +358,29 @@ impl EditGridView {
             Event::ClockTick(tick) => {
                 self.tooltip
                     .tick(tick, prefs, |tag| tooltip_format(grid, tag));
+                // Scroll if we're holding down any scroll key(s):
+                let keyboard = ui.keyboard();
+                let left = keyboard
+                    .is_held(prefs.hotkey_code(Hotkey::ScrollLeft));
+                let right =
+                    keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollRight));
+                let up = keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollUp));
+                let down = keyboard
+                    .is_held(prefs.hotkey_code(Hotkey::ScrollDown));
+                let dist = ((SCROLL_GRID_CELLS_PER_SECOND * tick.elapsed) *
+                                (GRID_CELL_SIZE as f64))
+                    .round() as i32;
+                if left && !right {
+                    self.scroll_by_screen_dist(-dist, 0);
+                } else if right && !left {
+                    self.scroll_by_screen_dist(dist, 0);
+                }
+                if up && !down {
+                    self.scroll_by_screen_dist(0, -dist);
+                } else if down && !up {
+                    self.scroll_by_screen_dist(0, dist);
+                }
+                // Spring back to scroll bounds:
                 let expand = (self.size * (0.25 / self.zoom)).as_i32_round();
                 let scroll_limit = (grid.bounds() * GRID_CELL_SIZE)
                     .expand2(expand.width, expand.height);

@@ -21,7 +21,7 @@ use super::button::{TextBox, TextButton};
 use cgmath::Matrix4;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
-use tachy::gui::{AudioQueue, Cursor, Event, Keycode, NextCursor, Resources};
+use tachy::gui::{Cursor, Event, Keycode, Resources, Ui};
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -128,10 +128,9 @@ impl<T: Clone> ButtonDialogBox<T> {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, audio: &mut AudioQueue)
-                    -> Option<T> {
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui) -> Option<T> {
         for button in self.buttons.iter_mut() {
-            if let Some(value) = button.on_event(event, true, audio) {
+            if let Some(value) = button.on_event(event, ui, true) {
                 return Some(value);
             }
         }
@@ -237,23 +236,22 @@ impl TextDialogBox {
         self.cancel_button.draw(resources, matrix, true);
     }
 
-    pub fn on_event<F>(&mut self, event: &Event, next_cursor: &mut NextCursor,
-                       audio: &mut AudioQueue, is_valid: F)
+    pub fn on_event<F>(&mut self, event: &Event, ui: &mut Ui, is_valid: F)
                        -> Option<Option<String>>
     where
         F: Fn(&str) -> bool,
     {
-        self.textbox.on_event(event, next_cursor);
+        self.textbox.on_event(event, ui);
         let string = self.textbox.string();
         let valid = is_valid(string);
-        if let Some(()) = self.ok_button.on_event(event, valid, audio) {
+        if let Some(()) = self.ok_button.on_event(event, ui, valid) {
             return Some(Some(string.to_string()));
         }
-        if let Some(()) = self.cancel_button.on_event(event, true, audio) {
+        if let Some(()) = self.cancel_button.on_event(event, ui, true) {
             return Some(None);
         }
         if event.is_mouse() {
-            next_cursor.request(Cursor::default());
+            ui.cursor().request(Cursor::default());
         }
         return None;
     }

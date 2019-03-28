@@ -19,7 +19,7 @@
 
 use super::common::ModeChange;
 use std::time::Instant;
-use tachy::gui::{AudioQueue, Event, NextCursor, Window};
+use tachy::gui::{Event, Window};
 use tachy::state::GameState;
 use tachy::view::{MenuAction, MenuView};
 
@@ -29,22 +29,24 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
     let mut view = MenuView::new(window, state);
     let mut last_tick = Instant::now();
-    let mut audio = AudioQueue::new();
     loop {
-        let mut cursor = NextCursor::new();
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
-                match view.on_event(&event, state, &mut audio, &mut cursor) {
+                match view.on_event(&event, &mut window.ui(), state) {
                     Some(MenuAction::GoToPuzzle(puzzle)) => {
                         match state.unlock_puzzle(puzzle) {
                             Ok(()) => {
                                 view.update_puzzle_list(state);
                                 state.set_current_puzzle(puzzle);
-                                view.go_to_current_puzzle(state);
+                                view.go_to_current_puzzle(&mut window.ui(),
+                                                          state);
                             }
                             Err(err) => {
-                                view.show_error(state, "unlock puzzle", &err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "unlock puzzle",
+                                                &err);
                             }
                         }
                     }
@@ -52,7 +54,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.copy_current_circuit() {
                             Ok(()) => view.update_circuit_list(state),
                             Err(err) => {
-                                view.show_error(state, "copy circuit", &err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "copy circuit",
+                                                &err);
                             }
                         }
                     }
@@ -60,7 +65,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.delete_current_circuit() {
                             Ok(()) => view.update_circuit_list(state),
                             Err(err) => {
-                                view.show_error(state, "delete circuit", &err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "delete circuit",
+                                                &err);
                             }
                         }
                     }
@@ -68,7 +76,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.load_edit_grid() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
-                                view.show_error(state, "load circuit", &err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "load circuit",
+                                                &err);
                             }
                         }
                     }
@@ -80,7 +91,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.rename_current_circuit(name) {
                             Ok(()) => view.update_circuit_list(state),
                             Err(err) => {
-                                view.show_error(state, "rename circuit", &err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "rename circuit",
+                                                &err);
                             }
                         }
                     }
@@ -92,7 +106,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.clear_profile() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
-                                view.show_error(state, "switch profile", &err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "switch profile",
+                                                &err);
                             }
                         }
                     }
@@ -105,7 +122,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 view.update_circuit_list(state);
                             }
                             Err(err) => {
-                                view.show_error(state, "switch profile", &err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "switch profile",
+                                                &err);
                             }
                         }
                     }
@@ -122,27 +142,29 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 }
                             }
                             Err(err) => {
-                                view.show_error(state, "delete profile", &err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "delete profile",
+                                                &err);
                             }
                         }
                     }
                     Some(MenuAction::QuitGame) => return ModeChange::Quit,
                     None => {}
                 }
-                window.cursors().set(cursor);
+                window.pump_cursor();
             }
             None => {
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
                 view.on_event(&Event::new_clock_tick(elapsed),
-                              state,
-                              &mut audio,
-                              &mut cursor);
-                window.cursors().set(cursor);
+                              &mut window.ui(),
+                              state);
+                window.pump_cursor();
                 last_tick = now;
-                window.pump_audio(&mut audio);
+                window.pump_audio();
                 view.draw(window.resources(), state);
-                window.swap();
+                window.pump_video();
             }
         }
     }

@@ -17,23 +17,36 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod audio;
-mod clipboard;
-mod context;
-mod cursor;
-mod event;
-mod resource;
-mod ui;
-mod window;
+use super::audio::AudioQueue;
+use super::clipboard::Clipboard;
+use super::cursor::NextCursor;
 
-pub use self::audio::{AudioQueue, Sound};
-pub use self::clipboard::Clipboard;
-pub use self::context::GuiContext;
-pub use self::cursor::{Cursor, Cursors, NextCursor};
-pub use self::event::{ClockEventData, Event, KeyEventData, Keycode,
-                      MouseEventData, MultitouchEventData, ScrollEventData};
-pub use self::resource::Resources;
-pub use self::ui::Ui;
-pub use self::window::{Window, WindowOptions};
+//===========================================================================//
+
+pub struct Ui<'a> {
+    audio: &'a mut AudioQueue,
+    clipboard: &'a Clipboard,
+    cursor: &'a mut NextCursor,
+}
+
+impl<'a> Ui<'a> {
+    pub(super) fn new(audio: &'a mut AudioQueue, clipboard: &'a Clipboard,
+                      cursor: &'a mut NextCursor)
+                      -> Ui<'a> {
+        Ui {
+            audio,
+            clipboard,
+            cursor,
+        }
+    }
+
+    pub fn audio(&mut self) -> &mut AudioQueue { &mut self.audio }
+
+    pub fn clipboard(&self) -> &Clipboard { self.clipboard }
+
+    pub fn cursor(&mut self) -> &mut NextCursor { &mut self.cursor }
+
+    // TODO: Allow getting keyboard state from the event pump
+}
 
 //===========================================================================//

@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::audio::AudioQueue;
-use super::clipboard::Clipboard;
 use super::context::GuiContext;
-use super::cursor::Cursors;
+use super::cursor::NextCursor;
 use super::event::Event;
 use super::resource::Resources;
+use super::ui::Ui;
 use gl;
 use sdl2;
 use std::mem;
@@ -51,6 +51,8 @@ pub struct Window<'a> {
     resources: Resources,
     possible_resolutions: Vec<RectSize<i32>>,
     options: WindowOptions,
+    audio: AudioQueue,
+    next_cursor: NextCursor,
 }
 
 impl<'a> Window<'a> {
@@ -131,14 +133,17 @@ impl<'a> Window<'a> {
                                         res.width >= WINDOW_MIN_WIDTH &&
                                             res.height >= WINDOW_MIN_HEIGHT
                                     });
-        Ok(Window {
-               gui_context,
-               sdl_window,
-               _gl_context: gl_context,
-               resources,
-               possible_resolutions,
-               options,
-           })
+        let window = Window {
+            gui_context,
+            sdl_window,
+            _gl_context: gl_context,
+            resources,
+            possible_resolutions,
+            options,
+            audio: AudioQueue::new(),
+            next_cursor: NextCursor::new(),
+        };
+        Ok(window)
     }
 
     pub fn size(&self) -> RectSize<i32> {
@@ -152,9 +157,13 @@ impl<'a> Window<'a> {
 
     pub fn options(&self) -> &WindowOptions { &self.options }
 
-    pub fn clipboard(&self) -> &Clipboard { &self.gui_context.clipboard }
-
     pub fn resources(&self) -> &Resources { &self.resources }
+
+    pub fn ui(&mut self) -> Ui {
+        Ui::new(&mut self.audio,
+                &self.gui_context.clipboard,
+                &mut self.next_cursor)
+    }
 
     pub fn poll_event(&mut self) -> Option<Event> {
         loop {
@@ -172,14 +181,17 @@ impl<'a> Window<'a> {
         }
     }
 
-    pub fn swap(&mut self) { self.sdl_window.gl_swap_window(); }
-
-    pub fn pump_audio(&mut self, audio: &mut AudioQueue) {
-        let mut audio_queue = self.gui_context.audio_queue.lock().unwrap();
-        audio_queue.merge(mem::replace(audio, AudioQueue::new()));
+    pub fn pump_audio(&mut self) {
+        let mut queue = self.gui_context.audio_queue.lock().unwrap();
+        queue.merge(mem::replace(&mut self.audio, AudioQueue::new()));
     }
 
-    pub fn cursors(&mut self) -> &mut Cursors { &mut self.gui_context.cursors }
+    pub fn pump_cursor(&mut self) {
+        let cursor = mem::replace(&mut self.next_cursor, NextCursor::new());
+        self.gui_context.cursors.set(cursor);
+    }
+
+    pub fn pump_video(&mut self) { self.sdl_window.gl_swap_window(); }
 }
 
 //===========================================================================//

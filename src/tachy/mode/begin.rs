@@ -19,7 +19,7 @@
 
 use super::common::ModeChange;
 use std::time::Instant;
-use tachy::gui::{AudioQueue, Event, Window};
+use tachy::gui::{Event, Window};
 use tachy::state::GameState;
 use tachy::view::{BeginAction, BeginView};
 
@@ -28,12 +28,11 @@ use tachy::view::{BeginAction, BeginView};
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     let mut view = BeginView::new(window.size(), state);
     let mut last_tick = Instant::now();
-    let mut audio = AudioQueue::new();
     loop {
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
-                match view.on_event(&event, state, &mut audio) {
+                match view.on_event(&event, &mut window.ui(), state) {
                     Some(BeginAction::CreateProfile(name)) => {
                         debug_log!("Creating profile {:?}", name);
                         match state.create_or_load_profile(name) {
@@ -46,17 +45,19 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     }
                     None => {}
                 }
+                window.pump_cursor();
             }
             None => {
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
                 view.on_event(&Event::new_clock_tick(elapsed),
-                              state,
-                              &mut audio);
+                              &mut window.ui(),
+                              state);
+                window.pump_cursor();
                 last_tick = now;
-                window.pump_audio(&mut audio);
+                window.pump_audio();
                 view.draw(window.resources(), state);
-                window.swap();
+                window.pump_video();
             }
         }
     }

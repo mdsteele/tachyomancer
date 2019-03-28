@@ -22,7 +22,7 @@ use super::super::button::{Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton,
                            RadioCheckbox, Slider, SliderAction, TextButton};
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Resources, Sound, Window, WindowOptions};
+use tachy::gui::{Event, Resources, Sound, Ui, Window, WindowOptions};
 use tachy::save::Hotkey;
 use tachy::state::GameState;
 
@@ -145,46 +145,44 @@ impl PrefsView {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
-                    audio: &mut AudioQueue)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    state: &mut GameState)
                     -> Option<PrefsAction> {
         debug_assert!(state.profile().is_some());
-        if let Some(action) = self.on_pane_event(event, state, audio) {
+        if let Some(action) = self.on_pane_event(event, ui, state) {
             return Some(action);
         }
 
         let mut next_pane: Option<PrefsPane> = None;
         for button in self.pane_buttons.iter_mut() {
-            if let Some(pane) =
-                button.on_event(event, &self.current_pane, audio)
+            if let Some(pane) = button
+                .on_event(event, ui, &self.current_pane)
             {
                 next_pane = Some(pane);
                 break;
             }
         }
         if let Some(pane) = next_pane {
-            self.on_pane_event(&Event::Unfocus, state, audio);
+            self.on_pane_event(&Event::Unfocus, ui, state);
             self.current_pane = pane;
         }
-        if let Some(action) = self.quit_button.on_event(event, true, audio) {
+        if let Some(action) = self.quit_button.on_event(event, ui, true) {
             return Some(action);
         }
 
         return None;
     }
 
-    fn on_pane_event(&mut self, event: &Event, state: &mut GameState,
-                     audio: &mut AudioQueue)
+    fn on_pane_event(&mut self, event: &Event, ui: &mut Ui,
+                     state: &mut GameState)
                      -> Option<PrefsAction> {
         match self.current_pane {
             PrefsPane::AudioVideo => {
-                self.audio_video_pane.on_event(event, state, audio)
+                self.audio_video_pane.on_event(event, ui, state)
             }
-            PrefsPane::Hotkeys => {
-                self.hotkeys_pane.on_event(event, state, audio)
-            }
+            PrefsPane::Hotkeys => self.hotkeys_pane.on_event(event, ui, state),
             PrefsPane::Profiles => {
-                self.profiles_pane.on_event(event, state, audio)
+                self.profiles_pane.on_event(event, ui, state)
             }
             PrefsPane::Credits => {
                 None // TODO
@@ -277,8 +275,8 @@ impl AudioVideoPane {
         self.revert_button.draw(resources, matrix, enabled);
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
-                    audio: &mut AudioQueue)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    state: &mut GameState)
                     -> Option<PrefsAction> {
         if let &Event::Unfocus = event {
             self.new_window_options = self.current_window_options.clone();
@@ -308,19 +306,19 @@ impl AudioVideoPane {
         match self.sound_volume_slider.on_event(event) {
             Some(SliderAction::Update(volume)) => {
                 state.prefs_mut().set_sound_volume_percent(volume);
-                audio.set_sound_volume_percent(volume);
+                ui.audio().set_sound_volume_percent(volume);
             }
             Some(SliderAction::Release) => {
-                audio.play_sound(Sound::Beep);
+                ui.audio().play_sound(Sound::Beep);
             }
             None => {}
         }
 
         let enabled = self.new_window_options != self.current_window_options;
-        if let Some(()) = self.revert_button.on_event(event, enabled, audio) {
+        if let Some(()) = self.revert_button.on_event(event, ui, enabled) {
             self.new_window_options = self.current_window_options.clone();
         }
-        if let Some(()) = self.apply_button.on_event(event, enabled, audio) {
+        if let Some(()) = self.apply_button.on_event(event, ui, enabled) {
             let prefs = state.prefs_mut();
             prefs.set_antialiasing(self.new_window_options.antialiasing);
             prefs.set_fullscreen(self.new_window_options.fullscreen);
@@ -370,11 +368,11 @@ impl HotkeysPane {
         self.defaults_button.draw(resources, matrix, enabled);
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
-                    audio: &mut AudioQueue)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    state: &mut GameState)
                     -> Option<PrefsAction> {
         let enabled = !state.prefs().hotkeys_are_defaults();
-        if self.defaults_button.on_event(event, enabled, audio).is_some() {
+        if self.defaults_button.on_event(event, ui, enabled).is_some() {
             state.prefs_mut().set_hotkeys_to_defaults();
             return None;
         }
@@ -443,8 +441,8 @@ impl ProfilesPane {
         self.delete_button.draw(resources, matrix, true);
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
-                    audio: &mut AudioQueue)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    state: &mut GameState)
                     -> Option<PrefsAction> {
         let current_profile_name = state.profile().unwrap().name();
         if let Some(profile_name) =
@@ -452,10 +450,10 @@ impl ProfilesPane {
         {
             return Some(PrefsAction::SwitchProfile(profile_name));
         }
-        if let Some(action) = self.new_button.on_event(event, true, audio) {
+        if let Some(action) = self.new_button.on_event(event, ui, true) {
             return Some(action);
         }
-        if let Some(action) = self.delete_button.on_event(event, true, audio) {
+        if let Some(action) = self.delete_button.on_event(event, ui, true) {
             return Some(action);
         }
         return None;

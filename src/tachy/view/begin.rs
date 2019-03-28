@@ -20,7 +20,7 @@
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Keycode, Resources};
+use tachy::gui::{Event, Keycode, Resources, Ui};
 use tachy::state::GameState;
 
 //===========================================================================//
@@ -62,10 +62,10 @@ impl BeginView {
         self.text_entry.draw(resources, &projection);
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
-                    audio: &mut AudioQueue)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    state: &mut GameState)
                     -> Option<BeginAction> {
-        if let Some(name) = self.text_entry.on_event(event, audio) {
+        if let Some(name) = self.text_entry.on_event(event, ui) {
             if name.is_empty() {
                 // TODO: display error to user
                 debug_log!("Profile name must be non-empty");
@@ -102,8 +102,7 @@ impl TextEntry {
             .draw(matrix, 60.0, Align::TopCenter, self.origin, &self.text);
     }
 
-    fn on_event(&mut self, event: &Event, _audio: &mut AudioQueue)
-                -> Option<String> {
+    fn on_event(&mut self, event: &Event, _ui: &mut Ui) -> Option<String> {
         match event {
             Event::KeyDown(key) => {
                 match key.code {
@@ -122,6 +121,7 @@ impl TextEntry {
                         (chr >= '\u{a1}' && chr <= '\u{ff}')
                     {
                         self.text.push(chr);
+                        // TODO: play sound
                     }
                 }
             }

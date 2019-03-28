@@ -28,8 +28,8 @@ use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
 use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsRect, Direction,
                   MatrixExt, Orientation, Rect, RectSize};
-use tachy::gui::{AudioQueue, Clipboard, ClockEventData, Cursor, Event,
-                 Keycode, NextCursor, Resources, Sound};
+use tachy::gui::{ClockEventData, Cursor, Event, Keycode, NextCursor,
+                 Resources, Sound, Ui};
 use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
 use tachy::state::{EditGrid, GridChange, WireColor};
 
@@ -366,9 +366,8 @@ impl EditGridView {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, grid: &mut EditGrid,
-                    prefs: &Prefs, audio: &mut AudioQueue,
-                    clipboard: &Clipboard, next_cursor: &mut NextCursor)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    grid: &mut EditGrid, prefs: &Prefs)
                     -> Option<EditGridAction> {
         match event {
             Event::ClockTick(tick) => {
@@ -406,12 +405,12 @@ impl EditGridView {
                             if let Interaction::RectSelected(rect) =
                                 self.interaction
                             {
-                                select::copy(grid, rect, clipboard);
+                                select::copy(grid, rect, ui.clipboard());
                             }
                         }
                         Keycode::V => {
                             if let Some(selection) =
-                                Selection::from_clipboard(clipboard,
+                                Selection::from_clipboard(ui.clipboard(),
                                                           grid.puzzle())
                             {
                                 self.cancel_interaction(grid);
@@ -431,7 +430,7 @@ impl EditGridView {
                             if let Interaction::RectSelected(rect) =
                                 self.interaction
                             {
-                                select::cut(grid, rect, clipboard);
+                                select::cut(grid, rect, ui.clipboard());
                                 self.interaction = Interaction::Nothing;
                             }
                         }
@@ -526,7 +525,7 @@ impl EditGridView {
                                                      Some(coords),
                                                      grid_pt);
                             self.interaction = Interaction::DraggingChip(drag);
-                            audio.play_sound(Sound::GrabChip);
+                            ui.audio().play_sound(Sound::GrabChip);
                         }
                     } else {
                         let mut drag = WireDrag::new();
@@ -552,7 +551,7 @@ impl EditGridView {
             }
             Event::MouseMove(mouse) => {
                 let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
-                next_cursor.request(self.cursor_for_grid_pt(grid_pt, grid));
+                ui.cursor().request(self.cursor_for_grid_pt(grid_pt, grid));
                 let mut should_stop_interaction = false;
                 match self.interaction {
                     Interaction::Nothing |
@@ -599,7 +598,7 @@ impl EditGridView {
                         }
                         Interaction::DraggingChip(drag) => {
                             drag.drop_onto_board(grid);
-                            audio.play_sound(Sound::DropChip);
+                            ui.audio().play_sound(Sound::DropChip);
                         }
                         Interaction::SelectingRect(drag) => {
                             let rect = drag.selected_rect();
@@ -623,7 +622,7 @@ impl EditGridView {
                     }
                     let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
                     let cursor = self.cursor_for_grid_pt(grid_pt, grid);
-                    next_cursor.request(cursor);
+                    ui.cursor().request(cursor);
                 }
             }
             Event::Multitouch(touch) => {

@@ -20,8 +20,7 @@
 use cgmath::{Matrix4, Point2};
 use tachy::font::{Align, Font};
 use tachy::geom::{AsFloat, Color4, Rect};
-use tachy::gui::{AudioQueue, ClockEventData, Cursor, Event, Keycode,
-                 NextCursor, Resources, Sound};
+use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Sound, Ui};
 use tachy::save::Hotkey;
 use unicode_width::UnicodeWidthStr;
 
@@ -314,11 +313,10 @@ impl<T: Clone + PartialEq> RadioButton<T> {
         self.inner.draw(resources, matrix, value != &self.inner.value);
     }
 
-    pub fn on_event(&mut self, event: &Event, value: &T,
-                    audio: &mut AudioQueue)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, value: &T)
                     -> Option<T> {
         let enabled = value != &self.inner.value;
-        self.inner.on_event(event, enabled, audio)
+        self.inner.on_event(event, ui, enabled)
     }
 }
 
@@ -628,7 +626,7 @@ impl TextBox {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, next_cursor: &mut NextCursor) {
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui) {
         match event {
             Event::ClockTick(tick) => {
                 self.cursor_blink = (self.cursor_blink + tick.elapsed) %
@@ -683,7 +681,7 @@ impl TextBox {
             }
             Event::MouseDown(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
-                    next_cursor.request(Cursor::Text);
+                    ui.cursor().request(Cursor::Text);
                     let rel_x = ((mouse.pt.x - self.rect.x) as f32) -
                         TEXT_BOX_INNER_MARGIN;
                     let char_index =
@@ -704,7 +702,7 @@ impl TextBox {
             Event::MouseMove(mouse) |
             Event::MouseUp(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
-                    next_cursor.request(Cursor::Text);
+                    ui.cursor().request(Cursor::Text);
                 }
             }
             Event::TextInput(text) => {
@@ -778,8 +776,7 @@ impl<T: Clone> TextButton<T> {
                                       &self.label);
     }
 
-    pub fn on_event(&mut self, event: &Event, enabled: bool,
-                    audio: &mut AudioQueue)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, enabled: bool)
                     -> Option<T> {
         match event {
             Event::ClockTick(tick) => {
@@ -804,7 +801,7 @@ impl<T: Clone> TextButton<T> {
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
                 if self.hover_pulse.set_hovering(hovering) && enabled {
-                    audio.play_sound(Sound::ButtonHover);
+                    ui.audio().play_sound(Sound::ButtonHover);
                 }
             }
             Event::Unfocus => self.hover_pulse.unfocus(),

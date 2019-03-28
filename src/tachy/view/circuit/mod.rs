@@ -34,8 +34,7 @@ use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath;
 use std::u32;
 use tachy::geom::{Coords, RectSize};
-use tachy::gui::{AudioQueue, Clipboard, Event, Keycode, NextCursor,
-                 Resources, Sound};
+use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
 use tachy::save::{ChipType, Prefs, Puzzle};
 use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange};
 
@@ -114,13 +113,11 @@ impl CircuitView {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event,
-                    (grid, prefs): (&mut EditGrid, &Prefs),
-                    audio: &mut AudioQueue, clipboard: &Clipboard,
-                    cursor: &mut NextCursor)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    (grid, prefs): (&mut EditGrid, &Prefs))
                     -> Option<CircuitAction> {
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
-            match dialog.on_event(event, cursor, audio, is_valid_const) {
+            match dialog.on_event(event, ui, is_valid_const) {
                 Some(Some(text)) => {
                     if let Ok(new_value) = text.parse::<u32>() {
                         change_const_chip_value(grid, coords, new_value);
@@ -133,7 +130,7 @@ impl CircuitView {
         }
 
         if let Some(mut dialog) = self.victory_dialog.take() {
-            match dialog.on_event(event, audio) {
+            match dialog.on_event(event, ui) {
                 Some(Some(action)) => return Some(action),
                 Some(None) => {}
                 None => self.victory_dialog = Some(dialog),
@@ -167,14 +164,14 @@ impl CircuitView {
             _ => {}
         }
 
-        self.edit_grid.request_interaction_cursor(event, cursor);
+        self.edit_grid.request_interaction_cursor(event, ui.cursor());
 
         if let Some(opt_action) = self.controls_tray.on_event(event, prefs) {
             match opt_action {
                 None => {}
                 Some(ControlsAction::Reset) => {
                     if grid.eval().is_some() {
-                        audio.play_sound(Sound::Beep);
+                        ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         self.paused = true;
                         grid.stop_eval();
@@ -182,7 +179,7 @@ impl CircuitView {
                 }
                 Some(ControlsAction::RunOrPause) => {
                     if grid.eval().is_none() {
-                        audio.play_sound(Sound::Beep);
+                        ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         self.paused = false;
                         grid.start_eval();
@@ -193,7 +190,7 @@ impl CircuitView {
                 }
                 Some(ControlsAction::StepTime) => {
                     if grid.eval().is_none() {
-                        audio.play_sound(Sound::Beep);
+                        ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         self.paused = true;
                         grid.start_eval();
@@ -206,7 +203,7 @@ impl CircuitView {
                 }
                 Some(ControlsAction::StepCycle) => {
                     if grid.eval().is_none() {
-                        audio.play_sound(Sound::Beep);
+                        ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         self.paused = true;
                         grid.start_eval();
@@ -219,7 +216,7 @@ impl CircuitView {
                 }
                 Some(ControlsAction::StepSubcycle) => {
                     if grid.eval().is_none() {
-                        audio.play_sound(Sound::Beep);
+                        ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         self.paused = true;
                         grid.start_eval();
@@ -238,11 +235,11 @@ impl CircuitView {
         match opt_action {
             Some(PartsAction::Grab(ctype, pt)) => {
                 self.edit_grid.grab_from_parts_tray(ctype, pt);
-                audio.play_sound(Sound::GrabChip);
+                ui.audio().play_sound(Sound::GrabChip);
             }
             Some(PartsAction::Drop) => {
                 self.edit_grid.drop_into_parts_tray(grid);
-                audio.play_sound(Sound::DropChip);
+                ui.audio().play_sound(Sound::DropChip);
             }
             None => {}
         }
@@ -255,8 +252,7 @@ impl CircuitView {
             return action;
         }
 
-        match self.edit_grid
-            .on_event(event, grid, prefs, audio, clipboard, cursor) {
+        match self.edit_grid.on_event(event, ui, grid, prefs) {
             Some(EditGridAction::EditConst(coords, value)) => {
                 let size = RectSize::new(self.width as i32,
                                          self.height as i32);

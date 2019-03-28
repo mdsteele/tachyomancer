@@ -29,8 +29,8 @@ use super::button::RadioButton;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath::{self, Matrix4};
 use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
-use tachy::gui::{AudioQueue, ClockEventData, Event, Keycode, NextCursor,
-                 Resources, Window, WindowOptions};
+use tachy::gui::{ClockEventData, Event, Keycode, Resources, Ui, Window,
+                 WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::GameState;
 use textwrap;
@@ -165,8 +165,8 @@ impl MenuView {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState,
-                    audio: &mut AudioQueue, next_cursor: &mut NextCursor)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    state: &mut GameState)
                     -> Option<MenuAction> {
         if let Event::ClockTick(tick) = event {
             debug_assert!(self.left_section <= self.right_section);
@@ -233,7 +233,7 @@ impl MenuView {
         }
 
         if let Some(mut dialog) = self.confirmation_dialog.take() {
-            match dialog.on_event(event, audio) {
+            match dialog.on_event(event, ui) {
                 Some(Some(action)) => return Some(action),
                 Some(None) => {}
                 None => self.confirmation_dialog = Some(dialog),
@@ -244,7 +244,7 @@ impl MenuView {
         }
 
         if let Some(mut dialog) = self.rename_dialog.take() {
-            match dialog.on_event(event, next_cursor, audio, |name| {
+            match dialog.on_event(event, ui, |name| {
                 state.is_valid_circuit_rename(name)
             }) {
                 Some(Some(name)) => {
@@ -259,7 +259,7 @@ impl MenuView {
         }
 
         if self.left_section == self.right_section || event.is_clock_tick() {
-            if let Some(action) = self.on_section_event(event, state, audio) {
+            if let Some(action) = self.on_section_event(event, ui, state) {
                 return Some(action);
             }
         }
@@ -267,22 +267,22 @@ impl MenuView {
         let mut next_section: Option<MenuSection> = None;
         for button in self.section_buttons.iter_mut() {
             if let Some(section) =
-                button.on_event(event, &state.menu_section(), audio)
+                button.on_event(event, ui, &state.menu_section())
             {
                 next_section = Some(section);
                 break;
             }
         }
         if let Some(section) = next_section {
-            self.on_section_event(&Event::Unfocus, state, audio);
+            self.on_section_event(&Event::Unfocus, ui, state);
             state.set_menu_section(section);
         }
 
         return None;
     }
 
-    fn on_section_event(&mut self, event: &Event, state: &mut GameState,
-                        audio: &mut AudioQueue)
+    fn on_section_event(&mut self, event: &Event, ui: &mut Ui,
+                        state: &mut GameState)
                         -> Option<MenuAction> {
         match state.menu_section() {
             MenuSection::Navigation => {
@@ -311,12 +311,12 @@ impl MenuView {
                 }
             }
             MenuSection::Puzzles => {
-                match self.puzzles_view.on_event(event, state, audio) {
+                match self.puzzles_view.on_event(event, ui, state) {
                     Some(PuzzlesAction::Copy) => {
                         return Some(MenuAction::CopyCircuit);
                     }
                     Some(PuzzlesAction::Delete) => {
-                        self.unfocus(state);
+                        self.unfocus(ui, state);
                         let text = format!("Really delete {}?",
                                            state.circuit_name());
                         let cancel_button =
@@ -337,7 +337,7 @@ impl MenuView {
                         return Some(MenuAction::NewCircuit);
                     }
                     Some(PuzzlesAction::Rename) => {
-                        self.unfocus(state);
+                        self.unfocus(ui, state);
                         let text = "Choose new circuit name:";
                         let initial = state.circuit_name();
                         let dialog =
@@ -352,7 +352,7 @@ impl MenuView {
                 }
             }
             MenuSection::Prefs => {
-                match self.prefs_view.on_event(event, state, audio) {
+                match self.prefs_view.on_event(event, ui, state) {
                     Some(PrefsAction::RebootWindow(options)) => {
                         return Some(MenuAction::RebootWindow(options));
                     }
@@ -363,7 +363,7 @@ impl MenuView {
                         return Some(MenuAction::SwitchProfile(name));
                     }
                     Some(PrefsAction::DeleteProfile) => {
-                        self.unfocus(state);
+                        self.unfocus(ui, state);
                         let text = format!("Are you sure you want \
                                             to delete all progress\n\
                                             on profile \"{}\"?\n\n\
@@ -390,10 +390,10 @@ impl MenuView {
         return None;
     }
 
-    pub fn show_error(&mut self, state: &mut GameState, unable: &str,
-                      error: &str) {
+    pub fn show_error(&mut self, ui: &mut Ui, state: &mut GameState,
+                      unable: &str, error: &str) {
         debug_log!("ERROR: Unable to {}: {}", unable, error);
-        self.unfocus(state);
+        self.unfocus(ui, state);
         let text = format!("ERROR: Unable to {}.\n\n{}", unable, error);
         let text = textwrap::fill(&text, 64);
         let buttons = &[("OK", None, Some(Keycode::Return))];
@@ -401,8 +401,9 @@ impl MenuView {
         self.confirmation_dialog = Some(dialog);
     }
 
-    pub fn go_to_current_puzzle(&mut self, state: &mut GameState) {
-        self.unfocus(state);
+    pub fn go_to_current_puzzle(&mut self, ui: &mut Ui,
+                                state: &mut GameState) {
+        self.unfocus(ui, state);
         state.set_menu_section(MenuSection::Puzzles);
         self.update_circuit_list(state);
     }
@@ -424,11 +425,10 @@ impl MenuView {
         self.puzzles_view.update_puzzle_list(state);
     }
 
-    fn unfocus(&mut self, state: &mut GameState) {
-        let mut audio = AudioQueue::new();
+    fn unfocus(&mut self, ui: &mut Ui, state: &mut GameState) {
         self.converse_view.on_event(&Event::Unfocus, state);
-        self.prefs_view.on_event(&Event::Unfocus, state, &mut audio);
-        self.puzzles_view.on_event(&Event::Unfocus, state, &mut audio);
+        self.prefs_view.on_event(&Event::Unfocus, ui, state);
+        self.puzzles_view.on_event(&Event::Unfocus, ui, state);
     }
 }
 

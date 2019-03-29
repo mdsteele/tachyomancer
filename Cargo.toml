@@ -25,7 +25,6 @@ png = "0.13"
 sdl2 = { version = "0.32", features = ["use_mac_framework"] }
 serde = "1"
 serde_derive = "1"
-textwrap = "0.11"
 toml = "0.4"
 unicase = "2.2"
 unicode-width = "0.1"

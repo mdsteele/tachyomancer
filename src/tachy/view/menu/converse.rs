@@ -19,14 +19,14 @@
 
 use super::list::ListView;
 use super::super::button::Scrollbar;
+use super::super::paragraph::Paragraph;
 use cgmath::{Matrix4, Point2, vec2};
-use num_integer::{div_floor, div_mod_floor};
-use std::borrow::Cow;
+use num_integer::div_mod_floor;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, MatrixExt, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
-use tachy::save::{Conversation, Profile, Puzzle};
+use tachy::save::{Conversation, Prefs, Profile, Puzzle};
 use tachy::state::{ConversationBubble, ConversationPortrait, GameState};
 
 //===========================================================================//
@@ -242,7 +242,7 @@ impl BubblesListView {
         let num_bubbles_shown =
             profile.conversation_progress(conv).saturating_add(1);
         if conv != self.conv || num_bubbles_shown > self.bubbles.len() {
-            self.rebuild_bubbles(profile, conv);
+            self.rebuild_bubbles(profile, state.prefs(), conv);
         }
         self.num_bubbles_shown = num_bubbles_shown.min(self.bubbles.len());
 
@@ -271,7 +271,8 @@ impl BubblesListView {
         self.scrollbar.scroll_to(total_height);
     }
 
-    fn rebuild_bubbles(&mut self, profile: &Profile, conv: Conversation) {
+    fn rebuild_bubbles(&mut self, profile: &Profile, prefs: &Prefs,
+                       conv: Conversation) {
         debug_log!("Rebuilding conversation bubbles");
         self.conv = conv;
         let bubble_width = self.rect.width -
@@ -284,11 +285,12 @@ impl BubblesListView {
                 bubble_top += BUBBLE_SPACING;
             }
             let bubble_view = match bubble {
-                ConversationBubble::NpcSpeech(portrait, text) => {
+                ConversationBubble::NpcSpeech(portrait, format) => {
                     NpcSpeechBubbleView::new(bubble_width,
                                              bubble_top,
                                              portrait,
-                                             &text)
+                                             prefs,
+                                             &format)
                 }
                 ConversationBubble::Puzzle(puzzle) => {
                     PuzzleBubbleView::new(bubble_width, bubble_top, puzzle)
@@ -299,8 +301,11 @@ impl BubblesListView {
                                              key,
                                              choices)
                 }
-                ConversationBubble::YouSpeech(text) => {
-                    YouSpeechBubbleView::new(bubble_width, bubble_top, &text)
+                ConversationBubble::YouSpeech(format) => {
+                    YouSpeechBubbleView::new(bubble_width,
+                                             bubble_top,
+                                             prefs,
+                                             &format)
                 }
             };
             bubble_top += bubble_view.rect().height;
@@ -375,28 +380,27 @@ trait BubbleView {
 struct NpcSpeechBubbleView {
     rect: Rect<i32>,
     portrait: ConversationPortrait,
-    lines: Vec<String>,
+    paragraph: Paragraph,
 }
 
 impl NpcSpeechBubbleView {
-    fn new(width: i32, top: i32, portrait: ConversationPortrait, text: &str)
+    fn new(width: i32, top: i32, portrait: ConversationPortrait,
+           prefs: &Prefs, format: &str)
            -> Box<BubbleView> {
-        let num_cols = div_floor(width - PORTRAIT_WIDTH -
-                                     3 * BUBBLE_INNER_MARGIN,
-                                 (0.5 * BUBBLE_FONT_SIZE) as i32)
-            .max(1) as usize;
-        let lines = textwrap::wrap_iter(text, num_cols)
-            .map(Cow::into_owned)
-            .collect::<Vec<String>>();
-        let height = (PORTRAIT_HEIGHT + 2 * BUBBLE_INNER_MARGIN)
-            .max(2 * BUBBLE_INNER_MARGIN +
-                     ((lines.len() as f32) * BUBBLE_LINE_HEIGHT -
-                          (BUBBLE_LINE_HEIGHT - BUBBLE_FONT_SIZE))
-                         .ceil() as i32);
+        let wrap_width = width - PORTRAIT_WIDTH - 3 * BUBBLE_INNER_MARGIN;
+        let paragraph = Paragraph::compile(BUBBLE_FONT_SIZE,
+                                           BUBBLE_LINE_HEIGHT,
+                                           wrap_width as f32,
+                                           prefs,
+                                           format);
+        let height =
+            (PORTRAIT_HEIGHT + 2 * BUBBLE_INNER_MARGIN)
+                .max(2 * BUBBLE_INNER_MARGIN +
+                         (paragraph.height().ceil() as i32));
         let view = NpcSpeechBubbleView {
             rect: Rect::new(0, top, width, height),
             portrait,
-            lines,
+            paragraph,
         };
         Box::new(view)
     }
@@ -428,18 +432,11 @@ impl BubbleView for NpcSpeechBubbleView {
                                             0.5 * portrait_rect.height),
                                        &format!("{:?}", self.portrait));
 
-        // Draw text:
+        // Draw paragraph:
         let left = (self.rect.x + PORTRAIT_WIDTH +
             2 * BUBBLE_INNER_MARGIN) as f32;
-        let mut top = (self.rect.y + BUBBLE_INNER_MARGIN) as f32;
-        for string in self.lines.iter() {
-            resources.fonts().roman().draw(matrix,
-                                           BUBBLE_FONT_SIZE,
-                                           Align::TopLeft,
-                                           (left, top),
-                                           string);
-            top += BUBBLE_LINE_HEIGHT;
-        }
+        let top = (self.rect.y + BUBBLE_INNER_MARGIN) as f32;
+        self.paragraph.draw(resources, matrix, (left, top));
     }
 }
 
@@ -595,24 +592,23 @@ impl BubbleView for YouChoiceBubbleView {
 
 struct YouSpeechBubbleView {
     rect: Rect<i32>,
-    lines: Vec<String>,
+    paragraph: Paragraph,
 }
 
 impl YouSpeechBubbleView {
-    fn new(width: i32, top: i32, text: &str) -> Box<BubbleView> {
-        let num_cols = div_floor(width - 2 * BUBBLE_INNER_MARGIN,
-                                 (0.5 * BUBBLE_FONT_SIZE) as i32)
-            .max(1) as usize;
-        let lines = textwrap::wrap_iter(text, num_cols)
-            .map(Cow::into_owned)
-            .collect::<Vec<String>>();
+    fn new(width: i32, top: i32, prefs: &Prefs, format: &str)
+           -> Box<BubbleView> {
+        let wrap_width = width - 2 * BUBBLE_INNER_MARGIN;
+        let paragraph = Paragraph::compile(BUBBLE_FONT_SIZE,
+                                           BUBBLE_LINE_HEIGHT,
+                                           wrap_width as f32,
+                                           prefs,
+                                           format);
         let height = 2 * BUBBLE_INNER_MARGIN +
-            ((lines.len() as f32) * BUBBLE_LINE_HEIGHT -
-                 (BUBBLE_LINE_HEIGHT - BUBBLE_FONT_SIZE))
-                .ceil() as i32;
+            (paragraph.height().ceil() as i32);
         let view = YouSpeechBubbleView {
             rect: Rect::new(0, top, width, height),
-            lines,
+            paragraph,
         };
         Box::new(view)
     }
@@ -628,15 +624,9 @@ impl BubbleView for YouSpeechBubbleView {
             .solid()
             .fill_rect(&matrix, color, self.rect.as_f32());
         let right = (self.rect.right() - BUBBLE_INNER_MARGIN) as f32;
-        let mut top = (self.rect.y + BUBBLE_INNER_MARGIN) as f32;
-        for string in self.lines.iter() {
-            resources.fonts().roman().draw(matrix,
-                                           BUBBLE_FONT_SIZE,
-                                           Align::TopRight,
-                                           (right, top),
-                                           string);
-            top += BUBBLE_LINE_HEIGHT;
-        }
+        let left = (right - self.paragraph.width()).floor();
+        let top = (self.rect.y + BUBBLE_INNER_MARGIN) as f32;
+        self.paragraph.draw(resources, matrix, (left, top));
     }
 }
 

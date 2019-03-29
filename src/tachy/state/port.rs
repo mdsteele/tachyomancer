@@ -50,12 +50,12 @@ impl PortColor {
 pub struct PortSpec {
     pub flow: PortFlow,
     pub color: PortColor,
-    pub pos: Coords, // TODO: rename this field to `coords`
+    pub coords: Coords,
     pub dir: Direction,
 }
 
 impl PortSpec {
-    pub fn loc(&self) -> (Coords, Direction) { (self.pos, self.dir) }
+    pub fn loc(&self) -> (Coords, Direction) { (self.coords, self.dir) }
 }
 
 //===========================================================================//

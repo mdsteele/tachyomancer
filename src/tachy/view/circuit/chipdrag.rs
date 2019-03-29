@@ -93,7 +93,7 @@ impl ChipDrag {
         let new_ports: HashSet<(Coords, Direction)> = self.chip_type
             .ports(new_coords, new_orient)
             .into_iter()
-            .map(|port| (port.pos, port.dir))
+            .map(|port| port.loc())
             .collect();
         let mut changes = Vec::<GridChange>::new();
         let mut old_wires = HashMap::new();

@@ -54,7 +54,8 @@ impl ChipExt for ChipType {
                 PortSpec {
                     flow,
                     color,
-                    pos: coords + orient.transform_in_size(delta.into(), size),
+                    coords: coords +
+                        orient.transform_in_size(delta.into(), size),
                     dir: orient * dir,
                 }
             })

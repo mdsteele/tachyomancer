@@ -187,8 +187,8 @@ impl ChipModel {
 
     fn draw_port(&self, resources: &Resources, matrix: &Matrix4<f32>,
                  port: &PortSpec) {
-        let x = port.pos.x as f32 + 0.5;
-        let y = port.pos.y as f32 + 0.5;
+        let x = port.coords.x as f32 + 0.5;
+        let y = port.coords.y as f32 + 0.5;
         let mat = matrix * Matrix4::trans2(x, y) *
             Matrix4::from_angle_z(port.dir.angle_from_east());
         let color = match (port.color, port.flow) {

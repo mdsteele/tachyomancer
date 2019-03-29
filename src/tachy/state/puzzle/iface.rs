@@ -103,7 +103,7 @@ impl Interface {
                      PortSpec {
                          flow: port.flow,
                          color: port.color,
-                         pos: start + delta * (index as i32),
+                         coords: start + delta * (index as i32),
                          dir: port_dir,
                      }
                  })

@@ -298,8 +298,15 @@ impl EditGridView {
         let coords = grid_pt.as_i32_floor();
         match self.interaction {
             Interaction::Nothing => {
-                // TODO: Check whether evaluation is active
-                if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
+                if grid.eval().is_some() {
+                    if let Some((_, ChipType::Button, _)) =
+                        grid.chip_at(coords)
+                    {
+                        return Cursor::HandPointing;
+                    }
+                } else if SelectingDrag::is_near_vertex(grid_pt,
+                                                        grid.bounds())
+                {
                     return Cursor::Crosshair;
                 } else if let Some(handle) =
                     BoundsHandle::for_grid_pt(grid_pt, grid)

@@ -140,7 +140,7 @@ impl PrefsView {
                 self.profiles_pane.draw(resources, matrix, state);
             }
             PrefsPane::Credits => {
-                // TODO
+                // TODO: credits pane
             }
         }
     }
@@ -185,7 +185,7 @@ impl PrefsView {
                 self.profiles_pane.on_event(event, ui, state)
             }
             PrefsPane::Credits => {
-                None // TODO
+                None // TODO: credits pane
             }
         }
     }

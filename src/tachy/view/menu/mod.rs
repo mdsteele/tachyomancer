@@ -150,7 +150,7 @@ impl MenuView {
                     section: MenuSection, state: &GameState) {
         match section {
             MenuSection::Navigation => {
-                // TODO
+                // TODO: navigation section
             }
             MenuSection::Messages => {
                 self.converse_view.draw(resources, matrix, state);
@@ -285,7 +285,7 @@ impl MenuView {
                         -> Option<MenuAction> {
         match state.menu_section() {
             MenuSection::Navigation => {
-                // TODO
+                // TODO: navigation section
             }
             MenuSection::Messages => {
                 match self.converse_view.on_event(event, state) {

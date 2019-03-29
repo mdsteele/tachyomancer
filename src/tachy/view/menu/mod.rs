@@ -33,7 +33,6 @@ use tachy::gui::{ClockEventData, Event, Keycode, Resources, Ui, Window,
                  WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::GameState;
-use textwrap;
 
 //===========================================================================//
 
@@ -317,8 +316,8 @@ impl MenuView {
                     }
                     Some(PuzzlesAction::Delete) => {
                         self.unfocus(ui, state);
-                        let text = format!("Really delete {}?",
-                                           state.circuit_name());
+                        let format = format!("Really delete {}?",
+                                             escape(state.circuit_name()));
                         let cancel_button =
                             ("Cancel", None, Some(Keycode::Escape));
                         let delete_button =
@@ -326,7 +325,8 @@ impl MenuView {
                         let buttons = &[cancel_button, delete_button];
                         self.confirmation_dialog =
                             Some(ButtonDialogBox::new(self.size,
-                                                      &text,
+                                                      state.prefs(),
+                                                      &format,
                                                       buttons));
                         return None;
                     }
@@ -338,12 +338,11 @@ impl MenuView {
                     }
                     Some(PuzzlesAction::Rename) => {
                         self.unfocus(ui, state);
-                        let text = "Choose new circuit name:";
-                        let initial = state.circuit_name();
                         let dialog =
                             TextDialogBox::new(self.size,
-                                               text,
-                                               initial,
+                                               state.prefs(),
+                                               "Choose new circuit name:",
+                                               state.circuit_name(),
                                                CIRCUIT_NAME_MAX_WIDTH);
                         self.rename_dialog = Some(dialog);
                         return None;
@@ -364,11 +363,12 @@ impl MenuView {
                     }
                     Some(PrefsAction::DeleteProfile) => {
                         self.unfocus(ui, state);
-                        let text = format!("Are you sure you want \
-                                            to delete all progress\n\
-                                            on profile \"{}\"?\n\n\
-                                            This cannot be undone!",
-                                           state.profile().unwrap().name());
+                        let format =
+                            format!("Are you sure you want \
+                                     to delete all progress\n\
+                                     on profile \"{}\"?\n\n\
+                                     This cannot be undone!",
+                                    escape(state.profile().unwrap().name()));
                         let cancel_button =
                             ("Cancel", None, Some(Keycode::Escape));
                         let delete_button =
@@ -376,7 +376,8 @@ impl MenuView {
                         let buttons = &[cancel_button, delete_button];
                         self.confirmation_dialog =
                             Some(ButtonDialogBox::new(self.size,
-                                                      &text,
+                                                      state.prefs(),
+                                                      &format,
                                                       buttons));
                         return None;
                     }
@@ -394,10 +395,12 @@ impl MenuView {
                       unable: &str, error: &str) {
         debug_log!("ERROR: Unable to {}: {}", unable, error);
         self.unfocus(ui, state);
-        let text = format!("ERROR: Unable to {}.\n\n{}", unable, error);
-        let text = textwrap::fill(&text, 64);
+        let format = format!("$R$*ERROR:$*$D Unable to {}.\n\n{}",
+                             unable,
+                             escape(error));
         let buttons = &[("OK", None, Some(Keycode::Return))];
-        let dialog = ButtonDialogBox::new(self.size, &text, buttons);
+        let dialog =
+            ButtonDialogBox::new(self.size, state.prefs(), &format, buttons);
         self.confirmation_dialog = Some(dialog);
     }
 
@@ -433,6 +436,8 @@ impl MenuView {
 }
 
 //===========================================================================//
+
+fn escape(string: &str) -> String { string.replace('$', "$$") }
 
 fn section_button(window_size: RectSize<i32>, index: i32, label: &str,
                   section: MenuSection)

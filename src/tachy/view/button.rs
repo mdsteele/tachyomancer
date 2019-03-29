@@ -47,7 +47,8 @@ const TEXT_BOX_FONT: Font = Font::Roman;
 const TEXT_BOX_FONT_SIZE: f32 = 20.0;
 const TEXT_BOX_INNER_MARGIN: f32 = 5.0;
 
-const TEXT_BUTTON_FONT_SIZE: f32 = 20.0;
+pub const TEXT_BUTTON_FONT: Font = Font::Bold;
+pub const TEXT_BUTTON_FONT_SIZE: f32 = 20.0;
 
 //===========================================================================//
 
@@ -768,12 +769,12 @@ impl<T: Clone> TextButton<T> {
                                            &Color4::ORANGE5,
                                            &Color4::CYAN3,
                                            &bg_color);
-        resources.fonts().bold().draw(&matrix,
-                                      TEXT_BUTTON_FONT_SIZE,
-                                      Align::MidCenter,
-                                      (rect.x + 0.5 * rect.width,
-                                       rect.y + 0.5 * rect.height),
-                                      &self.label);
+        let font = resources.fonts().get(TEXT_BUTTON_FONT);
+        font.draw(&matrix,
+                  TEXT_BUTTON_FONT_SIZE,
+                  Align::MidCenter,
+                  (rect.x + 0.5 * rect.width, rect.y + 0.5 * rect.height),
+                  &self.label);
     }
 
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui, enabled: bool)

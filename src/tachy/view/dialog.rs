@@ -17,11 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::button::{TextBox, TextButton};
+use super::button::{TEXT_BUTTON_FONT, TEXT_BUTTON_FONT_SIZE, TextBox,
+                    TextButton};
+use super::paragraph::Paragraph;
 use cgmath::Matrix4;
-use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::gui::{Cursor, Event, Keycode, Resources, Ui};
+use tachy::save::Prefs;
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -37,8 +39,9 @@ const BUTTON_SPACING: i32 = 14;
 const BUTTON_TOP_MARGIN: i32 = 16;
 
 const FONT_SIZE: f32 = 20.0;
-const LINE_HEIGHT: i32 = 24;
+const LINE_HEIGHT: f32 = 24.0;
 const MARGIN: i32 = 24;
+const MAX_PARAGRAPH_WIDTH: f32 = 600.0;
 const TEXTBOX_HEIGHT: i32 = 32;
 const TEXTBOX_TOP_MARGIN: i32 = 16;
 
@@ -46,25 +49,31 @@ const TEXTBOX_TOP_MARGIN: i32 = 16;
 
 pub struct ButtonDialogBox<T> {
     rect: Rect<i32>,
-    strings: Vec<String>,
+    paragraph: Paragraph,
     buttons: Vec<TextButton<T>>,
 }
 
 impl<T: Clone> ButtonDialogBox<T> {
-    pub fn new(window_size: RectSize<i32>, text: &str,
+    pub fn new(window_size: RectSize<i32>, prefs: &Prefs, format: &str,
                buttons: &[(&str, T, Option<Keycode>)])
                -> ButtonDialogBox<T> {
-        let strings: Vec<String> =
-            text.split('\n').map(str::to_string).collect();
+        let paragraph = Paragraph::compile(FONT_SIZE,
+                                           LINE_HEIGHT,
+                                           MAX_PARAGRAPH_WIDTH,
+                                           prefs,
+                                           format);
 
         let mut width = 0;
         let buttons: Vec<(&str, T, Option<Keycode>, i32, i32)> =
             buttons
                 .iter()
                 .map(|&(label, ref value, key)| {
-                    let button_width =
-                    BUTTON_MIN_WIDTH
-                        .max(string_width(label) + 2 * BUTTON_INNER_MARGIN);
+                    let label_width = TEXT_BUTTON_FONT.ratio() *
+                        TEXT_BUTTON_FONT_SIZE *
+                        (label.width() as f32);
+                    let button_width = BUTTON_MIN_WIDTH
+                        .max((label_width.ceil() as i32) +
+                                 2 * BUTTON_INNER_MARGIN);
                     if width > 0 {
                         width += BUTTON_SPACING;
                     }
@@ -72,12 +81,10 @@ impl<T: Clone> ButtonDialogBox<T> {
                     (label, value.clone(), key, width, button_width)
                 })
                 .collect();
-        for string in strings.iter() {
-            width = width.max(string_width(string));
-        }
+        width = width.max(paragraph.width().ceil() as i32);
         width += 2 * MARGIN;
 
-        let button_top = MARGIN + (strings.len() as i32) * LINE_HEIGHT +
+        let button_top = MARGIN + (paragraph.height().ceil() as i32) +
             BUTTON_TOP_MARGIN;
         let height = button_top + BUTTON_HEIGHT + MARGIN;
 
@@ -100,7 +107,7 @@ impl<T: Clone> ButtonDialogBox<T> {
 
         ButtonDialogBox {
             rect,
-            strings,
+            paragraph,
             buttons,
         }
     }
@@ -114,14 +121,8 @@ impl<T: Clone> ButtonDialogBox<T> {
                                              &DIALOG_COLOR_3);
 
         let left = (self.rect.x + MARGIN) as f32;
-        let mut top = (self.rect.y + MARGIN) as f32;
-        for string in self.strings.iter() {
-            resources
-                .fonts()
-                .roman()
-                .draw(matrix, FONT_SIZE, Align::TopLeft, (left, top), string);
-            top += LINE_HEIGHT as f32;
-        }
+        let top = (self.rect.y + MARGIN) as f32;
+        self.paragraph.draw(resources, matrix, (left, top));
 
         for button in self.buttons.iter() {
             button.draw(resources, matrix, true);
@@ -142,28 +143,26 @@ impl<T: Clone> ButtonDialogBox<T> {
 
 pub struct TextDialogBox {
     rect: Rect<i32>,
-    strings: Vec<String>,
+    paragraph: Paragraph,
     textbox: TextBox,
     ok_button: TextButton<()>,
     cancel_button: TextButton<()>,
 }
 
 impl TextDialogBox {
-    pub fn new(window_size: RectSize<i32>, text: &str, initial: &str,
-               max_len: usize)
+    pub fn new(window_size: RectSize<i32>, prefs: &Prefs, format: &str,
+               initial: &str, max_len: usize)
                -> TextDialogBox {
-        let strings: Vec<String> =
-            text.split('\n').map(str::to_string).collect();
+        let paragraph = Paragraph::compile(FONT_SIZE,
+                                           LINE_HEIGHT,
+                                           MAX_PARAGRAPH_WIDTH,
+                                           prefs,
+                                           format);
+        let textbox_width = (paragraph.width().ceil() as i32)
+            .max(2 * BUTTON_MIN_WIDTH + BUTTON_SPACING);
+        let width = textbox_width + 2 * MARGIN;
 
-        let mut width = 16 +
-            (0.5 * FONT_SIZE * (max_len as f32)).ceil() as i32;
-        for string in strings.iter() {
-            width = width.max(string_width(string));
-        }
-        let textbox_width = width;
-        width += 2 * MARGIN;
-
-        let textbox_top = MARGIN + (strings.len() as i32) * LINE_HEIGHT +
+        let textbox_top = MARGIN + (paragraph.height().ceil() as i32) +
             TEXTBOX_TOP_MARGIN;
         let button_top = textbox_top + TEXTBOX_HEIGHT + BUTTON_TOP_MARGIN;
         let height = button_top + BUTTON_HEIGHT + MARGIN;
@@ -201,7 +200,7 @@ impl TextDialogBox {
 
         TextDialogBox {
             rect,
-            strings,
+            paragraph,
             textbox,
             ok_button,
             cancel_button,
@@ -221,14 +220,8 @@ impl TextDialogBox {
                                              &DIALOG_COLOR_3);
 
         let left = (self.rect.x + MARGIN) as f32;
-        let mut top = (self.rect.y + MARGIN) as f32;
-        for string in self.strings.iter() {
-            resources
-                .fonts()
-                .roman()
-                .draw(matrix, FONT_SIZE, Align::TopLeft, (left, top), string);
-            top += LINE_HEIGHT as f32;
-        }
+        let top = (self.rect.y + MARGIN) as f32;
+        self.paragraph.draw(resources, matrix, (left, top));
 
         self.textbox.draw(resources, matrix);
         let valid = is_valid(&self.textbox.string());
@@ -255,12 +248,6 @@ impl TextDialogBox {
         }
         return None;
     }
-}
-
-//===========================================================================//
-
-fn string_width(string: &str) -> i32 {
-    (0.5 * FONT_SIZE * (string.width() as f32)).ceil() as i32
 }
 
 //===========================================================================//

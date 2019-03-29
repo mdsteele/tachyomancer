@@ -154,7 +154,7 @@ impl CircuitView {
                         }
                     }
                 }
-                action = self.on_eval_result(result, grid);
+                action = self.on_eval_result(result, grid, prefs);
             }
             Event::KeyDown(key) => {
                 if key.code == Keycode::Escape {
@@ -199,7 +199,7 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_time();
                     }
-                    action = self.on_eval_result(result, grid);
+                    action = self.on_eval_result(result, grid, prefs);
                 }
                 Some(ControlsAction::StepCycle) => {
                     if grid.eval().is_none() {
@@ -212,7 +212,7 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_cycle();
                     }
-                    action = self.on_eval_result(result, grid);
+                    action = self.on_eval_result(result, grid, prefs);
                 }
                 Some(ControlsAction::StepSubcycle) => {
                     if grid.eval().is_none() {
@@ -225,7 +225,7 @@ impl CircuitView {
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_subcycle();
                     }
-                    action = self.on_eval_result(result, grid);
+                    action = self.on_eval_result(result, grid, prefs);
                 }
             }
             return action;
@@ -257,6 +257,7 @@ impl CircuitView {
                 let size = RectSize::new(self.width as i32,
                                          self.height as i32);
                 let dialog = TextDialogBox::new(size,
+                                                prefs,
                                                 "Choose new const value:",
                                                 &value.to_string(),
                                                 u32::MAX.to_string().len());
@@ -267,7 +268,8 @@ impl CircuitView {
         return action;
     }
 
-    fn on_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid)
+    fn on_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid,
+                      prefs: &Prefs)
                       -> Option<CircuitAction> {
         let mut action: Option<CircuitAction> = None;
         match result {
@@ -290,7 +292,7 @@ impl CircuitView {
                                          self.height as i32);
                 // TODO: The dialog box should show the optimization graph
                 //   (with this point plotted on it).
-                let text =
+                let format =
                     format!("Victory!\nArea: {}\nScore: {}", area, score);
                 let buttons =
                     &[
@@ -300,7 +302,7 @@ impl CircuitView {
                          Some(Keycode::Return)),
                     ];
                 self.victory_dialog =
-                    Some(ButtonDialogBox::new(size, &text, buttons));
+                    Some(ButtonDialogBox::new(size, prefs, &format, buttons));
                 // TODO: Unfocus other views
             }
             EvalResult::Failure => {

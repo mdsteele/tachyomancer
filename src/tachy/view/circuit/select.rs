@@ -17,19 +17,25 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{MetricSpace, Point2, Vector2, vec2};
+use super::super::chip::ChipModel;
+use super::super::wire::WireModel;
+use cgmath::{Matrix4, MetricSpace, Point2, Vector2, vec2};
 use std::collections::HashMap;
-use tachy::geom::{AsFloat, AsInt, Coords, CoordsDelta, CoordsRect,
-                  CoordsSize, Direction, Orientation, Rect};
-use tachy::gui::Clipboard;
+use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsDelta, CoordsRect,
+                  CoordsSize, Direction, MatrixExt, Orientation, Rect};
+use tachy::gui::{Clipboard, Resources};
 use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
-use tachy::state::{EditGrid, GridChange};
+use tachy::state::{EditGrid, GridChange, WireColor, WireSize};
 
 //===========================================================================//
 
 // How close, in grid cells, the mouse must be to a grid vertex to start a
 // selection rect.
 const SELECTING_VERTEX_MAX_DIST: f32 = 0.2;
+
+const SELECTION_BOX_COLOR1: Color4 = Color4::CYAN5.with_alpha(0.75);
+const SELECTION_BOX_COLOR2: Color4 = Color4::CYAN4.with_alpha(0.75);
+const SELECTION_BOX_COLOR3: Color4 = Color4::CYAN4.with_alpha(0.1);
 
 //===========================================================================//
 
@@ -67,6 +73,15 @@ impl SelectingDrag {
                               (self.start.y - coords.y).abs());
         self.rect = self.rect.intersection(self.bounds);
     }
+
+    pub fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                    grid_cell_size: f32) {
+        draw_selection_box(resources,
+                           matrix,
+                           self.rect,
+                           grid_cell_size,
+                           vec2(0.0, 0.0));
+    }
 }
 
 //===========================================================================//
@@ -91,11 +106,7 @@ impl SelectionDrag {
         }
     }
 
-    pub fn selection_size(&self) -> CoordsSize { self.selection.size() }
-
-    pub fn top_left_grid_pt(&self) -> Point2<f32> {
-        self.grid_pt - self.grab_rel
-    }
+    fn top_left_grid_pt(&self) -> Point2<f32> { self.grid_pt - self.grab_rel }
 
     pub fn move_to(&mut self, grid_pt: Point2<f32>) { self.grid_pt = grid_pt; }
 
@@ -113,6 +124,63 @@ impl SelectionDrag {
 
     pub fn rotate_ccw(&mut self) {
         self.selection.reorient(Orientation::default().rotate_ccw());
+    }
+
+    pub fn draw_selection(&self, resources: &Resources,
+                          matrix: &Matrix4<f32>, chip_model: &ChipModel,
+                          wire_model: &WireModel, grid_cell_size: f32) {
+        let offset = self.top_left_grid_pt() - Point2::new(0.0, 0.0);
+
+        // Draw wires:
+        {
+            let matrix = matrix * Matrix4::trans2v(offset * grid_cell_size);
+            let color = WireColor::Unknown;
+            let size = WireSize::Two;
+            for (&(delta, dir), &shape) in self.selection.wires.iter() {
+                match (shape, dir) {
+                    (WireShape::Stub, _) => {
+                        let mat =
+                            delta_matrix(&matrix, delta, dir, grid_cell_size);
+                        wire_model.draw_stub(resources, &mat, color, size);
+                    }
+                    (WireShape::Straight, Direction::East) |
+                    (WireShape::Straight, Direction::North) => {
+                        let mat =
+                            delta_matrix(&matrix, delta, dir, grid_cell_size);
+                        wire_model.draw_straight(resources, &mat, color, size);
+                    }
+                    (WireShape::TurnLeft, _) => {
+                        let mat =
+                            delta_matrix(&matrix, delta, dir, grid_cell_size);
+                        wire_model.draw_corner(resources, &mat, color, size);
+                    }
+                    (WireShape::SplitTee, _) => {
+                        let mat =
+                            delta_matrix(&matrix, delta, dir, grid_cell_size);
+                        wire_model.draw_tee(resources, &mat, color, size);
+                    }
+                    (WireShape::Cross, Direction::East) => {
+                        let mat =
+                            delta_matrix(&matrix, delta, dir, grid_cell_size);
+                        wire_model.draw_cross(resources, &mat, color, size);
+                    }
+                    _ => {}
+                }
+            }
+
+            // Draw chips:
+            for (&delta, &(ctype, orient)) in self.selection.chips.iter() {
+                let mat = matrix *
+                    Matrix4::trans2v(delta.as_f32() * grid_cell_size) *
+                    Matrix4::from_scale(grid_cell_size);
+                chip_model.draw_chip(resources, &mat, ctype, orient, None);
+            }
+        }
+
+        // Draw selection box:
+        let rect = Rect::with_size(Coords::new(0, 0), self.selection.size());
+        // TODO: color box red if we cannot drop the selection here
+        draw_selection_box(resources, matrix, rect, grid_cell_size, offset);
     }
 
     pub fn cancel(self, grid: &mut EditGrid) -> bool {
@@ -135,6 +203,16 @@ impl SelectionDrag {
             self.original_selected_rect
         }
     }
+}
+
+fn delta_matrix(matrix: &Matrix4<f32>, delta: CoordsDelta, dir: Direction,
+                grid_cell_size: f32)
+                -> Matrix4<f32> {
+    let cx = ((delta.x as f32) + 0.5) * grid_cell_size;
+    let cy = ((delta.y as f32) + 0.5) * grid_cell_size;
+    matrix * Matrix4::trans2(cx, cy) *
+        Matrix4::from_angle_z(dir.angle_from_east()) *
+        Matrix4::from_scale(0.5 * grid_cell_size)
 }
 
 //===========================================================================//
@@ -203,6 +281,15 @@ impl Selection {
 
     pub fn size(&self) -> CoordsSize { self.size }
 
+    pub fn draw_box(resources: &Resources, matrix: &Matrix4<f32>,
+                    selected_rect: CoordsRect, grid_cell_size: f32) {
+        draw_selection_box(resources,
+                           matrix,
+                           selected_rect,
+                           grid_cell_size,
+                           vec2(0.0, 0.0));
+    }
+
     fn reorient(&mut self, reorient: Orientation) {
         let new_size = reorient * self.size;
         let new_chips = self.chips
@@ -264,6 +351,21 @@ impl Selection {
             }
         }
     }
+}
+
+//===========================================================================//
+
+fn draw_selection_box(resources: &Resources, matrix: &Matrix4<f32>,
+                      selected_rect: CoordsRect, grid_cell_size: f32,
+                      delta: Vector2<f32>) {
+    let ui = resources.shaders().ui();
+    let rect = (selected_rect.as_f32() * grid_cell_size).expand(4.0) +
+        delta * grid_cell_size;
+    ui.draw_selection_box(matrix,
+                          &rect,
+                          &SELECTION_BOX_COLOR1,
+                          &SELECTION_BOX_COLOR2,
+                          &SELECTION_BOX_COLOR3);
 }
 
 //===========================================================================//

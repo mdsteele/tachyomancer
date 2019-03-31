@@ -42,10 +42,6 @@ const GRID_CELL_SIZE: i32 = 64;
 // cells, at max zoom:
 const SCROLL_GRID_CELLS_PER_SECOND: f64 = 12.0;
 
-const SELECTION_BOX_COLOR1: Color4 = Color4::CYAN5.with_alpha(0.75);
-const SELECTION_BOX_COLOR2: Color4 = Color4::CYAN4.with_alpha(0.75);
-const SELECTION_BOX_COLOR3: Color4 = Color4::CYAN4.with_alpha(0.1);
-
 // The minimum zoom multiplier (i.e. how far zoomed out you can be):
 const ZOOM_MIN: f32 = 0.25;
 // The maximum zoom multiplier (i.e. how far zoomed in you can be):
@@ -139,19 +135,6 @@ impl EditGridView {
         }
     }
 
-    fn draw_selection_box(&self, resources: &Resources,
-                          matrix: &Matrix4<f32>, selected_rect: CoordsRect,
-                          delta: Vector2<f32>) {
-        let ui = resources.shaders().ui();
-        let rect = (selected_rect * GRID_CELL_SIZE).expand(4).as_f32() +
-            delta * (GRID_CELL_SIZE as f32);
-        ui.draw_selection_box(matrix,
-                              &rect,
-                              &SELECTION_BOX_COLOR1,
-                              &SELECTION_BOX_COLOR2,
-                              &SELECTION_BOX_COLOR3);
-    }
-
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
         self.draw_background_grid(resources);
         self.draw_bounds(resources, grid);
@@ -220,24 +203,22 @@ impl EditGridView {
         // Draw selection box (if any):
         match self.interaction {
             Interaction::SelectingRect(ref drag) => {
-                self.draw_selection_box(resources,
-                                        &matrix,
-                                        drag.selected_rect(),
-                                        vec2(0.0, 0.0));
+                drag.draw_box(resources,
+                              &self.unzoomed_matrix(),
+                              (GRID_CELL_SIZE as f32) * self.zoom);
             }
             Interaction::RectSelected(rect) => {
-                self.draw_selection_box(resources,
-                                        &matrix,
-                                        rect,
-                                        vec2(0.0, 0.0));
+                Selection::draw_box(resources,
+                                    &self.unzoomed_matrix(),
+                                    rect,
+                                    (GRID_CELL_SIZE as f32) * self.zoom);
             }
             Interaction::DraggingSelection(ref drag) => {
-                // TODO: Draw selected chips/wires
-                let rect = Rect::with_size(Coords::new(0, 0),
-                                           drag.selection_size());
-                let offset = drag.top_left_grid_pt() - Point2::new(0.0, 0.0);
-                // TODO: color box red if we cannot drop the selection here
-                self.draw_selection_box(resources, &matrix, rect, offset);
+                drag.draw_selection(resources,
+                                    &self.unzoomed_matrix(),
+                                    &self.chip_model,
+                                    &self.wire_model,
+                                    (GRID_CELL_SIZE as f32) * self.zoom);
             }
             _ => {}
         }
@@ -266,6 +247,13 @@ impl EditGridView {
             Matrix4::trans2(0.5 * self.size.width, 0.5 * self.size.height) *
             Matrix4::from_scale(self.zoom) *
             Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
+    }
+
+    fn unzoomed_matrix(&self) -> Matrix4<f32> {
+        cgmath::ortho(0.0, self.size.width, self.size.height, 0.0, -1.0, 1.0) *
+            Matrix4::trans2(0.5 * self.size.width, 0.5 * self.size.height) *
+            Matrix4::trans2((-self.scroll.x as f32) * self.zoom,
+                            (-self.scroll.y as f32) * self.zoom)
     }
 
     pub fn request_interaction_cursor(&self, event: &Event,

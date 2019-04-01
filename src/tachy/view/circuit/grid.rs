@@ -459,14 +459,26 @@ impl EditGridView {
                     self.on_hotkey(hotkey);
                 }
             }
-            Event::MouseDown(mouse) => {
+            Event::MouseDown(mouse) if mouse.left => {
                 let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
                 self.tooltip.stop_hover_all();
+                if grid.eval().is_some() {
+                    if let Some((coords, ctype, _)) =
+                        grid.chip_at(grid_pt.as_i32_floor())
+                    {
+                        if ctype == ChipType::Button {
+                            grid.eval_mut()
+                                .unwrap()
+                                .interaction()
+                                .press_button(coords);
+                        }
+                    }
+                    return None;
+                }
                 match self.interaction.take() {
+                    Interaction::Nothing => {}
                     Interaction::RectSelected(rect) => {
-                        if mouse.left &&
-                            rect.contains_point(grid_pt.as_i32_floor())
-                        {
+                        if rect.contains_point(grid_pt.as_i32_floor()) {
                             let selection = select::cut_provisionally(grid,
                                                                       rect);
                             let grab_rel = grid_pt - rect.top_left().as_f32();
@@ -476,10 +488,8 @@ impl EditGridView {
                                                           Some(rect));
                             self.interaction =
                                 Interaction::DraggingSelection(drag);
-                            return None;
-                        } else {
-                            self.interaction = Interaction::RectSelected(rect);
                         }
+                        return None;
                     }
                     Interaction::DraggingSelection(drag) => {
                         if let Some(rect) = drag.finish(grid) {
@@ -487,76 +497,60 @@ impl EditGridView {
                         }
                         return None;
                     }
-                    _ => {}
+                    _ => return None,
                 }
-                if grid.eval().is_some() {
-                    if mouse.left {
-                        if let Some((coords, ctype, _)) =
-                            grid.chip_at(grid_pt.as_i32_floor())
-                        {
-                            if ctype == ChipType::Button {
-                                grid.eval_mut()
-                                    .unwrap()
-                                    .interaction()
-                                    .press_button(coords);
-                            }
-                        }
-                    }
+                // TODO: Don't allow starting selection on a vertex that is
+                //   e.g. the center of a 2x2 chip.
+                if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
+                    let drag = SelectingDrag::new(grid.bounds(),
+                                                  grid_pt.as_i32_round());
+                    self.interaction = Interaction::SelectingRect(drag);
                     return None;
                 }
-                if mouse.left {
-                    // TODO: Don't allow starting selection on a vertex that is
-                    //   e.g. the center of a 2x2 chip.
-                    if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
-                        let drag = SelectingDrag::new(grid.bounds(),
-                                                      grid_pt.as_i32_round());
-                        self.interaction = Interaction::SelectingRect(drag);
-                        return None;
-                    }
-                    let mouse_coords = grid_pt.as_i32_floor();
-                    if !grid.bounds().contains_point(mouse_coords) {
-                        if let Some(handle) =
-                            BoundsHandle::for_grid_pt(grid_pt, grid)
-                        {
-                            let drag = BoundsDrag::new(handle, grid_pt, grid);
-                            self.interaction =
-                                Interaction::DraggingBounds(drag);
-                        }
-                    } else if let Some((coords, ctype, orient)) =
-                        grid.chip_at(mouse_coords)
+                let mouse_coords = grid_pt.as_i32_floor();
+                if !grid.bounds().contains_point(mouse_coords) {
+                    if let Some(handle) = BoundsHandle::for_grid_pt(grid_pt,
+                                                                    grid)
                     {
-                        // TODO: If mouse is within chip cell but near edge of
-                        //   chip, allow for wire dragging.
-                        let change =
-                            GridChange::RemoveChip(coords, ctype, orient);
-                        if grid.try_mutate_provisionally(vec![change]) {
-                            let drag = ChipDrag::new(ctype,
-                                                     orient,
-                                                     Some(coords),
-                                                     grid_pt);
-                            self.interaction = Interaction::DraggingChip(drag);
-                            ui.audio().play_sound(Sound::GrabChip);
-                        }
+                        let drag = BoundsDrag::new(handle, grid_pt, grid);
+                        self.interaction = Interaction::DraggingBounds(drag);
+                    }
+                } else if let Some((coords, ctype, orient)) =
+                    grid.chip_at(mouse_coords)
+                {
+                    // TODO: If mouse is within chip cell but near edge of
+                    //   chip, allow for wire dragging.
+                    let change = GridChange::RemoveChip(coords, ctype, orient);
+                    if grid.try_mutate_provisionally(vec![change]) {
+                        let drag = ChipDrag::new(ctype,
+                                                 orient,
+                                                 Some(coords),
+                                                 grid_pt);
+                        self.interaction = Interaction::DraggingChip(drag);
+                        ui.audio().play_sound(Sound::GrabChip);
+                    }
+                } else {
+                    let mut drag = WireDrag::new();
+                    if drag.move_to(Zone::from_grid_pt(grid_pt), grid) {
+                        self.interaction = Interaction::DraggingWires(drag);
                     } else {
-                        let mut drag = WireDrag::new();
-                        if drag.move_to(Zone::from_grid_pt(grid_pt), grid) {
-                            self.interaction =
-                                Interaction::DraggingWires(drag);
-                        } else {
-                            debug_log!("wire drag done (down)");
-                        }
+                        debug_log!("wire drag done (down)");
                     }
-                } else if mouse.right {
-                    let coords = self.coords_for_screen_pt(mouse.pt);
-                    if let Some((_, ChipType::Const(value), _)) =
-                        grid.chip_at(coords)
-                    {
-                        return Some(EditGridAction::EditConst(coords, value));
-                    }
-                    let change = GridChange::ToggleCrossWire(coords);
-                    if grid.try_mutate(vec![change]) {
-                        // TODO: Play sound.
-                    }
+                }
+            }
+            Event::MouseDown(mouse) if mouse.right => {
+                if grid.eval().is_some() {
+                    return None;
+                }
+                let coords = self.coords_for_screen_pt(mouse.pt);
+                if let Some((_, ChipType::Const(value), _)) =
+                    grid.chip_at(coords)
+                {
+                    return Some(EditGridAction::EditConst(coords, value));
+                }
+                let change = GridChange::ToggleCrossWire(coords);
+                if grid.try_mutate(vec![change]) {
+                    // TODO: Play sound.
                 }
             }
             Event::MouseMove(mouse) => {

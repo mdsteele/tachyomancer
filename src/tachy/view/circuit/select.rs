@@ -385,6 +385,13 @@ pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect,
     selection.copy_to_clipboard(clipboard);
 }
 
+pub fn delete(grid: &mut EditGrid, selected_rect: CoordsRect) {
+    let (changes, _) = changes_for_cut(grid, selected_rect);
+    if !grid.try_mutate(changes) {
+        debug_log!("WARNING: delete mutation failed");
+    }
+}
+
 pub fn cut_provisionally(grid: &mut EditGrid, selected_rect: CoordsRect)
                          -> Selection {
     let (changes, selection) = changes_for_cut(grid, selected_rect);

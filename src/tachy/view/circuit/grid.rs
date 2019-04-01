@@ -398,7 +398,14 @@ impl EditGridView {
             }
             Event::KeyDown(key) => {
                 self.tooltip.stop_hover_all();
-                if key.command {
+                if key.code == Keycode::Backspace ||
+                    key.code == Keycode::Delete
+                {
+                    if let Interaction::RectSelected(rect) = self.interaction {
+                        select::delete(grid, rect);
+                        self.interaction = Interaction::Nothing;
+                    }
+                } else if key.command {
                     match key.code {
                         Keycode::A => {
                             self.interaction =

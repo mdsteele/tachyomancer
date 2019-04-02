@@ -21,6 +21,8 @@ use tachy::gl::{Texture1D, Texture2D};
 
 //===========================================================================//
 
+const BRUSHED_METAL_JPEG_DATA: &[u8] = include_bytes!("brushed_metal.jpeg");
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const CHIP_ICONS_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/texture/chip_icons.png"));
@@ -51,17 +53,26 @@ const WIRE_TEXTURE1D_DATA: &[u8; 128] = &[
 //===========================================================================//
 
 pub struct Textures {
+    brushed_metal: Texture2D,
     chip_icons: Texture2D,
     wire: Texture1D,
 }
 
 impl Textures {
     pub fn new() -> Result<Textures, String> {
+        let brushed_metal = Texture2D::from_jpeg("brushed_metal",
+                                                 BRUSHED_METAL_JPEG_DATA)?;
         let chip_icons = Texture2D::from_png("texture/chip_icons",
                                              CHIP_ICONS_PNG_DATA)?;
         let wire = Texture1D::new_red(WIRE_TEXTURE1D_DATA)?;
-        Ok(Textures { chip_icons, wire })
+        Ok(Textures {
+               brushed_metal,
+               chip_icons,
+               wire,
+           })
     }
+
+    pub fn brushed_metal(&self) -> &Texture2D { &self.brushed_metal }
 
     pub fn chip_icons(&self) -> &Texture2D { &self.chip_icons }
 

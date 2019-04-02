@@ -20,6 +20,7 @@
 use cgmath::{Matrix4, vec2};
 use tachy::font::Align;
 use tachy::geom::{Coords, CoordsSize, Direction, MatrixExt, Orientation, Rect};
+use tachy::gl::{Primitive, VertexArray, VertexBuffer};
 use tachy::gui::Resources;
 use tachy::save::ChipType;
 use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
@@ -27,7 +28,7 @@ use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
 
 //===========================================================================//
 
-const MARGIN: f32 = 0.1;
+const MARGIN: f32 = 0.12;
 
 //===========================================================================//
 
@@ -56,10 +57,50 @@ enum ChipIcon {
 
 //===========================================================================//
 
-pub struct ChipModel {}
+const NUM_PORT_VERTICES: usize = 24;
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const PORT_VERTICES: &[f32; 2 * NUM_PORT_VERTICES] = &[
+    0.0, 0.0, // center
+    0.0, -1.0, // first corner
+
+    // edge:
+    0.88, -1.0,  0.88, -0.9,  0.88, -0.8,  0.88, -0.7,  0.88, -0.6,
+    0.88, -0.5,  0.88, -0.4,  0.88, -0.3,  0.88, -0.2,  0.88, -0.1,
+    0.88, -0.0,  0.88,  0.1,  0.88,  0.2,  0.88,  0.3,  0.88,  0.4,
+    0.88,  0.5,  0.88,  0.6,  0.88,  0.7,  0.88,  0.8,  0.88,  0.9,
+    0.88,  1.0,
+
+    0.0, 1.0, // last corner
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const PORT_VERTEX_IS_EDGE: &[u8; NUM_PORT_VERTICES] = &[
+    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+];
+
+//===========================================================================//
+
+pub struct ChipModel {
+    port_varray: VertexArray,
+    _port_vbuffer: VertexBuffer<f32>,
+    _port_edge_vbuffer: VertexBuffer<u8>,
+}
 
 impl ChipModel {
-    pub fn new() -> ChipModel { ChipModel {} }
+    pub fn new() -> ChipModel {
+        let port_varray = VertexArray::new(2);
+        let port_vbuffer = VertexBuffer::new(PORT_VERTICES);
+        let port_edge_vbuffer = VertexBuffer::new(PORT_VERTEX_IS_EDGE);
+        port_varray.bind();
+        port_vbuffer.attribf(0, 2, 0, 0);
+        port_edge_vbuffer.attribi(1, 1, 0, 0);
+        ChipModel {
+            port_varray,
+            _port_vbuffer: port_vbuffer,
+            _port_edge_vbuffer: port_edge_vbuffer,
+        }
+    }
 
     pub fn draw_interface(&self, resources: &Resources,
                           matrix: &Matrix4<f32>, interface: &Interface) {
@@ -190,15 +231,17 @@ impl ChipModel {
         let x = port.coords.x as f32 + 0.5;
         let y = port.coords.y as f32 + 0.5;
         let mat = matrix * Matrix4::trans2(x, y) *
-            Matrix4::from_angle_z(port.dir.angle_from_east());
-        let color = match (port.color, port.flow) {
-            (PortColor::Behavior, PortFlow::Send) => (1.0, 0.5, 0.0),
-            (PortColor::Behavior, PortFlow::Recv) => (0.75, 0.0, 0.0),
-            (PortColor::Event, PortFlow::Send) => (0.0, 1.0, 1.0),
-            (PortColor::Event, PortFlow::Recv) => (0.0, 0.0, 1.0),
-        };
-        let rect = Rect::new(0.5 - MARGIN, -0.3, 0.5 * MARGIN, 0.6);
-        resources.shaders().solid().fill_rect(&mat, color, rect);
+            Matrix4::from_angle_z(port.dir.angle_from_east()) *
+            Matrix4::scale2(0.5, 0.3); // TODO: make y scale depend on max size
+
+        let shader = resources.shaders().port();
+        shader.bind();
+        shader.set_mvp(&mat);
+        shader.set_port_flow_and_color(port.flow == PortFlow::Send,
+                                       port.color == PortColor::Event);
+        self.port_varray.bind();
+        resources.textures().brushed_metal().bind();
+        self.port_varray.draw(Primitive::TriangleFan, 0, NUM_PORT_VERTICES);
     }
 }
 

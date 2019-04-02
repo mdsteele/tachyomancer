@@ -18,7 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 use gl;
-use gl::types::{GLint, GLsizei, GLuint};
+use gl::types::{GLenum, GLint, GLsizei, GLuint};
+use jpeg_decoder;
 use png;
 use std::marker::PhantomData;
 use std::os::raw::c_void;
@@ -95,6 +96,43 @@ pub struct Texture2D {
 }
 
 impl Texture2D {
+    pub fn from_jpeg(jpeg_name: &str, jpeg_data: &[u8])
+                     -> Result<Texture2D, String> {
+        let mut decoder = jpeg_decoder::Decoder::new(jpeg_data);
+        if let Err(err) = decoder.read_info() {
+            return Err(format!("Failed to read JPEG header for {}: {}",
+                               jpeg_name,
+                               err));
+        }
+        let info = decoder.info().unwrap();
+        let format = match info.pixel_format {
+            jpeg_decoder::PixelFormat::L8 => (gl::RED, gl::R8),
+            jpeg_decoder::PixelFormat::RGB24 => (gl::RGB, gl::RGB8),
+            _ => {
+                return Err(format!("JPEG {} has unsupported format: {:?}",
+                                   jpeg_name,
+                                   info.pixel_format));
+            }
+        };
+        let width: usize = info.width.into();
+        let height: usize = info.height.into();
+        if !width.is_power_of_two() || !height.is_power_of_two() {
+            return Err(format!("Texture JPEG {} has size of {}x{}, \
+                                which are not both powers of 2",
+                               jpeg_name,
+                               width,
+                               height));
+        }
+        let data = decoder
+            .decode()
+            .map_err(|err| {
+                         format!("Failed to decode JPEG data for {}: {}",
+                                 jpeg_name,
+                                 err)
+                     })?;
+        return Ok(Texture2D::new(width, height, &data, format));
+    }
+
     /// Creates a new texture from PNG data.  The width and height must each be
     /// a power of two.
     pub fn from_png(png_name: &str, png_data: &[u8])
@@ -112,7 +150,7 @@ impl Texture2D {
                                png_name,
                                info.bit_depth));
         }
-        let (format, internal_format) = match info.color_type {
+        let format = match info.color_type {
             png::ColorType::Grayscale => (gl::RED, gl::R8),
             png::ColorType::RGB => (gl::RGB, gl::RGB8),
             png::ColorType::RGBA => (gl::RGBA, gl::RGBA8),
@@ -121,7 +159,6 @@ impl Texture2D {
                                    png_name,
                                    info.color_type));
             }
-
         };
         let width = info.width as usize;
         let height = info.height as usize;
@@ -140,6 +177,12 @@ impl Texture2D {
                                  png_name,
                                  err)
                      })?;
+        return Ok(Texture2D::new(width, height, &data, format));
+    }
+
+    fn new(width: usize, height: usize, data: &[u8],
+           (format, internal_format): (GLenum, GLenum))
+           -> Texture2D {
         let mut name: GLuint = 0;
         unsafe {
             gl::GenTextures(1, &mut name);
@@ -160,10 +203,10 @@ impl Texture2D {
                               gl::TEXTURE_MIN_FILTER,
                               gl::LINEAR as GLint);
         }
-        return Ok(Texture2D {
-                      name,
-                      phantom: PhantomData,
-                  });
+        Texture2D {
+            name,
+            phantom: PhantomData,
+        }
     }
 
     /// Sets this as the current texture.

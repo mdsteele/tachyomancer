@@ -114,6 +114,15 @@ impl UniformValue for Vector4<f32> {
     }
 }
 
+impl UniformValue for u32 {
+    fn gl_type() -> GLenum { gl::UNSIGNED_INT }
+    fn set_uniform(&self, loc: GLint) {
+        unsafe {
+            gl::Uniform1ui(loc, *self);
+        }
+    }
+}
+
 impl UniformValue for [u32; 64] {
     fn gl_type() -> GLenum { gl::UNSIGNED_INT }
     fn array_size() -> GLint { 64 }

@@ -23,6 +23,7 @@ extern crate claxon;
 extern crate getopts;
 extern crate gl;
 extern crate indexmap;
+extern crate jpeg_decoder;
 extern crate num_integer;
 extern crate pathfinding;
 extern crate png;

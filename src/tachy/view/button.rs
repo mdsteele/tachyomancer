@@ -641,14 +641,14 @@ impl TextBox {
                             self.cursor_byte -= chr.len_utf8();
                             self.cursor_char -= 1;
                             self.cursor_blink = 0.0;
-                            // TODO: play sound
+                            ui.audio().play_sound(Sound::TypeKey);
                         }
                         self.string.push_str(&rest);
                     }
                     Keycode::Delete => {
                         if self.cursor_byte < self.string.len() {
                             self.string.remove(self.cursor_byte);
-                            // TODO: play sound
+                            ui.audio().play_sound(Sound::TypeKey);
                         }
                     }
                     Keycode::Up | Keycode::PageUp | Keycode::Home => {
@@ -718,7 +718,7 @@ impl TextBox {
                         self.cursor_byte += chr.len_utf8();
                         self.cursor_char += 1;
                         self.cursor_blink = 0.0;
-                        // TODO: play sound
+                        ui.audio().play_sound(Sound::TypeKey);
                     }
                 }
             }

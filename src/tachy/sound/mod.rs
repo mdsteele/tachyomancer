@@ -70,6 +70,10 @@ pub fn grab_chip_data() -> Result<Vec<f32>, String> {
     decode_flac("grab-chip.flac", include_bytes!("grab-chip.flac"))
 }
 
+pub fn type_key_data() -> Result<Vec<f32>, String> {
+    decode_flac("type-key.flac", include_bytes!("type-key.flac"))
+}
+
 //===========================================================================//
 
 fn decode_flac(name: &str, data: &[u8]) -> Result<Vec<f32>, String> {

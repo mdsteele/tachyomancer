@@ -1,0 +1,10 @@
+name = "MECH-KEYBOARD-02.wav"
+artist = "newagesoup"
+license = "CC0 1.0"
+year = 2016
+url = "https://freesound.org/people/newagesoup/sounds/348238/"
+comments = """
+This file was modified from the original by (1) trimming to just part of the
+sound, (2) resampling from 48000 Hz to 44100 Hz, (3) mixing stereo down to
+mono, and (4) converting from WAV to FLAC.
+"""

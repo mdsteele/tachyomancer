@@ -36,6 +36,7 @@ pub enum Sound {
     ButtonHover,
     DropChip,
     GrabChip,
+    TypeKey,
 }
 
 //===========================================================================//
@@ -77,7 +78,9 @@ impl AudioData {
         let button_hover = sound::button_hover_data()?;
         let drop_chip = sound::drop_chip_data()?;
         let grab_chip = sound::grab_chip_data()?;
-        let sound_data = vec![beep, button_hover, drop_chip, grab_chip];
+        let type_key = sound::type_key_data()?;
+        let sound_data =
+            vec![beep, button_hover, drop_chip, grab_chip, type_key];
         Ok(AudioData { sound_data })
     }
 

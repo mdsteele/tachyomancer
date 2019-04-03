@@ -28,63 +28,58 @@ use tachy::state::{WireColor, WireSize};
 const WIRE_COLOR_ERROR: Color4 = Color4::new(1.0, 0.0, 0.0, 1.0);
 const WIRE_COLOR_UNKNOWN: Color4 = Color4::new(0.65, 0.65, 0.65, 1.0);
 
-const VERTICES_PER_WIRE_SIZE: usize = 57;
+const VERTICES_PER_WIRE_SIZE: usize = 52;
 
 // The cosine of 67.5 degrees:
 const COS_67_5: f32 = 0.38268343236508984;
 
-// The semi-thickness, inner texture param, and outer texture param for each
-// wire size:
+// The semi-thickness, low texture param, mid texture param, and high texture
+// param for each wire size:
 #[cfg_attr(rustfmt, rustfmt_skip)]
-const SIZES: &[(f32, f32, f32)] = &[
-    ( 2./32.,  0./128.,   4./128.), // 0-bit
-    ( 3./32.,  4./128.,  10./128.), // 1-bit
-    ( 5./32., 10./128.,  20./128.), // 2-bit
-    ( 8./32., 20./128.,  36./128.), // 4-bit
-    (11./32., 36./128.,  58./128.), // 8-bit
-    (15./32., 58./128.,  88./128.), // 16-bit
-    (20./32., 88./128., 128./128.), // 32-bit
+const SIZES: &[(f32, f32, f32, f32)] = &[
+    ( 2./32.,  0./128.,   2./128.,   4./128.), // 0-bit
+    ( 3./32.,  4./128.,   7./128.,  10./128.), // 1-bit
+    ( 5./32., 10./128.,  15./128.,  20./128.), // 2-bit
+    ( 8./32., 20./128.,  28./128.,  36./128.), // 4-bit
+    (11./32., 36./128.,  47./128.,  58./128.), // 8-bit
+    (15./32., 58./128.,  73./128.,  88./128.), // 16-bit
+    (20./32., 88./128., 108./128., 128./128.), // 32-bit
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 fn generate_wire_vertex_buffer() -> VertexBuffer<f32> {
     let data_len = 3 * VERTICES_PER_WIRE_SIZE * SIZES.len();
     let mut data = Vec::with_capacity(data_len);
-    for &(st, outer, inner) in SIZES {
+    for &(st, outer, inner, outer2) in SIZES {
         // Stub (east):
         data.extend_from_slice(&[
+            28./32., 0.0,       inner,
             1.0,     0.0,       inner,
             1.0,     st,        outer,
-            25./32., 0.5 * st,  outer,
-            25./32., -0.5 * st, outer,
+            28./32., st,        outer,
+            24./32., 0.5 * st,  outer,
+            24./32., -0.5 * st, outer,
+            28./32., -st,       outer,
             1.0,     -st,       outer,
+            1.0,     0.0,       inner,
         ]);
         // Straight (horz):
         data.extend_from_slice(&[
             -1.0, st,  outer,
             1.0,  st,  outer,
-            -1.0, 0.0, inner,
-            1.0,  0.0, inner,
-            -1.0, -st, outer,
-            1.0,  -st, outer,
+            -1.0, -st, outer2,
+            1.0,  -st, outer2,
         ]);
         // Corner (south and east):
         data.extend_from_slice(&[
             -st,     1.0,      outer,
-            0.0,     1.0,      inner,
+            st,      1.0,      outer2,
             -st,     25./32. - COS_67_5 * st, outer,
-            0.0,     25./32.,  inner,
+            st,      25./32. + COS_67_5 * st, outer2,
             25./32. - COS_67_5 * st, -st,     outer,
-            25./32., 0.0,      inner,
+            25./32. + COS_67_5 * st, st,      outer2,
             1.0,     -st,      outer,
-            28./32., 0.0,      inner,
-            1.0,     st,       outer,
-            25./32., 0.0,      inner,
-            25./32. + COS_67_5 * st, st,      outer,
-            0.0,     25./32.,  inner,
-            st,      25./32. + COS_67_5 * st, outer,
-            0.0,     1.0,      inner,
-            st,      1.0,      outer,
+            1.0,     st,       outer2,
         ]);
         // Tee (south/east/north):
         data.extend_from_slice(&[
@@ -171,7 +166,7 @@ impl WireModel {
         resources.textures().wire().bind();
         self.varray.bind();
         let start = wire_size_start(size) + 0;
-        self.varray.draw(Primitive::TriangleFan, start, 5);
+        self.varray.draw(Primitive::TriangleFan, start, 9);
     }
 
     /// Draws a horizontal straight wire in the box from (-1, -1) to (1, 1).
@@ -184,8 +179,8 @@ impl WireModel {
         shader.set_wire_color(wire_color(color));
         resources.textures().wire().bind();
         self.varray.bind();
-        let start = wire_size_start(size) + 5;
-        self.varray.draw(Primitive::TriangleStrip, start, 6);
+        let start = wire_size_start(size) + 9;
+        self.varray.draw(Primitive::TriangleStrip, start, 4);
     }
 
     /// Draws a south/east wire corner in the box from (-1, -1) to (1, 1).
@@ -197,8 +192,8 @@ impl WireModel {
         shader.set_wire_color(wire_color(color));
         resources.textures().wire().bind();
         self.varray.bind();
-        let start = wire_size_start(size) + 11;
-        self.varray.draw(Primitive::TriangleStrip, start, 15);
+        let start = wire_size_start(size) + 13;
+        self.varray.draw(Primitive::TriangleStrip, start, 8);
     }
 
     /// Draws a south/east/north wire tee in the box from (-1, -1) to (1, 1).
@@ -210,7 +205,7 @@ impl WireModel {
         shader.set_wire_color(wire_color(color));
         resources.textures().wire().bind();
         self.varray.bind();
-        let start = wire_size_start(size) + 26;
+        let start = wire_size_start(size) + 21;
         self.varray.draw(Primitive::TriangleFan, start, 13);
     }
 
@@ -223,7 +218,7 @@ impl WireModel {
         shader.set_wire_color(wire_color(color));
         resources.textures().wire().bind();
         self.varray.bind();
-        let start = wire_size_start(size) + 39;
+        let start = wire_size_start(size) + 34;
         self.varray.draw(Primitive::TriangleFan, start, 18);
     }
 }

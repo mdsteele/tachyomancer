@@ -17,9 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, Point2};
+use super::super::button::Scrollbar;
+use cgmath::{Matrix4, Point2, vec2};
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, Rect, RectSize};
+use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
+use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 use tachy::save::{CHIP_CATEGORIES, ChipType, Puzzle};
 
@@ -31,6 +33,9 @@ const CATEGORY_LABEL_FONT_SIZE: f32 = 20.0;
 const PART_WIDTH: i32 = 48;
 const PART_HEIGHT: i32 = 48;
 const PART_SPACING: i32 = 8;
+
+const SCROLLBAR_MARGIN: i32 = 3;
+const SCROLLBAR_WIDTH: i32 = 18;
 
 const TRAY_INNER_MARGIN: i32 = 16;
 const TRAY_OUTER_MARGIN: i32 = 32;
@@ -49,6 +54,7 @@ pub struct PartsTray {
     rect: Rect<i32>,
     category_labels: Vec<CategoryLabel>,
     parts: Vec<Part>,
+    scrollbar: Scrollbar,
 }
 
 impl PartsTray {
@@ -64,10 +70,10 @@ impl PartsTray {
         let tray_width = 2 * TRAY_INNER_MARGIN +
             num_columns * (PART_WIDTH + PART_SPACING) -
             PART_SPACING;
-        let rect = Rect::new(0,
-                             TRAY_OUTER_MARGIN,
-                             tray_width,
-                             window_size.height - 2 * TRAY_OUTER_MARGIN);
+        let mut rect = Rect::new(0,
+                                 TRAY_OUTER_MARGIN,
+                                 tray_width,
+                                 window_size.height - 2 * TRAY_OUTER_MARGIN);
 
         let mut num_parts: usize = 0;
         let mut categories = Vec::<(&str, Vec<ChipType>)>::new();
@@ -106,23 +112,52 @@ impl PartsTray {
             }
         }
 
+        let mut scrollbar = Scrollbar::new(Rect::new(rect.right() +
+                                                         SCROLLBAR_MARGIN,
+                                                     rect.y,
+                                                     SCROLLBAR_WIDTH,
+                                                     rect.height));
+        scrollbar.set_total_height(top + TRAY_INNER_MARGIN - rect.y);
+        if scrollbar.is_visible() {
+            rect.width += SCROLLBAR_MARGIN + SCROLLBAR_WIDTH;
+        }
+
         PartsTray {
             rect,
             category_labels,
             parts,
+            scrollbar,
         }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        {
+            let stencil = Stencil::new();
+            self.draw_box(resources, matrix);
+            stencil.enable_clipping();
+            self.draw_parts(resources, matrix);
+        }
+        self.scrollbar.draw(resources, matrix);
+    }
+
+    fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let ui = resources.shaders().ui();
-        let rect = self.rect.as_f32();
+        let mut rect = self.rect;
+        if self.scrollbar.is_visible() {
+            rect.width -= SCROLLBAR_MARGIN + SCROLLBAR_WIDTH;
+        }
         ui.draw_box2(matrix,
-                     &rect,
+                     &rect.as_f32(),
                      &Color4::ORANGE2,
                      &Color4::CYAN2,
                      &Color4::PURPLE0.with_alpha(0.8));
+    }
+
+    fn draw_parts(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let scroll = self.scrollbar.scroll_top() as f32;
+        let matrix = matrix * Matrix4::trans2(0.0, -scroll);
         for label in self.category_labels.iter() {
-            label.draw(resources, matrix);
+            label.draw(resources, &matrix);
         }
         for part in self.parts.iter() {
             part.draw(resources, &matrix);
@@ -130,10 +165,13 @@ impl PartsTray {
     }
 
     pub fn on_event(&mut self, event: &Event) -> (Option<PartsAction>, bool) {
+        self.scrollbar.on_event(event);
         match event {
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
+                let scrolled_pt = mouse.pt +
+                    vec2(0, self.scrollbar.scroll_top());
                 for part in self.parts.iter() {
-                    if part.rect.contains_point(mouse.pt) {
+                    if part.rect.contains_point(scrolled_pt) {
                         let action = PartsAction::Grab(part.ctype, mouse.pt);
                         return (Some(action), true);
                     }
@@ -147,7 +185,11 @@ impl PartsTray {
                     (None, false)
                 }
             }
+            Event::Multitouch(touch) if self.rect.contains_point(touch.pt) => {
+                (None, true)
+            }
             Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
+                self.scrollbar.scroll_by(scroll.delta.y);
                 (None, true)
             }
             _ => (None, false),

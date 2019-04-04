@@ -31,13 +31,9 @@ const CATEGORY_LABEL_FONT_SIZE: f32 = 20.0;
 const PART_WIDTH: i32 = 48;
 const PART_HEIGHT: i32 = 48;
 const PART_SPACING: i32 = 8;
-const PART_COLUMNS: i32 = 4;
 
 const TRAY_INNER_MARGIN: i32 = 16;
 const TRAY_OUTER_MARGIN: i32 = 32;
-const TRAY_WIDTH: i32 = 2 * TRAY_INNER_MARGIN +
-    PART_COLUMNS * (PART_WIDTH + PART_SPACING) -
-    PART_SPACING;
 
 //===========================================================================//
 
@@ -58,9 +54,19 @@ pub struct PartsTray {
 impl PartsTray {
     pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
                -> PartsTray {
+        let num_columns = if window_size.width < 1000 {
+            2
+        } else if window_size.width < 1200 {
+            3
+        } else {
+            4
+        };
+        let tray_width = 2 * TRAY_INNER_MARGIN +
+            num_columns * (PART_WIDTH + PART_SPACING) -
+            PART_SPACING;
         let rect = Rect::new(0,
                              TRAY_OUTER_MARGIN,
-                             TRAY_WIDTH,
+                             tray_width,
                              window_size.height - 2 * TRAY_OUTER_MARGIN);
 
         let mut num_parts: usize = 0;
@@ -90,7 +96,7 @@ impl PartsTray {
                     col * (PART_WIDTH + PART_SPACING);
                 parts.push(Part::new(left, top, ctype));
                 col += 1;
-                if col >= PART_COLUMNS {
+                if col >= num_columns {
                     col = 0;
                     top += PART_HEIGHT + PART_SPACING;
                 }

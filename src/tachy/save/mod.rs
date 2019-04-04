@@ -30,7 +30,7 @@ mod progress;
 mod puzzle;
 mod wire;
 
-pub use self::chip::ChipType;
+pub use self::chip::{CHIP_CATEGORIES, ChipType};
 pub use self::circuit::CircuitData;
 pub use self::converse::{AllConversationsIter, Conversation,
                          ConversationProgress};

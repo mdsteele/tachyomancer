@@ -25,7 +25,7 @@ use tachy::geom::CoordsSize;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChipType {
-    // Values:
+    // Value:
     Const(u32),
     Pack,
     Unpack,
@@ -54,6 +54,44 @@ pub enum ChipType {
     Display,
     Button,
 }
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
+    ("Value", &[
+        ChipType::Const(1),
+        ChipType::Pack,
+        ChipType::Unpack,
+    ]),
+    ("Arithmetic", &[
+        ChipType::Add,
+        ChipType::Sub,
+    ]),
+    ("Comparison", &[
+        ChipType::Cmp,
+        ChipType::CmpEq,
+        ChipType::Eq,
+    ]),
+    ("Logic", &[
+        ChipType::Not,
+        ChipType::And,
+        ChipType::Or,
+        ChipType::Mux,
+    ]),
+    ("Events", &[
+        ChipType::Clock,
+        ChipType::Delay,
+        ChipType::Discard,
+        ChipType::Join,
+        ChipType::Latest,
+        ChipType::Sample,
+    ]),
+    ("Special", &[
+        ChipType::Break,
+        ChipType::Ram,
+        ChipType::Display,
+        ChipType::Button,
+    ]),
+];
 
 impl str::FromStr for ChipType {
     type Err = String;

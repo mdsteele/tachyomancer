@@ -43,6 +43,7 @@ enum ChipIcon {
     CmpEq1,
     CmpEq2,
     Eq,
+    Mul,
     Mux,
     Not,
     Or,
@@ -174,6 +175,7 @@ impl ChipModel {
                 }
             }
             ChipType::Eq => ChipIcon::Eq,
+            ChipType::Mul => ChipIcon::Mul,
             ChipType::Mux => ChipIcon::Mux,
             ChipType::Not => ChipIcon::Not,
             ChipType::Or => ChipIcon::Or,

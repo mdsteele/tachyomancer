@@ -73,6 +73,43 @@ impl ChipEval for AddChipEval {
 
 //===========================================================================//
 
+pub const MUL_CHIP_DATA: &ChipData = ADD_CHIP_DATA;
+
+pub struct MulChipEval {
+    size: WireSize,
+    input1: usize,
+    input2: usize,
+    output: usize,
+}
+
+impl MulChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), MUL_CHIP_DATA.ports.len());
+        let chip_eval = MulChipEval {
+            size: slots[2].1,
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for MulChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input1, changed1) = state.recv_behavior(self.input1);
+        let (input2, changed2) = state.recv_behavior(self.input2);
+        if changed1 || changed2 {
+            let prod = (input1 as u64) * (input2 as u64);
+            let lo = (prod & (self.size.mask() as u64)) as u32;
+            state.send_behavior(self.output, lo);
+        }
+    }
+}
+
+//===========================================================================//
+
 pub const SUB_CHIP_DATA: &ChipData = ADD_CHIP_DATA;
 
 pub struct SubChipEval {

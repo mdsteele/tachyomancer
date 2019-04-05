@@ -32,6 +32,7 @@ pub enum ChipType {
     // Arithmetic:
     Add,
     Sub,
+    Mul,
     // Comparison:
     Cmp,
     CmpEq,
@@ -65,6 +66,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
     ("Arithmetic", &[
         ChipType::Add,
         ChipType::Sub,
+        ChipType::Mul,
     ]),
     ("Comparison", &[
         ChipType::Cmp,
@@ -111,6 +113,7 @@ impl str::FromStr for ChipType {
             "Eq" => Ok(ChipType::Eq),
             "Join" => Ok(ChipType::Join),
             "Latest" => Ok(ChipType::Latest),
+            "Mul" => Ok(ChipType::Mul),
             "Mux" => Ok(ChipType::Mux),
             "Not" => Ok(ChipType::Not),
             "Or" => Ok(ChipType::Or),
@@ -183,36 +186,18 @@ impl ChipType {
 
 #[cfg(test)]
 mod tests {
-    use super::ChipType;
+    use super::{CHIP_CATEGORIES, ChipType};
 
     #[test]
     fn chip_type_to_and_from_string() {
-        let chip_types = &[
-            ChipType::Add,
-            ChipType::And,
-            ChipType::Break,
-            ChipType::Button,
-            ChipType::Clock,
-            ChipType::Cmp,
-            ChipType::CmpEq,
+        let mut chip_types = vec![
             ChipType::Const(0),
             ChipType::Const(13),
             ChipType::Const(0xffffffff),
-            ChipType::Delay,
-            ChipType::Discard,
-            ChipType::Display,
-            ChipType::Eq,
-            ChipType::Join,
-            ChipType::Latest,
-            ChipType::Mux,
-            ChipType::Not,
-            ChipType::Or,
-            ChipType::Pack,
-            ChipType::Ram,
-            ChipType::Sample,
-            ChipType::Sub,
-            ChipType::Unpack,
         ];
+        for &(_, ctypes) in CHIP_CATEGORIES.iter() {
+            chip_types.extend_from_slice(ctypes);
+        }
         for &ctype in chip_types.iter() {
             assert_eq!(format!("{:?}", ctype).parse(), Ok(ctype));
         }

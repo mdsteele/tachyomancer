@@ -105,6 +105,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::CmpEq => self::compare::CMPEQ_CHIP_DATA,
         ChipType::Const(value) => self::value::const_chip_data(value),
         ChipType::Delay => self::event::DELAY_CHIP_DATA,
+        ChipType::Demux => self::event::DEMUX_CHIP_DATA,
         ChipType::Discard => self::event::DISCARD_CHIP_DATA,
         ChipType::Display => self::special::DISPLAY_CHIP_DATA,
         ChipType::Eq => self::compare::EQ_CHIP_DATA,
@@ -148,6 +149,7 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
             self::value::ConstChipEval::new_evals(value, slots)
         }
         ChipType::Delay => self::event::DelayChipEval::new_evals(slots),
+        ChipType::Demux => self::event::DemuxChipEval::new_evals(slots),
         ChipType::Discard => self::event::DiscardChipEval::new_evals(slots),
         ChipType::Display => vec![],
         ChipType::Eq => self::compare::EqChipEval::new_evals(slots),

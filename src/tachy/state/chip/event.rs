@@ -125,6 +125,57 @@ impl ChipEval for DelayChipEval {
 
 //===========================================================================//
 
+pub const DEMUX_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Send, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::North),
+    ],
+    constraints: &[
+        AbstractConstraint::Equal(0, 1),
+        AbstractConstraint::Equal(0, 2),
+        AbstractConstraint::Equal(1, 2),
+        AbstractConstraint::Exact(3, WireSize::One),
+    ],
+    dependencies: &[(0, 1), (0, 2), (3, 1), (3, 2)],
+};
+
+pub struct DemuxChipEval {
+    input: usize,
+    output1: usize,
+    output2: usize,
+    control: usize,
+}
+
+impl DemuxChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), DEMUX_CHIP_DATA.ports.len());
+        let chip_eval = DemuxChipEval {
+            input: slots[0].0,
+            output1: slots[1].0,
+            output2: slots[2].0,
+            control: slots[3].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for DemuxChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(value) = state.recv_event(self.input) {
+            if state.recv_behavior(self.control).0 != 0 {
+                state.send_event(self.output1, value);
+            } else {
+                state.send_event(self.output2, value);
+            }
+        }
+    }
+}
+
+//===========================================================================//
+
 pub const DISCARD_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),

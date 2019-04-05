@@ -46,6 +46,7 @@ pub enum ChipType {
     // Events:
     Clock,
     Delay,
+    Demux,
     Discard,
     Join,
     Latest,
@@ -84,6 +85,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
     ("Events", &[
         ChipType::Clock,
         ChipType::Delay,
+        ChipType::Demux,
         ChipType::Discard,
         ChipType::Join,
         ChipType::Latest,
@@ -110,6 +112,7 @@ impl str::FromStr for ChipType {
             "Cmp" => Ok(ChipType::Cmp),
             "CmpEq" => Ok(ChipType::CmpEq),
             "Delay" => Ok(ChipType::Delay),
+            "Demux" => Ok(ChipType::Demux),
             "Discard" => Ok(ChipType::Discard),
             "Display" => Ok(ChipType::Display),
             "Eq" => Ok(ChipType::Eq),
@@ -141,9 +144,11 @@ impl str::FromStr for ChipType {
 impl ChipType {
     pub fn is_allowed_in(self, puzzle: Puzzle) -> bool {
         match self {
-            ChipType::Clock | ChipType::Delay | ChipType::Discard |
-            ChipType::Join | ChipType::Latest | ChipType::Sample |
-            ChipType::Break | ChipType::Ram => puzzle.allows_events(),
+            ChipType::Clock | ChipType::Delay | ChipType::Demux |
+            ChipType::Discard | ChipType::Join | ChipType::Latest |
+            ChipType::Sample | ChipType::Break | ChipType::Ram => {
+                puzzle.allows_events()
+            }
             ChipType::Button => {
                 match puzzle.kind() {
                     PuzzleKind::Command | PuzzleKind::Sandbox => {

@@ -45,6 +45,7 @@ enum ChipIcon {
     CmpEq1,
     CmpEq2,
     Delay,
+    Demux,
     Eq,
     Mul,
     Mux,
@@ -180,6 +181,7 @@ impl ChipModel {
                 }
             }
             ChipType::Delay => ChipIcon::Delay,
+            ChipType::Demux => ChipIcon::Demux,
             ChipType::Eq => ChipIcon::Eq,
             ChipType::Mul => ChipIcon::Mul,
             ChipType::Mux => ChipIcon::Mux,
@@ -213,7 +215,9 @@ impl ChipModel {
 
     fn chip_icon_color(&self, chip_icon: ChipIcon) -> Color4 {
         match chip_icon {
-            ChipIcon::Clock | ChipIcon::Delay => Color4::CYAN2,
+            ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux => {
+                Color4::CYAN2
+            }
             _ => Color4::ORANGE2,
         }
     }

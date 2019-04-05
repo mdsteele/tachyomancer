@@ -119,6 +119,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Sample => self::event::SAMPLE_CHIP_DATA,
         ChipType::Sub => self::arith::SUB_CHIP_DATA,
         ChipType::Unpack => self::value::UNPACK_CHIP_DATA,
+        ChipType::Xor => self::logic::XOR_CHIP_DATA,
     }
 }
 
@@ -161,6 +162,7 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
         ChipType::Sample => self::event::SampleChipEval::new_evals(slots),
         ChipType::Sub => self::arith::SubChipEval::new_evals(slots),
         ChipType::Unpack => self::value::UnpackChipEval::new_evals(slots),
+        ChipType::Xor => self::logic::XorChipEval::new_evals(slots),
     }
 }
 

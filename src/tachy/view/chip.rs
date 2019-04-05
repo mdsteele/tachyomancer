@@ -53,6 +53,7 @@ enum ChipIcon {
     Sub2,
     Unpack1,
     Unpack2,
+    Xor,
     Blank,
 }
 
@@ -200,6 +201,7 @@ impl ChipModel {
                     ChipIcon::Unpack1
                 }
             }
+            ChipType::Xor => ChipIcon::Xor,
             _ => ChipIcon::Blank,
         }
     }

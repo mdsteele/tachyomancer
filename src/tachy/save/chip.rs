@@ -41,6 +41,7 @@ pub enum ChipType {
     Not,
     And,
     Or,
+    Xor,
     Mux,
     // Events:
     Clock,
@@ -77,6 +78,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Not,
         ChipType::And,
         ChipType::Or,
+        ChipType::Xor,
         ChipType::Mux,
     ]),
     ("Events", &[
@@ -122,6 +124,7 @@ impl str::FromStr for ChipType {
             "Sample" => Ok(ChipType::Sample),
             "Sub" => Ok(ChipType::Sub),
             "Unpack" => Ok(ChipType::Unpack),
+            "Xor" => Ok(ChipType::Xor),
             _ => {
                 if string.starts_with("Const(") && string.ends_with(')') {
                     let inner = &string[6..(string.len() - 1)];

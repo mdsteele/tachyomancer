@@ -282,28 +282,28 @@ impl AudioVideoPane {
             self.new_window_options = self.current_window_options.clone();
         }
 
-        if let Some(checked) =
-            self.antialias_checkbox
-                .on_event(event, self.new_window_options.antialiasing, true)
+        let antialiasing = self.new_window_options.antialiasing;
+        if let Some(checked) = self.antialias_checkbox
+            .on_event(event, ui, antialiasing, true)
         {
             self.new_window_options.antialiasing = checked;
         }
 
         if let Some(checked) =
             self.fullscreen_checkbox
-                .on_event(event, self.new_window_options.fullscreen, true)
+                .on_event(event, ui, self.new_window_options.fullscreen, true)
         {
             self.new_window_options.fullscreen = checked;
         }
 
         let resolution = self.new_window_options.resolution;
         for button in self.resolution_buttons.iter_mut() {
-            if let Some(new_res) = button.on_event(event, &resolution) {
+            if let Some(new_res) = button.on_event(event, ui, &resolution) {
                 self.new_window_options.resolution = new_res;
             }
         }
 
-        match self.sound_volume_slider.on_event(event) {
+        match self.sound_volume_slider.on_event(event, ui) {
             Some(SliderAction::Update(volume)) => {
                 state.prefs_mut().set_sound_volume_percent(volume);
                 ui.audio().set_sound_volume_percent(volume);
@@ -379,7 +379,7 @@ impl HotkeysPane {
 
         let mut listening: Option<Hotkey> = None;
         for hotkey_box in self.hotkey_boxes.iter_mut() {
-            match hotkey_box.on_event(event) {
+            match hotkey_box.on_event(event, ui) {
                 Some(HotkeyBoxAction::Listening) => {
                     listening = Some(hotkey_box.hotkey());
                 }
@@ -393,7 +393,7 @@ impl HotkeysPane {
         if let Some(hotkey) = listening {
             for hotkey_box in self.hotkey_boxes.iter_mut() {
                 if hotkey_box.hotkey() != hotkey {
-                    hotkey_box.on_event(&Event::Unfocus);
+                    hotkey_box.on_event(&Event::Unfocus, ui);
                 }
             }
         }

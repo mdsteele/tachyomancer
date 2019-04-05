@@ -100,7 +100,8 @@ impl Checkbox {
                   &self.label);
     }
 
-    pub fn on_event(&mut self, event: &Event, checked: bool, enabled: bool)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, checked: bool,
+                    enabled: bool)
                     -> Option<bool> {
         match event {
             Event::ClockTick(tick) => {
@@ -118,7 +119,7 @@ impl Checkbox {
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
                 if self.hover_pulse.set_hovering(hovering) {
-                    // TODO: play sound
+                    ui.audio().play_sound(Sound::ButtonHover);
                 }
             }
             Event::Unfocus => self.hover_pulse.unfocus(),
@@ -195,7 +196,8 @@ impl HotkeyBox {
                   self.hotkey.name());
     }
 
-    pub fn on_event(&mut self, event: &Event) -> Option<HotkeyBoxAction> {
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui)
+                    -> Option<HotkeyBoxAction> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick);
@@ -219,7 +221,7 @@ impl HotkeyBox {
                 let hovering = self.rect.contains_point(mouse.pt);
                 if self.hover_pulse.set_hovering(hovering) {
                     if !self.listening {
-                        // TODO: play sound
+                        ui.audio().play_sound(Sound::ButtonHover);
                     }
                 }
             }
@@ -342,9 +344,10 @@ impl<T: Clone + PartialEq> RadioCheckbox<T> {
         self.inner.draw(resources, matrix, value == &self.value, true);
     }
 
-    pub fn on_event(&mut self, event: &Event, value: &T) -> Option<T> {
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, value: &T)
+                    -> Option<T> {
         let checked = value == &self.value;
-        if let Some(true) = self.inner.on_event(event, checked, true) {
+        if let Some(true) = self.inner.on_event(event, ui, checked, true) {
             Some(self.value.clone())
         } else {
             None
@@ -507,7 +510,8 @@ impl Slider {
                               &bg_color);
     }
 
-    pub fn on_event(&mut self, event: &Event) -> Option<SliderAction> {
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui)
+                    -> Option<SliderAction> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick);
@@ -540,7 +544,7 @@ impl Slider {
                 } else {
                     let hovering = self.handle_rect().contains_point(mouse.pt);
                     if self.hover_pulse.set_hovering(hovering) {
-                        // TODO: play sound
+                        ui.audio().play_sound(Sound::ButtonHover);
                     }
                 }
             }

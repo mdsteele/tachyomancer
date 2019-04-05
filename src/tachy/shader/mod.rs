@@ -153,6 +153,7 @@ pub struct ChipShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
     icon_coords: ShaderUniform<Vector2<u32>>,
+    icon_color: ShaderUniform<Vector3<f32>>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
 }
@@ -161,6 +162,7 @@ impl ChipShader {
     fn new(program: ShaderProgram) -> Result<ChipShader, String> {
         let mvp = program.get_uniform("MVP")?;
         let icon_coords = program.get_uniform("IconCoords")?;
+        let icon_color = program.get_uniform("IconColor")?;
         let varray = VertexArray::new(1);
         let vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
         varray.bind();
@@ -169,15 +171,18 @@ impl ChipShader {
                program,
                mvp,
                icon_coords,
+               icon_color,
                varray,
                _vbuffer: vbuffer,
            })
     }
 
-    pub fn draw(&self, matrix: &Matrix4<f32>, icon_coords: Vector2<u32>) {
+    pub fn draw(&self, matrix: &Matrix4<f32>, icon_coords: Vector2<u32>,
+                icon_color: Color4) {
         self.program.bind();
         self.mvp.set(matrix);
         self.icon_coords.set(&icon_coords);
+        self.icon_color.set(&icon_color.rgb().into());
         self.varray.bind();
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
     }

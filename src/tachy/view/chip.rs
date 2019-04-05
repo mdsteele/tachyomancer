@@ -19,7 +19,8 @@
 
 use cgmath::{Matrix4, vec2};
 use tachy::font::Align;
-use tachy::geom::{Coords, CoordsSize, Direction, MatrixExt, Orientation, Rect};
+use tachy::geom::{Color4, Coords, CoordsSize, Direction, MatrixExt,
+                  Orientation, Rect};
 use tachy::gl::{Primitive, VertexArray, VertexBuffer};
 use tachy::gui::Resources;
 use tachy::save::ChipType;
@@ -39,9 +40,11 @@ const MARGIN: f32 = 0.12;
 enum ChipIcon {
     Add = 0,
     And,
+    Clock,
     Cmp,
     CmpEq1,
     CmpEq2,
+    Delay,
     Eq,
     Mul,
     Mux,
@@ -163,6 +166,7 @@ impl ChipModel {
         match ctype {
             ChipType::Add => ChipIcon::Add,
             ChipType::And => ChipIcon::And,
+            ChipType::Clock => ChipIcon::Clock,
             ChipType::Cmp => ChipIcon::Cmp,
             ChipType::CmpEq => {
                 let flip = match orient * Direction::North {
@@ -175,6 +179,7 @@ impl ChipModel {
                     ChipIcon::CmpEq1
                 }
             }
+            ChipType::Delay => ChipIcon::Delay,
             ChipType::Eq => ChipIcon::Eq,
             ChipType::Mul => ChipIcon::Mul,
             ChipType::Mux => ChipIcon::Mux,
@@ -206,6 +211,13 @@ impl ChipModel {
         }
     }
 
+    fn chip_icon_color(&self, chip_icon: ChipIcon) -> Color4 {
+        match chip_icon {
+            ChipIcon::Clock | ChipIcon::Delay => Color4::CYAN2,
+            _ => Color4::ORANGE2,
+        }
+    }
+
     fn draw_chip_icon(&self, resources: &Resources, matrix: &Matrix4<f32>,
                       orient: Orientation, size: CoordsSize, icon: ChipIcon) {
         let width = size.width as f32 - 2.0 * MARGIN;
@@ -216,8 +228,9 @@ impl ChipModel {
             orient.matrix() * Matrix4::trans2(-0.5, -0.5);
         let icon_index = icon as u32;
         let icon_coords = vec2(icon_index % 8, icon_index / 8);
+        let icon_color = self.chip_icon_color(icon);
         resources.textures().chip_icons().bind();
-        resources.shaders().chip().draw(&matrix, icon_coords);
+        resources.shaders().chip().draw(&matrix, icon_coords, icon_color);
     }
 
     fn draw_chip_string(&self, resources: &Resources, matrix: &Matrix4<f32>,

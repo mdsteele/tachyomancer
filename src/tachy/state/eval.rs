@@ -104,7 +104,6 @@ impl CircuitEval {
     }
 
     pub fn step_subcycle(&mut self) -> EvalResult {
-        self.errors.extend(self.puzzle.end_subcycle(&self.state));
         self.state.reset_for_subcycle();
         while !self.state.changed {
             if self.subcycle >= self.chips.len() {
@@ -115,12 +114,14 @@ impl CircuitEval {
                             chip.needs_another_cycle(&self.state);
                     }
                 }
+                self.errors.extend(self.puzzle.end_cycle(self.time_step,
+                                                         &self.state));
                 self.subcycle = 0;
                 self.cycle += 1;
-                self.state.reset_for_cycle();
                 if needs_another_cycle {
                     debug_log!("  Cycle {} complete, starting another cycle",
                                self.cycle);
+                    self.state.reset_for_cycle();
                     self.puzzle.begin_cycle(&mut self.state);
                     return EvalResult::Continue;
                 }
@@ -129,6 +130,7 @@ impl CircuitEval {
                 debug_log!("Time step {} complete after {} cycle(s)",
                            self.time_step,
                            self.cycle);
+                self.state.reset_for_cycle();
                 self.cycle = 0;
                 self.time_step += 1;
                 return EvalResult::Continue;
@@ -280,11 +282,15 @@ pub trait PuzzleEval {
     /// events for that time step.  The default implementation is a no-op.
     fn begin_cycle(&mut self, _state: &mut CircuitState) {}
 
-    /// Called at the end of each subcycle; returns a list of errors (if any)
-    /// that cause the puzzle to be failed (e.g. if an invalid value was sent
-    /// to an interface receiver).  The default implementation always returns
-    /// no errors.
-    fn end_subcycle(&mut self, _state: &CircuitState) -> Vec<EvalError> {
+    /// Called at the end of each cycle; returns a list of errors (if any) that
+    /// cause the puzzle to be failed (e.g. if an invalid value was sent to an
+    /// interface receiver).  The default implementation always returns no
+    /// errors.
+    ///
+    /// This is the method that should be used for receiving events at puzzle
+    /// interface ports.
+    fn end_cycle(&mut self, _time_step: u32, _state: &CircuitState)
+                 -> Vec<EvalError> {
         Vec::new()
     }
 
@@ -292,6 +298,9 @@ pub trait PuzzleEval {
     /// that cause the puzzle to be failed (e.g. if an invalid value was sent
     /// to an interface receiver).  The default implementation always returns
     /// no errors.
+    ///
+    /// This is the method that should be used for receiving behavior values at
+    /// puzzle interface ports.
     fn end_time_step(&mut self, _time_step: u32, _state: &CircuitState)
                      -> Vec<EvalError> {
         Vec::new()

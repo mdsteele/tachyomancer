@@ -88,12 +88,13 @@ impl Interface {
     }
 
     pub fn ports_with_top_left(&self, top_left: Coords) -> Vec<PortSpec> {
-        let delta = self.side.rotate_ccw().delta();
-        let start = match self.side {
-            Direction::East | Direction::North => {
-                top_left - delta * ((self.ports.len() as i32) - 1)
+        let delta = match self.side {
+            Direction::South | Direction::West => {
+                self.side.rotate_ccw().delta()
             }
-            Direction::South | Direction::West => top_left,
+            Direction::East | Direction::North => {
+                self.side.rotate_cw().delta()
+            }
         };
         let port_dir = -self.side;
         self.ports
@@ -103,7 +104,7 @@ impl Interface {
                      PortSpec {
                          flow: port.flow,
                          color: port.color,
-                         coords: start + delta * (index as i32),
+                         coords: top_left + delta * (index as i32),
                          dir: port_dir,
                      }
                  })

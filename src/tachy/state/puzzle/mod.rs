@@ -21,6 +21,7 @@ mod heliostat;
 mod iface;
 mod reactor;
 mod rng;
+mod robotarm;
 mod sandbox;
 mod tutorial;
 
@@ -36,6 +37,7 @@ pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
         Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
         Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
         Puzzle::AutomateReactor => self::reactor::INTERFACES,
+        Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
         Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
         Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
     }
@@ -55,6 +57,9 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
         }
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::AutomateReactorEval::new(slots))
+        }
+        Puzzle::AutomateRobotArm => {
+            Box::new(self::robotarm::AutomateRobotArmEval::new(slots))
         }
         Puzzle::SandboxBehavior => {
             Box::new(self::sandbox::SandboxBehaviorEval::new(slots))

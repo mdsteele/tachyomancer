@@ -36,6 +36,7 @@ pub enum Puzzle {
     TutorialOr,
     AutomateHeliostat,
     AutomateReactor,
+    AutomateRobotArm,
     SandboxBehavior,
     SandboxEvent,
 }
@@ -44,6 +45,7 @@ const ALL_PUZZLES: &[Puzzle] = &[
     Puzzle::TutorialOr,
     Puzzle::AutomateHeliostat,
     Puzzle::AutomateReactor,
+    Puzzle::AutomateRobotArm,
     Puzzle::SandboxBehavior,
     Puzzle::SandboxEvent,
 ];
@@ -121,6 +123,19 @@ impl Puzzle {
                         the power output to the desired level.",
                     instructions: "",
                     verification: &[0, 0, 0, 0, 0],
+                }
+            }
+            Puzzle::AutomateRobotArm => {
+                &PuzzleData {
+                    title: "Manipulator Arm",
+                    kind: PuzzleKind::Automate,
+                    allow_events: true,
+                    score_units: "Time",
+                    graph_bounds: (150, 150),
+                    description: "\
+                        Operate a robotic arm in response to radio commands.",
+                    instructions: "",
+                    verification: &[0, 0, 0],
                 }
             }
             Puzzle::SandboxBehavior => {

@@ -60,6 +60,7 @@ impl VerificationTray {
         let subview =
             match current_puzzle {
                 Puzzle::AutomateHeliostat => HeliostatCam::new(inner_rect),
+                Puzzle::AutomateRobotArm => RobotArmCam::new(inner_rect),
                 _ => {
                     FabricationTable::new(
                         inner_rect,
@@ -210,6 +211,44 @@ impl PuzzleVerifyView for HeliostatCam {
                   Align::TopLeft,
                   (left, top + 60.0),
                   &format!("Opt: ({}, {})", values[0], values[1]));
+    }
+}
+
+//===========================================================================//
+
+struct RobotArmCam {
+    rect: Rect<i32>,
+}
+
+impl RobotArmCam {
+    fn new(rect: Rect<i32>) -> Box<PuzzleVerifyView> {
+        Box::new(RobotArmCam { rect })
+    }
+}
+
+impl PuzzleVerifyView for RobotArmCam {
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+            _time_step: Option<u32>, values: &[u64], _errors: &[EvalError]) {
+        debug_assert_eq!(values.len(), 3);
+        // TODO: Draw a robot arm and eight numbered positions in a circle.
+        let left = self.rect.x as f32;
+        let top = self.rect.y as f32;
+        let font = resources.fonts().roman();
+        font.draw(matrix,
+                  TABLE_FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top),
+                  &format!("Pos: {}", values[0]));
+        font.draw(matrix,
+                  TABLE_FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top + 30.0),
+                  &format!("Deg: {}", values[1]));
+        font.draw(matrix,
+                  TABLE_FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top + 60.0),
+                  &format!("Cmd: {}", values[2]));
     }
 }
 

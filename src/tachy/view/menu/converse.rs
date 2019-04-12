@@ -25,7 +25,7 @@ use num_integer::div_mod_floor;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, MatrixExt, Rect};
 use tachy::gl::Stencil;
-use tachy::gui::{Event, Resources};
+use tachy::gui::{Event, Resources, Ui};
 use tachy::save::{Conversation, Prefs, Profile, Puzzle};
 use tachy::state::{ConversationBubble, ConversationPortrait, GameState};
 
@@ -97,10 +97,11 @@ impl ConverseView {
         self.bubbles_list.draw(resources, matrix);
     }
 
-    pub fn on_event(&mut self, event: &Event, state: &mut GameState)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    state: &mut GameState)
                     -> Option<ConverseAction> {
         if let Some(conv) =
-            self.conv_list.on_event(event, &state.current_conversation())
+            self.conv_list.on_event(event, ui, &state.current_conversation())
         {
             state.set_current_conversation(conv);
             self.update_conversation_bubbles(state);

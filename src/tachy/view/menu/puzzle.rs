@@ -157,14 +157,14 @@ impl PuzzlesView {
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
                     state: &mut GameState)
                     -> Option<PuzzlesAction> {
-        if let Some(puzzle) = self.puzzle_list
-            .on_event(event, &state.current_puzzle())
+        if let Some(puzzle) =
+            self.puzzle_list.on_event(event, ui, &state.current_puzzle())
         {
             state.set_current_puzzle(puzzle);
             self.update_circuit_list(state);
         }
         if let Some(circuit_name) =
-            self.circuit_list.on_event(event, state.circuit_name())
+            self.circuit_list.on_event(event, ui, state.circuit_name())
         {
             state.set_circuit_name(circuit_name);
         }

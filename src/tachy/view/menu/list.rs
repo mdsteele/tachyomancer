@@ -24,7 +24,7 @@ use std::borrow::Borrow;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, Rect};
 use tachy::gl::Stencil;
-use tachy::gui::{Event, Resources};
+use tachy::gui::{Event, Resources, Sound, Ui};
 
 //===========================================================================//
 
@@ -139,7 +139,8 @@ impl<T: Clone + Eq> ListView<T> {
                            &Color4::PURPLE0);
     }
 
-    pub fn on_event<Q>(&mut self, event: &Event, current: &Q) -> Option<T>
+    pub fn on_event<Q>(&mut self, event: &Event, ui: &mut Ui, current: &Q)
+                       -> Option<T>
     where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
@@ -158,7 +159,7 @@ impl<T: Clone + Eq> ListView<T> {
                     {
                         let value = &self.items[index as usize].0;
                         if value.borrow() != current {
-                            // TODO: Play sound
+                            ui.audio().play_sound(Sound::ButtonClick);
                             return Some(value.clone());
                         }
                     }

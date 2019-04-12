@@ -550,7 +550,7 @@ impl EditGridView {
                 }
                 let change = GridChange::ToggleCrossWire(coords);
                 if grid.try_mutate(vec![change]) {
-                    // TODO: Play sound.
+                    // TODO: Play sound for toggling cross wire.
                 }
             }
             Event::MouseMove(mouse) => {
@@ -571,7 +571,9 @@ impl EditGridView {
                         }
                     }
                     Interaction::DraggingBounds(ref mut drag) => {
-                        drag.move_to(grid_pt, grid);
+                        if drag.move_to(grid_pt, grid) {
+                            // TODO: Play sound for bounds drag changing
+                        }
                     }
                     Interaction::DraggingChip(ref mut drag) => {
                         drag.move_to(grid_pt);

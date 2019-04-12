@@ -166,7 +166,9 @@ impl CircuitView {
 
         self.edit_grid.request_interaction_cursor(event, ui.cursor());
 
-        if let Some(opt_action) = self.controls_tray.on_event(event, prefs) {
+        if let Some(opt_action) = self.controls_tray
+            .on_event(event, ui, prefs)
+        {
             match opt_action {
                 None => {}
                 Some(ControlsAction::Reset) => {

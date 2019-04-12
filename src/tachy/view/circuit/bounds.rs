@@ -125,7 +125,7 @@ impl BoundsDrag {
         next_cursor.request(self.handle.cursor());
     }
 
-    pub fn move_to(&mut self, grid_pt: Point2<f32>, grid: &EditGrid) {
+    pub fn move_to(&mut self, grid_pt: Point2<f32>, grid: &EditGrid) -> bool {
         self.drag_current_grid_pt = grid_pt;
         let delta: CoordsDelta = (self.drag_current_grid_pt -
                                       self.drag_start_grid_pt)
@@ -159,8 +159,14 @@ impl BoundsDrag {
             }
             BoundsHandle::Left | BoundsHandle::Right => {}
         }
-        self.bounds = Rect::new(left, top, right - left, bottom - top);
-        self.acceptable = grid.can_have_bounds(self.bounds);
+        let new_bounds = Rect::new(left, top, right - left, bottom - top);
+        if new_bounds != self.bounds {
+            self.bounds = new_bounds;
+            self.acceptable = grid.can_have_bounds(self.bounds);
+            true
+        } else {
+            false
+        }
     }
 
     pub fn finish(self, grid: &mut EditGrid) {

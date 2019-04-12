@@ -288,7 +288,7 @@ impl MenuView {
                 // TODO: navigation section
             }
             MenuSection::Messages => {
-                match self.converse_view.on_event(event, state) {
+                match self.converse_view.on_event(event, ui, state) {
                     Some(ConverseAction::Complete) => {
                         state.mark_current_conversation_complete();
                         self.converse_view.update_conversation_list(state);
@@ -394,6 +394,7 @@ impl MenuView {
     pub fn show_error(&mut self, ui: &mut Ui, state: &mut GameState,
                       unable: &str, error: &str) {
         debug_log!("ERROR: Unable to {}: {}", unable, error);
+        // TODO: Play sound for error dialog popup.
         self.unfocus(ui, state);
         let format = format!("$R$*ERROR:$*$D Unable to {}.\n\n{}",
                              unable,
@@ -429,7 +430,7 @@ impl MenuView {
     }
 
     fn unfocus(&mut self, ui: &mut Ui, state: &mut GameState) {
-        self.converse_view.on_event(&Event::Unfocus, state);
+        self.converse_view.on_event(&Event::Unfocus, ui, state);
         self.prefs_view.on_event(&Event::Unfocus, ui, state);
         self.puzzles_view.on_event(&Event::Unfocus, ui, state);
     }

@@ -112,7 +112,7 @@ impl Checkbox {
                     self.rect.contains_point(mouse.pt)
                 {
                     self.hover_pulse.on_click();
-                    // TOOD: play sound
+                    ui.audio().play_sound(Sound::ButtonClick);
                     return Some(!checked);
                 }
             }
@@ -212,6 +212,7 @@ impl HotkeyBox {
                 if self.rect.contains_point(mouse.pt) && !self.listening {
                     self.hover_pulse.on_click();
                     self.listening = true;
+                    ui.audio().play_sound(Sound::ButtonClick);
                     return Some(HotkeyBoxAction::Listening);
                 } else {
                     self.listening = false;
@@ -790,7 +791,7 @@ impl<T: Clone> TextButton<T> {
             Event::KeyDown(key) => {
                 if enabled && Some(key.code) == self.keycode {
                     self.hover_pulse.on_click();
-                    // TODO: play sound
+                    ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.value.clone());
                 }
             }
@@ -799,7 +800,7 @@ impl<T: Clone> TextButton<T> {
                     self.rect.contains_point(mouse.pt)
                 {
                     self.hover_pulse.on_click();
-                    // TODO: play sound
+                    ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.value.clone());
                 }
             }

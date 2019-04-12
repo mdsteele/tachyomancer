@@ -446,7 +446,7 @@ impl ProfilesPane {
                     -> Option<PrefsAction> {
         let current_profile_name = state.profile().unwrap().name();
         if let Some(profile_name) =
-            self.profile_list.on_event(event, current_profile_name)
+            self.profile_list.on_event(event, ui, current_profile_name)
         {
             return Some(PrefsAction::SwitchProfile(profile_name));
         }

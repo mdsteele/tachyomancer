@@ -20,7 +20,7 @@
 use super::super::tooltip::Tooltip;
 use cgmath::Matrix4;
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
-use tachy::gui::{Event, Resources};
+use tachy::gui::{Event, Resources, Sound, Ui};
 use tachy::save::{Hotkey, Prefs, Puzzle};
 
 //===========================================================================//
@@ -138,10 +138,11 @@ impl ControlsTray {
         self.tooltip.draw(resources, matrix);
     }
 
-    pub fn on_event(&mut self, event: &Event, prefs: &Prefs)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, prefs: &Prefs)
                     -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
-            let opt_action = button.on_event(event, prefs, &mut self.tooltip);
+            let opt_action =
+                button.on_event(event, ui, prefs, &mut self.tooltip);
             if opt_action.is_some() {
                 return Some(opt_action);
             }
@@ -194,19 +195,19 @@ impl ControlsButton {
         resources.shaders().solid().fill_rect(matrix, color, rect);
     }
 
-    pub fn on_event(&mut self, event: &Event, prefs: &Prefs,
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, prefs: &Prefs,
                     tooltip: &mut Tooltip<ControlsAction>)
                     -> Option<ControlsAction> {
         match event {
             Event::KeyDown(key) => {
                 if key.code == prefs.hotkey_code(self.hotkey) {
-                    // TODO: play sound
+                    ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.action);
                 }
             }
             Event::MouseDown(mouse) => {
                 if mouse.left && self.rect.contains_point(mouse.pt) {
-                    // TODO: play sound
+                    ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.action);
                 }
             }

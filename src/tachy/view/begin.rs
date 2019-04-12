@@ -20,7 +20,7 @@
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
-use tachy::gui::{Event, Keycode, Resources, Ui};
+use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
 use tachy::state::GameState;
 
 //===========================================================================//
@@ -102,14 +102,14 @@ impl TextEntry {
             .draw(matrix, 60.0, Align::TopCenter, self.origin, &self.text);
     }
 
-    fn on_event(&mut self, event: &Event, _ui: &mut Ui) -> Option<String> {
+    fn on_event(&mut self, event: &Event, ui: &mut Ui) -> Option<String> {
         match event {
             Event::KeyDown(key) => {
                 match key.code {
                     Keycode::Return => return Some(self.text.clone()),
                     Keycode::Backspace => {
                         if self.text.pop().is_some() {
-                            // TODO: play sound
+                            ui.audio().play_sound(Sound::TypeKey);
                         }
                     }
                     _ => {}
@@ -121,7 +121,7 @@ impl TextEntry {
                         (chr >= '\u{a1}' && chr <= '\u{ff}')
                     {
                         self.text.push(chr);
-                        // TODO: play sound
+                        ui.audio().play_sound(Sound::TypeKey);
                     }
                 }
             }

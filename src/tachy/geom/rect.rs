@@ -29,9 +29,18 @@ pub struct RectSize<T> {
     pub height: T,
 }
 
-impl<T> RectSize<T> {
+impl<T: BaseNum> RectSize<T> {
     pub fn new(width: T, height: T) -> RectSize<T> {
         RectSize { width, height }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.width <= T::zero() || self.height <= T::zero()
+    }
+
+    pub fn expand(&self, margin: T) -> RectSize<T> {
+        let margin2 = margin + margin;
+        RectSize::new(self.width + margin2, self.height + margin2)
     }
 }
 

@@ -72,10 +72,6 @@ impl Puzzle {
 
     pub fn allows_events(self) -> bool { self.data().allow_events }
 
-    pub fn static_verification_data(self) -> &'static [u64] {
-        self.data().verification
-    }
-
     fn data(self) -> &'static PuzzleData {
         match self {
             Puzzle::TutorialOr => {
@@ -93,7 +89,6 @@ impl Puzzle {
                     instructions: "\
                         Create a circuit that outputs 1 if at least one of \
                         the two inputs is 1, or 0 if both inputs are 0.",
-                    verification: &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1],
                 }
             }
             Puzzle::AutomateHeliostat => {
@@ -108,7 +103,6 @@ impl Puzzle {
                         onto the solar panels at the optimal angle.",
                     instructions: "\
                         Move the heliostat towards the optimal position.",
-                    verification: &[3, 7, 15, 15, 1000],
                 }
             }
             Puzzle::AutomateReactor => {
@@ -122,7 +116,6 @@ impl Puzzle {
                         Manipulate the reactor's control rods to regulate \
                         the power output to the desired level.",
                     instructions: "",
-                    verification: &[0, 0, 0, 0, 0],
                 }
             }
             Puzzle::AutomateRobotArm => {
@@ -135,7 +128,6 @@ impl Puzzle {
                     description: "\
                         Operate a robotic arm in response to radio commands.",
                     instructions: "",
-                    verification: &[0, 0, 0],
                 }
             }
             Puzzle::SandboxBehavior => {
@@ -150,7 +142,6 @@ impl Puzzle {
                         that are currently available.  You can use this area \
                         for prototyping, experimentation, or freeform design.",
                     instructions: "",
-                    verification: &[],
                 }
             }
             Puzzle::SandboxEvent => {
@@ -166,7 +157,6 @@ impl Puzzle {
                         use this area for prototyping, experimentation, or \
                         freeform design.",
                     instructions: "",
-                    verification: &[],
                 }
             }
         }
@@ -183,7 +173,6 @@ struct PuzzleData {
     graph_bounds: (i32, i32),
     description: &'static str,
     instructions: &'static str,
-    verification: &'static [u64],
 }
 
 //===========================================================================//

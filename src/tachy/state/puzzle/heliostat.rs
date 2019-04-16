@@ -94,8 +94,7 @@ pub const INTERFACES: &[Interface] = &[
 
 //===========================================================================//
 
-pub struct AutomateHeliostatEval {
-    verification: [u64; 5],
+pub struct HeliostatEval {
     opt_x_wire: usize,
     opt_y_wire: usize,
     pos_x_wire: usize,
@@ -107,14 +106,13 @@ pub struct AutomateHeliostatEval {
     rng: SimpleRng,
 }
 
-impl AutomateHeliostatEval {
+impl HeliostatEval {
     pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> AutomateHeliostatEval {
+               -> HeliostatEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 3);
-        AutomateHeliostatEval {
-            verification: [0; 5],
+        HeliostatEval {
             opt_x_wire: slots[0][0].1,
             opt_y_wire: slots[0][1].1,
             pos_x_wire: slots[1][0].1,
@@ -127,18 +125,14 @@ impl AutomateHeliostatEval {
         }
     }
 
-    fn update_verification(&mut self) {
-        self.verification[0] = self.current_opt.x as u64;
-        self.verification[1] = self.current_opt.y as u64;
-        self.verification[2] = self.current_pos.x as u64;
-        self.verification[3] = self.current_pos.y as u64;
-        self.verification[4] = self.energy as u64;
-    }
+    pub fn current_energy(&self) -> u32 { self.energy }
+
+    pub fn current_optimum(&self) -> Point2<u32> { self.current_opt }
+
+    pub fn current_position(&self) -> Point2<u32> { self.current_pos }
 }
 
-impl PuzzleEval for AutomateHeliostatEval {
-    fn verification_data(&self) -> &[u64] { &self.verification }
-
+impl PuzzleEval for HeliostatEval {
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
         if (time_step % 20) == 0 {
@@ -146,7 +140,6 @@ impl PuzzleEval for AutomateHeliostatEval {
             let y = self.rng.rand_u4();
             self.current_opt = Point2::new(x, y);
         }
-        self.update_verification();
         state.send_behavior(self.opt_x_wire, self.current_opt.x);
         state.send_behavior(self.opt_y_wire, self.current_opt.y);
         state.send_behavior(self.pos_x_wire, self.current_pos.x);
@@ -173,7 +166,6 @@ impl PuzzleEval for AutomateHeliostatEval {
             0x1 if self.current_pos.x < 0xf => self.current_pos.x += 1,
             _ => {}
         }
-        self.update_verification();
         Vec::new()
     }
 }

@@ -84,8 +84,6 @@ impl SandboxBehaviorEval {
 }
 
 impl PuzzleEval for SandboxBehaviorEval {
-    fn verification_data(&self) -> &[u64] { &[] }
-
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
         state.send_behavior(self.timer, time_step & 0xff);
@@ -113,8 +111,6 @@ impl SandboxEventEval {
 }
 
 impl PuzzleEval for SandboxEventEval {
-    fn verification_data(&self) -> &[u64] { &[] }
-
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
         state.send_event(self.metronome, 0);

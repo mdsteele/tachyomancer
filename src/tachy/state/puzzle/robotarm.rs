@@ -117,8 +117,7 @@ enum MotorMovement {
 
 //===========================================================================//
 
-pub struct AutomateRobotArmEval {
-    verification: [u64; 3],
+pub struct RobotArmEval {
     rng: SimpleRng,
     recv_wire: usize,
     xmit_port: (Coords, Direction),
@@ -139,14 +138,12 @@ pub struct AutomateRobotArmEval {
     has_sent_radio_reply: bool,
 }
 
-impl AutomateRobotArmEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> AutomateRobotArmEval {
+impl RobotArmEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> RobotArmEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 4);
-        AutomateRobotArmEval {
-            verification: [0; 3],
+        RobotArmEval {
             rng: SimpleRng::new(0xd313_0a05_098a_98b5),
             xmit_port: slots[0][0].0,
             xmit_wire: slots[0][0].1,
@@ -168,16 +165,14 @@ impl AutomateRobotArmEval {
         }
     }
 
-    fn update_verification(&mut self) {
-        self.verification[0] = self.current_position as u64;
-        self.verification[1] = self.current_position_degrees as u64;
-        self.verification[2] = self.last_command as u64;
-    }
+    pub fn current_position(&self) -> u32 { self.current_position }
+
+    pub fn current_angle(&self) -> u32 { self.current_position_degrees }
+
+    pub fn last_command(&self) -> u32 { self.last_command }
 }
 
-impl PuzzleEval for AutomateRobotArmEval {
-    fn verification_data(&self) -> &[u64] { &self.verification }
-
+impl PuzzleEval for RobotArmEval {
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
         if self.time_to_next_command == Some(0) {
@@ -201,7 +196,6 @@ impl PuzzleEval for AutomateRobotArmEval {
             self.movement_is_done = false;
         }
 
-        self.update_verification();
         return None;
     }
 
@@ -316,7 +310,6 @@ impl PuzzleEval for AutomateRobotArmEval {
                 *time -= 1;
             }
         }
-        self.update_verification();
         Vec::new()
     }
 }

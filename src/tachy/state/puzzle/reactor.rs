@@ -97,7 +97,6 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct AutomateReactorEval {
-    verification: [u64; 5],
     power_wire: usize,
     target_wire: usize,
     rod_wires: Vec<usize>,
@@ -114,7 +113,6 @@ impl AutomateReactorEval {
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), NUM_RODS);
         AutomateReactorEval {
-            verification: [0; 5],
             power_wire: slots[0][0].1,
             target_wire: slots[0][1].1,
             rod_wires: slots[1].iter().map(|&(_, wire)| wire).collect(),
@@ -127,8 +125,6 @@ impl AutomateReactorEval {
 }
 
 impl PuzzleEval for AutomateReactorEval {
-    fn verification_data(&self) -> &[u64] { &self.verification }
-
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
         let current_power = self.current_power.round() as u32;
@@ -144,9 +140,6 @@ impl PuzzleEval for AutomateReactorEval {
         } else {
             self.held_target_for = 0;
         }
-
-        self.verification[3] = current_power as u64;
-        self.verification[4] = self.current_target as u64;
 
         state.send_behavior(self.power_wire, current_power);
         state.send_behavior(self.target_wire, self.current_target);
@@ -164,9 +157,6 @@ impl PuzzleEval for AutomateReactorEval {
             .iter()
             .map(|&rod_wire| state.recv_behavior(rod_wire).0)
             .collect();
-        for (index, &value) in rod_values.iter().enumerate() {
-            self.verification[index] = value as u64;
-        }
         let rod_total: u32 = rod_values.iter().cloned().sum();
         let rod_average: f64 = (rod_total as f64) / (rod_values.len() as f64);
         let rod_imbalance: f64 = rod_values

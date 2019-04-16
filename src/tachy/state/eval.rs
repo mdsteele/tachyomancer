@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use downcast_rs::Downcast;
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::mem;
@@ -85,8 +86,10 @@ impl CircuitEval {
 
     pub fn time_step(&self) -> u32 { self.time_step }
 
-    pub fn verification_data(&self) -> &[u64] {
-        self.puzzle.verification_data()
+    /// Returns the PuzzleEval object, which must have the specified type.
+    /// Panics if the incorrect type is specified.
+    pub fn puzzle_eval<T: PuzzleEval>(&self) -> &T {
+        self.puzzle.downcast_ref::<T>().unwrap()
     }
 
     pub fn errors(&self) -> &[EvalError] { &self.errors }
@@ -268,11 +271,7 @@ impl CircuitInteraction {
 
 //===========================================================================//
 
-pub trait PuzzleEval {
-    /// Returns the opaque data array that should be passed to this puzzle's
-    /// verification view.
-    fn verification_data(&self) -> &[u64];
-
+pub trait PuzzleEval: Downcast {
     /// Called at the beginning of each time step; sets up input values for the
     /// circuit.
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
@@ -306,13 +305,12 @@ pub trait PuzzleEval {
         Vec::new()
     }
 }
+impl_downcast!(PuzzleEval);
 
 #[allow(dead_code)]
 pub struct NullPuzzleEval();
 
 impl PuzzleEval for NullPuzzleEval {
-    fn verification_data(&self) -> &[u64] { &[] }
-
     fn begin_time_step(&mut self, _step: u32, _state: &mut CircuitState)
                        -> Option<EvalScore> {
         None

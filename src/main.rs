@@ -20,6 +20,8 @@
 extern crate app_dirs;
 extern crate cgmath;
 extern crate claxon;
+#[macro_use]
+extern crate downcast_rs;
 extern crate getopts;
 extern crate gl;
 extern crate indexmap;

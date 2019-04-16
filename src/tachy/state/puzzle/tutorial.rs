@@ -20,7 +20,6 @@
 use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use tachy::geom::{Coords, Direction};
-use tachy::save::Puzzle;
 use tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
@@ -78,7 +77,7 @@ pub const OR_INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct TutorialOrEval {
-    verification: Vec<u64>,
+    table_values: Vec<u64>,
     input1_wire: usize,
     input2_wire: usize,
     output_wire: usize,
@@ -86,6 +85,12 @@ pub struct TutorialOrEval {
 }
 
 impl TutorialOrEval {
+    pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
+        &["in1", "in2", "out"];
+
+    pub const EXPECTED_TABLE_VALUES: &'static [u64] =
+        &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1];
+
     pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
                -> TutorialOrEval {
         debug_assert_eq!(slots.len(), 3);
@@ -93,20 +98,18 @@ impl TutorialOrEval {
         debug_assert_eq!(slots[1].len(), 1);
         debug_assert_eq!(slots[2].len(), 1);
         TutorialOrEval {
-            verification: Puzzle::TutorialOr
-                .static_verification_data()
-                .to_vec(),
+            table_values: TutorialOrEval::EXPECTED_TABLE_VALUES.to_vec(),
             input1_wire: slots[0][0].1,
             input2_wire: slots[1][0].1,
             output_wire: slots[2][0].1,
             output_port: slots[2][0].0,
         }
     }
+
+    pub fn table_values(&self) -> &[u64] { &self.table_values }
 }
 
 impl PuzzleEval for TutorialOrEval {
-    fn verification_data(&self) -> &[u64] { &self.verification }
-
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
         if time_step >= 4 {
@@ -124,7 +127,7 @@ impl PuzzleEval for TutorialOrEval {
         let input2 = state.recv_behavior(self.input2_wire).0;
         let expected = input1 | input2;
         let actual = state.recv_behavior(self.output_wire).0;
-        self.verification[3 * (time_step as usize) + 2] = actual as u64;
+        self.table_values[3 * (time_step as usize) + 2] = actual as u64;
         if actual != expected {
             let error = EvalError {
                 time_step,

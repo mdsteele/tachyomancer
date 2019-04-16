@@ -87,20 +87,7 @@ impl CircuitView {
         self.edit_grid.draw_board(resources, grid);
         let projection =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
-        if let Some(eval) = grid.eval() {
-            self.verification_tray.draw(resources,
-                                        &projection,
-                                        Some(eval.time_step()),
-                                        eval.verification_data(),
-                                        eval.errors());
-        } else {
-            self.verification_tray.draw(resources,
-                                        &projection,
-                                        None,
-                                        grid.puzzle()
-                                            .static_verification_data(),
-                                        &[]);
-        }
+        self.verification_tray.draw(resources, &projection, grid.eval());
         self.parts_tray.draw(resources, &projection);
         self.controls_tray.draw(resources, &projection);
         self.edit_grid.draw_dragged(resources);

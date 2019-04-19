@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256">
-  <!-- Dialog -->
+  <!-- Tray -->
   <g transform="translate(0, 0)">
+    <path d="M 0,2 L 98,2 L 108,12 V 36 l 18,0 v 20 l -18,10 L 108,126 L 0,126"
+          fill="#00f" stroke="#0f0" stroke-width="2"/>
+    <path d="M 126,45 v 4" fill="none" stroke="#f00" stroke-width="4"/>
+  </g>
+  <!-- Dialog -->
+  <g transform="translate(0, 128)">
     <!-- Outline -->
     <path d="M 2,2 H 102 L 126,26 V 126 H 40 L 2,88 z"
           fill="#00f" stroke="#0f0" stroke-width="2"/>

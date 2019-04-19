@@ -19,7 +19,7 @@
 
 mod ui;
 
-use self::ui::UiShader;
+pub use self::ui::UiShader;
 use cgmath::{Matrix4, Vector2, Vector3, Vector4};
 use tachy::geom::{Color4, MatrixExt, Rect};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,

@@ -208,6 +208,14 @@ impl<T: BaseNum> ops::Mul<T> for Rect<T> {
     }
 }
 
+impl<T: BaseNum> ops::Sub<Vector2<T>> for Rect<T> {
+    type Output = Rect<T>;
+
+    fn sub(self, other: Vector2<T>) -> Rect<T> {
+        Rect::new(self.x - other.x, self.y - other.y, self.width, self.height)
+    }
+}
+
 //===========================================================================//
 
 pub struct RectPointsIter<T> {

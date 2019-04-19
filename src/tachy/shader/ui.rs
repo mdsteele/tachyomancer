@@ -85,17 +85,17 @@ const CHECKBOX_DATA: &[f32] = &[
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const DIALOG_DATA: &[f32] = &[
-    0.0, 0.0, 0.0, 0.0,  0.25, 0.0, 64.0, 0.0,
-    0.375, 0.0, -32.0, 0.0,  0.5, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,  0.5, 0.0, 64.0, 0.0,
+    0.75, 0.0, -32.0, 0.0,  1.0, 0.0, 0.0, 0.0,
 
-    0.0, 0.125, 0.0, 32.0,  0.25, 0.125, 64.0, 32.0,
-    0.375, 0.125, -32.0, 32.0,  0.5, 0.125, 0.0, 32.0,
+    0.0, 0.25, 0.0, 32.0,  0.5, 0.25, 64.0, 32.0,
+    0.75, 0.25, -32.0, 32.0,  1.0, 0.25, 0.0, 32.0,
 
-    0.0, 0.25, 0.0, -64.0,  0.25, 0.25, 64.0, -64.0,
-    0.375, 0.25, -32.0, -64.0,  0.5, 0.25, 0.0, -64.0,
+    0.0, 0.5, 0.0, -64.0,  0.5, 0.5, 64.0, -64.0,
+    0.75, 0.5, -32.0, -64.0,  1.0, 0.5, 0.0, -64.0,
 
-    0.0, 0.5, 0.0, 0.0,  0.25, 0.5, 64.0, 0.0,
-    0.375, 0.5, -32.0, 0.0,  0.5, 0.5, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,  0.5, 1.0, 64.0, 0.0,
+    0.75, 1.0, -32.0, 0.0,  1.0, 1.0, 0.0, 0.0,
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -128,6 +128,39 @@ const SELECTION_BOX_DATA: &[f32] = &[
     0.75, 1.0, -8.0, 0.0,  1.0, 1.0, 0.0, 0.0,
 ];
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const TRAY_DATA_1: &[f32] = &[
+    0.0, 0.0, 0.0, 0.0,  0.5, 0.0, 64.0, 0.0,
+    0.75, 0.0, -32.0, 0.0,  1.0, 0.0, 0.0, 0.0,
+
+    0.0, 0.375, 0.0, 48.0,  0.5, 0.375, 64.0, 48.0,
+    0.75, 0.375, -32.0, 48.0,  1.0, 0.375, 0.0, 48.0,
+
+    0.0, 0.375, 0.0, -48.0,  0.5, 0.375, 64.0, -48.0,
+    0.75, 0.375, -32.0, -48.0,  1.0, 0.375, 0.0, -48.0,
+
+    0.0, 0.75, 0.0, 0.0,  0.5, 0.75, 64.0, 0.0,
+    0.75, 0.75, -32.0, 0.0,  1.0, 0.75, 0.0, 0.0,
+];
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const TRAY_DATA_2: &[f32] = &[
+    0.0, 0.75, 0.0, 0.0,  0.5, 0.75, 64.0, 0.0,
+    0.75, 0.75, -32.0, 0.0,  1.0, 0.75, 0.0, 0.0,
+
+    0.0, 0.875, 0.0, 16.0,  0.5, 0.875, 64.0, 16.0,
+    0.75, 0.875, -32.0, 16.0,  1.0, 0.875, 0.0, 16.0,
+
+    0.0, 0.875, 0.0, -16.0,  0.5, 0.875, 64.0, -16.0,
+    0.75, 0.875, -32.0, -16.0,  1.0, 0.875, 0.0, -16.0,
+
+    0.0, 1.0, 0.0, 0.0,  0.5, 1.0, 64.0, 0.0,
+    0.75, 1.0, -32.0, 0.0,  1.0, 1.0, 0.0, 0.0,
+];
+const TRAY_TAB_WIDTH: f32 = 20.0;
+const TRAY_TAB_UPPER_MARGIN: f32 = 34.0;
+const TRAY_TAB_INNER_MARGIN: f32 = 16.0;
+const TRAY_TAB_LOWER_MARGIN: f32 = 30.0;
+
 //===========================================================================//
 
 pub struct UiShader {
@@ -151,6 +184,10 @@ pub struct UiShader {
     scroll_varray: VertexArray,
     _selection_box_vbuffer: VertexBuffer<f32>,
     selection_box_varray: VertexArray,
+    _tray_vbuffer_1: VertexBuffer<f32>,
+    tray_varray_1: VertexArray,
+    _tray_vbuffer_2: VertexBuffer<f32>,
+    tray_varray_2: VertexArray,
 }
 
 impl UiShader {
@@ -178,6 +215,10 @@ impl UiShader {
                                                             SCROLL_DATA);
         let (selection_box_varray, selection_box_vbuffer) =
             make_vertices(&corners_vbuffer, SELECTION_BOX_DATA);
+        let (tray_varray_1, tray_vbuffer_1) = make_vertices(&corners_vbuffer,
+                                                            TRAY_DATA_1);
+        let (tray_varray_2, tray_vbuffer_2) = make_vertices(&corners_vbuffer,
+                                                            TRAY_DATA_2);
 
         let shader = UiShader {
             program,
@@ -200,6 +241,10 @@ impl UiShader {
             scroll_varray,
             _selection_box_vbuffer: selection_box_vbuffer,
             selection_box_varray,
+            _tray_vbuffer_1: tray_vbuffer_1,
+            tray_varray_1,
+            _tray_vbuffer_2: tray_vbuffer_2,
+            tray_varray_2,
         };
         Ok(shader)
     }
@@ -249,7 +294,7 @@ impl UiShader {
 
     pub fn draw_dialog(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
                        color1: &Color4, color2: &Color4, color3: &Color4) {
-        let tex_rect = Rect::new(0.0, 0.0, 1.0, 1.0);
+        let tex_rect = Rect::new(0.0, 0.5, 0.5, 0.5);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.dialog_varray.bind();
         self.dialog_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
@@ -296,6 +341,38 @@ impl UiShader {
         self.selection_box_varray.bind();
         self.selection_box_varray
             .draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn draw_tray(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
+                     tab_size: f32, color1: &Color4, color2: &Color4,
+                     color3: &Color4) {
+        let tex_rect = Rect::new(0.0, 0.0, 0.5, 0.5);
+
+        let rect1 = Rect::new(rect.x,
+                              rect.y,
+                              rect.width + TRAY_TAB_WIDTH,
+                              TRAY_TAB_UPPER_MARGIN +
+                                  2.0 * TRAY_TAB_INNER_MARGIN +
+                                  TRAY_TAB_LOWER_MARGIN +
+                                  tab_size);
+        self.bind(matrix, &rect1, color1, color2, color3, &tex_rect);
+        self.tray_varray_1.bind();
+        self.tray_varray_1.draw_elements(Primitive::Triangles, &self.ibuffer);
+
+        let rect2 = Rect::new(rect1.x,
+                              rect1.bottom(),
+                              rect1.width,
+                              rect.height - rect1.height);
+        self.bind(matrix, &rect2, color1, color2, color3, &tex_rect);
+        self.tray_varray_2.bind();
+        self.tray_varray_2.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn tray_tab_rect(rect: Rect<f32>, tab_size: f32) -> Rect<f32> {
+        Rect::new(rect.right(),
+                  rect.y + TRAY_TAB_UPPER_MARGIN,
+                  TRAY_TAB_WIDTH,
+                  tab_size + 2.0 * TRAY_TAB_INNER_MARGIN)
     }
 }
 

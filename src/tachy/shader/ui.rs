@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::Matrix4;
-use tachy::geom::{Color4, Rect};
+use tachy::geom::{Color4, MatrixExt, Rect};
 use tachy::gl::{IndexBuffer, Primitive, Shader, ShaderProgram, ShaderType,
                 ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
@@ -344,32 +344,44 @@ impl UiShader {
     }
 
     pub fn draw_tray(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                     tab_size: f32, color1: &Color4, color2: &Color4,
-                     color3: &Color4) {
+                     tab_size: f32, flip_horz: bool, color1: &Color4,
+                     color2: &Color4, color3: &Color4) {
         let tex_rect = Rect::new(0.0, 0.0, 0.5, 0.5);
+        let matrix = if flip_horz {
+            matrix * Matrix4::trans2(rect.x + rect.width, rect.y) *
+                Matrix4::scale2(-1.0, 1.0)
+        } else {
+            matrix * Matrix4::trans2(rect.x, rect.y)
+        };
 
-        let rect1 = Rect::new(rect.x,
-                              rect.y,
+        let rect1 = Rect::new(0.0,
+                              0.0,
                               rect.width + TRAY_TAB_WIDTH,
                               TRAY_TAB_UPPER_MARGIN +
                                   2.0 * TRAY_TAB_INNER_MARGIN +
                                   TRAY_TAB_LOWER_MARGIN +
                                   tab_size);
-        self.bind(matrix, &rect1, color1, color2, color3, &tex_rect);
+        self.bind(&matrix, &rect1, color1, color2, color3, &tex_rect);
         self.tray_varray_1.bind();
         self.tray_varray_1.draw_elements(Primitive::Triangles, &self.ibuffer);
 
-        let rect2 = Rect::new(rect1.x,
-                              rect1.bottom(),
+        let rect2 = Rect::new(0.0,
+                              rect1.height,
                               rect1.width,
                               rect.height - rect1.height);
-        self.bind(matrix, &rect2, color1, color2, color3, &tex_rect);
+        self.bind(&matrix, &rect2, color1, color2, color3, &tex_rect);
         self.tray_varray_2.bind();
         self.tray_varray_2.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn tray_tab_rect(rect: Rect<f32>, tab_size: f32) -> Rect<f32> {
-        Rect::new(rect.right(),
+    pub fn tray_tab_rect(rect: Rect<f32>, tab_size: f32, flip_horz: bool)
+                         -> Rect<f32> {
+        let left = if flip_horz {
+            rect.x - TRAY_TAB_WIDTH
+        } else {
+            rect.right()
+        };
+        Rect::new(left,
                   rect.y + TRAY_TAB_UPPER_MARGIN,
                   TRAY_TAB_WIDTH,
                   tab_size + 2.0 * TRAY_TAB_INNER_MARGIN)

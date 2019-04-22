@@ -23,6 +23,7 @@ mod control;
 mod grid;
 mod parts;
 mod select;
+mod tray;
 mod verify;
 mod wiredrag;
 

@@ -18,11 +18,12 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::button::Scrollbar;
+use super::tray::TraySlide;
 use cgmath::{Deg, Matrix4, Point2, vec2};
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::gl::Stencil;
-use tachy::gui::{ClockEventData, Event, Resources};
+use tachy::gui::{Event, Resources};
 use tachy::save::{CHIP_CATEGORIES, ChipType, Puzzle};
 use tachy::shader::UiShader;
 
@@ -38,10 +39,11 @@ const PART_SPACING: i32 = 8;
 const SCROLLBAR_MARGIN: i32 = 8;
 const SCROLLBAR_WIDTH: i32 = 16;
 
+const TRAY_FLIP_HORZ: bool = false;
 const TRAY_INNER_MARGIN: i32 = 16;
 const TRAY_OUTER_MARGIN: i32 = 32;
 const TRAY_TAB_FONT_SIZE: f32 = 16.0;
-const TRAY_TAB_SIZE: f32 = 60.0;
+const TRAY_TAB_HEIGHT: f32 = 60.0;
 const TRAY_TAB_TEXT: &str = "PARTS";
 
 //===========================================================================//
@@ -59,8 +61,7 @@ pub struct PartsTray {
     category_labels: Vec<CategoryLabel>,
     parts: Vec<Part>,
     scrollbar: Scrollbar,
-    slide: f64,
-    shown: bool,
+    slide: TraySlide,
 }
 
 impl PartsTray {
@@ -135,17 +136,17 @@ impl PartsTray {
             category_labels,
             parts,
             scrollbar,
-            slide: 0.0,
-            shown: true,
+            slide: TraySlide::new(rect.width),
         }
     }
 
     fn slid_rect(&self) -> Rect<i32> {
-        self.rect - vec2(self.slide.round() as i32, 0)
+        self.rect - vec2(self.slide.distance(), 0)
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let matrix = matrix * Matrix4::trans2(-self.slide.round() as f32, 0.0);
+        let matrix = matrix *
+            Matrix4::trans2(-self.slide.distance() as f32, 0.0);
         {
             let stencil = Stencil::new();
             self.draw_box(resources, &matrix);
@@ -158,11 +159,13 @@ impl PartsTray {
     fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let ui = resources.shaders().ui();
         let rect = self.rect.as_f32();
-        let tab_rect = UiShader::tray_tab_rect(rect, TRAY_TAB_SIZE);
+        let tab_rect =
+            UiShader::tray_tab_rect(rect, TRAY_TAB_HEIGHT, TRAY_FLIP_HORZ);
 
         ui.draw_tray(matrix,
                      &rect,
-                     TRAY_TAB_SIZE,
+                     TRAY_TAB_HEIGHT,
+                     TRAY_FLIP_HORZ,
                      &Color4::ORANGE2,
                      &Color4::CYAN2,
                      &Color4::PURPLE0.with_alpha(0.8));
@@ -170,12 +173,12 @@ impl PartsTray {
         let tab_matrix = matrix *
             Matrix4::trans2(tab_rect.x + 0.5 * tab_rect.width,
                             tab_rect.y + 0.5 * tab_rect.height) *
-            Matrix4::from_angle_z(Deg(90.0));
+            Matrix4::from_angle_z(Deg(-90.0));
         let font = resources.fonts().roman();
         font.draw(&tab_matrix,
                   TRAY_TAB_FONT_SIZE,
                   Align::MidCenter,
-                  (0.0, 2.0),
+                  (0.0, -2.0),
                   TRAY_TAB_TEXT);
     }
 
@@ -192,21 +195,20 @@ impl PartsTray {
 
     pub fn on_event(&mut self, event: &Event) -> (Option<PartsAction>, bool) {
         let rel_event =
-            event.relative_to(Point2::new(-self.slide.round() as i32, 0));
+            event.relative_to(Point2::new(-self.slide.distance(), 0));
         self.scrollbar.on_event(&rel_event);
 
         match event {
             Event::ClockTick(tick) => {
-                let goal = if self.shown { 0 } else { self.rect.width + 1 };
-                self.slide = track_towards(self.slide, goal as f64, tick);
+                self.slide.on_tick(tick);
             }
             Event::MouseDown(mouse) if mouse.left => {
-                let rel_mouse_pt = mouse.pt +
-                    vec2(self.slide.round() as i32, 0);
+                let rel_mouse_pt = mouse.pt + vec2(self.slide.distance(), 0);
                 let tab_rect = UiShader::tray_tab_rect(self.rect.as_f32(),
-                                                       TRAY_TAB_SIZE);
+                                                       TRAY_TAB_HEIGHT,
+                                                       TRAY_FLIP_HORZ);
                 if tab_rect.contains_point(rel_mouse_pt.as_f32()) {
-                    self.shown = !self.shown;
+                    self.slide.toggle();
                     return (None, true);
                 } else if self.rect.contains_point(rel_mouse_pt) {
                     let rel_scrolled_pt = rel_mouse_pt +
@@ -238,17 +240,6 @@ impl PartsTray {
             _ => {}
         }
         return (None, false);
-    }
-}
-
-fn track_towards(current: f64, goal: f64, tick: &ClockEventData) -> f64 {
-    let tracking_base: f64 = 0.00001; // smaller = faster tracking
-    let difference = goal - current;
-    if difference.abs() < 0.5 {
-        goal
-    } else {
-        let change = difference * (1.0 - tracking_base.powf(tick.elapsed));
-        current + change
     }
 }
 

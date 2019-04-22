@@ -172,10 +172,18 @@ impl ChipType {
 
     pub fn tooltip_format(self) -> String {
         let name = match self {
-            ChipType::Const(_) => "Const".to_string(),
+            ChipType::And => "Bitwise AND".to_string(),
+            ChipType::Const(_) => "Constant".to_string(),
+            ChipType::Not => "Bitwise NOT".to_string(),
+            ChipType::Or => "Bitwise OR".to_string(),
+            ChipType::Xor => "Bitwise XOR".to_string(),
             other => format!("{:?}", other),
         };
         let description = match self {
+            ChipType::And => {
+                "For each bit in the wire, the output is 1 if both inputs \
+                 are 1, or 0 if either input is 0."
+            }
             ChipType::Const(_) => {
                 "Outputs a constant value.\n\
                  $(Right-click) on the chip to change the output value."
@@ -183,6 +191,28 @@ impl ChipType {
             ChipType::Discard => {
                 "Transforms value-carrying events into 0-bit events by \
                  discarding the value."
+            }
+            ChipType::Not => {
+                "Inverts bits.  Each 0 bit in the input becomes a 1 bit in \
+                 the output, and vice-versa."
+            }
+            ChipType::Or => {
+                "For each bit in the wire, the output is 1 if either input \
+                 is 1, or 0 if both inputs are 0."
+            }
+            ChipType::Pack => {
+                "Joins two input wires into a single output wire with twice \
+                 as many bits.  One input wire becomes the low bits of the \
+                 output, and the other becomes the high bits."
+            }
+            ChipType::Unpack => {
+                "Splits the input wire into two output wires, each with half \
+                 as many bits.  One output wire has the low bits of the \
+                 input, and the other has the high bits."
+            }
+            ChipType::Xor => {
+                "For each bit in the wire, the output is 1 if exactly one \
+                 input is 1, or 0 if the inputs are both 0 or both 1."
             }
             _ => "TODO",
         };

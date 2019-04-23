@@ -28,7 +28,7 @@ mod tutorial;
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
-pub use self::tutorial::TutorialOrEval;
+pub use self::tutorial::{TutorialOrEval, TutorialXorEval};
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
 use tachy::save::Puzzle;
@@ -38,6 +38,7 @@ use tachy::save::Puzzle;
 pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
     match puzzle {
         Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
+        Puzzle::TutorialXor => self::tutorial::XOR_INTERFACES,
         Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
         Puzzle::AutomateReactor => self::reactor::INTERFACES,
         Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
@@ -53,6 +54,7 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
                        -> Box<PuzzleEval> {
     match puzzle {
         Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
+        Puzzle::TutorialXor => Box::new(TutorialXorEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::AutomateReactorEval::new(slots))

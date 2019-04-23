@@ -34,6 +34,7 @@ pub enum PuzzleKind {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum Puzzle {
     TutorialOr,
+    TutorialXor,
     AutomateHeliostat,
     AutomateReactor,
     AutomateRobotArm,
@@ -43,6 +44,7 @@ pub enum Puzzle {
 
 const ALL_PUZZLES: &[Puzzle] = &[
     Puzzle::TutorialOr,
+    Puzzle::TutorialXor,
     Puzzle::AutomateHeliostat,
     Puzzle::AutomateReactor,
     Puzzle::AutomateRobotArm,
@@ -75,7 +77,7 @@ impl Puzzle {
         match self {
             Puzzle::TutorialOr => {
                 &PuzzleData {
-                    title: "1-Bit Or Gate",
+                    title: "1-Bit OR Gate",
                     kind: PuzzleKind::Tutorial,
                     allow_events: false,
                     score_units: "Wire Length",
@@ -92,6 +94,26 @@ impl Puzzle {
                           0.\n\
                         * $!Note that ($/a$/ OR $/b$/) is equivalent to \
                           NOT ((NOT $/a$/) AND (NOT $/b$/)).",
+                }
+            }
+            Puzzle::TutorialXor => {
+                &PuzzleData {
+                    title: "1-Bit XOR Gate",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 1-bit $*XOR$* gate out of $*AND$*, \
+                        $*OR$*, and $*NOT$* gates.\n\n\
+                        Once this task is completed, you will be able to use \
+                        $*XOR$* gates in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct a $*XOR$* gate.\n\
+                        * $!The output on the right side of the board should \
+                          be 1 if exactly one input is 1, but not both.\n\
+                        * $!Note that ($/a$/ XOR $/b$/) is equivalent to \
+                          ($/a$/ OR $/b$/) AND NOT ($/a$/ AND $/b$/).",
                 }
             }
             Puzzle::AutomateHeliostat => {

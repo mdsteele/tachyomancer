@@ -21,7 +21,7 @@ use super::shared::{FabricationTable, PuzzleVerifyView};
 use cgmath::{Matrix4, Point2};
 use tachy::geom::RectSize;
 use tachy::gui::Resources;
-use tachy::state::{CircuitEval, EvalError, TutorialOrEval};
+use tachy::state::{CircuitEval, EvalError, TutorialOrEval, TutorialXorEval};
 
 //===========================================================================//
 
@@ -49,6 +49,37 @@ impl PuzzleVerifyView for TutorialOrVerifyView {
             (Some(eval.time_step()), puzzle.table_values(), eval.errors())
         } else {
             (None, TutorialOrEval::EXPECTED_TABLE_VALUES, &[] as &[EvalError])
+        };
+        self.table.draw(resources, matrix, time_step, values, errors);
+    }
+}
+
+//===========================================================================//
+
+pub struct TutorialXorVerifyView {
+    table: FabricationTable,
+}
+
+impl TutorialXorVerifyView {
+    pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
+        let table =
+            FabricationTable::new(right_bottom,
+                                  TutorialXorEval::TABLE_COLUMN_NAMES,
+                                  TutorialXorEval::EXPECTED_TABLE_VALUES);
+        Box::new(TutorialXorVerifyView { table })
+    }
+}
+
+impl PuzzleVerifyView for TutorialXorVerifyView {
+    fn size(&self) -> RectSize<i32> { self.table.size() }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+            circuit_eval: Option<&CircuitEval>) {
+        let (time_step, values, errors) = if let Some(eval) = circuit_eval {
+            let puzzle = eval.puzzle_eval::<TutorialXorEval>();
+            (Some(eval.time_step()), puzzle.table_values(), eval.errors())
+        } else {
+            (None, TutorialXorEval::EXPECTED_TABLE_VALUES, &[] as &[EvalError])
         };
         self.table.draw(resources, matrix, time_step, values, errors);
     }

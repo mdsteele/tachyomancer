@@ -23,6 +23,7 @@ mod control;
 mod grid;
 mod parts;
 mod select;
+mod specify;
 mod tray;
 mod verify;
 mod wiredrag;
@@ -30,6 +31,7 @@ mod wiredrag;
 use self::control::{ControlsAction, ControlsTray};
 use self::grid::{EditGridAction, EditGridView};
 use self::parts::{PartsAction, PartsTray};
+use self::specify::SpecificationTray;
 use self::verify::VerificationTray;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath;
@@ -59,6 +61,7 @@ pub struct CircuitView {
     edit_grid: EditGridView,
     controls_tray: ControlsTray,
     parts_tray: PartsTray,
+    specification_tray: SpecificationTray,
     verification_tray: VerificationTray,
     seconds_since_time_step: f64,
     paused: bool,
@@ -67,7 +70,8 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
+    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle,
+               prefs: &Prefs)
                -> CircuitView {
         CircuitView {
             width: window_size.width as f32,
@@ -75,6 +79,9 @@ impl CircuitView {
             edit_grid: EditGridView::new(window_size),
             controls_tray: ControlsTray::new(window_size, current_puzzle),
             parts_tray: PartsTray::new(window_size, current_puzzle),
+            specification_tray: SpecificationTray::new(window_size,
+                                                       current_puzzle,
+                                                       prefs),
             verification_tray: VerificationTray::new(window_size,
                                                      current_puzzle),
             seconds_since_time_step: 0.0,
@@ -89,6 +96,7 @@ impl CircuitView {
         let projection =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
         self.verification_tray.draw(resources, &projection, grid.eval());
+        self.specification_tray.draw(resources, &projection);
         self.parts_tray.draw(resources, &projection);
         self.controls_tray.draw(resources, &projection);
         self.edit_grid.draw_dragged(resources);
@@ -233,6 +241,11 @@ impl CircuitView {
             }
             None => {}
         }
+        if stop {
+            return action;
+        }
+
+        let stop = self.specification_tray.on_event(event);
         if stop {
             return action;
         }

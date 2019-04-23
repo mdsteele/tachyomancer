@@ -67,7 +67,6 @@ impl Puzzle {
 
     pub fn description(self) -> &'static str { self.data().description }
 
-    #[allow(dead_code)]
     pub fn instructions(self) -> &'static str { self.data().instructions }
 
     pub fn allows_events(self) -> bool { self.data().allow_events }
@@ -84,11 +83,15 @@ impl Puzzle {
                     description: "\
                         Tutorial: Build a 1-bit $*OR$* gate out of $*AND$* \
                         and $*NOT$* gates.\n\n\
-                        Once $/this$/ task is completed, you will be able to \
-                        use $*OR$* gates in future tasks.",
+                        Once this task is completed, you will be able to use \
+                        $*OR$* gates in future tasks.",
                     instructions: "\
-                        Create a circuit that outputs 1 if at least one of \
-                        the two inputs is 1, or 0 if both inputs are 0.",
+                        * $!Your goal is to construct an $*OR$* gate.\n\
+                        * $!The output on the right side of the board should \
+                          be 1 if either input is 1, or 0 if both inputs are \
+                          0.\n\
+                        * $!Note that ($/a$/ OR $/b$/) is equivalent to \
+                          NOT ((NOT $/a$/) AND (NOT $/b$/)).",
                 }
             }
             Puzzle::AutomateHeliostat => {
@@ -102,7 +105,15 @@ impl Puzzle {
                         Automate the ship's heliostat to reflect sunlight \
                         onto the solar panels at the optimal angle.",
                     instructions: "\
-                        Move the heliostat towards the optimal position.",
+                        * $!Your goal is fill the energy meter by always \
+                          moving the heliostat towards the optimal position.\n\
+                        * $!The optimal position is given by the sensor \
+                          interface on the left side of the board.  This \
+                          optimal position will change from time to time.\n\
+                        * $!The current position is given by the motor \
+                          interface on the right side of the board.\n\
+                        * $!The closer the current position is to optimal, \
+                          the more energy will be produced.",
                 }
             }
             Puzzle::AutomateReactor => {

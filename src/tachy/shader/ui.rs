@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::Matrix4;
+use num_integer::div_mod_floor;
 use tachy::geom::{Color4, MatrixExt, Rect};
 use tachy::gl::{IndexBuffer, Primitive, Shader, ShaderProgram, ShaderType,
                 ShaderUniform, Texture2D, VertexArray, VertexBuffer};
@@ -298,6 +299,20 @@ impl UiShader {
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.dialog_varray.bind();
         self.dialog_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn draw_icon(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
+                     icon_index: usize, color1: &Color4, color2: &Color4,
+                     color3: &Color4) {
+        let (icon_row, icon_col) = div_mod_floor(icon_index, 3);
+        let tex_rect = Rect::new(0.5 + 0.125 * (icon_col as f32),
+                                 0.75 + 0.125 * (icon_row as f32),
+                                 0.125,
+                                 0.125);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.checkbox_varray.bind();
+        self.checkbox_varray
+            .draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
     pub fn draw_list_frame(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,

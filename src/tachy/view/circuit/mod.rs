@@ -28,7 +28,7 @@ mod tray;
 mod verify;
 mod wiredrag;
 
-use self::control::{ControlsAction, ControlsTray};
+use self::control::{ControlsAction, ControlsStatus, ControlsTray};
 use self::grid::{EditGridAction, EditGridView};
 use self::parts::{PartsAction, PartsTray};
 use self::specify::SpecificationTray;
@@ -64,7 +64,7 @@ pub struct CircuitView {
     specification_tray: SpecificationTray,
     verification_tray: VerificationTray,
     seconds_since_time_step: f64,
-    paused: bool,
+    controls_status: ControlsStatus,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
     victory_dialog: Option<ButtonDialogBox<Option<CircuitAction>>>,
 }
@@ -85,7 +85,7 @@ impl CircuitView {
             verification_tray: VerificationTray::new(window_size,
                                                      current_puzzle),
             seconds_since_time_step: 0.0,
-            paused: true,
+            controls_status: ControlsStatus::Stopped,
             edit_const_dialog: None,
             victory_dialog: None,
         }
@@ -98,7 +98,7 @@ impl CircuitView {
         self.verification_tray.draw(resources, &projection, grid.eval());
         self.specification_tray.draw(resources, &projection);
         self.parts_tray.draw(resources, &projection);
-        self.controls_tray.draw(resources, &projection);
+        self.controls_tray.draw(resources, &projection, self.controls_status);
         self.edit_grid.draw_dragged(resources);
         self.edit_grid.draw_tooltip(resources, &projection);
         if let Some((ref dialog, _)) = self.edit_const_dialog {
@@ -112,6 +112,9 @@ impl CircuitView {
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
                     (grid, prefs): (&mut EditGrid, &Prefs))
                     -> Option<CircuitAction> {
+        debug_assert_eq!(self.controls_status == ControlsStatus::Stopped,
+                         grid.eval().is_none());
+
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
             match dialog.on_event(event, ui, is_valid_const) {
                 Some(Some(text)) => {
@@ -139,7 +142,7 @@ impl CircuitView {
             Event::ClockTick(tick) => {
                 let mut result = EvalResult::Continue;
                 if let Some(eval) = grid.eval_mut() {
-                    if !self.paused {
+                    if self.controls_status == ControlsStatus::Running {
                         self.seconds_since_time_step += tick.elapsed;
                         while self.seconds_since_time_step >=
                             SECONDS_PER_TIME_STEP
@@ -162,8 +165,8 @@ impl CircuitView {
 
         self.edit_grid.request_interaction_cursor(event, ui.cursor());
 
-        if let Some(opt_action) = self.controls_tray
-            .on_event(event, ui, prefs)
+        if let Some(opt_action) =
+            self.controls_tray.on_event(event, ui, self.controls_status, prefs)
         {
             match opt_action {
                 None => {}
@@ -171,26 +174,39 @@ impl CircuitView {
                     if grid.eval().is_some() {
                         ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
-                        self.paused = true;
+                        self.controls_status = ControlsStatus::Stopped;
                         grid.stop_eval();
                     }
                 }
                 Some(ControlsAction::RunOrPause) => {
-                    if grid.eval().is_none() {
-                        ui.audio().play_sound(Sound::Beep);
-                        self.seconds_since_time_step = 0.0;
-                        self.paused = false;
-                        grid.start_eval();
-                    } else {
-                        self.seconds_since_time_step = 0.0;
-                        self.paused = !self.paused;
+                    match self.controls_status {
+                        ControlsStatus::Stopped => {
+                            debug_assert!(grid.eval().is_none());
+                            ui.audio().play_sound(Sound::Beep);
+                            self.seconds_since_time_step = 0.0;
+                            self.controls_status = ControlsStatus::Running;
+                            grid.start_eval();
+                        }
+                        ControlsStatus::Running => {
+                            debug_assert!(grid.eval().is_some());
+                            self.seconds_since_time_step = 0.0;
+                            self.controls_status = ControlsStatus::Paused;
+                        }
+                        ControlsStatus::Paused => {
+                            debug_assert!(grid.eval().is_some());
+                            self.seconds_since_time_step = 0.0;
+                            self.controls_status = ControlsStatus::Running;
+                        }
+                        ControlsStatus::Finished => {
+                            debug_assert!(grid.eval().is_some());
+                        }
                     }
                 }
                 Some(ControlsAction::StepTime) => {
                     if grid.eval().is_none() {
                         ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
-                        self.paused = true;
+                        self.controls_status = ControlsStatus::Paused;
                         grid.start_eval();
                     }
                     let mut result = EvalResult::Continue;
@@ -203,7 +219,7 @@ impl CircuitView {
                     if grid.eval().is_none() {
                         ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
-                        self.paused = true;
+                        self.controls_status = ControlsStatus::Paused;
                         grid.start_eval();
                     }
                     let mut result = EvalResult::Continue;
@@ -216,7 +232,7 @@ impl CircuitView {
                     if grid.eval().is_none() {
                         ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
-                        self.paused = true;
+                        self.controls_status = ControlsStatus::Paused;
                         grid.start_eval();
                     }
                     let mut result = EvalResult::Continue;
@@ -274,11 +290,13 @@ impl CircuitView {
     fn on_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid,
                       prefs: &Prefs)
                       -> Option<CircuitAction> {
-        let mut action: Option<CircuitAction> = None;
         match result {
-            EvalResult::Continue => return None,
+            EvalResult::Continue => None,
             EvalResult::Breakpoint(coords_vec) => {
                 debug_log!("Breakpoint: {:?}", coords_vec);
+                self.seconds_since_time_step = 0.0;
+                self.controls_status = ControlsStatus::Paused;
+                None
             }
             EvalResult::Victory(score) => {
                 let area = grid.bounds().area();
@@ -290,7 +308,6 @@ impl CircuitView {
                 };
                 debug_log!("Victory!  area={}, score={}", area, score);
                 grid.stop_eval();
-                action = Some(CircuitAction::Victory(area, score));
                 let size = RectSize::new(self.width as i32,
                                          self.height as i32);
                 // TODO: The dialog box should show the optimization graph
@@ -307,14 +324,15 @@ impl CircuitView {
                 self.victory_dialog =
                     Some(ButtonDialogBox::new(size, prefs, &format, buttons));
                 // TODO: Unfocus other views
+                self.controls_status = ControlsStatus::Stopped;
+                Some(CircuitAction::Victory(area, score))
             }
             EvalResult::Failure => {
                 debug_log!("Failure!");
+                self.controls_status = ControlsStatus::Finished;
+                None
             }
         }
-        self.seconds_since_time_step = 0.0;
-        self.paused = true;
-        return action;
     }
 }
 

@@ -238,7 +238,7 @@ impl HotkeyBox {
 
 //===========================================================================//
 
-struct HoverPulse {
+pub struct HoverPulse {
     hovering: bool,
     timer: f64,
     brightness: f64,

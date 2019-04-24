@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::button::HoverPulse;
 use super::super::tooltip::Tooltip;
 use cgmath::Matrix4;
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
@@ -56,6 +57,14 @@ const TOOLTIP_STEP_TIME: &str = "\
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ControlsStatus {
+    Stopped,
+    Running,
+    Paused,
+    Finished,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ControlsAction {
     Reset,
     RunOrPause,
@@ -65,6 +74,22 @@ pub enum ControlsAction {
 }
 
 impl ControlsAction {
+    fn icon_index(self, status: ControlsStatus) -> usize {
+        match self {
+            ControlsAction::Reset => 2,
+            ControlsAction::RunOrPause => {
+                if status == ControlsStatus::Running {
+                    1
+                } else {
+                    0
+                }
+            }
+            ControlsAction::StepSubcycle => 3,
+            ControlsAction::StepCycle => 4,
+            ControlsAction::StepTime => 5,
+        }
+    }
+
     fn tooltip_format(self) -> &'static str {
         match self {
             ControlsAction::Reset => TOOLTIP_RESET,
@@ -125,7 +150,8 @@ impl ControlsTray {
         }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                status: ControlsStatus) {
         let ui = resources.shaders().ui();
         ui.draw_box2(matrix,
                      &self.rect.as_f32(),
@@ -133,16 +159,17 @@ impl ControlsTray {
                      &Color4::CYAN2,
                      &Color4::PURPLE0.with_alpha(0.8));
         for button in self.buttons.iter() {
-            button.draw(resources, matrix);
+            button.draw(resources, matrix, status);
         }
         self.tooltip.draw(resources, matrix);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, prefs: &Prefs)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    status: ControlsStatus, prefs: &Prefs)
                     -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
             let opt_action =
-                button.on_event(event, ui, prefs, &mut self.tooltip);
+                button.on_event(event, ui, status, prefs, &mut self.tooltip);
             if opt_action.is_some() {
                 return Some(opt_action);
             }
@@ -171,7 +198,7 @@ struct ControlsButton {
     action: ControlsAction,
     rect: Rect<i32>,
     hotkey: Hotkey,
-    hovering: bool,
+    hover_pulse: HoverPulse,
 }
 
 impl ControlsButton {
@@ -181,46 +208,101 @@ impl ControlsButton {
             action,
             rect,
             hotkey,
-            hovering: false,
+            hover_pulse: HoverPulse::new(),
         }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let color = if self.hovering {
-            (1.0, 0.2, 0.2)
-        } else {
-            (0.75, 0.0, 0.0)
-        };
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(matrix, color, rect);
+    fn is_enabled(&self, status: ControlsStatus) -> bool {
+        match self.action {
+            ControlsAction::Reset => status != ControlsStatus::Stopped,
+            ControlsAction::RunOrPause => status != ControlsStatus::Finished,
+            _ => {
+                status != ControlsStatus::Running &&
+                    status != ControlsStatus::Finished
+            }
+        }
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, prefs: &Prefs,
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                status: ControlsStatus) {
+        let ui = resources.shaders().ui();
+        let enabled = self.is_enabled(status);
+
+        let rect = self.rect.as_f32();
+        let bg_color = if !enabled {
+            Color4::new(1.0, 1.0, 1.0, 0.1)
+        } else {
+            Color4::PURPLE0
+                .mix(Color4::PURPLE3, self.hover_pulse.brightness())
+                .with_alpha(0.8)
+        };
+        ui.draw_box4(matrix,
+                     &rect,
+                     &Color4::ORANGE4,
+                     &Color4::CYAN3,
+                     &bg_color);
+
+        let icon_rect = Rect::new(rect.x + 0.5 * (rect.width - rect.height),
+                                  rect.y,
+                                  rect.height,
+                                  rect.height);
+        let icon_index = self.action.icon_index(status);
+        if enabled {
+            ui.draw_icon(matrix,
+                         &icon_rect,
+                         icon_index,
+                         &Color4::ORANGE4,
+                         &Color4::ORANGE3,
+                         &Color4::ORANGE2);
+        } else {
+            ui.draw_icon(matrix,
+                         &icon_rect,
+                         icon_index,
+                         &Color4::new(0.8, 0.8, 0.8, 1.0),
+                         &Color4::new(0.6, 0.6, 0.6, 1.0),
+                         &Color4::new(0.4, 0.4, 0.4, 1.0));
+        }
+    }
+
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
+                    status: ControlsStatus, prefs: &Prefs,
                     tooltip: &mut Tooltip<ControlsAction>)
                     -> Option<ControlsAction> {
         match event {
+            Event::ClockTick(tick) => {
+                self.hover_pulse.on_clock_tick(tick);
+            }
             Event::KeyDown(key) => {
-                if key.code == prefs.hotkey_code(self.hotkey) {
+                if self.is_enabled(status) &&
+                    key.code == prefs.hotkey_code(self.hotkey)
+                {
+                    self.hover_pulse.on_click();
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.action);
                 }
             }
-            Event::MouseDown(mouse) => {
-                if mouse.left && self.rect.contains_point(mouse.pt) {
+            Event::MouseDown(mouse) if mouse.left => {
+                if self.is_enabled(status) &&
+                    self.rect.contains_point(mouse.pt)
+                {
+                    self.hover_pulse.on_click();
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.action);
                 }
             }
             Event::MouseMove(mouse) => {
-                self.hovering = self.rect.contains_point(mouse.pt);
-                if self.hovering {
+                let hovering = self.rect.contains_point(mouse.pt);
+                if self.hover_pulse.set_hovering(hovering) &&
+                    self.is_enabled(status)
+                {
+                    ui.audio().play_sound(Sound::ButtonHover);
                     tooltip.start_hover(self.action, mouse.pt);
                 } else {
                     tooltip.stop_hover(&self.action);
                 }
             }
             Event::Unfocus => {
-                self.hovering = false;
+                self.hover_pulse.unfocus();
                 tooltip.stop_hover(&self.action);
             }
             _ => {}

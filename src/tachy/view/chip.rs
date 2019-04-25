@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{Matrix4, vec2};
-use tachy::font::Align;
+use tachy::font::{Align, Font};
 use tachy::geom::{Color4, Coords, CoordsSize, Direction, MatrixExt,
                   Orientation, Rect};
 use tachy::gui::Resources;
@@ -45,7 +45,7 @@ impl ChipModel {
                           interface: &Interface) {
         let size = interface.size();
         for port in interface.ports_with_top_left(Coords::new(0, 0)) {
-            ChipModel::draw_port(resources, matrix, &port);
+            draw_port(resources, matrix, &port);
         }
         let width = size.width as f32 - 2.0 * MARGIN;
         let height = size.height as f32 - 2.0 * MARGIN;
@@ -60,13 +60,24 @@ impl ChipModel {
         let size = orient * ctype.size();
 
         for port in ctype.ports(Coords::new(0, 0), orient) {
-            ChipModel::draw_port(resources, matrix, &port);
+            draw_port(resources, matrix, &port);
         }
 
-        let icon = ChipModel::chip_icon(ctype, orient);
-        ChipModel::draw_chip_icon(resources, matrix, orient, size, icon);
+        let icon = chip_icon(ctype, orient);
+        draw_chip_icon(resources, matrix, orient, size, icon);
 
         match ctype {
+            ChipType::Const(value) => {
+                let label = value.to_string();
+                let font_size = 0.5 /
+                    ((label.len() as f32) * Font::Roman.ratio()).max(1.0);
+                draw_chip_string(resources,
+                                 matrix,
+                                 size,
+                                 font_size,
+                                 &Color4::ORANGE4,
+                                 &label);
+            }
             ChipType::Display => {
                 let mut opt_value: Option<u32> = None;
                 if let Some((coords, grid)) = coords_and_grid {
@@ -77,128 +88,136 @@ impl ChipModel {
                     }
                 }
                 if let Some(value) = opt_value {
-                    ChipModel::draw_chip_string(resources,
-                                                matrix,
-                                                size,
-                                                &format!("{}", value));
+                    draw_chip_string(resources,
+                                     matrix,
+                                     size,
+                                     0.3,
+                                     &Color4::WHITE,
+                                     &format!("{}", value));
                 } else {
-                    ChipModel::draw_chip_string(resources,
-                                                matrix,
-                                                size,
-                                                "Display");
+                    draw_chip_string(resources,
+                                     matrix,
+                                     size,
+                                     0.3,
+                                     &chip_icon_color(icon),
+                                     "Display");
                 };
             }
             _ => {
                 if icon == ChipIcon::Blank {
-                    ChipModel::draw_chip_string(resources,
-                                                matrix,
-                                                size,
-                                                &format!("{:?}", ctype));
+                    draw_chip_string(resources,
+                                     matrix,
+                                     size,
+                                     0.3,
+                                     &chip_icon_color(icon),
+                                     &format!("{:?}", ctype));
                 }
             }
         }
     }
+}
 
-    fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
-        match ctype {
-            ChipType::Add => ChipIcon::Add,
-            ChipType::And => ChipIcon::And,
-            ChipType::Clock => ChipIcon::Clock,
-            ChipType::Cmp => ChipIcon::Cmp,
-            ChipType::CmpEq => {
-                let flip = match orient * Direction::North {
-                    Direction::North | Direction::East => false,
-                    Direction::South | Direction::West => true,
-                };
-                if flip {
-                    ChipIcon::Cmpeq2
-                } else {
-                    ChipIcon::Cmpeq1
-                }
+fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
+    match ctype {
+        ChipType::Add => ChipIcon::Add,
+        ChipType::And => ChipIcon::And,
+        ChipType::Clock => ChipIcon::Clock,
+        ChipType::Cmp => ChipIcon::Cmp,
+        ChipType::CmpEq => {
+            let flip = match orient * Direction::North {
+                Direction::North | Direction::East => false,
+                Direction::South | Direction::West => true,
+            };
+            if flip {
+                ChipIcon::Cmpeq2
+            } else {
+                ChipIcon::Cmpeq1
             }
-            ChipType::Delay => ChipIcon::Delay,
-            ChipType::Demux => ChipIcon::Demux,
-            ChipType::Eq => ChipIcon::Eq,
-            ChipType::Mul => ChipIcon::Mul,
-            ChipType::Mux => ChipIcon::Mux,
-            ChipType::Not => ChipIcon::Not,
-            ChipType::Or => ChipIcon::Or,
-            ChipType::Pack => {
-                if orient.is_mirrored() {
-                    ChipIcon::Pack2
-                } else {
-                    ChipIcon::Pack1
-                }
-            }
-            ChipType::Sub => {
-                if orient.is_rotated_90() {
-                    ChipIcon::Sub2
-                } else {
-                    ChipIcon::Sub1
-                }
-            }
-            ChipType::Unpack => {
-                if orient.is_mirrored() {
-                    ChipIcon::Unpack2
-                } else {
-                    ChipIcon::Unpack1
-                }
-            }
-            ChipType::Xor => ChipIcon::Xor,
-            _ => ChipIcon::Blank,
         }
-    }
-
-    fn chip_icon_color(chip_icon: ChipIcon) -> Color4 {
-        match chip_icon {
-            ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux => {
-                Color4::CYAN2
+        ChipType::Const(_) => ChipIcon::Const,
+        ChipType::Delay => ChipIcon::Delay,
+        ChipType::Demux => ChipIcon::Demux,
+        ChipType::Eq => ChipIcon::Eq,
+        ChipType::Mul => ChipIcon::Mul,
+        ChipType::Mux => ChipIcon::Mux,
+        ChipType::Not => ChipIcon::Not,
+        ChipType::Or => ChipIcon::Or,
+        ChipType::Pack => {
+            if orient.is_mirrored() {
+                ChipIcon::Pack2
+            } else {
+                ChipIcon::Pack1
             }
-            _ => Color4::ORANGE2,
         }
+        ChipType::Sub => {
+            if orient.is_rotated_90() {
+                ChipIcon::Sub2
+            } else {
+                ChipIcon::Sub1
+            }
+        }
+        ChipType::Unpack => {
+            if orient.is_mirrored() {
+                ChipIcon::Unpack2
+            } else {
+                ChipIcon::Unpack1
+            }
+        }
+        ChipType::Xor => ChipIcon::Xor,
+        _ => ChipIcon::Blank,
     }
+}
 
-    fn draw_chip_icon(resources: &Resources, matrix: &Matrix4<f32>,
-                      orient: Orientation, size: CoordsSize, icon: ChipIcon) {
-        let width = size.width as f32 - 2.0 * MARGIN;
-        let height = size.height as f32 - 2.0 * MARGIN;
-        let matrix = matrix * Matrix4::trans2(MARGIN, MARGIN) *
-            Matrix4::scale2(width, height) *
-            Matrix4::trans2(0.5, 0.5) *
-            orient.matrix() * Matrix4::trans2(-0.5, -0.5);
-        let icon_index = icon as u32;
-        let icon_coords = vec2(icon_index % 8, icon_index / 8);
-        let icon_color = ChipModel::chip_icon_color(icon);
-        resources.textures().chip_icons().bind();
-        resources.shaders().chip().draw(&matrix, icon_coords, icon_color);
+fn chip_icon_color(chip_icon: ChipIcon) -> Color4 {
+    match chip_icon {
+        ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux => Color4::CYAN2,
+        _ => Color4::ORANGE2,
     }
+}
 
-    fn draw_chip_string(resources: &Resources, matrix: &Matrix4<f32>,
-                        size: CoordsSize, string: &str) {
-        let (width, height) = (size.width as f32, size.height as f32);
-        resources.fonts().roman().draw(matrix,
-                                       0.3,
-                                       Align::MidCenter,
-                                       (0.5 * width, 0.5 * height),
-                                       string);
-    }
+fn draw_chip_icon(resources: &Resources, matrix: &Matrix4<f32>,
+                  orient: Orientation, size: CoordsSize, icon: ChipIcon) {
+    let width = size.width as f32 - 2.0 * MARGIN;
+    let height = size.height as f32 - 2.0 * MARGIN;
+    let matrix = matrix * Matrix4::trans2(MARGIN, MARGIN) *
+        Matrix4::scale2(width, height) *
+        Matrix4::trans2(0.5, 0.5) * orient.matrix() *
+        Matrix4::trans2(-0.5, -0.5);
+    let icon_index = icon as u32;
+    let icon_coords = vec2(icon_index % 8, icon_index / 8);
+    let icon_color = chip_icon_color(icon);
+    resources.textures().chip_icons().bind();
+    resources.shaders().chip().draw(&matrix, icon_coords, icon_color);
+}
 
-    fn draw_port(resources: &Resources, matrix: &Matrix4<f32>,
-                 port: &PortSpec) {
-        let x = port.coords.x as f32 + 0.5;
-        let y = port.coords.y as f32 + 0.5;
-        let mat = matrix * Matrix4::trans2(x, y) *
-            Matrix4::from_angle_z(port.dir.angle_from_east()) *
-            Matrix4::scale2(0.5, 0.3); // TODO: make y scale depend on max size
+fn draw_chip_string(resources: &Resources, matrix: &Matrix4<f32>,
+                    chip_size: CoordsSize, font_size: f32, color: &Color4,
+                    string: &str) {
+    let (width, height) = (chip_size.width as f32, chip_size.height as f32);
+    let font = resources.fonts().roman();
+    font.draw_style(matrix,
+                    font_size,
+                    Align::MidCenter,
+                    (0.5 * width, 0.5 * height),
+                    color,
+                    0.0,
+                    string);
+}
 
-        let shader = resources.shaders().port();
-        shader.bind();
-        shader.set_mvp(&mat);
-        shader.set_port_flow_and_color(port.flow == PortFlow::Send,
-                                       port.color == PortColor::Event);
-        resources.textures().brushed_metal().bind();
-        shader.draw();
-    }
+fn draw_port(resources: &Resources, matrix: &Matrix4<f32>, port: &PortSpec) {
+    let x = port.coords.x as f32 + 0.5;
+    let y = port.coords.y as f32 + 0.5;
+    let mat = matrix * Matrix4::trans2(x, y) *
+        Matrix4::from_angle_z(port.dir.angle_from_east()) *
+        Matrix4::scale2(0.5, 0.3); // TODO: make y scale depend on max size
+
+    let shader = resources.shaders().port();
+    shader.bind();
+    shader.set_mvp(&mat);
+    shader.set_port_flow_and_color(port.flow == PortFlow::Send,
+                                   port.color == PortColor::Event);
+    resources.textures().brushed_metal().bind();
+    shader.draw();
 }
 
 //===========================================================================//

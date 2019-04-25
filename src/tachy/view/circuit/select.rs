@@ -127,8 +127,8 @@ impl SelectionDrag {
     }
 
     pub fn draw_selection(&self, resources: &Resources,
-                          matrix: &Matrix4<f32>, chip_model: &ChipModel,
-                          wire_model: &WireModel, grid_cell_size: f32) {
+                          matrix: &Matrix4<f32>, wire_model: &WireModel,
+                          grid_cell_size: f32) {
         let offset = self.top_left_grid_pt() - Point2::new(0.0, 0.0);
 
         // Draw wires:
@@ -173,7 +173,7 @@ impl SelectionDrag {
                 let mat = matrix *
                     Matrix4::trans2v(delta.as_f32() * grid_cell_size) *
                     Matrix4::from_scale(grid_cell_size);
-                chip_model.draw_chip(resources, &mat, ctype, orient, None);
+                ChipModel::draw_chip(resources, &mat, ctype, orient, None);
             }
         }
 

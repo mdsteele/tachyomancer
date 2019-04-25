@@ -17,8 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod port;
 mod ui;
 
+pub use self::port::PortShader;
 pub use self::ui::UiShader;
 use cgmath::{Matrix4, Vector2, Vector3, Vector4};
 use tachy::geom::{Color4, MatrixExt, Rect};
@@ -32,9 +34,6 @@ const BOARD_FRAG_CODE: &[u8] = include_bytes!("board.frag");
 
 const CHIP_VERT_CODE: &[u8] = include_bytes!("chip.vert");
 const CHIP_FRAG_CODE: &[u8] = include_bytes!("chip.frag");
-
-const PORT_VERT_CODE: &[u8] = include_bytes!("port.vert");
-const PORT_FRAG_CODE: &[u8] = include_bytes!("port.frag");
 
 const SOLID_VERT_CODE: &[u8] = include_bytes!("solid.vert");
 const SOLID_FRAG_CODE: &[u8] = include_bytes!("solid.frag");
@@ -185,53 +184,6 @@ impl ChipShader {
         self.icon_color.set(&icon_color.rgb().into());
         self.varray.bind();
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
-    }
-}
-
-//===========================================================================//
-
-pub struct PortShader {
-    program: ShaderProgram,
-    mvp: ShaderUniform<Matrix4<f32>>,
-    flow_and_color: ShaderUniform<u32>,
-    color_tint: ShaderUniform<Color4>,
-}
-
-impl PortShader {
-    fn new() -> Result<PortShader, String> {
-        let vert =
-            Shader::new(ShaderType::Vertex, "port.vert", PORT_VERT_CODE)?;
-        let frag =
-            Shader::new(ShaderType::Fragment, "port.frag", PORT_FRAG_CODE)?;
-        let program = ShaderProgram::new(&[&vert, &frag])?;
-
-        let mvp = program.get_uniform("MVP")?;
-        let flow_and_color = program.get_uniform("FlowAndColor")?;
-        let color_tint = program.get_uniform("ColorTint")?;
-        Ok(PortShader {
-               program,
-               mvp,
-               flow_and_color,
-               color_tint,
-           })
-    }
-
-    pub fn bind(&self) { self.program.bind(); }
-
-    pub fn set_mvp(&self, mvp: &Matrix4<f32>) { self.mvp.set(mvp); }
-
-    pub fn set_port_flow_and_color(&self, flow: bool, color: bool) {
-        let mut value = 0;
-        if flow {
-            value |= 0x2;
-        }
-        if color {
-            value |= 0x1;
-            self.color_tint.set(&Color4::CYAN5);
-        } else {
-            self.color_tint.set(&Color4::ORANGE4);
-        }
-        self.flow_and_color.set(&value);
     }
 }
 

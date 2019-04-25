@@ -25,6 +25,7 @@ extern crate rusttype;
 use png::HasParameters;
 use std::env;
 use std::fs::{self, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -151,6 +152,7 @@ impl Converter {
         let svg_dir = PathBuf::from("src/tachy/texture/chip");
         let mut latest_timestamp = self.build_script_timestamp;
         let mut png_paths = Vec::<PathBuf>::new();
+        let mut icon_names = Vec::<String>::new();
         for entry in svg_dir.read_dir().unwrap() {
             let svg_path = entry.unwrap().path();
             if svg_path.extension() != Some("svg".as_ref()) {
@@ -167,6 +169,7 @@ impl Converter {
                 png_path.metadata().unwrap().modified().unwrap();
             latest_timestamp = latest_timestamp.max(png_timestamp);
             png_paths.push(png_path);
+            icon_names.push(capitalize(svg_name.to_str().unwrap()));
         }
 
         // Check if the output PNG file is already up-to-date:
@@ -215,6 +218,20 @@ impl Converter {
                                                    texture_data)
             .unwrap();
         texture_image.write_png(File::create(&texture_path).unwrap()).unwrap();
+
+        // Generate ChipIcon enum:
+        icon_names.sort();
+        let icon_rs_relpath = PathBuf::from("texture/chip_icons.rs");
+        eprintln!("Generating: {:?}", icon_rs_relpath);
+        let icon_rs_path = self.out_dir.join(&icon_rs_relpath);
+        let mut icon_rs = File::create(&icon_rs_path).unwrap();
+        writeln!(icon_rs, "#[derive(Clone, Copy, Eq, PartialEq)]").unwrap();
+        writeln!(icon_rs, "enum ChipIcon {{").unwrap();
+        for (index, icon_name) in icon_names.iter().enumerate() {
+            writeln!(icon_rs, "    {} = {},", icon_name, index).unwrap();
+        }
+        writeln!(icon_rs, "    Blank = {},", icon_names.len()).unwrap();
+        writeln!(icon_rs, "}}").unwrap();
     }
 
     fn svg_to_png(&self, svg_path: &Path, png_relpath: &Path,
@@ -264,6 +281,20 @@ impl Converter {
         }
         return false;
     }
+}
+
+//===========================================================================//
+
+fn capitalize(string: &str) -> String {
+    let mut capitalized = String::with_capacity(string.len());
+    let mut chars = string.chars();
+    if let Some(chr) = chars.next() {
+        capitalized.push(chr.to_ascii_uppercase());
+    }
+    for chr in chars {
+        capitalized.push(chr);
+    }
+    capitalized
 }
 
 //===========================================================================//

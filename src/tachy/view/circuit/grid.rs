@@ -61,7 +61,6 @@ pub struct EditGridView {
     size: RectSize<f32>,
     scroll: Vector2<i32>,
     zoom: f32,
-    chip_model: ChipModel,
     wire_model: WireModel,
     interaction: Interaction,
     tooltip: Tooltip<GridTooltipTag>,
@@ -73,7 +72,6 @@ impl EditGridView {
             size: window_size.as_f32(),
             scroll: Vector2::new(0, 0),
             zoom: ZOOM_MAX,
-            chip_model: ChipModel::new(),
             wire_model: WireModel::new(),
             interaction: Interaction::Nothing,
             tooltip: Tooltip::new(window_size),
@@ -131,7 +129,7 @@ impl EditGridView {
             let y = (coords.y * GRID_CELL_SIZE) as f32;
             let mat = matrix * Matrix4::trans2(x, y) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
-            self.chip_model.draw_interface(resources, &mat, interface);
+            ChipModel::draw_interface(resources, &mat, interface);
         }
     }
 
@@ -193,11 +191,11 @@ impl EditGridView {
             let y = (coords.y * GRID_CELL_SIZE) as f32;
             let mat = matrix * Matrix4::trans2(x, y) *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32);
-            self.chip_model.draw_chip(resources,
-                                      &mat,
-                                      ctype,
-                                      orient,
-                                      Some((coords, grid)));
+            ChipModel::draw_chip(resources,
+                                 &mat,
+                                 ctype,
+                                 orient,
+                                 Some((coords, grid)));
         }
 
         // Draw selection box (if any):
@@ -216,7 +214,6 @@ impl EditGridView {
             Interaction::DraggingSelection(ref drag) => {
                 drag.draw_selection(resources,
                                     &self.unzoomed_matrix(),
-                                    &self.chip_model,
                                     &self.wire_model,
                                     (GRID_CELL_SIZE as f32) * self.zoom);
             }
@@ -230,11 +227,11 @@ impl EditGridView {
             let matrix = self.vp_matrix() *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32) *
                 Matrix4::trans2(pt.x, pt.y);
-            self.chip_model.draw_chip(resources,
-                                      &matrix,
-                                      drag.chip_type(),
-                                      drag.new_orient(),
-                                      None);
+            ChipModel::draw_chip(resources,
+                                 &matrix,
+                                 drag.chip_type(),
+                                 drag.new_orient(),
+                                 None);
         }
     }
 

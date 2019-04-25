@@ -18,10 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::button::Scrollbar;
+use super::super::chip::ChipModel;
 use super::tray::TraySlide;
 use cgmath::{Deg, Matrix4, Point2, vec2};
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
+use tachy::geom::{AsFloat, Color4, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources};
 use tachy::save::{CHIP_CATEGORIES, ChipType, Puzzle};
@@ -62,6 +63,7 @@ pub struct PartsTray {
     parts: Vec<Part>,
     scrollbar: Scrollbar,
     slide: TraySlide,
+    // TODO: tooltip when hovering over part
 }
 
 impl PartsTray {
@@ -279,14 +281,16 @@ impl Part {
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let chip_size = self.ctype.size();
+        let chip_dim = chip_size.width.max(chip_size.height) as f32;
         let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(matrix, (0.75, 0.0, 0.0), rect);
-        resources.fonts().roman().draw(matrix,
-                                       20.0,
-                                       Align::MidCenter,
-                                       (rect.x + 0.5 * rect.width,
-                                        rect.y + 0.5 * rect.height),
-                                       &format!("{:?}", self.ctype));
+        let matrix = matrix * Matrix4::trans2(rect.x, rect.y) *
+            Matrix4::from_scale(rect.width / chip_dim);
+        ChipModel::draw_chip(resources,
+                             &matrix,
+                             self.ctype,
+                             Orientation::default(),
+                             None);
     }
 }
 

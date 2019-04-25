@@ -21,7 +21,6 @@ use cgmath::{Matrix4, vec2};
 use tachy::font::Align;
 use tachy::geom::{Color4, Coords, CoordsSize, Direction, MatrixExt,
                   Orientation, Rect};
-use tachy::gl::{Primitive, VertexArray, VertexBuffer};
 use tachy::gui::Resources;
 use tachy::save::ChipType;
 use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
@@ -33,86 +32,20 @@ const MARGIN: f32 = 0.12;
 
 //===========================================================================//
 
-// These must match the list of SVG files in src/tacy/texture/chip/, and must
-// appear in alphabetical order (except for Blank, which should come last).
-// TODO: Have build.rs generate this declaration.
-#[derive(Clone, Copy, Eq, PartialEq)]
-enum ChipIcon {
-    Add = 0,
-    And,
-    Clock,
-    Cmp,
-    CmpEq1,
-    CmpEq2,
-    Delay,
-    Demux,
-    Eq,
-    Mul,
-    Mux,
-    Not,
-    Or,
-    Pack1,
-    Pack2,
-    Sub1,
-    Sub2,
-    Unpack1,
-    Unpack2,
-    Xor,
-    Blank,
-}
+// Generated code:
+// enum ChipIcon { ... }
+include!(concat!(env!("OUT_DIR"), "/texture/chip_icons.rs"));
 
 //===========================================================================//
 
-const NUM_PORT_VERTICES: usize = 24;
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
-const PORT_VERTICES: &[f32; 2 * NUM_PORT_VERTICES] = &[
-    0.0, 0.0, // center
-    0.0, -1.0, // first corner
-
-    // edge:
-    0.88, -1.0,  0.88, -0.9,  0.88, -0.8,  0.88, -0.7,  0.88, -0.6,
-    0.88, -0.5,  0.88, -0.4,  0.88, -0.3,  0.88, -0.2,  0.88, -0.1,
-    0.88, -0.0,  0.88,  0.1,  0.88,  0.2,  0.88,  0.3,  0.88,  0.4,
-    0.88,  0.5,  0.88,  0.6,  0.88,  0.7,  0.88,  0.8,  0.88,  0.9,
-    0.88,  1.0,
-
-    0.0, 1.0, // last corner
-];
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
-const PORT_VERTEX_IS_EDGE: &[u8; NUM_PORT_VERTICES] = &[
-    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-];
-
-//===========================================================================//
-
-pub struct ChipModel {
-    port_varray: VertexArray,
-    _port_vbuffer: VertexBuffer<f32>,
-    _port_edge_vbuffer: VertexBuffer<u8>,
-}
+pub struct ChipModel {}
 
 impl ChipModel {
-    pub fn new() -> ChipModel {
-        let port_varray = VertexArray::new(2);
-        let port_vbuffer = VertexBuffer::new(PORT_VERTICES);
-        let port_edge_vbuffer = VertexBuffer::new(PORT_VERTEX_IS_EDGE);
-        port_varray.bind();
-        port_vbuffer.attribf(0, 2, 0, 0);
-        port_edge_vbuffer.attribi(1, 1, 0, 0);
-        ChipModel {
-            port_varray,
-            _port_vbuffer: port_vbuffer,
-            _port_edge_vbuffer: port_edge_vbuffer,
-        }
-    }
-
-    pub fn draw_interface(&self, resources: &Resources,
-                          matrix: &Matrix4<f32>, interface: &Interface) {
+    pub fn draw_interface(resources: &Resources, matrix: &Matrix4<f32>,
+                          interface: &Interface) {
         let size = interface.size();
         for port in interface.ports_with_top_left(Coords::new(0, 0)) {
-            self.draw_port(resources, matrix, &port);
+            ChipModel::draw_port(resources, matrix, &port);
         }
         let width = size.width as f32 - 2.0 * MARGIN;
         let height = size.height as f32 - 2.0 * MARGIN;
@@ -121,17 +54,17 @@ impl ChipModel {
         resources.shaders().solid().fill_rect(matrix, color, rect);
     }
 
-    pub fn draw_chip(&self, resources: &Resources, matrix: &Matrix4<f32>,
+    pub fn draw_chip(resources: &Resources, matrix: &Matrix4<f32>,
                      ctype: ChipType, orient: Orientation,
                      coords_and_grid: Option<(Coords, &EditGrid)>) {
         let size = orient * ctype.size();
 
         for port in ctype.ports(Coords::new(0, 0), orient) {
-            self.draw_port(resources, matrix, &port);
+            ChipModel::draw_port(resources, matrix, &port);
         }
 
-        let icon = self.chip_icon(ctype, orient);
-        self.draw_chip_icon(resources, matrix, orient, size, icon);
+        let icon = ChipModel::chip_icon(ctype, orient);
+        ChipModel::draw_chip_icon(resources, matrix, orient, size, icon);
 
         match ctype {
             ChipType::Display => {
@@ -144,26 +77,29 @@ impl ChipModel {
                     }
                 }
                 if let Some(value) = opt_value {
-                    self.draw_chip_string(resources,
-                                          matrix,
-                                          size,
-                                          &format!("{}", value));
+                    ChipModel::draw_chip_string(resources,
+                                                matrix,
+                                                size,
+                                                &format!("{}", value));
                 } else {
-                    self.draw_chip_string(resources, matrix, size, "Display");
+                    ChipModel::draw_chip_string(resources,
+                                                matrix,
+                                                size,
+                                                "Display");
                 };
             }
             _ => {
                 if icon == ChipIcon::Blank {
-                    self.draw_chip_string(resources,
-                                          matrix,
-                                          size,
-                                          &format!("{:?}", ctype));
+                    ChipModel::draw_chip_string(resources,
+                                                matrix,
+                                                size,
+                                                &format!("{:?}", ctype));
                 }
             }
         }
     }
 
-    fn chip_icon(&self, ctype: ChipType, orient: Orientation) -> ChipIcon {
+    fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         match ctype {
             ChipType::Add => ChipIcon::Add,
             ChipType::And => ChipIcon::And,
@@ -175,9 +111,9 @@ impl ChipModel {
                     Direction::South | Direction::West => true,
                 };
                 if flip {
-                    ChipIcon::CmpEq2
+                    ChipIcon::Cmpeq2
                 } else {
-                    ChipIcon::CmpEq1
+                    ChipIcon::Cmpeq1
                 }
             }
             ChipType::Delay => ChipIcon::Delay,
@@ -213,7 +149,7 @@ impl ChipModel {
         }
     }
 
-    fn chip_icon_color(&self, chip_icon: ChipIcon) -> Color4 {
+    fn chip_icon_color(chip_icon: ChipIcon) -> Color4 {
         match chip_icon {
             ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux => {
                 Color4::CYAN2
@@ -222,7 +158,7 @@ impl ChipModel {
         }
     }
 
-    fn draw_chip_icon(&self, resources: &Resources, matrix: &Matrix4<f32>,
+    fn draw_chip_icon(resources: &Resources, matrix: &Matrix4<f32>,
                       orient: Orientation, size: CoordsSize, icon: ChipIcon) {
         let width = size.width as f32 - 2.0 * MARGIN;
         let height = size.height as f32 - 2.0 * MARGIN;
@@ -232,12 +168,12 @@ impl ChipModel {
             orient.matrix() * Matrix4::trans2(-0.5, -0.5);
         let icon_index = icon as u32;
         let icon_coords = vec2(icon_index % 8, icon_index / 8);
-        let icon_color = self.chip_icon_color(icon);
+        let icon_color = ChipModel::chip_icon_color(icon);
         resources.textures().chip_icons().bind();
         resources.shaders().chip().draw(&matrix, icon_coords, icon_color);
     }
 
-    fn draw_chip_string(&self, resources: &Resources, matrix: &Matrix4<f32>,
+    fn draw_chip_string(resources: &Resources, matrix: &Matrix4<f32>,
                         size: CoordsSize, string: &str) {
         let (width, height) = (size.width as f32, size.height as f32);
         resources.fonts().roman().draw(matrix,
@@ -247,7 +183,7 @@ impl ChipModel {
                                        string);
     }
 
-    fn draw_port(&self, resources: &Resources, matrix: &Matrix4<f32>,
+    fn draw_port(resources: &Resources, matrix: &Matrix4<f32>,
                  port: &PortSpec) {
         let x = port.coords.x as f32 + 0.5;
         let y = port.coords.y as f32 + 0.5;
@@ -260,9 +196,8 @@ impl ChipModel {
         shader.set_mvp(&mat);
         shader.set_port_flow_and_color(port.flow == PortFlow::Send,
                                        port.color == PortColor::Event);
-        self.port_varray.bind();
         resources.textures().brushed_metal().bind();
-        self.port_varray.draw(Primitive::TriangleFan, 0, NUM_PORT_VERTICES);
+        shader.draw();
     }
 }
 

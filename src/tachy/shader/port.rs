@@ -27,6 +27,9 @@ use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
 const PORT_VERT_CODE: &[u8] = include_bytes!("port.vert");
 const PORT_FRAG_CODE: &[u8] = include_bytes!("port.frag");
 
+const BEHAVIOR_WIRE_COLOR: Color4 = Color4::ORANGE4;
+const EVENT_WIRE_COLOR: Color4 = Color4::new(0.533, 0.667, 0.667, 1.0);
+
 //===========================================================================//
 
 const NUM_PORT_VERTICES: usize = 24;
@@ -108,9 +111,9 @@ impl PortShader {
         }
         if color {
             value |= 0x1;
-            self.color_tint.set(&Color4::CYAN5);
+            self.color_tint.set(&EVENT_WIRE_COLOR);
         } else {
-            self.color_tint.set(&Color4::ORANGE4);
+            self.color_tint.set(&BEHAVIOR_WIRE_COLOR);
         }
         self.flow_and_color.set(&value);
     }

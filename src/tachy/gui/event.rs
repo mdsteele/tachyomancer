@@ -36,6 +36,7 @@ const SCROLL_DELTA_MULTIPLIER: i32 = 5;
 #[derive(Clone)]
 pub enum Event {
     ClockTick(ClockEventData),
+    Debug(String, String),
     KeyDown(KeyEventData),
     MouseDown(MouseEventData),
     MouseMove(MouseEventData),
@@ -54,6 +55,13 @@ impl Event {
         let data =
             ClockEventData { elapsed: seconds.min(MAX_CLOCK_TICK_SECONDS) };
         Event::ClockTick(data)
+    }
+
+    pub fn new_debug(line: &str) -> Event {
+        let mut parts = line.splitn(2, '=');
+        let key = parts.next().unwrap_or("").trim().to_string();
+        let value = parts.next().unwrap_or("").trim().to_string();
+        Event::Debug(key, value)
     }
 
     pub(super) fn from_sdl_event(sdl_event: sdl2::event::Event,
@@ -284,6 +292,52 @@ impl ScrollEventData {
                 y: self.pt.y - origin.y,
             },
             delta: self.delta,
+        }
+    }
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::{Event, MAX_CLOCK_TICK_SECONDS};
+    use std::time::Duration;
+
+    #[test]
+    fn make_clock_tick_event() {
+        assert!(MAX_CLOCK_TICK_SECONDS > 0.025);
+        match Event::new_clock_tick(Duration::from_millis(25)) {
+            Event::ClockTick(tick) => {
+                assert_eq!(tick.elapsed, 0.025);
+            }
+            _ => panic!("wrong event type"),
+        }
+
+        assert!(MAX_CLOCK_TICK_SECONDS < 1.5);
+        match Event::new_clock_tick(Duration::from_millis(1500)) {
+            Event::ClockTick(tick) => {
+                assert_eq!(tick.elapsed, MAX_CLOCK_TICK_SECONDS);
+            }
+            _ => panic!("wrong event type"),
+        }
+    }
+
+    #[test]
+    fn make_debug_event() {
+        match Event::new_debug("foobar = baz = quux\n") {
+            Event::Debug(key, value) => {
+                assert_eq!(key, "foobar");
+                assert_eq!(value, "baz = quux");
+            }
+            _ => panic!("wrong event type"),
+        }
+
+        match Event::new_debug(" foo-bar ") {
+            Event::Debug(key, value) => {
+                assert_eq!(key, "foo-bar");
+                assert_eq!(value, "");
+            }
+            _ => panic!("wrong event type"),
         }
     }
 }

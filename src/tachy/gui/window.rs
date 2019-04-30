@@ -168,6 +168,9 @@ impl<'a> Window<'a> {
 
     pub fn poll_event(&mut self) -> Option<Event> {
         loop {
+            if let Some(line) = self.gui_context.stdin_reader.pop_line() {
+                return Some(Event::new_debug(&line));
+            }
             let pump = &mut self.gui_context.event_pump;
             match pump.poll_event() {
                 None => return None,

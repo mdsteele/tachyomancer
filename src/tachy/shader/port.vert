@@ -17,9 +17,9 @@ void main() {
   if (vertexEdge != 0u) {
     float delta = 0.0;
     if ((FlowAndColor & portColorMask) != 0u) {
-      delta = sqrt(abs(4 * y)) - 1;
+      delta = 1.1 * (abs(2 * y) - 1); // event
     } else {
-      delta = 0.8 * (pow(1.414 * y, 2) - 1);
+      delta = 0.8 * (pow(1.414 * y, 2) - 1); // behavior
     }
     if ((FlowAndColor & portFlowMask) != 0u) {
       delta = -delta;

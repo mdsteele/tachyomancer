@@ -17,6 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use std::str::FromStr;
+
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,6 +53,23 @@ const ALL_PUZZLES: &[Puzzle] = &[
     Puzzle::SandboxBehavior,
     Puzzle::SandboxEvent,
 ];
+
+// TODO: Consider using strum crate for this (and other enums).
+impl FromStr for Puzzle {
+    type Err = ();
+    fn from_str(string: &str) -> Result<Puzzle, ()> {
+        match string {
+            "AutomateHeliostat" => Ok(Puzzle::AutomateHeliostat),
+            "AutomateReactor" => Ok(Puzzle::AutomateReactor),
+            "AutomateRobotArm" => Ok(Puzzle::AutomateRobotArm),
+            "SandboxBehavior" => Ok(Puzzle::SandboxBehavior),
+            "SandboxEvent" => Ok(Puzzle::SandboxEvent),
+            "TutorialOr" => Ok(Puzzle::TutorialOr),
+            "TutorialXor" => Ok(Puzzle::TutorialXor),
+            _ => Err(()),
+        }
+    }
+}
 
 impl Puzzle {
     /// Returns the first puzzle in the game, which is always unlocked.

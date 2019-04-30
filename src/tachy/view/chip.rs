@@ -109,7 +109,7 @@ impl ChipModel {
                                      matrix,
                                      size,
                                      0.3,
-                                     &chip_icon_color(icon),
+                                     &Color4::WHITE,
                                      &format!("{:?}", ctype));
                 }
             }

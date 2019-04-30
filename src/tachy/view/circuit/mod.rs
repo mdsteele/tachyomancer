@@ -253,6 +253,7 @@ impl CircuitView {
             }
             Some(PartsAction::Drop) => {
                 self.edit_grid.drop_into_parts_tray(grid);
+                // TODO: Only play sound if we were actually holding a chip
                 ui.audio().play_sound(Sound::DropChip);
             }
             None => {}

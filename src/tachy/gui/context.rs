@@ -20,6 +20,7 @@
 use super::audio::{AudioMixer, AudioQueue};
 use super::clipboard::Clipboard;
 use super::cursor::Cursors;
+use super::debug::StdinReader;
 use sdl2;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
@@ -36,6 +37,7 @@ pub struct GuiContext {
     _audio_device: sdl2::audio::AudioDevice<AudioMixer>,
     pub(super) audio_queue: Arc<Mutex<AudioQueue>>,
     pub(super) cursors: Cursors,
+    pub(super) stdin_reader: StdinReader,
 }
 
 impl GuiContext {
@@ -66,6 +68,7 @@ impl GuiContext {
                _audio_device: audio_device,
                audio_queue,
                cursors,
+               stdin_reader: StdinReader::start(),
            })
     }
 

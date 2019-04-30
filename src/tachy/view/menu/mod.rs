@@ -167,68 +167,76 @@ impl MenuView {
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
                     state: &mut GameState)
                     -> Option<MenuAction> {
-        if let Event::ClockTick(tick) = event {
-            debug_assert!(self.left_section <= self.right_section);
-            let goal_section = state.menu_section();
-            if self.left_section == self.right_section {
-                if goal_section < self.left_section {
-                    self.left_section = goal_section;
-                    self.section_anim = 1.0;
-                } else if goal_section > self.left_section {
-                    self.right_section = goal_section;
-                    self.section_anim = 0.0;
-                }
-            }
-            if self.left_section != self.right_section {
-                let mut anim_goal = if goal_section == self.left_section {
-                    0.0
-                } else if goal_section == self.right_section {
-                    1.0
-                } else if goal_section < self.left_section {
-                    -1.0
-                } else if goal_section > self.right_section {
-                    2.0
-                } else if self.section_anim < 0.5 {
-                    -1.0
-                } else {
-                    2.0
-                };
-                self.section_anim =
-                    track_towards(self.section_anim, anim_goal, tick);
-                if self.section_anim < 0.0 {
-                    debug_assert!(self.section_anim >= -1.0);
+        match event {
+            Event::ClockTick(tick) => {
+                debug_assert!(self.left_section <= self.right_section);
+                let goal_section = state.menu_section();
+                if self.left_section == self.right_section {
                     if goal_section < self.left_section {
-                        self.right_section = self.left_section;
                         self.left_section = goal_section;
-                        self.section_anim += 1.0;
-                        anim_goal = 0.0;
-                    } else {
-                        debug_assert!(goal_section < self.right_section);
+                        self.section_anim = 1.0;
+                    } else if goal_section > self.left_section {
                         self.right_section = goal_section;
-                        self.section_anim = -self.section_anim;
-                        anim_goal = 1.0;
-                    }
-                } else if self.section_anim > 1.0 {
-                    debug_assert!(self.section_anim <= 2.0);
-                    if goal_section > self.right_section {
-                        self.left_section = self.right_section;
-                        self.right_section = goal_section;
-                        self.section_anim -= 1.0;
-                        anim_goal = 1.0;
-                    } else {
-                        debug_assert!(goal_section > self.left_section);
-                        self.left_section = goal_section;
-                        self.section_anim = 2.0 - self.section_anim;
-                        anim_goal = 0.0;
+                        self.section_anim = 0.0;
                     }
                 }
-                debug_assert!(self.section_anim >= 0.0 &&
-                                  self.section_anim <= 1.0);
-                if self.section_anim == anim_goal {
-                    self.left_section = goal_section;
-                    self.right_section = goal_section;
+                if self.left_section != self.right_section {
+                    let mut anim_goal = if goal_section == self.left_section {
+                        0.0
+                    } else if goal_section == self.right_section {
+                        1.0
+                    } else if goal_section < self.left_section {
+                        -1.0
+                    } else if goal_section > self.right_section {
+                        2.0
+                    } else if self.section_anim < 0.5 {
+                        -1.0
+                    } else {
+                        2.0
+                    };
+                    self.section_anim =
+                        track_towards(self.section_anim, anim_goal, tick);
+                    if self.section_anim < 0.0 {
+                        debug_assert!(self.section_anim >= -1.0);
+                        if goal_section < self.left_section {
+                            self.right_section = self.left_section;
+                            self.left_section = goal_section;
+                            self.section_anim += 1.0;
+                            anim_goal = 0.0;
+                        } else {
+                            debug_assert!(goal_section < self.right_section);
+                            self.right_section = goal_section;
+                            self.section_anim = -self.section_anim;
+                            anim_goal = 1.0;
+                        }
+                    } else if self.section_anim > 1.0 {
+                        debug_assert!(self.section_anim <= 2.0);
+                        if goal_section > self.right_section {
+                            self.left_section = self.right_section;
+                            self.right_section = goal_section;
+                            self.section_anim -= 1.0;
+                            anim_goal = 1.0;
+                        } else {
+                            debug_assert!(goal_section > self.left_section);
+                            self.left_section = goal_section;
+                            self.section_anim = 2.0 - self.section_anim;
+                            anim_goal = 0.0;
+                        }
+                    }
+                    debug_assert!(self.section_anim >= 0.0 &&
+                                      self.section_anim <= 1.0);
+                    if self.section_anim == anim_goal {
+                        self.left_section = goal_section;
+                        self.right_section = goal_section;
+                    }
                 }
             }
+            Event::Debug(key, value) if key == "unlockpuzzle" => {
+                if let Ok(puzzle) = value.parse::<Puzzle>() {
+                    return Some(MenuAction::GoToPuzzle(puzzle));
+                }
+            }
+            _ => {}
         }
 
         if let Some(mut dialog) = self.confirmation_dialog.take() {

@@ -17,24 +17,46 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod audio;
-mod clipboard;
-mod context;
-mod cursor;
-mod debug;
-mod event;
-mod resource;
-mod ui;
-mod window;
+use std::collections::VecDeque;
+use std::io;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
-pub use self::audio::{AudioQueue, Sound};
-pub use self::clipboard::Clipboard;
-pub use self::context::GuiContext;
-pub use self::cursor::{Cursor, Cursors, NextCursor};
-pub use self::event::{ClockEventData, Event, KeyEventData, Keycode,
-                      MouseEventData, MultitouchEventData, ScrollEventData};
-pub use self::resource::Resources;
-pub use self::ui::{Keyboard, Ui};
-pub use self::window::{Window, WindowOptions};
+//===========================================================================//
+
+pub struct StdinReader {
+    queue: Arc<Mutex<VecDeque<String>>>,
+}
+
+impl StdinReader {
+    pub(super) fn start() -> StdinReader {
+        let queue = Arc::new(Mutex::new(VecDeque::<String>::new()));
+        let stdin_reader = StdinReader { queue: queue.clone() };
+        thread::spawn(move || {
+            let reader = io::stdin();
+            loop {
+                let mut string = String::new();
+                match reader.read_line(&mut string) {
+                    Err(err) => {
+                        debug_log!("ERROR: StdinReader failed: {}", err);
+                        return;
+                    }
+                    Ok(0) => {
+                        debug_log!("StdinReader reached EOF.");
+                        return;
+                    }
+                    Ok(_) => {
+                        queue.lock().unwrap().push_back(string);
+                    }
+                }
+            }
+        });
+        stdin_reader
+    }
+
+    pub fn pop_line(&mut self) -> Option<String> {
+        self.queue.lock().unwrap().pop_front()
+    }
+}
 
 //===========================================================================//

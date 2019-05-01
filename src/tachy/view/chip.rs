@@ -28,6 +28,7 @@ use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
 
 //===========================================================================//
 
+const INTERFACE_LABEL_COLOR: Color4 = Color4::new(0.75, 0.75, 0.75, 1.0);
 const MARGIN: f32 = 0.12;
 
 //===========================================================================//
@@ -43,15 +44,32 @@ pub struct ChipModel {}
 impl ChipModel {
     pub fn draw_interface(resources: &Resources, matrix: &Matrix4<f32>,
                           interface: &Interface) {
-        let size = interface.size();
-        for port in interface.ports_with_top_left(Coords::new(0, 0)) {
-            draw_port(resources, matrix, &port);
+        // Draw ports:
+        let ports = interface.ports_with_top_left(Coords::new(0, 0));
+        for &(_, ref port) in ports.iter() {
+            draw_port(resources, matrix, port);
         }
+
+        // Draw body:
+        let size = interface.size();
         let width = size.width as f32 - 2.0 * MARGIN;
         let height = size.height as f32 - 2.0 * MARGIN;
         let color = (0.3, 0.3, 0.3);
         let rect = Rect::new(MARGIN, MARGIN, width, height);
         resources.shaders().solid().fill_rect(matrix, color, rect);
+
+        // Draw port labels:
+        let font = resources.fonts().roman();
+        for &(name, ref port) in ports.iter() {
+            font.draw_style(matrix,
+                            0.25,
+                            Align::MidCenter,
+                            (0.5 + (port.coords.x as f32),
+                             0.5 + (port.coords.y as f32)),
+                            &INTERFACE_LABEL_COLOR,
+                            0.0,
+                            name);
+        }
     }
 
     pub fn draw_chip(resources: &Resources, matrix: &Matrix4<f32>,

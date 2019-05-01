@@ -83,11 +83,12 @@ impl Interface {
         size.into()
     }
 
-    pub fn ports(&self, bounds: CoordsRect) -> Vec<PortSpec> {
+    pub fn ports(&self, bounds: CoordsRect) -> Vec<(&'static str, PortSpec)> {
         self.ports_with_top_left(self.top_left(bounds))
     }
 
-    pub fn ports_with_top_left(&self, top_left: Coords) -> Vec<PortSpec> {
+    pub fn ports_with_top_left(&self, top_left: Coords)
+                               -> Vec<(&'static str, PortSpec)> {
         let delta = match self.side {
             Direction::South | Direction::West => {
                 self.side.rotate_ccw().delta()
@@ -101,13 +102,14 @@ impl Interface {
             .iter()
             .enumerate()
             .map(|(index, port)| {
-                     PortSpec {
-                         flow: port.flow,
-                         color: port.color,
-                         coords: top_left + delta * (index as i32),
-                         dir: port_dir,
-                     }
-                 })
+                let spec = PortSpec {
+                    flow: port.flow,
+                    color: port.color,
+                    coords: top_left + delta * (index as i32),
+                    dir: port_dir,
+                };
+                (port.name, spec)
+            })
             .collect()
     }
 
@@ -115,14 +117,14 @@ impl Interface {
         self.ports(bounds)
             .into_iter()
             .enumerate()
-            .map(|(index, port)| {
+            .map(|(index, (_, port))| {
                      PortConstraint::Exact(port.loc(), self.ports[index].size)
                  })
             .collect()
     }
 
     pub fn tooltip_format(&self) -> String {
-        if self.ports.len() == 1 && self.ports[0].name.is_empty() {
+        if self.ports.len() == 1 && self.ports[0].description.is_empty() {
             let port = &self.ports[0];
             format!("$*{}$>({}-bit {} {:?})$<$*\n{}",
                     self.name,

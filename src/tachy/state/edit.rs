@@ -905,7 +905,7 @@ impl EditGrid {
         let mut all_ports =
             HashMap::<(Coords, Direction), (PortFlow, PortColor)>::new();
         for interface in self.interfaces.iter() {
-            for port in interface.ports(self.bounds) {
+            for (_, port) in interface.ports(self.bounds) {
                 all_ports.insert(port.loc(), (port.flow, port.color));
             }
         }
@@ -1007,7 +1007,7 @@ impl EditGrid {
                         interface
                             .ports(self.bounds)
                             .into_iter()
-                            .map(|port| {
+                            .map(|(_, port)| {
                                      let loc = port.loc();
                                      (loc, wires_for_ports[&loc])
                                  })

@@ -46,15 +46,19 @@ pub const INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Right(1),
         ports: &[
             InterfacePort {
-                name: "Transmitter",
-                description: "Signal here when the command is completed.",
+                name: "Xmit",
+                description: "\
+                    Connects to the radio transmitter.  Signal here when \
+                    the command is completed.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
             InterfacePort {
-                name: "Receiver",
-                description: "Sends an event when a radio command arrives.",
+                name: "Recv",
+                description: "\
+                    Connects to the radio receiver.  Sends an event when a \
+                    radio command arrives.",
                 flow: PortFlow::Send,
                 color: PortColor::Event,
                 size: WireSize::Four,
@@ -69,7 +73,7 @@ pub const INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Right(0),
         ports: &[
             InterfacePort {
-                name: "Position",
+                name: "Pos",
                 description: "\
                     Indicates the current position of the arm (0-7).",
                 flow: PortFlow::Send,
@@ -85,7 +89,7 @@ pub const INTERFACES: &[Interface] = &[
                 size: WireSize::One,
             },
             InterfacePort {
-                name: "Manipulate",
+                name: "Manip",
                 description: "\
                     Signal here to manipulate at the current position.",
                 flow: PortFlow::Recv,

@@ -32,7 +32,7 @@ pub const OR_INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "",
+                name: "in1",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -47,7 +47,7 @@ pub const OR_INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "",
+                name: "in2",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -64,7 +64,7 @@ pub const OR_INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "",
+                name: "out",
                 description: "",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,
@@ -156,7 +156,7 @@ pub const XOR_INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "",
+                name: "in1",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -171,7 +171,7 @@ pub const XOR_INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "",
+                name: "in2",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -188,7 +188,7 @@ pub const XOR_INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "",
+                name: "out",
                 description: "",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,

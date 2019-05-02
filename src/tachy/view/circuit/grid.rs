@@ -23,7 +23,7 @@ use super::select::{self, SelectingDrag, Selection, SelectionDrag};
 use super::super::chip::ChipModel;
 use super::super::tooltip::Tooltip;
 use super::super::wire::WireModel;
-use super::wiredrag::{WireDrag, Zone};
+use super::wiredrag::WireDrag;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
 use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsRect, Direction,
@@ -528,7 +528,7 @@ impl EditGridView {
                     }
                 } else {
                     let mut drag = WireDrag::new();
-                    if drag.move_to(Zone::from_grid_pt(grid_pt), grid) {
+                    if drag.move_to(grid_pt, grid) {
                         self.interaction = Interaction::DraggingWires(drag);
                     } else {
                         debug_log!("wire drag done (down)");
@@ -582,7 +582,7 @@ impl EditGridView {
                         drag.move_to(grid_pt);
                     }
                     Interaction::DraggingWires(ref mut drag) => {
-                        if !drag.move_to(Zone::from_grid_pt(grid_pt), grid) {
+                        if !drag.move_to(grid_pt, grid) {
                             debug_log!("wire drag done (move)");
                             should_stop_interaction = true;
                         }

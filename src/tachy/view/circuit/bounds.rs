@@ -25,7 +25,7 @@ use tachy::state::{EditGrid, GridChange};
 //===========================================================================//
 
 // The thickness, in grid cells, of the bounds margin:
-pub const BOUNDS_MARGIN: f32 = 0.45;
+pub const BOUNDS_MARGIN: f32 = 0.65;
 
 //===========================================================================//
 

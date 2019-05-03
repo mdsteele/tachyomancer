@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use png;
-use sdl2::mouse::{self, SystemCursor};
+use sdl2::mouse;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::surface::Surface;
 use std::collections::HashMap;
@@ -35,13 +35,17 @@ const NUM_CURSOR_ROWS: usize = 4;
 // Table of (cursor, (col, row), hotspot).
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const CURSORS: &[(Cursor, (usize, usize), (i32, i32))] = &[
-    (Cursor::Arrow,                    (0, 0), (1, 1)),
-    (Cursor::Crosshair,                (1, 0), (7, 7)),
-    (Cursor::Text,                     (2, 0), (7, 7)),
-    (Cursor::ResizeEastWest,           (0, 1), (7, 7)),
-    (Cursor::ResizeNorthSouth,         (1, 1), (7, 7)),
-    (Cursor::ResizeNortheastSouthwest, (2, 1), (7, 7)),
-    (Cursor::ResizeNorthwestSoutheast, (3, 1), (7, 7)),
+    (Cursor::Arrow,                    (0, 0), (2, 2)),
+    (Cursor::Crosshair,                (1, 0), (11, 11)),
+    (Cursor::Text,                     (2, 0), (11, 11)),
+    (Cursor::ResizeEastWest,           (0, 1), (11, 11)),
+    (Cursor::ResizeNorthSouth,         (1, 1), (11, 11)),
+    (Cursor::ResizeNortheastSouthwest, (2, 1), (11, 11)),
+    (Cursor::ResizeNorthwestSoutheast, (3, 1), (11, 11)),
+    (Cursor::HandOpen,                 (0, 2), (6, 4)),
+    (Cursor::HandClosed,               (1, 2), (6, 4)),
+    (Cursor::HandPointing,             (2, 2), (6, 4)),
+    (Cursor::Wire,                     (0, 3), (2, 2)),
 ];
 
 //===========================================================================//
@@ -148,15 +152,6 @@ impl Cursors {
                 mouse::Cursor::from_surface(&sdl_surface, hot_x, hot_y)?;
             cursors.insert(cursor, sdl_cursor);
         }
-        // TODO: Use custom cursors for these:
-        cursors.insert(Cursor::HandClosed,
-                       mouse::Cursor::from_system(SystemCursor::SizeAll)?);
-        cursors.insert(Cursor::HandOpen,
-                       mouse::Cursor::from_system(SystemCursor::Hand)?);
-        cursors.insert(Cursor::HandPointing,
-                       mouse::Cursor::from_system(SystemCursor::Hand)?);
-        cursors.insert(Cursor::Wire,
-                       mouse::Cursor::from_system(SystemCursor::Arrow)?);
         let current_cursor = Cursor::default();
         cursors[&current_cursor].set();
         Ok(Cursors {

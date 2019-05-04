@@ -21,7 +21,7 @@ use super::super::button::HoverPulse;
 use super::super::tooltip::Tooltip;
 use cgmath::Matrix4;
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
-use tachy::gui::{Event, Resources, Sound, Ui};
+use tachy::gui::{Cursor, Event, Resources, Sound, Ui};
 use tachy::save::{Hotkey, Prefs, Puzzle};
 
 //===========================================================================//
@@ -179,16 +179,22 @@ impl ControlsTray {
                 self.tooltip.tick(tick, prefs, |action| {
                     action.tooltip_format().to_string()
                 });
-                None
             }
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
-                Some(None)
+                return Some(None);
+            }
+            Event::MouseMove(mouse) |
+            Event::MouseUp(mouse) => {
+                if self.rect.contains_point(mouse.pt) {
+                    ui.cursor().request(Cursor::default());
+                }
             }
             Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
-                Some(None)
+                return Some(None);
             }
-            _ => None,
+            _ => {}
         }
+        return None;
     }
 }
 

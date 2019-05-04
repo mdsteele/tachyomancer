@@ -24,7 +24,7 @@ use cgmath::{Deg, Matrix4, Point2, vec2};
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gl::Stencil;
-use tachy::gui::{Event, Resources};
+use tachy::gui::{Cursor, Event, Resources, Ui};
 use tachy::save::{CHIP_CATEGORIES, ChipType, Puzzle};
 use tachy::shader::UiShader;
 
@@ -33,9 +33,10 @@ use tachy::shader::UiShader;
 const CATEGORY_LABEL_HEIGHT: i32 = 30;
 const CATEGORY_LABEL_FONT_SIZE: f32 = 20.0;
 
-const PART_WIDTH: i32 = 48;
-const PART_HEIGHT: i32 = 48;
-const PART_SPACING: i32 = 8;
+const PART_WIDTH: i32 = 56;
+const PART_HEIGHT: i32 = 56;
+const PART_INNER_MARGIN: i32 = 4;
+const PART_SPACING: i32 = 0;
 
 const SCROLLBAR_MARGIN: i32 = 8;
 const SCROLLBAR_WIDTH: i32 = 16;
@@ -78,7 +79,7 @@ impl PartsTray {
         };
         let tray_width = 2 * TRAY_INNER_MARGIN +
             num_columns * (PART_WIDTH + PART_SPACING) -
-            PART_SPACING;
+            PART_SPACING - 2 * PART_INNER_MARGIN;
         let mut rect = Rect::new(0,
                                  TRAY_OUTER_MARGIN,
                                  tray_width,
@@ -104,10 +105,10 @@ impl PartsTray {
         let mut top = rect.y + TRAY_INNER_MARGIN;
         for (name, ctypes) in categories {
             category_labels.push(CategoryLabel::new(top, name));
-            top += CATEGORY_LABEL_HEIGHT;
+            top += CATEGORY_LABEL_HEIGHT - PART_INNER_MARGIN;
             let mut col = 0;
             for ctype in ctypes {
-                let left = TRAY_INNER_MARGIN +
+                let left = TRAY_INNER_MARGIN - PART_INNER_MARGIN +
                     col * (PART_WIDTH + PART_SPACING);
                 parts.push(Part::new(left, top, ctype));
                 col += 1;
@@ -195,7 +196,8 @@ impl PartsTray {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event) -> (Option<PartsAction>, bool) {
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui)
+                    -> (Option<PartsAction>, bool) {
         let rel_event =
             event.relative_to(Point2::new(-self.slide.distance(), 0));
         self.scrollbar.on_event(&rel_event);
@@ -225,7 +227,15 @@ impl PartsTray {
                     return (None, true);
                 }
             }
+            Event::MouseMove(mouse) => {
+                if let Some(cursor) = self.cursor_for_mouse_pt(mouse.pt) {
+                    ui.cursor().request(cursor);
+                }
+            }
             Event::MouseUp(mouse) => {
+                if let Some(cursor) = self.cursor_for_mouse_pt(mouse.pt) {
+                    ui.cursor().request(cursor);
+                }
                 if mouse.left && self.slid_rect().contains_point(mouse.pt) {
                     return (Some(PartsAction::Drop), false);
                 }
@@ -242,6 +252,26 @@ impl PartsTray {
             _ => {}
         }
         return (None, false);
+    }
+
+    fn cursor_for_mouse_pt(&self, mouse_pt: Point2<i32>) -> Option<Cursor> {
+        let rel_mouse_pt = mouse_pt + vec2(self.slide.distance(), 0);
+        let tab_rect = UiShader::tray_tab_rect(self.rect.as_f32(),
+                                               TRAY_TAB_HEIGHT,
+                                               TRAY_FLIP_HORZ);
+        if tab_rect.contains_point(rel_mouse_pt.as_f32()) {
+            return Some(Cursor::default());
+        } else if self.rect.contains_point(rel_mouse_pt) {
+            let rel_scrolled_pt = rel_mouse_pt +
+                vec2(0, self.scrollbar.scroll_top());
+            for part in self.parts.iter() {
+                if part.rect.contains_point(rel_scrolled_pt) {
+                    return Some(Cursor::HandOpen);
+                }
+            }
+            return Some(Cursor::default());
+        }
+        return None;
     }
 }
 
@@ -283,7 +313,7 @@ impl Part {
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let chip_size = self.ctype.size();
         let chip_dim = chip_size.width.max(chip_size.height) as f32;
-        let rect = self.rect.as_f32();
+        let rect = self.rect.expand(-PART_INNER_MARGIN).as_f32();
         let matrix = matrix * Matrix4::trans2(rect.x, rect.y) *
             Matrix4::from_scale(rect.width / chip_dim);
         ChipModel::draw_chip(resources,

@@ -245,7 +245,7 @@ impl CircuitView {
             return action;
         }
 
-        let (opt_action, stop) = self.parts_tray.on_event(event);
+        let (opt_action, stop) = self.parts_tray.on_event(event, ui);
         match opt_action {
             Some(PartsAction::Grab(ctype, pt)) => {
                 self.edit_grid.grab_from_parts_tray(ctype, pt);
@@ -262,12 +262,12 @@ impl CircuitView {
             return action;
         }
 
-        let stop = self.specification_tray.on_event(event);
+        let stop = self.specification_tray.on_event(event, ui);
         if stop {
             return action;
         }
 
-        let stop = self.verification_tray.on_event(event);
+        let stop = self.verification_tray.on_event(event, ui);
         if stop {
             return action;
         }

@@ -27,7 +27,7 @@ use super::tray::TraySlide;
 use cgmath::{Deg, Matrix4, Point2, vec2};
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
-use tachy::gui::{Event, Resources};
+use tachy::gui::{Cursor, Event, Resources, Ui};
 use tachy::save::Puzzle;
 use tachy::shader::UiShader;
 use tachy::state::CircuitEval;
@@ -127,7 +127,7 @@ impl VerificationTray {
         self.subview.draw(resources, &matrix, circuit_eval);
     }
 
-    pub fn on_event(&mut self, event: &Event) -> bool {
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui) -> bool {
         match event {
             Event::ClockTick(tick) => {
                 self.slide.on_tick(tick);
@@ -142,6 +142,18 @@ impl VerificationTray {
                     return true;
                 } else if self.rect.contains_point(rel_mouse_pt) {
                     return true;
+                }
+            }
+            Event::MouseMove(mouse) |
+            Event::MouseUp(mouse) => {
+                let rel_mouse_pt = mouse.pt - vec2(self.slide.distance(), 0);
+                let tab_rect = UiShader::tray_tab_rect(self.rect.as_f32(),
+                                                       TRAY_TAB_HEIGHT,
+                                                       TRAY_FLIP_HORZ);
+                if self.rect.contains_point(rel_mouse_pt) ||
+                    tab_rect.contains_point(rel_mouse_pt.as_f32())
+                {
+                    ui.cursor().request(Cursor::default());
                 }
             }
             Event::Multitouch(touch)

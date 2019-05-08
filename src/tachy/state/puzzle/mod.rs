@@ -28,22 +28,44 @@ mod tutorial;
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
-pub use self::tutorial::{TutorialOrEval, TutorialXorEval};
+pub use self::tutorial::{TutorialBubblePosition, TutorialOrEval,
+                         TutorialXorEval};
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
 use tachy::save::Puzzle;
 
 //===========================================================================//
 
-pub fn puzzle_interfaces(puzzle: Puzzle) -> &'static [Interface] {
-    match puzzle {
-        Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
-        Puzzle::TutorialXor => self::tutorial::XOR_INTERFACES,
-        Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
-        Puzzle::AutomateReactor => self::reactor::INTERFACES,
-        Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
-        Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
-        Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
+pub trait PuzzleExt {
+    fn interfaces(&self) -> &'static [Interface];
+    fn tutorial_bubbles(
+        &self)
+        -> &'static [(TutorialBubblePosition, &'static str)];
+}
+
+//===========================================================================//
+
+impl PuzzleExt for Puzzle {
+    fn interfaces(&self) -> &'static [Interface] {
+        match self {
+            Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
+            Puzzle::TutorialXor => self::tutorial::XOR_INTERFACES,
+            Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
+            Puzzle::AutomateReactor => self::reactor::INTERFACES,
+            Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
+            Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
+            Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
+        }
+    }
+
+    fn tutorial_bubbles(
+        &self)
+        -> &'static [(TutorialBubblePosition, &'static str)] {
+        match self {
+            Puzzle::TutorialOr => self::tutorial::OR_BUBBLES,
+            Puzzle::TutorialXor => self::tutorial::XOR_BUBBLES,
+            _ => &[],
+        }
     }
 }
 

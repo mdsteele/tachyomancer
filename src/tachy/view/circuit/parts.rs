@@ -20,6 +20,7 @@
 use super::super::button::Scrollbar;
 use super::super::chip::ChipModel;
 use super::tray::TraySlide;
+use super::tutorial::TutorialBubble;
 use cgmath::{Deg, Matrix4, Point2, vec2};
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, MatrixExt, Orientation, Rect, RectSize};
@@ -64,11 +65,13 @@ pub struct PartsTray {
     parts: Vec<Part>,
     scrollbar: Scrollbar,
     slide: TraySlide,
+    tutorial_bubble: Option<TutorialBubble>,
     // TODO: tooltip when hovering over part
 }
 
 impl PartsTray {
-    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
+    pub fn new(window_size: RectSize<i32>, puzzle: Puzzle,
+               tutorial_bubble: Option<TutorialBubble>)
                -> PartsTray {
         let num_columns = if window_size.width < 1000 {
             2
@@ -91,7 +94,7 @@ impl PartsTray {
             let allowed_ctypes: Vec<ChipType> = ctypes
                 .iter()
                 .cloned()
-                .filter(|ctype| ctype.is_allowed_in(current_puzzle))
+                .filter(|ctype| ctype.is_allowed_in(puzzle))
                 .collect();
             if !allowed_ctypes.is_empty() {
                 num_parts += allowed_ctypes.len();
@@ -140,6 +143,7 @@ impl PartsTray {
             parts,
             scrollbar,
             slide: TraySlide::new(rect.width),
+            tutorial_bubble,
         }
     }
 
@@ -157,6 +161,10 @@ impl PartsTray {
             self.draw_parts(resources, &matrix);
         }
         self.scrollbar.draw(resources, &matrix);
+        if let Some(ref bubble) = self.tutorial_bubble {
+            let topleft = Point2::new(self.rect.right() + 6, self.rect.y - 20);
+            bubble.draw(resources, &matrix, topleft);
+        }
     }
 
     fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>) {

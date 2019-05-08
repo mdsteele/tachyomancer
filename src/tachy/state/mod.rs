@@ -34,8 +34,9 @@ pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
 pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore};
 pub use self::game::GameState;
 pub use self::port::{PortColor, PortFlow, PortSpec};
-pub use self::puzzle::{HeliostatEval, Interface, RobotArmEval,
-                       TutorialOrEval, TutorialXorEval};
+pub use self::puzzle::{HeliostatEval, Interface, PuzzleExt, RobotArmEval,
+                       TutorialBubblePosition, TutorialOrEval,
+                       TutorialXorEval};
 pub use self::size::WireSize;
 
 //===========================================================================//

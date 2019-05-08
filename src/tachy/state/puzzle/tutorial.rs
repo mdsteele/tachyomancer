@@ -22,6 +22,15 @@ use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use tachy::geom::{Coords, Direction};
 use tachy::state::{PortColor, PortFlow, WireSize};
 
+//===========================================================================/
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum TutorialBubblePosition {
+    Bounds(Direction),
+    ControlsTray,
+    PartsTray,
+}
+
 //===========================================================================//
 
 pub const OR_INTERFACES: &[Interface] = &[
@@ -73,6 +82,16 @@ pub const OR_INTERFACES: &[Interface] = &[
         ],
     },
 ];
+
+pub const OR_BUBBLES: &[(TutorialBubblePosition, &str)] =
+    &[
+        (TutorialBubblePosition::PartsTray,
+         "Drag chips from the parts\ntray onto the board."),
+        (TutorialBubblePosition::Bounds(Direction::North),
+         "Drag between board squares to\ncreate wires between chip ports."),
+        (TutorialBubblePosition::ControlsTray,
+         "When you're ready, press\nthe play button to test\nyour design."),
+    ];
 
 //===========================================================================//
 
@@ -197,6 +216,8 @@ pub const XOR_INTERFACES: &[Interface] = &[
         ],
     },
 ];
+
+pub const XOR_BUBBLES: &[(TutorialBubblePosition, &str)] = &[]; // TODO
 
 //===========================================================================//
 

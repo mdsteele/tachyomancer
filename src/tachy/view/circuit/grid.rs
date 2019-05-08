@@ -23,6 +23,7 @@ use super::select::{self, SelectingDrag, Selection, SelectionDrag};
 use super::super::chip::ChipModel;
 use super::super::tooltip::Tooltip;
 use super::super::wire::WireModel;
+use super::tutorial::TutorialBubble;
 use super::wiredrag::WireDrag;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
 use std::mem;
@@ -63,17 +64,21 @@ pub struct EditGridView {
     zoom: f32,
     wire_model: WireModel,
     interaction: Interaction,
+    tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
     tooltip: Tooltip<GridTooltipTag>,
 }
 
 impl EditGridView {
-    pub fn new(window_size: RectSize<i32>) -> EditGridView {
+    pub fn new(window_size: RectSize<i32>,
+               tutorial_bubbles: Vec<(Direction, TutorialBubble)>)
+               -> EditGridView {
         EditGridView {
             size: window_size.as_f32(),
             scroll: Vector2::new(0, 0),
             zoom: ZOOM_MAX,
             wire_model: WireModel::new(),
             interaction: Interaction::Nothing,
+            tutorial_bubbles,
             tooltip: Tooltip::new(window_size),
         }
     }
@@ -117,6 +122,44 @@ impl EditGridView {
         resources.shaders().solid().fill_rect(&matrix, color, rect);
     }
 
+    fn draw_tutorial_bubbles(&self, resources: &Resources, grid: &EditGrid) {
+        let matrix = self.unzoomed_matrix();
+        let bounds = grid.bounds().as_f32().expand(BOUNDS_MARGIN) *
+            ((GRID_CELL_SIZE as f32) * self.zoom);
+        let margin: i32 = 8;
+        for &(dir, ref bubble) in self.tutorial_bubbles.iter() {
+            let topleft = match dir {
+                Direction::East => {
+                    Point2::new((bounds.right().round() as i32) + margin,
+                                ((bounds.y + 0.5 * bounds.height).round() as
+                                     i32) -
+                                    bubble.height() / 2)
+                }
+                Direction::South => {
+                    Point2::new(((bounds.x + 0.5 * bounds.width).round() as
+                                     i32) -
+                                    bubble.width() / 2,
+                                (bounds.bottom().round() as i32) + margin)
+                }
+                Direction::West => {
+                    Point2::new((bounds.x.round() as i32) - margin -
+                                    bubble.width(),
+                                ((bounds.y + 0.5 * bounds.height).round() as
+                                     i32) -
+                                    bubble.height() / 2)
+                }
+                Direction::North => {
+                    Point2::new(((bounds.x + 0.5 * bounds.width).round() as
+                                     i32) -
+                                    bubble.width() / 2,
+                                (bounds.y.round() as i32) - margin -
+                                    bubble.height())
+                }
+            };
+            bubble.draw(resources, &matrix, topleft);
+        }
+    }
+
     fn draw_interfaces(&self, resources: &Resources, matrix: &Matrix4<f32>,
                        grid: &EditGrid) {
         let bounds = match self.interaction {
@@ -136,6 +179,7 @@ impl EditGridView {
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
         self.draw_background_grid(resources);
         self.draw_bounds(resources, grid);
+        self.draw_tutorial_bubbles(resources, grid);
 
         // Draw wires:
         let matrix = self.vp_matrix();

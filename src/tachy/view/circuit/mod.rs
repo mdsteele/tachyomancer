@@ -25,6 +25,7 @@ mod parts;
 mod select;
 mod specify;
 mod tray;
+mod tutorial;
 mod verify;
 mod wiredrag;
 
@@ -32,14 +33,16 @@ use self::control::{ControlsAction, ControlsStatus, ControlsTray};
 use self::grid::{EditGridAction, EditGridView};
 use self::parts::{PartsAction, PartsTray};
 use self::specify::SpecificationTray;
+use self::tutorial::TutorialBubble;
 use self::verify::VerificationTray;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath;
 use std::u32;
-use tachy::geom::{Coords, RectSize};
+use tachy::geom::{Coords, Direction, RectSize};
 use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
 use tachy::save::{ChipType, Prefs, Puzzle};
-use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange};
+use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
+                   TutorialBubblePosition};
 
 //===========================================================================//
 
@@ -70,20 +73,41 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle,
-               prefs: &Prefs)
+    pub fn new(window_size: RectSize<i32>, puzzle: Puzzle, prefs: &Prefs)
                -> CircuitView {
+        // TODO: Don't show any tutorial bubbles if puzzle is solved.
+        let bubbles = puzzle.tutorial_bubbles();
+        let bounds_bubbles: Vec<(Direction, TutorialBubble)> = bubbles
+            .iter()
+            .filter_map(|&(pos, format)| match pos {
+                            TutorialBubblePosition::Bounds(dir) => {
+                                Some((dir, TutorialBubble::new(prefs, format)))
+                            }
+                            _ => None,
+                        })
+            .collect();
+        let controls_bubble =
+            bubbles
+                .iter()
+                .find(|&&(pos, _)| pos == TutorialBubblePosition::ControlsTray)
+                .map(|&(_, format)| TutorialBubble::new(prefs, format));
+        let parts_bubble =
+            bubbles
+                .iter()
+                .find(|&&(pos, _)| pos == TutorialBubblePosition::PartsTray)
+                .map(|&(_, format)| TutorialBubble::new(prefs, format));
         CircuitView {
             width: window_size.width as f32,
             height: window_size.height as f32,
-            edit_grid: EditGridView::new(window_size),
-            controls_tray: ControlsTray::new(window_size, current_puzzle),
-            parts_tray: PartsTray::new(window_size, current_puzzle),
+            edit_grid: EditGridView::new(window_size, bounds_bubbles),
+            controls_tray: ControlsTray::new(window_size,
+                                             puzzle,
+                                             controls_bubble),
+            parts_tray: PartsTray::new(window_size, puzzle, parts_bubble),
             specification_tray: SpecificationTray::new(window_size,
-                                                       current_puzzle,
+                                                       puzzle,
                                                        prefs),
-            verification_tray: VerificationTray::new(window_size,
-                                                     current_puzzle),
+            verification_tray: VerificationTray::new(window_size, puzzle),
             seconds_since_time_step: 0.0,
             controls_status: ControlsStatus::Stopped,
             edit_const_dialog: None,

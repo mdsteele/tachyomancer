@@ -19,7 +19,8 @@
 
 use super::super::button::HoverPulse;
 use super::super::tooltip::Tooltip;
-use cgmath::Matrix4;
+use super::tutorial::TutorialBubble;
+use cgmath::{Matrix4, Point2};
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::gui::{Cursor, Event, Resources, Sound, Ui};
 use tachy::save::{Hotkey, Prefs, Puzzle};
@@ -106,11 +107,13 @@ impl ControlsAction {
 pub struct ControlsTray {
     rect: Rect<i32>,
     buttons: Vec<ControlsButton>,
+    tutorial_bubble: Option<TutorialBubble>,
     tooltip: Tooltip<ControlsAction>,
 }
 
 impl ControlsTray {
-    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
+    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle,
+               tutorial_bubble: Option<TutorialBubble>)
                -> ControlsTray {
         let mut actions =
             vec![
@@ -146,6 +149,7 @@ impl ControlsTray {
         ControlsTray {
             rect,
             buttons,
+            tutorial_bubble,
             tooltip,
         }
     }
@@ -160,6 +164,10 @@ impl ControlsTray {
                      &Color4::PURPLE0.with_alpha(0.8));
         for button in self.buttons.iter() {
             button.draw(resources, matrix, status);
+        }
+        if let Some(ref bubble) = self.tutorial_bubble {
+            let topleft = Point2::new(self.rect.x - 230, self.rect.y - 24);
+            bubble.draw(resources, matrix, topleft);
         }
         self.tooltip.draw(resources, matrix);
     }

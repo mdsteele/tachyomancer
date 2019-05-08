@@ -21,7 +21,7 @@ use super::check::{self, WireColor, WireError, WireInfo};
 use super::chip::{ChipExt, new_chip_evals};
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
-use super::puzzle::{Interface, new_puzzle_eval, puzzle_interfaces};
+use super::puzzle::{Interface, PuzzleExt, new_puzzle_eval};
 use super::size::WireSize;
 use std::collections::{HashMap, hash_map};
 use std::mem;
@@ -111,7 +111,7 @@ impl EditGrid {
         let mut grid = EditGrid {
             puzzle,
             bounds: Rect::new(-4, -3, 8, 6),
-            interfaces: puzzle_interfaces(puzzle),
+            interfaces: puzzle.interfaces(),
             fragments: HashMap::new(),
             chips: HashMap::new(),
             wires: Vec::new(),
@@ -135,7 +135,7 @@ impl EditGrid {
                               data.bounds.1,
                               data.bounds.2,
                               data.bounds.3),
-            interfaces: puzzle_interfaces(puzzle),
+            interfaces: puzzle.interfaces(),
             fragments: HashMap::new(),
             chips: HashMap::new(),
             wires: Vec::new(),

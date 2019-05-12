@@ -20,6 +20,7 @@
 mod check;
 mod chip;
 mod converse;
+mod cutscene;
 mod edit;
 mod eval;
 mod game;
@@ -30,6 +31,7 @@ mod size;
 pub use self::check::WireColor;
 pub use self::chip::ChipExt;
 pub use self::converse::{ConversationBubble, ConversationPortrait};
+pub use self::cutscene::{Cutscene, CutsceneScript, Theater};
 pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
 pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore};
 pub use self::game::GameState;

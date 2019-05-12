@@ -20,32 +20,25 @@
 use super::common::ModeChange;
 use std::time::Instant;
 use tachy::gui::{Event, Window};
-use tachy::state::{Cutscene, GameState};
-use tachy::view::{BeginAction, BeginView};
+use tachy::state::GameState;
+use tachy::view::{CutsceneAction, CutsceneView};
 
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
-    let mut view = BeginView::new(window.size(), state);
+    debug_assert!(state.cutscene().is_some());
+    let mut view = CutsceneView::new(window.size());
+    view.init(&mut window.ui(), state.cutscene_mut().unwrap());
     let mut last_tick = Instant::now();
     loop {
+        let mut finished = false;
         match window.poll_event() {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
-                match view.on_event(&event, &mut window.ui(), state) {
-                    Some(BeginAction::CreateProfile(name)) => {
-                        debug_log!("Creating profile {:?}", name);
-                        match state.create_or_load_profile(name) {
-                            Ok(()) => {
-                                state.set_cutscene(Cutscene::Intro.script());
-                                return ModeChange::Next;
-                            }
-                            Err(err) => {
-                                // TODO: display error to user; don't panic
-                                panic!("CreateProfile failed: {:?}", err);
-                            }
-                        }
-                    }
+                match view.on_event(&event,
+                                      &mut window.ui(),
+                                      state.cutscene_mut().unwrap()) {
+                    Some(CutsceneAction::Finished) => finished = true,
                     None => {}
                 }
                 window.pump_cursor();
@@ -53,15 +46,22 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             None => {
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
-                view.on_event(&Event::new_clock_tick(elapsed),
-                              &mut window.ui(),
-                              state);
+                match view.on_event(&Event::new_clock_tick(elapsed),
+                                      &mut window.ui(),
+                                      state.cutscene_mut().unwrap()) {
+                    Some(CutsceneAction::Finished) => finished = true,
+                    None => {}
+                }
                 window.pump_cursor();
                 last_tick = now;
                 window.pump_audio();
-                view.draw(window.resources(), state);
+                view.draw(window.resources(), state.cutscene().unwrap());
                 window.pump_video();
             }
+        }
+        if finished {
+            state.clear_cutscene();
+            return ModeChange::Next;
         }
     }
 }

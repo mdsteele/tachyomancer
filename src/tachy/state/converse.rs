@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::cutscene::Cutscene;
 use tachy::save::{Conversation, Profile, Puzzle};
 
 //===========================================================================//
@@ -32,6 +33,7 @@ pub enum ConversationBubble {
     YouSpeech(String),
     YouChoice(String, Vec<(String, String)>),
     NpcSpeech(ConversationPortrait, String),
+    Cutscene(Cutscene),
     Puzzle(Puzzle),
 }
 
@@ -52,6 +54,7 @@ impl ConversationBubble {
 
     fn make_wake_up(profile: &Profile, builder: &mut ConversationBuilder)
                     -> Result<(), ()> {
+        builder.cutscene(Cutscene::Intro);
         builder.esra("Hello, world!\n\nLorem ipsum dolor sit amet, \
                       consectetur adipiscing elit, sed do eiusmod \
                       tempor incididunt ut labore et dolore magna \
@@ -136,6 +139,10 @@ impl ConversationBuilder {
     fn choice<'a, 'b>(&'a mut self, profile: &'b Profile, key: &str)
                       -> ChoiceBuilder<'a, 'b> {
         ChoiceBuilder::new(self, profile, key)
+    }
+
+    fn cutscene(&mut self, cutscene: Cutscene) {
+        self.bubbles.push(ConversationBubble::Cutscene(cutscene));
     }
 
     fn esra(&mut self, text: &str) {

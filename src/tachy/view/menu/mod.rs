@@ -32,7 +32,7 @@ use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
 use tachy::gui::{ClockEventData, Event, Keycode, Resources, Ui, Window,
                  WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
-use tachy::state::GameState;
+use tachy::state::{Cutscene, GameState};
 
 //===========================================================================//
 
@@ -52,6 +52,7 @@ const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
 #[derive(Clone)]
 pub enum MenuAction {
     GoToPuzzle(Puzzle),
+    PlayCutscene(Cutscene),
     CopyCircuit,
     DeleteCircuit,
     EditCircuit,
@@ -313,6 +314,9 @@ impl MenuView {
                         state.set_current_conversation_choice(key, value);
                         state.increment_current_conversation_progress();
                         self.converse_view.update_conversation_bubbles(state);
+                    }
+                    Some(ConverseAction::PlayCutscene(cutscene)) => {
+                        return Some(MenuAction::PlayCutscene(cutscene));
                     }
                     None => {}
                 }

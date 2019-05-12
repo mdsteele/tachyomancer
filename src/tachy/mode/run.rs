@@ -24,7 +24,9 @@ use tachy::state::GameState;
 //===========================================================================//
 
 pub fn run_mode(state: &mut GameState, window: &mut Window) -> ModeChange {
-    if state.profile().is_none() {
+    if state.cutscene().is_some() {
+        super::cutscene::run(state, window)
+    } else if state.profile().is_none() {
         super::begin::run(state, window)
     } else if state.edit_grid().is_some() {
         super::circuit::run(state, window)

@@ -27,7 +27,8 @@ use tachy::geom::{AsFloat, MatrixExt, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources, Ui};
 use tachy::save::{Conversation, Prefs, Profile, Puzzle};
-use tachy::state::{ConversationBubble, ConversationPortrait, GameState};
+use tachy::state::{ConversationBubble, ConversationPortrait, Cutscene,
+                   GameState};
 
 //===========================================================================//
 
@@ -41,6 +42,8 @@ const BUBBLE_SPACING: i32 = 16;
 
 const CHOICE_HEIGHT: i32 = 30;
 const CHOICE_SPACING: i32 = 2;
+
+const CUTSCENE_BUBBLE_HEIGHT: i32 = 50;
 
 const MORE_BUTTON_HEIGHT: i32 = 30;
 
@@ -60,6 +63,7 @@ pub enum ConverseAction {
     GoToPuzzle(Puzzle),
     Increment,
     MakeChoice(String, String),
+    PlayCutscene(Cutscene),
 }
 
 //===========================================================================//
@@ -286,6 +290,9 @@ impl BubblesListView {
                 bubble_top += BUBBLE_SPACING;
             }
             let bubble_view = match bubble {
+                ConversationBubble::Cutscene(cutscene) => {
+                    CutsceneBubbleView::new(bubble_width, bubble_top, cutscene)
+                }
                 ConversationBubble::NpcSpeech(portrait, format) => {
                     NpcSpeechBubbleView::new(bubble_width,
                                              bubble_top,
@@ -374,6 +381,61 @@ trait BubbleView {
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>);
 
     fn on_event(&mut self, _event: &Event) -> Option<ConverseAction> { None }
+}
+
+//===========================================================================//
+
+struct CutsceneBubbleView {
+    rect: Rect<i32>,
+    cutscene: Cutscene,
+    hovering: bool,
+}
+
+impl CutsceneBubbleView {
+    fn new(width: i32, top: i32, cutscene: Cutscene) -> Box<BubbleView> {
+        let view = CutsceneBubbleView {
+            rect: Rect::new(0, top, width, CUTSCENE_BUBBLE_HEIGHT),
+            cutscene,
+            hovering: false,
+        };
+        Box::new(view)
+    }
+}
+
+impl BubbleView for CutsceneBubbleView {
+    fn rect(&self) -> Rect<i32> { self.rect }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let color = if self.hovering {
+            (0.1, 1.0, 1.0)
+        } else {
+            (0.1, 0.5, 0.5)
+        };
+        let rect = self.rect.as_f32();
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.fonts().roman().draw(&matrix,
+                                       BUBBLE_FONT_SIZE,
+                                       Align::MidCenter,
+                                       (rect.x + 0.5 * rect.width,
+                                        rect.y + 0.5 * rect.height),
+                                       "Replay cutscene");
+    }
+
+    fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
+        match event {
+            Event::MouseDown(mouse) => {
+                if self.rect.contains_point(mouse.pt) {
+                    return Some(ConverseAction::PlayCutscene(self.cutscene));
+                }
+            }
+            Event::MouseMove(mouse) => {
+                self.hovering = self.rect.contains_point(mouse.pt);
+            }
+            Event::Unfocus => self.hovering = false,
+            _ => {}
+        }
+        return None;
+    }
 }
 
 //===========================================================================//

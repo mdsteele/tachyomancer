@@ -20,6 +20,7 @@
 mod begin;
 mod circuit;
 mod common;
+mod cutscene;
 mod menu;
 mod run;
 

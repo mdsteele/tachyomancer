@@ -21,6 +21,7 @@ mod begin;
 mod button;
 mod chip;
 mod circuit;
+mod cutscene;
 mod dialog;
 mod menu;
 mod paragraph;
@@ -29,6 +30,7 @@ mod wire;
 
 pub use self::begin::{BeginAction, BeginView};
 pub use self::circuit::{CircuitAction, CircuitView};
+pub use self::cutscene::{CutsceneAction, CutsceneView};
 pub use self::menu::{MenuAction, MenuView};
 
 //===========================================================================//

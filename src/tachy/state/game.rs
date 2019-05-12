@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::cutscene::CutsceneScript;
 use super::edit::EditGrid;
 use std::time::Duration;
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Prefs,
@@ -36,6 +37,7 @@ pub struct GameState {
     profile: Option<Profile>,
     circuit_name: String,
     edit_grid: Option<EditGrid>,
+    cutscene: Option<CutsceneScript>,
 }
 
 impl GameState {
@@ -55,6 +57,7 @@ impl GameState {
             profile: opt_profile,
             circuit_name,
             edit_grid: None,
+            cutscene: None,
         };
         Ok(state)
     }
@@ -102,6 +105,20 @@ impl GameState {
     pub fn prefs(&self) -> &Prefs { self.savedir.prefs() }
 
     pub fn prefs_mut(&mut self) -> &mut Prefs { self.savedir.prefs_mut() }
+
+    pub fn cutscene(&self) -> Option<&CutsceneScript> {
+        self.cutscene.as_ref()
+    }
+
+    pub fn cutscene_mut(&mut self) -> Option<&mut CutsceneScript> {
+        self.cutscene.as_mut()
+    }
+
+    pub fn set_cutscene(&mut self, cutscene: CutsceneScript) {
+        self.cutscene = Some(cutscene);
+    }
+
+    pub fn clear_cutscene(&mut self) { self.cutscene = None; }
 
     pub fn profile_names(&self) -> ProfileNamesIter {
         self.savedir.profile_names()

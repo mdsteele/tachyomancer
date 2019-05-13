@@ -106,7 +106,7 @@ impl Paragraph {
                         parser.push_key(&parse_arg(&mut chars, ']'), prefs)
                     }
                     Some('(') => {
-                        parser.push_phrase(&parse_arg(&mut chars, ')'))
+                        parser.push_phrase(&parse_arg(&mut chars, ')'), prefs)
                     }
                     _ => {}
                 }
@@ -218,7 +218,7 @@ impl Parser {
 
     fn push(&mut self, chr: char) { self.current_piece.push(chr); }
 
-    fn push_phrase(&mut self, phrase_name: &str) {
+    fn push_phrase(&mut self, phrase_name: &str, prefs: &Prefs) {
         let phrase = match phrase_name {
             "Command" => {
                 if cfg!(any(target_os = "ios", target_os = "macos")) {
@@ -236,6 +236,7 @@ impl Parser {
                     "Right-click"
                 }
             }
+            "YOURNAME" => prefs.current_profile().unwrap_or("YOURNAME"),
             _ => {
                 debug_log!("WARNING: Bad phrase name {:?} in paragraph format \
                             string",

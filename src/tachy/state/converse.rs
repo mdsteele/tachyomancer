@@ -55,8 +55,8 @@ impl ConversationBubble {
     fn make_wake_up(profile: &Profile, builder: &mut ConversationBuilder)
                     -> Result<(), ()> {
         builder.cutscene(Cutscene::Intro);
-        builder.esra("Hello, world!\n\nLorem ipsum dolor sit amet, \
-                      consectetur adipiscing elit, sed do eiusmod \
+        builder.esra("Hello, Commander $(YOURNAME)!\n\nLorem ipsum dolor sit \
+                      amet, consectetur adipiscing elit, sed do eiusmod \
                       tempor incididunt ut labore et dolore magna \
                       aliqua.  Ut enim ad minim veniam, quis \
                       nostrud exercitation ullamco laboris nisi ut \

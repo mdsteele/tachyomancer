@@ -19,7 +19,7 @@
 
 use cgmath::{Matrix4, Point2};
 use tachy::font::{Align, Font};
-use tachy::geom::{AsFloat, Color4, Rect};
+use tachy::geom::{AsFloat, Color3, Color4, Rect};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Sound, Ui};
 use tachy::save::Hotkey;
 use unicode_width::UnicodeWidthStr;
@@ -80,9 +80,8 @@ impl Checkbox {
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
         } else {
-            Color4::PURPLE0
-                .mix(Color4::PURPLE3, self.hover_pulse.brightness())
-                .with_alpha(0.8)
+            Color4::PURPLE0_TRANSLUCENT.mix(Color4::PURPLE3_TRANSLUCENT,
+                                            self.hover_pulse.brightness())
         };
         ui.draw_checkbox(matrix,
                          &box_rect.as_f32(),
@@ -170,9 +169,8 @@ impl HotkeyBox {
         let bg_color = if self.listening {
             Color4::PURPLE5
         } else {
-            Color4::PURPLE0
-                .mix(Color4::PURPLE3, self.hover_pulse.brightness())
-                .with_alpha(0.8)
+            Color4::PURPLE0_TRANSLUCENT.mix(Color4::PURPLE3_TRANSLUCENT,
+                                            self.hover_pulse.brightness())
         };
         ui.draw_scroll_handle(matrix,
                               &box_rect.as_f32(),
@@ -607,9 +605,8 @@ impl TextBox {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         // Box:
-        let color = (0.0, 0.0, 0.0);
         let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.shaders().solid().fill_rect(&matrix, Color3::BLACK, rect);
         // Text:
         let font = resources.fonts().get(TEXT_BOX_FONT);
         font.draw(&matrix,
@@ -620,7 +617,7 @@ impl TextBox {
                   &self.string);
         // Cursor:
         if self.cursor_blink < 0.5 * TEXT_BOX_CURSOR_BLINK_PERIOD {
-            let color = (0.5, 0.5, 0.0);
+            let color = Color3::new(0.5, 0.5, 0.0);
             let cursor_rect =
                 Rect::new(rect.x + TEXT_BOX_INNER_MARGIN +
                               TEXT_BOX_FONT.ratio() * TEXT_BOX_FONT_SIZE *
@@ -764,9 +761,8 @@ impl<T: Clone> TextButton<T> {
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
         } else {
-            Color4::PURPLE0
-                .mix(Color4::PURPLE3, self.hover_pulse.brightness())
-                .with_alpha(0.8)
+            Color4::PURPLE0_TRANSLUCENT.mix(Color4::PURPLE3_TRANSLUCENT,
+                                            self.hover_pulse.brightness())
         };
         let rect = self.rect.as_f32();
         resources.shaders().ui().draw_box4(&matrix,

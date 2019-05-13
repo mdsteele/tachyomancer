@@ -57,10 +57,7 @@ impl CutsceneView {
                                    1.0);
         let rect = Rect::with_size(Point2::new(0.0, 0.0), self.size);
         let color = self.theater.background_color();
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(&matrix, (color.r, color.g, color.b), rect);
+        resources.shaders().solid().fill_rect(&matrix, color, rect);
         if cutscene.is_paused() {
             resources.fonts().roman().draw(&matrix,
                                            20.0,

@@ -161,7 +161,7 @@ impl ControlsTray {
                      &self.rect.as_f32(),
                      &Color4::ORANGE2,
                      &Color4::CYAN2,
-                     &Color4::PURPLE0.with_alpha(0.8));
+                     &Color4::PURPLE0_TRANSLUCENT);
         for button in self.buttons.iter() {
             button.draw(resources, matrix, status);
         }
@@ -246,9 +246,8 @@ impl ControlsButton {
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
         } else {
-            Color4::PURPLE0
-                .mix(Color4::PURPLE3, self.hover_pulse.brightness())
-                .with_alpha(0.8)
+            Color4::PURPLE0_TRANSLUCENT.mix(Color4::PURPLE3_TRANSLUCENT,
+                                            self.hover_pulse.brightness())
         };
         ui.draw_box4(matrix,
                      &rect,

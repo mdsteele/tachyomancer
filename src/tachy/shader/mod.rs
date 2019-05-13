@@ -22,8 +22,8 @@ mod ui;
 
 pub use self::port::PortShader;
 pub use self::ui::UiShader;
-use cgmath::{Matrix4, Vector2, Vector3, Vector4};
-use tachy::geom::{Color4, MatrixExt, Rect};
+use cgmath::{Matrix4, Vector2, Vector4};
+use tachy::geom::{Color3, Color4, MatrixExt, Rect};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 VertexArray, VertexBuffer};
 
@@ -152,7 +152,7 @@ pub struct ChipShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
     icon_coords: ShaderUniform<Vector2<u32>>,
-    icon_color: ShaderUniform<Vector3<f32>>,
+    icon_color: ShaderUniform<Color3>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
 }
@@ -177,11 +177,11 @@ impl ChipShader {
     }
 
     pub fn draw(&self, matrix: &Matrix4<f32>, icon_coords: Vector2<u32>,
-                icon_color: Color4) {
+                icon_color: Color3) {
         self.program.bind();
         self.mvp.set(matrix);
         self.icon_coords.set(&icon_coords);
-        self.icon_color.set(&icon_color.rgb().into());
+        self.icon_color.set(&icon_color);
         self.varray.bind();
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
     }
@@ -191,7 +191,7 @@ impl ChipShader {
 
 pub struct SolidShader {
     program: ShaderProgram,
-    color: ShaderUniform<Vector3<f32>>,
+    color: ShaderUniform<Color3>,
     mvp: ShaderUniform<Matrix4<f32>>,
     varray: VertexArray,
     rect_vbuffer: VertexBuffer<u8>,
@@ -213,10 +213,10 @@ impl SolidShader {
            })
     }
 
-    pub fn fill_rect(&self, matrix: &Matrix4<f32>, color: (f32, f32, f32),
+    pub fn fill_rect(&self, matrix: &Matrix4<f32>, color: Color3,
                      rect: Rect<f32>) {
         self.program.bind();
-        self.color.set(&color.into());
+        self.color.set(&color);
         let mvp = matrix * Matrix4::trans2(rect.x, rect.y) *
             Matrix4::scale2(rect.width, rect.height);
         self.mvp.set(&mvp);

@@ -19,7 +19,7 @@
 
 use super::paragraph::Paragraph;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{Color4, Rect, RectSize};
+use tachy::geom::{Color3, Color4, Rect, RectSize};
 use tachy::gui::{ClockEventData, Resources};
 use tachy::save::Prefs;
 
@@ -67,7 +67,7 @@ impl<T: PartialEq> Tooltip<T> {
                              &rect,
                              &Color4::ORANGE2,
                              &Color4::CYAN2,
-                             &Color4::PURPLE0.with_alpha(0.9));
+                             &Color3::PURPLE0.with_alpha(0.9));
                 paragraph.draw(resources,
                                matrix,
                                (rect.x + TOOLTIP_INNER_MARGIN,

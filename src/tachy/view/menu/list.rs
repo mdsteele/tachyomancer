@@ -22,7 +22,7 @@ use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use std::borrow::Borrow;
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, Rect};
+use tachy::geom::{AsFloat, Color3, Color4, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources, Sound, Ui};
 
@@ -86,7 +86,7 @@ impl<T: Clone + Eq> ListView<T> {
         rect.width = self.item_width() as f32;
         rect = rect.expand(-2.0);
         let solid = resources.shaders().solid();
-        solid.fill_rect(matrix, Color4::PURPLE0.rgb(), rect);
+        solid.fill_rect(matrix, Color3::PURPLE0, rect);
     }
 
     fn draw_items<Q>(&self, resources: &Resources, matrix: &Matrix4<f32>,

@@ -63,7 +63,7 @@ impl TutorialBubble {
                                            &rect,
                                            &Color4::CYAN3,
                                            &Color4::ORANGE4,
-                                           &Color4::PURPLE0.with_alpha(0.8));
+                                           &Color4::PURPLE0_TRANSLUCENT);
         self.paragraph.draw(resources,
                             matrix,
                             (rect.x + MARGIN as f32, rect.y + MARGIN as f32));

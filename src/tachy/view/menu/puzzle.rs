@@ -23,7 +23,7 @@ use super::super::paragraph::Paragraph;
 use cgmath::{Deg, Matrix4};
 use std::cell::RefCell;
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, MatrixExt, Rect};
+use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect};
 use tachy::gui::{Event, Resources, Ui};
 use tachy::save::{Prefs, Puzzle};
 use tachy::state::GameState;
@@ -243,7 +243,7 @@ impl DescriptionView {
                                            &self.rect.as_f32(),
                                            &Color4::ORANGE2,
                                            &Color4::CYAN2,
-                                           &Color4::PURPLE0.with_alpha(0.8));
+                                           &Color4::PURPLE0_TRANSLUCENT);
 
         let mut cached = self.cache.borrow_mut();
         match cached.as_ref() {
@@ -285,7 +285,7 @@ impl GraphView {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 puzzle: Puzzle, points: &[(i32, i32)]) {
-        let color = (0.1, 0.7, 0.4);
+        let color = Color3::new(0.1, 0.7, 0.4);
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
 
@@ -315,10 +315,10 @@ impl GraphView {
                                    self.rect.height - 2 * GRAPH_INNER_MARGIN -
                                        GRAPH_LABEL_MARGIN);
         let graph_rect = graph_rect.as_f32();
-        let color = (0.1, 0.1, 0.1);
+        let color = Color3::new(0.1, 0.1, 0.1);
         resources.shaders().solid().fill_rect(&matrix, color, graph_rect);
         let graph_bounds = puzzle.graph_bounds();
-        let color = (0.9, 0.1, 0.1);
+        let color = Color3::new(0.9, 0.1, 0.1);
         for &(pt_x, pt_y) in points.iter() {
             let rel_x = graph_rect.width *
                 ((pt_x as f32) / (graph_bounds.0 as f32));
@@ -332,7 +332,7 @@ impl GraphView {
         }
 
         // Draw axis ticks:
-        let color = (0.1, 0.1, 0.1);
+        let color = Color3::new(0.1, 0.1, 0.1);
         let unit_span = (graph_rect.width - GRAPH_TICK_THICKNESS) /
             (graph_bounds.0 as f32);
         let mut tick = 0;

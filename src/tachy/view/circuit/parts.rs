@@ -179,7 +179,7 @@ impl PartsTray {
                      TRAY_FLIP_HORZ,
                      &Color4::ORANGE2,
                      &Color4::CYAN2,
-                     &Color4::PURPLE0.with_alpha(0.8));
+                     &Color4::PURPLE0_TRANSLUCENT);
 
         let tab_matrix = matrix *
             Matrix4::trans2(tab_rect.x + 0.5 * tab_rect.width,

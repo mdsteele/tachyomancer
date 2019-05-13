@@ -19,7 +19,7 @@
 
 use cgmath::{Matrix4, vec2};
 use tachy::font::{Align, Font};
-use tachy::geom::{Color4, Coords, CoordsSize, Direction, MatrixExt,
+use tachy::geom::{Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
                   Orientation, Rect};
 use tachy::gui::Resources;
 use tachy::save::ChipType;
@@ -54,7 +54,7 @@ impl ChipModel {
         let size = interface.size();
         let width = size.width as f32 - 2.0 * MARGIN;
         let height = size.height as f32 - 2.0 * MARGIN;
-        let color = (0.3, 0.3, 0.3);
+        let color = Color3::new(0.3, 0.3, 0.3);
         let rect = Rect::new(MARGIN, MARGIN, width, height);
         resources.shaders().solid().fill_rect(matrix, color, rect);
 
@@ -117,7 +117,7 @@ impl ChipModel {
                                      matrix,
                                      size,
                                      0.3,
-                                     &chip_icon_color(icon),
+                                     &Color4::WHITE,
                                      "Display");
                 };
             }
@@ -186,10 +186,10 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
     }
 }
 
-fn chip_icon_color(chip_icon: ChipIcon) -> Color4 {
+fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
     match chip_icon {
-        ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux => Color4::CYAN2,
-        _ => Color4::ORANGE2,
+        ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux => Color3::CYAN2,
+        _ => Color3::ORANGE2,
     }
 }
 

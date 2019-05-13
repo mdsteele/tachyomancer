@@ -30,7 +30,7 @@ use unicode_width::UnicodeWidthStr;
 
 const DIALOG_COLOR_1: Color4 = Color4::CYAN4;
 const DIALOG_COLOR_2: Color4 = Color4::ORANGE5;
-const DIALOG_COLOR_3: Color4 = Color4::PURPLE0.with_alpha(0.8);
+const DIALOG_COLOR_3: Color4 = Color4::PURPLE0_TRANSLUCENT;
 
 const BUTTON_HEIGHT: i32 = 40;
 const BUTTON_INNER_MARGIN: i32 = 10;

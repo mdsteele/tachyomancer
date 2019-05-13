@@ -21,7 +21,7 @@ use cgmath::{Matrix4, Point2};
 use std::collections::HashSet;
 use std::u32;
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Rect, RectSize};
+use tachy::geom::{AsFloat, Color3, Rect, RectSize};
 use tachy::gui::Resources;
 use tachy::state::{CircuitEval, EvalError};
 
@@ -108,11 +108,11 @@ impl FabricationTable {
 
         for row in 0..self.num_rows {
             let color = if Some(row as u32) == time_step {
-                (0.7, 0.7, 1.0)
+                Color3::new(0.7, 0.7, 1.0)
             } else if error_rows.contains(&row) {
-                (0.7, 0.3, 0.3)
+                Color3::new(0.7, 0.3, 0.3)
             } else {
-                (0.1, 0.1, 0.1)
+                Color3::new(0.1, 0.1, 0.1)
             };
             let row_top = rect.y + ((row + 1) as f32) * row_height;
             let rect = Rect::new(rect.x, row_top, rect.width, row_height);

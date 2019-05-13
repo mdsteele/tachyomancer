@@ -28,7 +28,7 @@ use self::puzzle::{PuzzlesAction, PuzzlesView};
 use super::button::RadioButton;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath::{self, Matrix4};
-use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
+use tachy::geom::{AsFloat, Color3, MatrixExt, Rect, RectSize};
 use tachy::gui::{ClockEventData, Event, Keycode, Resources, Ui, Window,
                  WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
@@ -120,7 +120,7 @@ impl MenuView {
         resources
             .shaders()
             .solid()
-            .fill_rect(&projection, (0.2, 0.1, 0.2), rect);
+            .fill_rect(&projection, Color3::new(0.2, 0.1, 0.2), rect);
         for button in self.section_buttons.iter() {
             button.draw(resources, &projection, &state.menu_section());
         }

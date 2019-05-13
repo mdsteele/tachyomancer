@@ -23,7 +23,7 @@ use super::super::paragraph::Paragraph;
 use cgmath::{Matrix4, Point2, vec2};
 use num_integer::div_mod_floor;
 use tachy::font::Align;
-use tachy::geom::{AsFloat, MatrixExt, Rect};
+use tachy::geom::{AsFloat, Color3, MatrixExt, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources, Ui};
 use tachy::save::{Conversation, Prefs, Profile, Puzzle};
@@ -171,7 +171,7 @@ impl BubblesListView {
         // Draw background and define clipping area:
         let stencil = Stencil::new();
         {
-            let color = (0.1, 0.1, 0.1);
+            let color = Color3::new(0.1, 0.1, 0.1);
             resources
                 .shaders()
                 .solid()
@@ -340,9 +340,9 @@ impl MoreButton {
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let color = if self.hovering {
-            (1.0, 0.5, 0.1)
+            Color3::new(1.0, 0.5, 0.1)
         } else {
-            (0.5, 0.25, 0.1)
+            Color3::new(0.5, 0.25, 0.1)
         };
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
@@ -407,9 +407,9 @@ impl BubbleView for CutsceneBubbleView {
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let color = if self.hovering {
-            (0.1, 1.0, 1.0)
+            Color3::new(0.1, 1.0, 1.0)
         } else {
-            (0.1, 0.5, 0.5)
+            Color3::new(0.1, 0.5, 0.5)
         };
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
@@ -475,7 +475,7 @@ impl BubbleView for NpcSpeechBubbleView {
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         // Draw bubble:
         let rect = self.rect.as_f32();
-        let color = (0.1, 0.5, 0.1);
+        let color = Color3::new(0.1, 0.5, 0.1);
         resources.shaders().solid().fill_rect(&matrix, color, rect);
 
         // Draw portrait:
@@ -484,7 +484,7 @@ impl BubbleView for NpcSpeechBubbleView {
                                       PORTRAIT_WIDTH,
                                       PORTRAIT_HEIGHT);
         let portrait_rect = portrait_rect.as_f32();
-        let color = (0.3, 0.5, 0.3);
+        let color = Color3::new(0.3, 0.5, 0.3);
         resources.shaders().solid().fill_rect(&matrix, color, portrait_rect);
         resources.fonts().roman().draw(matrix,
                                        BUBBLE_FONT_SIZE,
@@ -529,9 +529,9 @@ impl BubbleView for PuzzleBubbleView {
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let color = if self.hovering {
-            (0.1, 1.0, 1.0)
+            Color3::new(0.1, 1.0, 1.0)
         } else {
-            (0.1, 0.5, 0.5)
+            Color3::new(0.1, 0.5, 0.5)
         };
         let rect = self.rect.as_f32();
         resources.shaders().solid().fill_rect(&matrix, color, rect);
@@ -610,9 +610,9 @@ impl BubbleView for YouChoiceBubbleView {
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         for (index, &(_, ref label)) in self.choices.iter().enumerate() {
             let color = if self.hovering == Some(index) {
-                (1.0, 1.0, 0.1)
+                Color3::new(1.0, 1.0, 0.1)
             } else {
-                (0.5, 0.5, 0.1)
+                Color3::new(0.5, 0.5, 0.1)
             };
             let rect = Rect::new(self.rect.x,
                                  self.rect.y +
@@ -681,7 +681,7 @@ impl BubbleView for YouSpeechBubbleView {
     fn rect(&self) -> Rect<i32> { self.rect }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let color = (0.5, 0.1, 0.1);
+        let color = Color3::new(0.5, 0.1, 0.1);
         resources
             .shaders()
             .solid()

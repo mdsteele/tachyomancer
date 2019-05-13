@@ -27,7 +27,7 @@ mod polygon;
 mod rect;
 
 pub use self::cast::{AsFloat, AsInt};
-pub use self::color::Color4;
+pub use self::color::{Color3, Color4};
 pub use self::coords::{Coords, CoordsDelta, CoordsRect, CoordsSize};
 pub use self::dir::{AllDirectionsIter, Direction};
 pub use self::matrix::MatrixExt;

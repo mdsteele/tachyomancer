@@ -21,8 +21,9 @@ use super::super::chip::ChipModel;
 use super::super::wire::WireModel;
 use cgmath::{Matrix4, MetricSpace, Point2, Vector2, vec2};
 use std::collections::HashMap;
-use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsDelta, CoordsRect,
-                  CoordsSize, Direction, MatrixExt, Orientation, Rect};
+use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsDelta,
+                  CoordsRect, CoordsSize, Direction, MatrixExt, Orientation,
+                  Rect};
 use tachy::gui::{Clipboard, Resources};
 use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
 use tachy::state::{EditGrid, GridChange, WireColor, WireSize};
@@ -33,9 +34,9 @@ use tachy::state::{EditGrid, GridChange, WireColor, WireSize};
 // selection rect.
 const SELECTING_VERTEX_MAX_DIST: f32 = 0.2;
 
-const SELECTION_BOX_COLOR1: Color4 = Color4::CYAN5.with_alpha(0.75);
-const SELECTION_BOX_COLOR2: Color4 = Color4::CYAN4.with_alpha(0.75);
-const SELECTION_BOX_COLOR3: Color4 = Color4::CYAN4.with_alpha(0.1);
+const SELECTION_BOX_COLOR1: Color4 = Color3::CYAN5.with_alpha(0.75);
+const SELECTION_BOX_COLOR2: Color4 = Color3::CYAN4.with_alpha(0.75);
+const SELECTION_BOX_COLOR3: Color4 = Color3::CYAN4.with_alpha(0.1);
 
 //===========================================================================//
 

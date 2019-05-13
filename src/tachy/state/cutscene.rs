@@ -19,7 +19,7 @@
 
 use std::collections::VecDeque;
 use std::mem;
-use tachy::geom::Color4;
+use tachy::geom::Color3;
 use tachy::gui::{Sound, Ui};
 
 //===========================================================================//
@@ -82,22 +82,22 @@ impl CutsceneScript {
 //===========================================================================//
 
 pub struct Theater {
-    bg_color: Color4,
+    bg_color: Color3,
 }
 
 impl Theater {
     pub fn new() -> Theater {
-        Theater { bg_color: Color4::new(0.0, 0.0, 0.0, 1.0) }
+        Theater { bg_color: Color3::new(0.0, 0.0, 0.0) }
     }
 
-    pub fn background_color(&self) -> Color4 { self.bg_color }
+    pub fn background_color(&self) -> Color3 { self.bg_color }
 }
 
 //===========================================================================//
 
 mod sn {
     use super::SceneNode;
-    use tachy::geom::Color4;
+    use tachy::geom::Color3;
     use tachy::gui::Sound;
 
     pub(super) fn seq(nodes: Vec<SceneNode>) -> SceneNode {
@@ -109,7 +109,7 @@ mod sn {
     }
 
     pub(super) fn background(r: f32, g: f32, b: f32) -> SceneNode {
-        SceneNode::Background(Color4::new(r, g, b, 1.0), false)
+        SceneNode::Background(Color3::new(r, g, b), false)
     }
 
     pub(super) fn pause() -> SceneNode { SceneNode::Pause(false) }
@@ -126,7 +126,7 @@ mod sn {
 pub(self) enum SceneNode {
     Seq(VecDeque<SceneNode>),
     Par(Vec<SceneNode>),
-    Background(Color4, bool),
+    Background(Color3, bool),
     Pause(bool),
     Sound(Sound, bool),
     Wait(f64),

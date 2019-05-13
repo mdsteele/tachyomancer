@@ -27,7 +27,7 @@ use super::tutorial::TutorialBubble;
 use super::wiredrag::WireDrag;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
 use std::mem;
-use tachy::geom::{AsFloat, AsInt, Color4, Coords, CoordsRect, Direction,
+use tachy::geom::{AsFloat, AsInt, Color3, Coords, CoordsRect, Direction,
                   MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, NextCursor,
                  Resources, Sound, Ui};
@@ -108,9 +108,9 @@ impl EditGridView {
         let height = (bounds.height * GRID_CELL_SIZE) as f32;
         let thick = BOUNDS_MARGIN * (GRID_CELL_SIZE as f32);
         let color = if is_acceptable {
-            Color4::PURPLE2.rgb()
+            Color3::PURPLE2
         } else {
-            (1.0, 0.0, 0.0)
+            Color3::new(1.0, 0.0, 0.0)
         };
         let rect = Rect::new(x - thick, y, thick, height);
         resources.shaders().solid().fill_rect(&matrix, color, rect);

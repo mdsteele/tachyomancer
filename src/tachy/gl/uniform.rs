@@ -17,11 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, Vector2, Vector3, Vector4};
+use cgmath::{Matrix4, Vector2, Vector4};
 use gl;
 use gl::types::{GLenum, GLint};
 use std::marker::PhantomData;
-use tachy::geom::{Color4, Rect};
+use tachy::geom::{Color3, Color4, Rect};
 
 //===========================================================================//
 
@@ -49,6 +49,15 @@ pub trait UniformValue {
     fn gl_type() -> GLenum;
     fn array_size() -> GLint { 1 }
     fn set_uniform(&self, loc: GLint);
+}
+
+impl UniformValue for Color3 {
+    fn gl_type() -> GLenum { gl::FLOAT_VEC3 }
+    fn set_uniform(&self, loc: GLint) {
+        unsafe {
+            gl::Uniform3f(loc, self.r, self.g, self.b);
+        }
+    }
 }
 
 impl UniformValue for Color4 {
@@ -92,15 +101,6 @@ impl UniformValue for Vector2<u32> {
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform2ui(loc, self.x, self.y);
-        }
-    }
-}
-
-impl UniformValue for Vector3<f32> {
-    fn gl_type() -> GLenum { gl::FLOAT_VEC3 }
-    fn set_uniform(&self, loc: GLint) {
-        unsafe {
-            gl::Uniform3f(loc, self.x, self.y, self.z);
         }
     }
 }

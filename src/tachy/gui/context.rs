@@ -29,7 +29,7 @@ use tachy::geom::RectSize;
 //===========================================================================//
 
 pub struct GuiContext {
-    _sdl_context: sdl2::Sdl,
+    pub(super) sdl_context: sdl2::Sdl,
     pub(super) video_subsystem: sdl2::VideoSubsystem,
     pub(super) clipboard: Clipboard,
     pub(super) event_pump: sdl2::EventPump,
@@ -60,7 +60,7 @@ impl GuiContext {
         audio_device.resume();
 
         Ok(GuiContext {
-               _sdl_context: sdl_context,
+               sdl_context,
                video_subsystem,
                clipboard,
                event_pump,

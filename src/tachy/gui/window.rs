@@ -166,6 +166,10 @@ impl<'a> Window<'a> {
                 &self.gui_context.event_pump)
     }
 
+    pub fn set_cursor_visible(&mut self, visible: bool) {
+        self.gui_context.sdl_context.mouse().show_cursor(visible);
+    }
+
     pub fn poll_event(&mut self) -> Option<Event> {
         loop {
             if let Some(line) = self.gui_context.stdin_reader.pop_line() {

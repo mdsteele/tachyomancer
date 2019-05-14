@@ -26,6 +26,13 @@ use tachy::view::{CutsceneAction, CutsceneView};
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
+    window.set_cursor_visible(false);
+    let mode_change = run_internal(state, window);
+    window.set_cursor_visible(true);
+    mode_change
+}
+
+fn run_internal(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.cutscene().is_some());
     let mut view = CutsceneView::new(window.size());
     view.init(&mut window.ui(), state.cutscene_mut().unwrap());

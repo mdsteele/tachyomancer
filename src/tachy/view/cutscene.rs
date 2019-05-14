@@ -38,7 +38,7 @@ const MESSAGE_OUTER_MARGIN: f32 = 24.0;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 const CONTINUE_MESSAGE: &str = "Tap anywhere to continue";
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
-const CONTINUE_MESSAGE: &str = "Click anywhere or press [ENTER] to continue";
+const CONTINUE_MESSAGE: &str = "Click or press [ENTER] to continue";
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
 const SKIP_MESSAGE: &str = "Long-press anywhere to skip";

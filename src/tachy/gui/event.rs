@@ -67,6 +67,7 @@ impl Event {
     pub(super) fn from_sdl_event(sdl_event: sdl2::event::Event,
                                  pump: &sdl2::EventPump)
                                  -> Option<Event> {
+        // TODO: On iOS/Android, treat long-press as right-click.
         match sdl_event {
             sdl2::event::Event::KeyDown { keycode, keymod, .. } => {
                 if let Some(code) = keycode {

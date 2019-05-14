@@ -70,6 +70,21 @@ const BOX_DATA: &[f32] = &[
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+const BUBBLE_DATA: &[f32] = &[
+    0.0, 0.0, 0.0, 0.0,  0.375, 0.0, 12.0, 0.0,
+    0.625, 0.0, -12.0, 0.0,  1.0, 0.0, 0.0, 0.0,
+
+    0.0, 0.375, 0.0, 12.0,  0.375, 0.375, 12.0, 12.0,
+    0.625, 0.375, -12.0, 12.0,  1.0, 0.375, 0.0, 12.0,
+
+    0.0, 0.625, 0.0, -12.0,  0.375, 0.625, 12.0, -12.0,
+    0.625, 0.625, -12.0, -12.0,  1.0, 0.625, 0.0, -12.0,
+
+    0.0, 1.0, 0.0, 0.0,  0.375, 1.0, 12.0, 0.0,
+    0.625, 1.0, -12.0, 0.0,  1.0, 1.0, 0.0, 0.0,
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 const CHECKBOX_DATA: &[f32] = &[
     0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0,
     1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0,
@@ -177,6 +192,8 @@ pub struct UiShader {
     _corners_vbuffer: VertexBuffer<u8>,
     _box_vbuffer: VertexBuffer<f32>,
     box_varray: VertexArray,
+    _bubble_vbuffer: VertexBuffer<f32>,
+    bubble_varray: VertexArray,
     _checkbox_vbuffer: VertexBuffer<f32>,
     checkbox_varray: VertexArray,
     _dialog_vbuffer: VertexBuffer<f32>,
@@ -208,6 +225,8 @@ impl UiShader {
 
         let (box_varray, box_vbuffer) = make_vertices(&corners_vbuffer,
                                                       BOX_DATA);
+        let (bubble_varray, bubble_vbuffer) = make_vertices(&corners_vbuffer,
+                                                            BUBBLE_DATA);
         let (checkbox_varray, checkbox_vbuffer) =
             make_vertices(&corners_vbuffer, CHECKBOX_DATA);
         let (dialog_varray, dialog_vbuffer) = make_vertices(&corners_vbuffer,
@@ -234,6 +253,8 @@ impl UiShader {
             _corners_vbuffer: corners_vbuffer,
             _box_vbuffer: box_vbuffer,
             box_varray,
+            _bubble_vbuffer: bubble_vbuffer,
+            bubble_varray,
             _checkbox_vbuffer: checkbox_vbuffer,
             checkbox_varray,
             _dialog_vbuffer: dialog_vbuffer,
@@ -277,6 +298,14 @@ impl UiShader {
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.box_varray.bind();
         self.box_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn draw_bubble(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
+                       color1: &Color4, color2: &Color4, color3: &Color4) {
+        let tex_rect = Rect::new(0.75, 0.375, 0.125, 0.125);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.bubble_varray.bind();
+        self.bubble_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
     pub fn draw_checkbox(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,

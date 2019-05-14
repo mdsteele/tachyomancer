@@ -93,6 +93,12 @@
       <path d="M 0,31.5 h 32"/>
     </g>
   </g>
+  <!-- Tutorial bubble -->
+  <g transform="translate(192, 96)">
+    <path d="M 20,0.5 A 12 12 0 0 1 31.5,12 V 20 A 12 12 0 0 1 20,31.5
+             H 12 A 12 12 0 0 1 0.5,20 V 12 A 12 12 0 0 1 12,0.5 Z"
+          fill="#00f" stroke="#f00" stroke-width="1"/>
+  </g>
   <!-- Selection box -->
   <g transform="translate(224, 96)">
     <!-- Outline -->

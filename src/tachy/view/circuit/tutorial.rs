@@ -56,14 +56,15 @@ impl TutorialBubble {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 topleft: Point2<i32>) {
+        let ui = resources.shaders().ui();
         let rect =
             Rect::new(topleft.x, topleft.y, self.width(), self.height())
                 .as_f32();
-        resources.shaders().ui().draw_box2(matrix,
-                                           &rect,
-                                           &Color4::CYAN3,
-                                           &Color4::ORANGE4,
-                                           &Color4::PURPLE0_TRANSLUCENT);
+        ui.draw_bubble(matrix,
+                       &rect,
+                       &Color4::ORANGE1,
+                       &Color4::CYAN1,
+                       &Color4::PURPLE0_TRANSLUCENT);
         self.paragraph.draw(resources,
                             matrix,
                             (rect.x + MARGIN as f32, rect.y + MARGIN as f32));

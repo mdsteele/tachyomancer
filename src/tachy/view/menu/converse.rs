@@ -27,8 +27,7 @@ use tachy::geom::{AsFloat, Color3, MatrixExt, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources, Ui};
 use tachy::save::{Conversation, Prefs, Profile, Puzzle};
-use tachy::state::{ConversationBubble, ConversationPortrait, Cutscene,
-                   GameState};
+use tachy::state::{ConversationBubble, Cutscene, GameState, Portrait};
 
 //===========================================================================//
 
@@ -442,13 +441,13 @@ impl BubbleView for CutsceneBubbleView {
 
 struct NpcSpeechBubbleView {
     rect: Rect<i32>,
-    portrait: ConversationPortrait,
+    portrait: Portrait,
     paragraph: Paragraph,
 }
 
 impl NpcSpeechBubbleView {
-    fn new(width: i32, top: i32, portrait: ConversationPortrait,
-           prefs: &Prefs, format: &str)
+    fn new(width: i32, top: i32, portrait: Portrait, prefs: &Prefs,
+           format: &str)
            -> Box<BubbleView> {
         let wrap_width = width - PORTRAIT_WIDTH - 3 * BUBBLE_INNER_MARGIN;
         let paragraph = Paragraph::compile(BUBBLE_FONT_SIZE,
@@ -476,7 +475,7 @@ impl BubbleView for NpcSpeechBubbleView {
         // Draw bubble:
         let rect = self.rect.as_f32();
         let color = Color3::new(0.1, 0.5, 0.1);
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.shaders().solid().fill_rect(matrix, color, rect);
 
         // Draw portrait:
         let portrait_rect = Rect::new(self.rect.x + BUBBLE_INNER_MARGIN,
@@ -485,7 +484,7 @@ impl BubbleView for NpcSpeechBubbleView {
                                       PORTRAIT_HEIGHT);
         let portrait_rect = portrait_rect.as_f32();
         let color = Color3::new(0.3, 0.5, 0.3);
-        resources.shaders().solid().fill_rect(&matrix, color, portrait_rect);
+        resources.shaders().solid().fill_rect(matrix, color, portrait_rect);
         resources.fonts().roman().draw(matrix,
                                        BUBBLE_FONT_SIZE,
                                        Align::MidCenter,

@@ -35,7 +35,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
 fn run_internal(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.cutscene().is_some());
     let mut view = CutsceneView::new(window.size());
-    view.init(&mut window.ui(), state.cutscene_mut().unwrap());
+    view.init(&mut window.ui(), state.cutscene_mut_and_prefs().unwrap());
     let mut last_tick = Instant::now();
     loop {
         let mut finished = false;
@@ -43,8 +43,8 @@ fn run_internal(state: &mut GameState, window: &mut Window) -> ModeChange {
             Some(Event::Quit) => return ModeChange::Quit,
             Some(event) => {
                 match view.on_event(&event,
-                                      &mut window.ui(),
-                                      state.cutscene_mut().unwrap()) {
+                                    &mut window.ui(),
+                                    state.cutscene_mut_and_prefs().unwrap()) {
                     Some(CutsceneAction::Finished) => finished = true,
                     None => {}
                 }
@@ -53,9 +53,11 @@ fn run_internal(state: &mut GameState, window: &mut Window) -> ModeChange {
             None => {
                 let now = Instant::now();
                 let elapsed = now.duration_since(last_tick);
-                match view.on_event(&Event::new_clock_tick(elapsed),
-                                      &mut window.ui(),
-                                      state.cutscene_mut().unwrap()) {
+                let action =
+                    view.on_event(&Event::new_clock_tick(elapsed),
+                                  &mut window.ui(),
+                                  state.cutscene_mut_and_prefs().unwrap());
+                match action {
                     Some(CutsceneAction::Finished) => finished = true,
                     None => {}
                 }

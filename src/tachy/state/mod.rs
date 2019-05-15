@@ -30,7 +30,7 @@ mod size;
 
 pub use self::check::WireColor;
 pub use self::chip::ChipExt;
-pub use self::converse::{ConversationBubble, ConversationPortrait};
+pub use self::converse::{ConversationBubble, Portrait};
 pub use self::cutscene::{Cutscene, CutsceneScript, Theater};
 pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
 pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore};

@@ -17,11 +17,14 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::paragraph::Paragraph;
 use cgmath::{self, Matrix4, Point2};
+use std::collections::BTreeMap;
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, Rect, RectSize};
-use tachy::gui::{Event, Keycode, Resources, Ui};
-use tachy::state::{CutsceneScript, Theater};
+use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
+use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound, Ui};
+use tachy::save::Prefs;
+use tachy::state::{CutsceneScript, Portrait, Theater};
 use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
@@ -29,6 +32,13 @@ use unicode_width::UnicodeWidthStr;
 const CLICKS_TO_SHOW_SKIP: i32 = 3;
 const TIME_BETWEEN_CLICKS: f64 = 0.4; // seconds
 const TIME_TO_HIDE_SKIP: f64 = 2.0; // seconds
+
+const TALK_FONT_SIZE: f32 = 20.0;
+const TALK_INNER_MARGIN: i32 = 12;
+const TALK_LINE_HEIGHT: f32 = 22.0;
+const TALK_MAX_PARAGRAPH_WIDTH: f32 = 460.0;
+const TALK_PORTRAIT_HEIGHT: i32 = 75;
+const TALK_PORTRAIT_WIDTH: i32 = 60;
 
 const MESSAGE_FONT_SIZE: f32 = 20.0;
 const MESSAGE_INNER_MARGIN_HORZ: f32 = 10.0;
@@ -55,23 +65,28 @@ pub enum CutsceneAction {
 
 pub struct CutsceneView {
     size: RectSize<f32>,
-    theater: Theater,
     skip_clicks: i32,
     skip_click_time: f64,
+    bg_color: Color3,
+    talk_bubbles: BTreeMap<i32, TalkBubble>,
+    next_talk_bubble_tag: i32,
 }
 
 impl CutsceneView {
     pub fn new(window_size: RectSize<i32>) -> CutsceneView {
         CutsceneView {
             size: window_size.as_f32(),
-            theater: Theater::new(),
             skip_clicks: 0,
             skip_click_time: 0.0,
+            bg_color: Color3::BLACK,
+            talk_bubbles: BTreeMap::new(),
+            next_talk_bubble_tag: 0,
         }
     }
 
-    pub fn init(&mut self, ui: &mut Ui, cutscene: &mut CutsceneScript) {
-        cutscene.tick(0.0, ui, &mut self.theater);
+    pub fn init(&mut self, ui: &mut Ui,
+                (cutscene, prefs): (&mut CutsceneScript, &Prefs)) {
+        cutscene.tick(0.0, &mut TheaterImpl::new(self, ui.audio(), prefs));
     }
 
     pub fn draw(&self, resources: &Resources, cutscene: &CutsceneScript) {
@@ -82,8 +97,11 @@ impl CutsceneView {
                                    -1.0,
                                    1.0);
         let rect = Rect::with_size(Point2::new(0.0, 0.0), self.size);
-        let color = self.theater.background_color();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.shaders().solid().fill_rect(&matrix, self.bg_color, rect);
+
+        for bubble in self.talk_bubbles.values() {
+            bubble.draw(resources, &matrix);
+        }
 
         if cutscene.is_paused() {
             self.draw_message(resources,
@@ -125,7 +143,7 @@ impl CutsceneView {
     }
 
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    cutscene: &mut CutsceneScript)
+                    (cutscene, prefs): (&mut CutsceneScript, &Prefs))
                     -> Option<CutsceneAction> {
         match event {
             Event::ClockTick(tick) => {
@@ -136,12 +154,16 @@ impl CutsceneView {
                         self.skip_click_time = 0.0;
                     }
                 }
-                if cutscene.tick(tick.elapsed, ui, &mut self.theater) {
+                if cutscene.tick(tick.elapsed,
+                                 &mut TheaterImpl::new(self,
+                                                       ui.audio(),
+                                                       prefs))
+                {
                     return Some(CutsceneAction::Finished);
                 }
             }
             Event::KeyDown(key) if key.code == Keycode::Escape => {
-                self.maybe_skip(cutscene);
+                self.maybe_skip(ui, prefs, cutscene);
             }
             Event::KeyDown(key) if key.code == Keycode::Return => {
                 self.unpause(cutscene);
@@ -153,7 +175,7 @@ impl CutsceneView {
                            cfg!(any(target_os = "android",
                                     target_os = "ios"))
                 {
-                    self.maybe_skip(cutscene);
+                    self.maybe_skip(ui, prefs, cutscene);
                 }
             }
             _ => {}
@@ -161,9 +183,10 @@ impl CutsceneView {
         return None;
     }
 
-    fn maybe_skip(&mut self, cutscene: &mut CutsceneScript) {
+    fn maybe_skip(&mut self, ui: &mut Ui, prefs: &Prefs,
+                  cutscene: &mut CutsceneScript) {
         if self.skip_clicks >= CLICKS_TO_SHOW_SKIP {
-            cutscene.skip(&mut self.theater);
+            cutscene.skip(&mut TheaterImpl::new(self, ui.audio(), prefs));
             self.skip_clicks = 0;
             self.skip_click_time = 0.0;
         } else {
@@ -184,6 +207,128 @@ impl CutsceneView {
                 self.skip_click_time = TIME_BETWEEN_CLICKS;
             }
         }
+    }
+}
+
+//===========================================================================//
+
+struct TalkBubble {
+    rect: Rect<i32>,
+    portrait: Portrait,
+    paragraph: Paragraph,
+}
+
+impl TalkBubble {
+    fn new(window_size: RectSize<f32>, prefs: &Prefs, portrait: Portrait,
+           (x_pos, y_pos): (i32, i32), format: &str)
+           -> TalkBubble {
+        let paragraph = Paragraph::compile(TALK_FONT_SIZE,
+                                           TALK_LINE_HEIGHT,
+                                           TALK_MAX_PARAGRAPH_WIDTH,
+                                           prefs,
+                                           format);
+        let horz = 0.5 + (x_pos as f32) / 200.0;
+        let vert = 0.5 + (y_pos as f32) / 200.0;
+        let width = TALK_PORTRAIT_WIDTH + 3 * TALK_INNER_MARGIN +
+            (paragraph.width().ceil() as i32);
+        let height = TALK_PORTRAIT_HEIGHT
+            .max(paragraph.height().ceil() as i32) +
+            2 * TALK_INNER_MARGIN;
+        let rect =
+            Rect::new((horz * (window_size.width - (width as f32)))
+                          .round() as i32,
+                      (vert * (window_size.height - (height as f32)))
+                          .round() as i32,
+                      width,
+                      height);
+        TalkBubble {
+            rect,
+            portrait,
+            paragraph,
+        }
+    }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        // Draw bubble:
+        let rect = self.rect.as_f32();
+        let color = Color3::new(0.1, 0.5, 0.1);
+        resources.shaders().solid().fill_rect(matrix, color, rect);
+
+        // Draw portrait:
+        let portrait_rect = Rect::new(self.rect.x + TALK_INNER_MARGIN,
+                                      self.rect.y + TALK_INNER_MARGIN,
+                                      TALK_PORTRAIT_WIDTH,
+                                      TALK_PORTRAIT_HEIGHT);
+        let portrait_rect = portrait_rect.as_f32();
+        let color = Color3::new(0.3, 0.5, 0.3);
+        resources.shaders().solid().fill_rect(matrix, color, portrait_rect);
+        resources.fonts().roman().draw(matrix,
+                                       TALK_FONT_SIZE,
+                                       Align::MidCenter,
+                                       (portrait_rect.x +
+                                            0.5 * portrait_rect.width,
+                                        portrait_rect.y +
+                                            0.5 * portrait_rect.height),
+                                       &format!("{:?}", self.portrait));
+
+        // Draw paragraph:
+        let left = (self.rect.x + TALK_PORTRAIT_WIDTH +
+                        2 * TALK_INNER_MARGIN) as f32;
+        let top = (self.rect.y + TALK_INNER_MARGIN) as f32;
+        self.paragraph.draw(resources, matrix, (left, top));
+    }
+
+    fn is_done(&self) -> bool {
+        true // TODO: show text one char at a time, return true only when done
+    }
+}
+
+//===========================================================================//
+
+struct TheaterImpl<'a> {
+    view: &'a mut CutsceneView,
+    audio: &'a mut AudioQueue,
+    prefs: &'a Prefs,
+}
+
+impl<'a> TheaterImpl<'a> {
+    fn new(view: &'a mut CutsceneView, audio: &'a mut AudioQueue,
+           prefs: &'a Prefs)
+           -> TheaterImpl<'a> {
+        TheaterImpl { view, audio, prefs }
+    }
+}
+
+impl<'a> Theater for TheaterImpl<'a> {
+    fn add_talk(&mut self, portrait: Portrait, pos: (i32, i32), format: &str)
+                -> i32 {
+        let tag = self.view.next_talk_bubble_tag;
+        self.view.next_talk_bubble_tag += 1;
+        let bubble =
+            TalkBubble::new(self.view.size, self.prefs, portrait, pos, format);
+        debug_assert!(!self.view.talk_bubbles.contains_key(&tag));
+        self.view.talk_bubbles.insert(tag, bubble);
+        tag
+    }
+
+    fn talk_is_done(&self, tag: i32) -> bool {
+        debug_assert!(self.view.talk_bubbles.contains_key(&tag));
+        self.view
+            .talk_bubbles
+            .get(&tag)
+            .map(TalkBubble::is_done)
+            .unwrap_or(true)
+    }
+
+    fn remove_talk(&mut self, tag: i32) {
+        debug_assert!(self.view.talk_bubbles.contains_key(&tag));
+        self.view.talk_bubbles.remove(&tag);
+    }
+
+    fn play_sound(&mut self, sound: Sound) { self.audio.play_sound(sound); }
+
+    fn set_background_color(&mut self, color: Color3) {
+        self.view.bg_color = color;
     }
 }
 

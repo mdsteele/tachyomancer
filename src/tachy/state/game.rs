@@ -110,8 +110,13 @@ impl GameState {
         self.cutscene.as_ref()
     }
 
-    pub fn cutscene_mut(&mut self) -> Option<&mut CutsceneScript> {
-        self.cutscene.as_mut()
+    pub fn cutscene_mut_and_prefs(&mut self)
+                                  -> Option<(&mut CutsceneScript, &Prefs)> {
+        if let Some(ref mut cutscene) = self.cutscene {
+            Some((cutscene, self.savedir.prefs()))
+        } else {
+            None
+        }
     }
 
     pub fn set_cutscene(&mut self, cutscene: CutsceneScript) {

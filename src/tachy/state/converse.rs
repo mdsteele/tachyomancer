@@ -23,8 +23,9 @@ use tachy::save::{Conversation, Profile, Puzzle};
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ConversationPortrait {
+pub enum Portrait {
     Esra,
+    Lisa,
 }
 
 //===========================================================================//
@@ -32,7 +33,7 @@ pub enum ConversationPortrait {
 pub enum ConversationBubble {
     YouSpeech(String),
     YouChoice(String, Vec<(String, String)>),
-    NpcSpeech(ConversationPortrait, String),
+    NpcSpeech(Portrait, String),
     Cutscene(Cutscene),
     Puzzle(Puzzle),
 }
@@ -145,11 +146,9 @@ impl ConversationBuilder {
         self.bubbles.push(ConversationBubble::Cutscene(cutscene));
     }
 
-    fn esra(&mut self, text: &str) {
-        self.npc(ConversationPortrait::Esra, text);
-    }
+    fn esra(&mut self, text: &str) { self.npc(Portrait::Esra, text); }
 
-    fn npc(&mut self, portrait: ConversationPortrait, text: &str) {
+    fn npc(&mut self, portrait: Portrait, text: &str) {
         self.bubbles
             .push(ConversationBubble::NpcSpeech(portrait, text.to_string()));
     }

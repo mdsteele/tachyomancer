@@ -147,6 +147,9 @@ impl CutsceneView {
                     -> Option<CutsceneAction> {
         match event {
             Event::ClockTick(tick) => {
+                for bubble in self.talk_bubbles.values_mut() {
+                    bubble.tick(tick.elapsed);
+                }
                 if self.skip_clicks > 0 {
                     self.skip_click_time -= tick.elapsed;
                     if self.skip_click_time <= 0.0 {
@@ -197,6 +200,9 @@ impl CutsceneView {
 
     fn unpause(&mut self, cutscene: &mut CutsceneScript) {
         cutscene.unpause();
+        for bubble in self.talk_bubbles.values_mut() {
+            bubble.skip_to_end();
+        }
         if self.skip_clicks >= CLICKS_TO_SHOW_SKIP {
             self.skip_click_time = TIME_TO_HIDE_SKIP;
         } else {
@@ -216,6 +222,7 @@ struct TalkBubble {
     rect: Rect<i32>,
     portrait: Portrait,
     paragraph: Paragraph,
+    millis: f64,
 }
 
 impl TalkBubble {
@@ -245,6 +252,7 @@ impl TalkBubble {
             rect,
             portrait,
             paragraph,
+            millis: 0.0,
         }
     }
 
@@ -275,11 +283,18 @@ impl TalkBubble {
         let left = (self.rect.x + TALK_PORTRAIT_WIDTH +
                         2 * TALK_INNER_MARGIN) as f32;
         let top = (self.rect.y + TALK_INNER_MARGIN) as f32;
-        self.paragraph.draw(resources, matrix, (left, top));
+        let millis = self.millis as usize;
+        self.paragraph.draw_partial(resources, matrix, (left, top), millis);
+    }
+
+    fn tick(&mut self, elapsed: f64) { self.millis += elapsed * 1000.0; }
+
+    fn skip_to_end(&mut self) {
+        self.millis = self.paragraph.total_millis() as f64;
     }
 
     fn is_done(&self) -> bool {
-        true // TODO: show text one char at a time, return true only when done
+        (self.millis as usize) >= self.paragraph.total_millis()
     }
 }
 

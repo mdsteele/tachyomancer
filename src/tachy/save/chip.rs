@@ -186,7 +186,7 @@ impl ChipType {
             }
             ChipType::Const(_) => {
                 "Outputs a constant value.\n\
-                 $(Right-click) on the chip to change the output value."
+                 $'Right-click' on the chip to change the output value."
             }
             ChipType::Discard => {
                 "Transforms value-carrying events into 0-bit events by \

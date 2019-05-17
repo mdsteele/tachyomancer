@@ -24,13 +24,13 @@ use tachy::font::{Align, Font, Fonts};
 use tachy::geom::Color4;
 use tachy::gui::Resources;
 use tachy::save::{Hotkey, Prefs};
-use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
 const DEFAULT_ALIGN: ParserAlign = ParserAlign::Left;
 const DEFAULT_COLOR: Color4 = Color4::WHITE;
 const DEFAULT_FONT: Font = Font::Roman;
+const DEFAULT_MILLIS_PER_CHAR: usize = 30;
 const GREEN: Color4 = Color4::new(0.0, 1.0, 0.0, 1.0);
 const RED: Color4 = Color4::new(1.0, 0.0, 0.0, 1.0);
 
@@ -40,6 +40,7 @@ pub struct Paragraph {
     lines: Vec<CompiledLine>,
     font_size: f32,
     line_height: f32,
+    total_millis: usize,
     width: f32,
 }
 
@@ -68,7 +69,9 @@ impl Paragraph {
     ///   that font for subsequent text.  The default font is `Roman`.
     /// * `$[h]`, where `h` is the name of a hotkey (e.g. `FlipHorz`), inserts
     ///   the name of the keycode bound to that hotkey.
-    /// * `$(p)`, where `p` is the name of a special phrase, inserts the phrase
+    /// * `$(n)`, where `n` is a decimal number, switches the text speed to
+    ///   that many milliseconds per character.  The deafult is 30.
+    /// * `$'p'`, where `p` is the name of a special phrase, inserts the phrase
     ///   text.  Supported phrases include:
     ///     * "Command", which turns into the equivalent modifier key name
     ///       depending on the platform (e.g. "Command" on MacOS, "Control" on
@@ -106,9 +109,19 @@ impl Paragraph {
                         parser.push_key(&parse_arg(&mut chars, ']'), prefs)
                     }
                     Some('(') => {
-                        parser.push_phrase(&parse_arg(&mut chars, ')'), prefs)
+                        parser.set_millis_per_char(&parse_arg(&mut chars, ')'))
                     }
-                    _ => {}
+                    Some('\'') => {
+                        parser.push_phrase(&parse_arg(&mut chars, '\''), prefs)
+                    }
+                    Some(ch) => {
+                        debug_log!("WARNING: Invalid paragraph escape: ${}",
+                                   ch);
+                    }
+                    None => {
+                        debug_log!("WARNING: Incomplete paragraph escape at \
+                                    end of format string");
+                    }
                 }
             } else if chr == '\n' {
                 parser.newline();
@@ -126,12 +139,27 @@ impl Paragraph {
             .max(0.0)
     }
 
+    pub fn total_millis(&self) -> usize { self.total_millis }
+
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                topleft: (f32, f32)) {
+                left_top: (f32, f32)) {
+        self.draw_partial(resources, matrix, left_top, self.total_millis);
+    }
+
+    pub fn draw_partial(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                        left_top: (f32, f32), mut num_millis: usize) {
         let fonts = resources.fonts();
-        let (left, mut top) = topleft;
+        let (left, mut top) = left_top;
         for line in self.lines.iter() {
-            line.draw(fonts, matrix, self.font_size, left, top);
+            if !line.draw(fonts,
+                          matrix,
+                          self.font_size,
+                          left,
+                          top,
+                          &mut num_millis)
+            {
+                break;
+            }
             top += self.line_height;
         }
     }
@@ -161,10 +189,14 @@ impl CompiledLine {
     }
 
     fn draw(&self, fonts: &Fonts, matrix: &Matrix4<f32>, font_size: f32,
-            left: f32, top: f32) {
+            left: f32, top: f32, num_millis: &mut usize)
+            -> bool {
         for piece in self.pieces.iter() {
-            piece.draw(fonts, matrix, font_size, left, top);
+            if !piece.draw(fonts, matrix, font_size, left, top, num_millis) {
+                return false;
+            }
         }
+        return true;
     }
 }
 
@@ -174,20 +206,33 @@ struct CompiledPiece {
     offset: f32,
     font: Font,
     color: Color4,
+    millis_per_char: usize,
     slant: f32,
-    text: String,
+    chars: Vec<u8>,
 }
 
 impl CompiledPiece {
     fn draw(&self, fonts: &Fonts, matrix: &Matrix4<f32>, font_size: f32,
-            left: f32, top: f32) {
-        fonts.get(self.font).draw_style(matrix,
+            left: f32, top: f32, millis_remaining: &mut usize)
+            -> bool {
+        let text_millis = self.chars.len() * self.millis_per_char;
+        let (chars, finished) = if text_millis <= *millis_remaining {
+            *millis_remaining -= text_millis;
+            (self.chars.as_slice(), true)
+        } else {
+            debug_assert!(self.millis_per_char > 0);
+            let substring_chars = *millis_remaining / self.millis_per_char;
+            debug_assert!(substring_chars < self.chars.len());
+            (&self.chars[..substring_chars], false)
+        };
+        fonts.get(self.font).draw_chars(matrix,
                                         font_size,
                                         Align::TopLeft,
                                         (left + self.offset, top),
                                         &self.color,
                                         self.slant,
-                                        &self.text);
+                                        chars);
+        finished
     }
 }
 
@@ -199,7 +244,8 @@ struct Parser {
     current_font: Font,
     current_italic: bool,
     current_line: ParserLine,
-    current_piece: String,
+    current_millis_per_char: usize,
+    current_piece: Vec<u8>,
     lines: Vec<ParserLine>,
 }
 
@@ -211,12 +257,17 @@ impl Parser {
             current_font: DEFAULT_FONT,
             current_italic: false,
             current_line: ParserLine::new(),
-            current_piece: String::new(),
+            current_millis_per_char: DEFAULT_MILLIS_PER_CHAR,
+            current_piece: Vec::new(),
             lines: Vec::new(),
         }
     }
 
-    fn push(&mut self, chr: char) { self.current_piece.push(chr); }
+    fn push(&mut self, chr: char) { self.current_piece.push(chr as u8); }
+
+    fn push_str(&mut self, string: &str) {
+        self.current_piece.extend(string.chars().map(|chr| chr as u8));
+    }
 
     fn push_phrase(&mut self, phrase_name: &str, prefs: &Prefs) {
         let phrase = match phrase_name {
@@ -244,13 +295,13 @@ impl Parser {
                 phrase_name
             }
         };
-        self.current_piece.push_str(phrase);
+        self.push_str(phrase);
     }
 
     fn push_key(&mut self, hotkey_name: &str, prefs: &Prefs) {
         if let Ok(hotkey) = Hotkey::from_str(hotkey_name) {
             let key_name = Hotkey::keycode_name(prefs.hotkey_code(hotkey));
-            self.current_piece.push_str(&format!("[{}]", key_name));
+            self.push_str(&format!("[{}]", key_name));
         } else {
             debug_log!("WARNING: Bad hotkey name {:?} in paragraph format \
                         string",
@@ -291,6 +342,18 @@ impl Parser {
         }
     }
 
+    fn set_millis_per_char(&mut self, number_string: &str) {
+        if let Ok(number) = number_string.parse::<usize>() {
+            if number != self.current_millis_per_char {
+                self.shift_piece();
+                self.current_millis_per_char = number;
+            }
+        } else {
+            debug_log!("WARNING: Bad number {:?} in paragraph format string",
+                       number_string);
+        }
+    }
+
     fn set_wrap_indent_to_here(&mut self, font_size: f32) {
         self.shift_piece();
         let pieces = match self.current_align {
@@ -322,8 +385,9 @@ impl Parser {
             let piece = ParserPiece {
                 font: self.current_font,
                 color: self.current_color,
+                millis_per_char: self.current_millis_per_char,
                 slant: if self.current_italic { 0.5 } else { 0.0 },
-                text: mem::replace(&mut self.current_piece, String::new()),
+                chars: mem::replace(&mut self.current_piece, Vec::new()),
             };
             let pieces = match self.current_align {
                 ParserAlign::Left => &mut self.current_line.left,
@@ -356,7 +420,7 @@ impl Parser {
                             next_piece = pieces.next();
                         }
                         ParserPieceSplit::SomeFits(pp1, pp2) => {
-                            if !pp1.text.is_empty() {
+                            if !pp1.chars.is_empty() {
                                 compiler.push(pp1);
                             }
                             compiler.fix_offsets(align);
@@ -369,7 +433,7 @@ impl Parser {
                                 compiler.fix_offsets(align);
                                 compiler.newline(wrap_indent);
                             }
-                            if !pp1.text.is_empty() {
+                            if !pp1.chars.is_empty() {
                                 compiler.push(pp1);
                                 compiler.fix_offsets(align);
                                 if line_was_empty {
@@ -399,6 +463,7 @@ struct Compiler {
     pieces: Vec<CompiledPiece>,
     align_start: usize,
     offset: f32,
+    total_millis: usize,
 }
 
 impl Compiler {
@@ -412,10 +477,12 @@ impl Compiler {
             pieces: Vec::new(),
             align_start: 0,
             offset: 0.0,
+            total_millis: 0,
         }
     }
 
     fn push(&mut self, piece: ParserPiece) {
+        self.total_millis += piece.num_millis();
         let piece_width = piece.width(self.font_size);
         self.pieces.push(piece.compile(self.offset));
         self.offset += piece_width;
@@ -458,6 +525,7 @@ impl Compiler {
             font_size: self.font_size,
             line_height: self.line_height,
             width: self.actual_width,
+            total_millis: self.total_millis,
         }
     }
 }
@@ -499,14 +567,17 @@ impl ParserLine {
 struct ParserPiece {
     font: Font,
     color: Color4,
+    millis_per_char: usize,
     slant: f32,
-    text: String,
+    chars: Vec<u8>,
 }
 
 impl ParserPiece {
     fn width(&self, font_size: f32) -> f32 {
-        font_size * self.font.ratio() * (self.text.width() as f32)
+        font_size * self.font.ratio() * (self.chars.len() as f32)
     }
+
+    fn num_millis(&self) -> usize { self.millis_per_char * self.chars.len() }
 
     fn split(mut self, font_size: f32, remaining_width: f32)
              -> ParserPieceSplit {
@@ -518,45 +589,47 @@ impl ParserPiece {
                 usize
         };
 
-        if self.text.width() <= remaining_chars {
+        if self.chars.len() <= remaining_chars {
             return ParserPieceSplit::AllFits(self);
         }
 
-        let mut str_index: usize = 0;
+        let mut chars_index: usize = 0;
         let mut last_space: Option<usize> = None;
-        for chr in self.text.chars().take(remaining_chars) {
-            if chr == ' ' {
-                last_space = Some(str_index);
+        for &chr in &self.chars[..remaining_chars] {
+            if chr == b' ' {
+                last_space = Some(chars_index);
             }
-            str_index += chr.len_utf8();
+            chars_index += 1;
         }
         if let Some(index) = last_space {
             let rest = ParserPiece {
                 font: self.font,
                 color: self.color,
+                millis_per_char: self.millis_per_char,
                 slant: self.slant,
-                text: self.text[index..].trim_start_matches(' ').to_string(),
+                chars: trim_starting_spaces(&self.chars[index..]),
             };
-            self.text.truncate(index);
+            self.chars.truncate(index);
             return ParserPieceSplit::SomeFits(self, rest);
         }
 
         let mut first_space: Option<usize> = None;
-        for chr in self.text[str_index..].chars() {
-            if chr == ' ' {
-                first_space = Some(str_index);
+        for &chr in &self.chars[chars_index..] {
+            if chr == b' ' {
+                first_space = Some(chars_index);
                 break;
             }
-            str_index += chr.len_utf8();
+            chars_index += 1;
         }
         if let Some(index) = first_space {
             let rest = ParserPiece {
                 font: self.font,
                 color: self.color,
+                millis_per_char: self.millis_per_char,
                 slant: self.slant,
-                text: self.text[index..].trim_start_matches(' ').to_string(),
+                chars: trim_starting_spaces(&self.chars[index..]),
             };
-            self.text.truncate(index);
+            self.chars.truncate(index);
             return ParserPieceSplit::NoneFits(self, Some(rest));
         }
         return ParserPieceSplit::NoneFits(self, None);
@@ -567,10 +640,20 @@ impl ParserPiece {
             offset,
             font: self.font,
             color: self.color,
+            millis_per_char: self.millis_per_char,
             slant: self.slant,
-            text: self.text,
+            chars: self.chars,
         }
     }
+}
+
+fn trim_starting_spaces(chars: &[u8]) -> Vec<u8> {
+    for (index, &chr) in chars.iter().enumerate() {
+        if chr != b' ' {
+            return chars[index..].to_vec();
+        }
+    }
+    return chars.to_vec();
 }
 
 //===========================================================================//
@@ -595,21 +678,21 @@ enum ParserAlign {
 #[cfg(test)]
 mod tests {
     use super::Paragraph;
+    use std::char;
     use tachy::font::Font;
     use tachy::save::Prefs;
 
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn get_lines(paragraph: &Paragraph) -> Vec<String> {
-        paragraph
-            .lines
-            .iter()
-            .map(|line| {
-                     let mut text = String::new();
-                     for piece in line.pieces.iter() {
-                         text.push_str(&piece.text);
-                     }
-                     text.trim_end_matches(' ').to_string()
-                 })
-            .collect()
+        paragraph.lines.iter().map(|line| {
+            let mut text = String::new();
+            for piece in line.pieces.iter() {
+                text.push_str(&piece.chars.iter().map(|&chr| {
+                    char::from_u32(chr as u32).unwrap()
+                }).collect::<String>());
+            }
+            text.trim_end_matches(' ').to_string()
+        }).collect()
     }
 
     #[test]

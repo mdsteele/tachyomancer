@@ -61,7 +61,10 @@ fn intro_cutscene() -> CutsceneScript {
         sn::talk(Portrait::Lisa, (0, 0), "Hello, world!"),
         sn::talk(Portrait::Lisa, (-50, -60), "This seems to be working well."),
         sn::talk(Portrait::Lisa, (-90, 90), "\
-            Hello, Commander $(YOURNAME)!\n\nLorem ipsum dolor sit amet, \
+            Hello, Commander $'YOURNAME'...\n\
+            $(1000)Y$(0)OU$(1000) $(0)HAVE$(100) $(0)GOT$(1000) $(0)TO$(100) \
+            $(0)BE$(100) $(0)KIDDING$(100) $(0)ME!$(1500) $(30)\n\n\
+            Lorem ipsum dolor sit amet, \
             consectetur adipiscing elit, sed do eiusmod tempor incididunt ut \
             labore et dolore magna aliqua.  Ut enim ad minim veniam, quis \
             nostrud exercitation ullamco laboris nisi ut aliquip ex ea \

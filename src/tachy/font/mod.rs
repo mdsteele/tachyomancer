@@ -92,23 +92,26 @@ impl FontData {
 
     pub fn ratio(&self) -> f32 { self.ratio }
 
-    pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, alignment: Align,
+    pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, align: Align,
                 start: (f32, f32), text: &str) {
-        self.draw_style(matrix,
-                        height,
-                        alignment,
-                        start,
-                        &Color4::WHITE,
-                        0.0,
-                        text);
+        let color = &Color4::WHITE;
+        let slant = 0.0;
+        self.draw_style(matrix, height, align, start, color, slant, text);
     }
 
     pub fn draw_style(&self, matrix: &Matrix4<f32>, height: f32,
-                      alignment: Align, start: (f32, f32), color: &Color4,
+                      align: Align, start: (f32, f32), color: &Color4,
                       slant: f32, text: &str) {
+        let chars: Vec<u8> = text.chars().map(|chr| chr as u8).collect();
+        self.draw_chars(matrix, height, align, start, color, slant, &chars);
+    }
+
+    pub fn draw_chars(&self, matrix: &Matrix4<f32>, height: f32,
+                      align: Align, start: (f32, f32), color: &Color4,
+                      slant: f32, chars: &[u8]) {
         self.texture.bind();
         let size = (self.ratio * height, height);
-        self.shader.draw(matrix, size, alignment, start, color, slant, text);
+        self.shader.draw(matrix, size, align, start, color, slant, chars);
     }
 }
 
@@ -168,13 +171,12 @@ impl TextShader {
 
     fn draw(&self, matrix: &Matrix4<f32>, size: (f32, f32),
             alignment: Align, start: (f32, f32), color: &Color4, slant: f32,
-            text: &str) {
+            chars: &[u8]) {
         self.program.bind();
         self.varray.bind();
         self.color.set(color);
         self.slant.set(&slant);
 
-        let chars: Vec<u32> = text.chars().map(|c| c as u32).collect();
         let num_chars = chars.len();
         let mut shift = match alignment {
             Align::TopLeft => Vector2::new(0.0, 0.0),
@@ -191,8 +193,9 @@ impl TextShader {
         let mut offset = 0;
         while offset < num_chars {
             let stride = (num_chars - offset).min(MAX_CHARS);
-            (&mut array[..stride])
-                .copy_from_slice(&chars[offset..(offset + stride)]);
+            for i in 0..stride {
+                array[i] = chars[offset + i] as u32;
+            }
             self.text.set(&array);
             let mvp = matrix * Matrix4::trans2(start.0, start.1) *
                 Matrix4::scale2(size.0, size.1) *

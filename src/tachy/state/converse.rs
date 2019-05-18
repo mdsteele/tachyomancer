@@ -23,9 +23,17 @@ use tachy::save::{Conversation, Profile, Puzzle};
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[allow(dead_code)]
 pub enum Portrait {
+    Andrei = 0,
+    Cara,
+    Eirene,
     Esra,
+    Henry,
     Lisa,
+    Liu,
+    Purge,
+    Trevor,
 }
 
 //===========================================================================//
@@ -70,7 +78,14 @@ impl ConversationBubble {
             .done()?;
         builder.puzzle(profile, Puzzle::TutorialOr)?;
         builder.you("\"How's that look?\"");
-        builder.esra("Congrats!");
+        builder.lisa("Congrats!");
+        builder.liu("Heyo, congrats!");
+        builder.eirene("${Alien}Congrats");
+        builder.trevor("Ah, good.");
+        builder.andrei("My congratuations to you!");
+        builder.henry("'Grats!");
+        builder.cara("Wow, that was great!");
+        builder.purge("WE'LL GET YOU NEXT TIME, HUMANS");
         Ok(())
     }
 
@@ -146,7 +161,23 @@ impl ConversationBuilder {
         self.bubbles.push(ConversationBubble::Cutscene(cutscene));
     }
 
+    fn andrei(&mut self, text: &str) { self.npc(Portrait::Andrei, text); }
+
+    fn cara(&mut self, text: &str) { self.npc(Portrait::Cara, text); }
+
+    fn eirene(&mut self, text: &str) { self.npc(Portrait::Eirene, text); }
+
     fn esra(&mut self, text: &str) { self.npc(Portrait::Esra, text); }
+
+    fn henry(&mut self, text: &str) { self.npc(Portrait::Henry, text); }
+
+    fn lisa(&mut self, text: &str) { self.npc(Portrait::Lisa, text); }
+
+    fn liu(&mut self, text: &str) { self.npc(Portrait::Liu, text); }
+
+    fn purge(&mut self, text: &str) { self.npc(Portrait::Purge, text); }
+
+    fn trevor(&mut self, text: &str) { self.npc(Portrait::Trevor, text); }
 
     fn npc(&mut self, portrait: Portrait, text: &str) {
         self.bubbles

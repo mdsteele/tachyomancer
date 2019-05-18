@@ -37,6 +37,7 @@ fn main() {
     converter.font_to_texture("inconsolata-bold");
     converter.font_to_texture("inconsolata-regular");
     converter.generate_chip_icons();
+    converter.generate_portraits_texture();
     converter.svg_to_png(&PathBuf::from("src/tachy/gui/cursor.svg"),
                          &PathBuf::from("texture/cursor.png"),
                          icns::PixelFormat::RGBA);
@@ -59,6 +60,11 @@ const DIST_SPREAD: usize = 6;
 const CHIP_ICON_SIZE: usize = 64;
 const CHIP_TEXTURE_COLS: usize = 8;
 const CHIP_TEXTURE_ROWS: usize = 8;
+
+const PORTRAIT_WIDTH: usize = 68;
+const PORTRAIT_HEIGHT: usize = 85;
+const PORTRAITS_TEXTURE_WIDTH: usize = 256;
+const PORTRAITS_TEXTURE_HEIGHT: usize = 256;
 
 struct Converter {
     build_script_timestamp: SystemTime,
@@ -150,7 +156,6 @@ impl Converter {
     fn generate_chip_icons(&self) {
         // Convert chip icon SVGs to PNGs:
         let svg_dir = PathBuf::from("src/tachy/texture/chip");
-        let mut latest_timestamp = self.build_script_timestamp;
         let mut png_paths = Vec::<PathBuf>::new();
         let mut icon_names = Vec::<String>::new();
         for entry in svg_dir.read_dir().unwrap() {
@@ -165,59 +170,19 @@ impl Converter {
                 self.svg_to_png(&svg_path,
                                 &png_relpath,
                                 icns::PixelFormat::Alpha);
-            let png_timestamp =
-                png_path.metadata().unwrap().modified().unwrap();
-            latest_timestamp = latest_timestamp.max(png_timestamp);
             png_paths.push(png_path);
             icon_names.push(capitalize(svg_name.to_str().unwrap()));
         }
-
-        // Check if the output PNG file is already up-to-date:
-        let texture_relpath = PathBuf::from("texture/chip_icons.png");
-        let texture_path = self.out_dir.join(&texture_relpath);
-        if texture_path.is_file() {
-            let texture_timestamp =
-                texture_path.metadata().unwrap().modified().unwrap();
-            if texture_timestamp >= latest_timestamp {
-                eprintln!("Up-to-date: {:?}", texture_relpath);
-                return;
-            }
-        }
-        eprintln!("Generating: {:?}", texture_relpath);
-        self.create_parent_dir(&texture_path);
+        png_paths.sort();
 
         // Combine icon PNGs into a single texture PNG:
-        png_paths.sort();
-        let texture_width = CHIP_ICON_SIZE * CHIP_TEXTURE_COLS;
-        let texture_height = CHIP_ICON_SIZE * CHIP_TEXTURE_ROWS;
-        let mut texture_data = vec![0u8; texture_width * texture_height];
-        for (index, png_path) in png_paths.iter().enumerate() {
-            let texture_col = index % CHIP_TEXTURE_COLS;
-            let texture_row = index / CHIP_TEXTURE_COLS;
-            let png_file = File::open(&png_path).unwrap();
-            let icon = icns::Image::read_png(png_file).unwrap();
-            let icon = icon.convert_to(icns::PixelFormat::Alpha);
-            assert_eq!(icon.width() as usize, CHIP_ICON_SIZE);
-            assert_eq!(icon.height() as usize, CHIP_ICON_SIZE);
-            let icon_data = icon.data();
-            for y in 0..CHIP_ICON_SIZE {
-                let src_start = y * CHIP_ICON_SIZE;
-                let src_slice = &icon_data[src_start..
-                                               (src_start + CHIP_ICON_SIZE)];
-                let dst_start = texture_row * texture_width * CHIP_ICON_SIZE +
-                    texture_col * CHIP_ICON_SIZE +
-                    y * texture_width;
-                let dst_slice =
-                    &mut texture_data[dst_start..(dst_start + CHIP_ICON_SIZE)];
-                dst_slice.copy_from_slice(src_slice);
-            }
-        }
-        let texture_image = icns::Image::from_data(icns::PixelFormat::Gray,
-                                                   texture_width as u32,
-                                                   texture_height as u32,
-                                                   texture_data)
-            .unwrap();
-        texture_image.write_png(File::create(&texture_path).unwrap()).unwrap();
+        self.sprite_images((CHIP_ICON_SIZE, CHIP_ICON_SIZE),
+                           icns::PixelFormat::Alpha,
+                           &png_paths,
+                           (CHIP_ICON_SIZE * CHIP_TEXTURE_COLS,
+                            CHIP_ICON_SIZE * CHIP_TEXTURE_ROWS),
+                           icns::PixelFormat::Gray,
+                           &PathBuf::from("texture/chip_icons.png"));
 
         // Generate ChipIcon enum:
         icon_names.sort();
@@ -232,6 +197,85 @@ impl Converter {
         }
         writeln!(icon_rs, "    Blank = {},", icon_names.len()).unwrap();
         writeln!(icon_rs, "}}").unwrap();
+    }
+
+    fn generate_portraits_texture(&self) {
+        let png_dir = PathBuf::from("src/tachy/texture/portrait");
+        let mut png_paths = Vec::<PathBuf>::new();
+        for entry in png_dir.read_dir().unwrap() {
+            let png_path = entry.unwrap().path();
+            if png_path.extension() != Some("png".as_ref()) {
+                continue;
+            }
+            png_paths.push(png_path);
+        }
+        png_paths.sort();
+        self.sprite_images((PORTRAIT_WIDTH, PORTRAIT_HEIGHT),
+                           icns::PixelFormat::Gray,
+                           &png_paths,
+                           (PORTRAITS_TEXTURE_WIDTH,
+                            PORTRAITS_TEXTURE_HEIGHT),
+                           icns::PixelFormat::Gray,
+                           &PathBuf::from("texture/portraits.png"));
+    }
+
+    fn sprite_images(&self, (png_width, png_height): (usize, usize),
+                     png_format: icns::PixelFormat, png_paths: &[PathBuf],
+                     (texture_width, texture_height): (usize, usize),
+                     texture_format: icns::PixelFormat,
+                     texture_relpath: &Path) {
+        // Find the latest input timestamp:
+        let mut latest_timestamp = self.build_script_timestamp;
+        for png_path in png_paths.iter() {
+            let png_timestamp =
+                png_path.metadata().unwrap().modified().unwrap();
+            latest_timestamp = latest_timestamp.max(png_timestamp);
+        }
+
+        // Check whether the output file is already up-to-date:
+        let texture_path = self.out_dir.join(texture_relpath);
+        if texture_path.is_file() {
+            let texture_timestamp =
+                texture_path.metadata().unwrap().modified().unwrap();
+            if texture_timestamp >= latest_timestamp {
+                eprintln!("Up-to-date: {:?}", texture_relpath);
+                return;
+            }
+        }
+        eprintln!("Generating: {:?}", texture_relpath);
+        self.create_parent_dir(&texture_path);
+
+        // Combine the input PNGs into a single texture PNG:
+        let mut texture_data = vec![0u8; texture_width * texture_height];
+        let num_texture_cols = texture_width / png_width;
+        for (index, png_path) in png_paths.iter().enumerate() {
+            let texture_col = index % num_texture_cols;
+            let texture_row = index / num_texture_cols;
+            let png_file = File::open(&png_path).unwrap();
+            let mut png_image = icns::Image::read_png(png_file).unwrap();
+            if png_image.pixel_format() != png_format {
+                png_image = png_image.convert_to(png_format);
+            }
+            assert_eq!(png_image.width() as usize, png_width);
+            assert_eq!(png_image.height() as usize, png_height);
+            let png_data = png_image.data();
+            for y in 0..png_height {
+                let src_start = y * png_width;
+                let src_slice = &png_data[src_start..(src_start + png_width)];
+                let dst_start = texture_row * texture_width * png_height +
+                    texture_col * png_width +
+                    y * texture_width;
+                let dst_slice = &mut texture_data[dst_start..
+                                                      (dst_start + png_width)];
+                dst_slice.copy_from_slice(src_slice);
+            }
+        }
+        let texture_image = icns::Image::from_data(texture_format,
+                                                   texture_width as u32,
+                                                   texture_height as u32,
+                                                   texture_data)
+            .unwrap();
+        texture_image.write_png(File::create(texture_path).unwrap()).unwrap();
     }
 
     fn svg_to_png(&self, svg_path: &Path, png_relpath: &Path,

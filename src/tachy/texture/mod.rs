@@ -28,6 +28,10 @@ const CHIP_ICONS_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/texture/chip_icons.png"));
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+const PORTRAITS_PNG_DATA: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/texture/portraits.png"));
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 const WIRE_TEXTURE1D_DATA: &[u8; 256] = &[
     // 0-bit (4 pixels):
     192, 128, 0, 0, 0, 0, 128, 192,
@@ -66,6 +70,7 @@ const WIRE_TEXTURE1D_DATA: &[u8; 256] = &[
 pub struct Textures {
     brushed_metal: Texture2D,
     chip_icons: Texture2D,
+    portraits: Texture2D,
     wire: Texture1D,
 }
 
@@ -75,10 +80,13 @@ impl Textures {
                                                  BRUSHED_METAL_JPEG_DATA)?;
         let chip_icons = Texture2D::from_png("texture/chip_icons",
                                              CHIP_ICONS_PNG_DATA)?;
+        let portraits = Texture2D::from_png("texture/portraits",
+                                            PORTRAITS_PNG_DATA)?;
         let wire = Texture1D::new_red(WIRE_TEXTURE1D_DATA)?;
         Ok(Textures {
                brushed_metal,
                chip_icons,
+               portraits,
                wire,
            })
     }
@@ -86,6 +94,8 @@ impl Textures {
     pub fn brushed_metal(&self) -> &Texture2D { &self.brushed_metal }
 
     pub fn chip_icons(&self) -> &Texture2D { &self.chip_icons }
+
+    pub fn portraits(&self) -> &Texture2D { &self.portraits }
 
     pub fn wire(&self) -> &Texture1D { &self.wire }
 }

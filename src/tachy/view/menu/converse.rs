@@ -46,8 +46,8 @@ const CUTSCENE_BUBBLE_HEIGHT: i32 = 50;
 
 const MORE_BUTTON_HEIGHT: i32 = 30;
 
-const PORTRAIT_HEIGHT: i32 = 75;
-const PORTRAIT_WIDTH: i32 = 60;
+const PORTRAIT_HEIGHT: i32 = 85;
+const PORTRAIT_WIDTH: i32 = 68;
 
 const PUZZLE_BUBBLE_HEIGHT: i32 = 50;
 
@@ -478,21 +478,13 @@ impl BubbleView for NpcSpeechBubbleView {
         resources.shaders().solid().fill_rect(matrix, color, rect);
 
         // Draw portrait:
-        let portrait_rect = Rect::new(self.rect.x + BUBBLE_INNER_MARGIN,
-                                      self.rect.y + BUBBLE_INNER_MARGIN,
-                                      PORTRAIT_WIDTH,
-                                      PORTRAIT_HEIGHT);
-        let portrait_rect = portrait_rect.as_f32();
-        let color = Color3::new(0.3, 0.5, 0.3);
-        resources.shaders().solid().fill_rect(matrix, color, portrait_rect);
-        resources.fonts().roman().draw(matrix,
-                                       BUBBLE_FONT_SIZE,
-                                       Align::MidCenter,
-                                       (portrait_rect.x +
-                                            0.5 * portrait_rect.width,
-                                        portrait_rect.y +
-                                            0.5 * portrait_rect.height),
-                                       &format!("{:?}", self.portrait));
+        let portrait_left_top = Point2::new(self.rect.x + BUBBLE_INNER_MARGIN,
+                                            self.rect.y + BUBBLE_INNER_MARGIN);
+        resources.textures().portraits().bind();
+        resources
+            .shaders()
+            .portrait()
+            .draw(matrix, self.portrait as u32, portrait_left_top.as_f32());
 
         // Draw paragraph:
         let left = (self.rect.x + PORTRAIT_WIDTH +

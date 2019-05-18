@@ -18,9 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 mod port;
+mod portrait;
 mod ui;
 
 pub use self::port::PortShader;
+pub use self::portrait::PortraitShader;
 pub use self::ui::UiShader;
 use cgmath::{Matrix4, Vector2, Vector4};
 use tachy::geom::{Color3, Color4, MatrixExt, Rect};
@@ -47,6 +49,7 @@ pub struct Shaders {
     board: BoardShader,
     chip: ChipShader,
     port: PortShader,
+    portrait: PortraitShader,
     solid: SolidShader,
     ui: UiShader,
     wire: WireShader,
@@ -70,6 +73,8 @@ impl Shaders {
 
         let port = PortShader::new()?;
 
+        let portrait = PortraitShader::new()?;
+
         let solid_vert =
             Shader::new(ShaderType::Vertex, "solid.vert", SOLID_VERT_CODE)?;
         let solid_frag =
@@ -90,6 +95,7 @@ impl Shaders {
             board,
             chip,
             port,
+            portrait,
             solid,
             ui,
             wire,
@@ -102,6 +108,8 @@ impl Shaders {
     pub fn chip(&self) -> &ChipShader { &self.chip }
 
     pub fn port(&self) -> &PortShader { &self.port }
+
+    pub fn portrait(&self) -> &PortraitShader { &self.portrait }
 
     pub fn solid(&self) -> &SolidShader { &self.solid }
 

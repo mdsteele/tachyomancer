@@ -20,6 +20,7 @@
 use super::common::ModeChange;
 use std::time::Instant;
 use tachy::gui::{Event, Window};
+use tachy::save::MenuSection;
 use tachy::state::{Cutscene, GameState};
 use tachy::view::{BeginAction, BeginView};
 
@@ -37,6 +38,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         debug_log!("Creating profile {:?}", name);
                         match state.create_or_load_profile(name) {
                             Ok(()) => {
+                                state.set_menu_section(MenuSection::Messages);
                                 state.set_cutscene(Cutscene::Intro.script());
                                 return ModeChange::Next;
                             }

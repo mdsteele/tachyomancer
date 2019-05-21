@@ -201,6 +201,13 @@ impl GameState {
         }
     }
 
+    pub fn reset_current_conversation_progress(&mut self) {
+        if let Some(ref mut profile) = self.profile {
+            let conv = profile.current_conversation();
+            profile.reset_conversation_progress(conv);
+        }
+    }
+
     pub fn is_conversation_unlocked(&self, conv: Conversation) -> bool {
         match self.profile.as_ref() {
             Some(profile) => profile.is_conversation_unlocked(conv),

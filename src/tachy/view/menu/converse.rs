@@ -103,6 +103,13 @@ impl ConverseView {
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
                     state: &mut GameState)
                     -> Option<ConverseAction> {
+        match event {
+            Event::Debug(key, _) if key == "resetconv" => {
+                state.reset_current_conversation_progress();
+                self.bubbles_list.reset(state);
+            }
+            _ => {}
+        }
         if let Some(conv) =
             self.conv_list.on_event(event, ui, &state.current_conversation())
         {
@@ -237,6 +244,13 @@ impl BubblesListView {
             }
         }
         return None;
+    }
+
+    fn reset(&mut self, state: &GameState) {
+        self.bubbles.clear();
+        self.num_bubbles_shown = 0;
+        self.more_button = None;
+        self.update_conversation(state);
     }
 
     fn update_conversation(&mut self, state: &GameState) {

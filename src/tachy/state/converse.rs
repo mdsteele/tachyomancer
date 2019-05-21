@@ -51,86 +51,150 @@ impl ConversationBubble {
                     -> Vec<ConversationBubble> {
         let mut builder = ConversationBuilder::new(conv, profile);
         let _ = match conv {
-            Conversation::WakeUp => {
-                ConversationBubble::make_wake_up(profile, &mut builder)
-            }
+            Conversation::WakeUp => make_wake_up(profile, &mut builder),
             Conversation::RestorePower => {
-                ConversationBubble::make_restore_power(profile, &mut builder)
+                make_restore_power(profile, &mut builder)
             }
         };
         builder.build()
     }
+}
 
-    fn make_wake_up(profile: &Profile, builder: &mut ConversationBuilder)
-                    -> Result<(), ()> {
-        builder.cutscene(Cutscene::Intro);
-        builder.esra("Hello, Commander $'YOURNAME'!\n\nLorem ipsum dolor sit \
-                      amet, consectetur adipiscing elit, sed do eiusmod \
-                      tempor incididunt ut labore et dolore magna \
-                      aliqua.  Ut enim ad minim veniam, quis \
-                      nostrud exercitation ullamco laboris nisi ut \
-                      aliquip ex ea commodo consequat.");
-        builder
-            .choice(profile, "greeting")
-            .option("hello", "\"Hello to you, too.\"")
-            .option("confused", "\"Huh?  Where am I?\"")
-            .option("silent", "(Say nothing)")
-            .done()?;
-        builder.puzzle(profile, Puzzle::TutorialOr)?;
-        builder.you("\"How's that look?\"");
-        builder.lisa("Congrats!");
-        builder.liu("Heyo, congrats!");
-        builder.eirene("${Alien}Congrats");
-        builder.trevor("Ah, good.");
-        builder.andrei("My congratuations to you!");
-        builder.henry("'Grats!");
-        builder.cara("Wow, that was great!");
-        builder.purge("WE'LL GET YOU NEXT TIME, HUMANS");
-        Ok(())
+#[cfg_attr(rustfmt, rustfmt_skip)]
+fn make_wake_up(profile: &Profile, builder: &mut ConversationBuilder)
+                -> Result<(), ()> {
+    builder.cutscene(Cutscene::Intro);
+    builder.esra("Commander $'YOURNAME', please wake up.");
+    builder.you("\"Ow, my head...what happened?\"");
+    builder.esra("I'm glad you're awake, Commander.  Your help is required.");
+    builder.you("\"Huh?  Who am I talking to?\"");
+    builder.esra("This is the Emergency Situation Response AI built into the \
+                  Odyssey's main computer.");
+    builder.you("\"What!?  The ESRA's been activated?  That must mean that \
+                 things are $/really$/ bad...\"");
+    builder.esra("\
+        Indeed.  I will summarize the situation.  The Odyssey has been \
+        severely damaged.  Much of the crew is dead.  We seem to be in a \
+        stable orbit, but our location is unknown and our engines are \
+        inoperable.  There is no sign of the other convoy ships.");
+    builder.you("\"Where is the captain?\"");
+    builder.esra("\
+        Captain Jackson is alive and well, but still asleep in cryo, as are \
+        the other surviving crew members.  You are the first one I woke up.");
+    let should = builder
+        .choice(profile, "should")
+        .option("captain", "\"You should have woken the captain first.\"")
+        .option("what", "\"So what is it that you need me to to?\"")
+        .done()?;
+    if should == "captain" {
+        builder.esra("\
+            Due to the specifics of the situation, it was important that I \
+            start with you.  I will explain in a moment.");
+    } else {
+        builder.esra("\
+            A repair job that you alone of the surviving crew have the \
+            necessary qualifications to perform.  I will explain in a \
+            moment.");
     }
+    builder.esra("\
+        The ship is almost completely without power.  The primary LTF core \
+        has been destroyed, and the backup reactor is currently offline.  All \
+        but one of the solar panels were torn off, and the last one is stuck \
+        at the wrong angle because its actuator control board is fried.  We \
+        are collecting barely enough power to maintain minimal life support.  \
+        I had to conserve power for nine months to save up enough to safely \
+        thaw you.");
+    builder.you("\
+        \"Do you mean to tell me that we've been adrift for nine months?  \
+        This was supposed to be a three-month mission!  Why hasn't anyone \
+        come looking for us?\"");
+    builder.esra("\
+        That is a good question, and I do not know the answer.  For now, I \
+        believe our goal should be wake the other crew members and attempt to \
+        repair the ship.  To do that, we will first need to restore power.  \
+        And to do that, I need you, specifically.  You are the only surviving \
+        crew member with any control circuit engineering experience.");
+    let remember = builder
+        .choice(profile, "remember")
+        .option("sure", "\"Sure, I think I can handle that.\"")
+        .option("how",
+                "\"I haven't done that stuff in ages; I'm not sure I remember \
+                 how.\"")
+        .option("hurts", "\"Did I mention how much my head hurts right now?\"")
+        .done()?;
+    if remember == "sure" {
+        builder.esra("\
+            Your confidence is encouraging.  Nonetheless, I suggest working \
+            through the tutorial programs in my databanks, just to make \
+            sure.  I will send them over to your terminal.");
+    } else if remember == "how" {
+        builder.esra("\
+            Don't worry, it will come back to you.  There are tutorial \
+            programs in my databanks that will get you back up to speed in \
+            no time.  I will send them over to your terminal.");
+    } else {
+        builder.esra("\
+            There should be some painkillers in the medical supply cabinet.  \
+            Unfortunately, said cabinet got blown into space when the LTF \
+            core exploded.  Hopefully, your headache will subside on its \
+            own.\n\n\
+            In the meantime, there are tutorial programs in my databanks that \
+            should help get you back up to speed.  I will send them over to \
+            your terminal.");
+    }
+    builder.puzzle(profile, Puzzle::TutorialOr)?;
+    builder.you("\"How's that look?\"");
+    Ok(())
+}
 
-    fn make_restore_power(profile: &Profile,
-                          builder: &mut ConversationBuilder)
-                          -> Result<(), ()> {
-        builder.esra("Now that you've been trained on the basics of circuit \
-                      design, the first task we need to accomplish is \
-                      restoring additional ship power.  That will allow us \
-                      to safely rouse additional crew members from cryosleep, \
-                      and to start bringing other ship systems back online.");
-        builder.esra("The LTF core is badly damaged, and we simply don't \
-                      have the raw materials available to repair it.  The \
-                      backup reactor is probably repairable, but not without \
-                      physical access to it, and because of the damaged \
-                      sections of the ship, you can't safely reach it from \
-                      where you are now.");
-        builder.esra("Therefore, my recommendation is that you begin by \
-                      repairing the heliostat controller so we can get proper \
-                      output from the few remaining solar panels.  We won't \
-                      get very much power from that, but it's a start.");
-        let choice = builder
-            .choice(profile, "start")
-            .option("sgtm", "Sounds like a good plan.")
-            .option("how-much", "How much power will we get?")
-            .done()?;
-        if choice == "how-much" {
-            builder.esra("Probably enough to rouse one additional crew \
-                          member from cryosleep, and provide life support \
-                          for the both of you, but not much more than that.");
-        } else {
-            builder.esra("As I said, it's a start.");
-        }
-        builder.esra("The heliostat position sensors are still working, and \
-                      can automatically calculate the optimal mirror \
-                      position at any given time.  However, the motor control \
-                      board that actually moves the mirror into that position \
-                      needs to be replaced.");
-        builder.esra("I'll upload the relevant specifications to your \
-                      terminal.  Let me know when you have a working design, \
-                      and then we can get it installed.");
-        builder.puzzle(profile, Puzzle::AutomateHeliostat)?;
-        builder.esra("Excellent work.");
-        Ok(())
+fn make_restore_power(profile: &Profile, builder: &mut ConversationBuilder)
+                      -> Result<(), ()> {
+    builder.esra("Now that you've been trained on the basics of circuit \
+                  design, the first task we need to accomplish is \
+                  restoring additional ship power.  That will allow us \
+                  to safely rouse additional crew members from cryosleep, \
+                  and to start bringing other ship systems back online.");
+    builder.esra("The LTF core is badly damaged, and we simply don't \
+                  have the raw materials available to repair it.  The \
+                  backup reactor is probably repairable, but not without \
+                  physical access to it, and because of the damaged \
+                  sections of the ship, you can't safely reach it from \
+                  where you are now.");
+    builder.esra("Therefore, my recommendation is that you begin by \
+                  repairing the heliostat controller so we can get proper \
+                  output from the few remaining solar panels.  We won't \
+                  get very much power from that, but it's a start.");
+    let choice = builder
+        .choice(profile, "start")
+        .option("sgtm", "Sounds like a good plan.")
+        .option("how-much", "How much power will we get?")
+        .done()?;
+    if choice == "how-much" {
+        builder.esra("Probably enough to rouse one additional crew \
+                      member from cryosleep, and provide life support \
+                      for the both of you, but not much more than that.");
+    } else {
+        builder.esra("As I said, it's a start.");
     }
+    builder.esra("The heliostat position sensors are still working, and \
+                  can automatically calculate the optimal mirror \
+                  position at any given time.  However, the motor control \
+                  board that actually moves the mirror into that position \
+                  needs to be replaced.");
+    builder.esra("I'll upload the relevant specifications to your \
+                  terminal.  Let me know when you have a working design, \
+                  and then we can get it installed.");
+    builder.puzzle(profile, Puzzle::AutomateHeliostat)?;
+    builder.esra("Excellent work.");
+    builder.lisa("Congrats!");
+    builder.liu("Heyo, congrats!");
+    builder.eirene("${Alien}Congrats");
+    builder.trevor("Ah, good.");
+    builder.andrei("My congratuations to you!");
+    builder.henry("'Grats!");
+    builder.cara("Wow, that was great!");
+    builder.purge("WE'LL GET YOU NEXT TIME, HUMANS");
+    Ok(())
 }
 
 //===========================================================================//
@@ -194,7 +258,8 @@ impl ConversationBuilder {
     }
 
     fn you(&mut self, text: &str) {
-        self.bubbles.push(ConversationBubble::YouSpeech(text.to_string()));
+        self.bubbles
+            .push(ConversationBubble::YouSpeech(format!("$>{}", text)));
     }
 }
 

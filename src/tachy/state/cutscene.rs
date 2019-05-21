@@ -25,21 +25,6 @@ use tachy::gui::Sound;
 
 //===========================================================================//
 
-pub trait Theater {
-    fn add_talk(&mut self, portrait: Portrait, pos: (i32, i32), format: &str)
-                -> i32;
-
-    fn talk_is_done(&self, tag: i32) -> bool;
-
-    fn remove_talk(&mut self, tag: i32);
-
-    fn play_sound(&mut self, sound: Sound);
-
-    fn set_background_color(&mut self, color: Color3);
-}
-
-//===========================================================================//
-
 #[derive(Clone, Copy)]
 pub enum Cutscene {
     Intro,
@@ -56,34 +41,45 @@ impl Cutscene {
 #[cfg_attr(rustfmt, rustfmt_skip)]
 fn intro_cutscene() -> CutsceneScript {
     CutsceneScript::new(sn::seq(vec![
-        sn::background(0.5, 0.0, 0.0),
+        sn::background(0.1, 0.1, 0.1),
         sn::wait(1.0),
-        sn::talk(Portrait::Lisa, (0, 0), "Hello, world!"),
-        sn::talk(Portrait::Lisa, (-50, -60), "This seems to be working well."),
-        sn::talk(Portrait::Lisa, (-90, 90), "\
-            Hello, Commander $'YOURNAME'...\n\
-            $(1000)Y$(0)OU$(1000) $(0)HAVE$(100) $(0)GOT$(1000) $(0)TO$(100) \
-            $(0)BE$(100) $(0)KIDDING$(100) $(0)ME!$(1500) $(30)\n\n\
-            Lorem ipsum dolor sit amet, \
-            consectetur adipiscing elit, sed do eiusmod tempor incididunt ut \
-            labore et dolore magna aliqua.  Ut enim ad minim veniam, quis \
-            nostrud exercitation ullamco laboris nisi ut aliquip ex ea \
-            commodo consequat."),
-        sn::background(0.0, 0.5, 0.0),
         sn::par(vec![
+            sn::talk(Portrait::Esra, (-40, -50), "Wake up..."),
+            sn::sound(Sound::ButtonHover), // TODO: heartbeat
+        ]),
+        sn::wait(0.5),
+        sn::talk(Portrait::Lisa, (0, 0), "\
+            Commander $'YOURNAME', is it?  I'm Captain Lisa Jackson.  It's \
+            good to have you on as my first officer on this mission."),
+        sn::wait(1.0),
+        sn::par(vec![
+            sn::talk(Portrait::Esra, (40, 50), "Wake up, $'YOURNAME'..."),
             sn::seq(vec![
-                sn::wait(0.5),
-                sn::sound(Sound::Beep),
-                sn::background(0.0, 0.5, 0.5),
-            ]),
-            sn::seq(vec![
-                sn::pause(),
-                sn::background(0.0, 0.0, 0.5),
-                sn::wait(0.5),
-                sn::sound(Sound::Beep),
+                sn::sound(Sound::ButtonHover), // TODO: heartbeat
+                sn::wait(1.0),
+                sn::sound(Sound::ButtonHover), // TODO: heartbeat
             ]),
         ]),
+        sn::wait(0.5),
+        sn::talk(Portrait::Lisa, (0, 0), "\
+            I have a feeling that your skills will come in handy."),
+        sn::wait(1.0),
     ]))
+}
+
+//===========================================================================//
+
+pub trait Theater {
+    fn add_talk(&mut self, portrait: Portrait, pos: (i32, i32), format: &str)
+                -> i32;
+
+    fn talk_is_done(&self, tag: i32) -> bool;
+
+    fn remove_talk(&mut self, tag: i32);
+
+    fn play_sound(&mut self, sound: Sound);
+
+    fn set_background_color(&mut self, color: Color3);
 }
 
 //===========================================================================//
@@ -128,8 +124,6 @@ mod sn {
         SceneNode::Background(Color3::new(r, g, b), false)
     }
 
-    pub(super) fn pause() -> SceneNode { SceneNode::Pause(false) }
-
     pub(super) fn sound(sound: Sound) -> SceneNode {
         SceneNode::Sound(sound, false)
     }
@@ -159,7 +153,6 @@ pub(self) enum SceneNode {
     Seq(VecDeque<SceneNode>),
     Par(Vec<SceneNode>),
     Background(Color3, bool),
-    Pause(bool),
     Sound(Sound, bool),
     Talk(TalkPhase),
     Wait(f64),
@@ -174,7 +167,6 @@ impl SceneNode {
             &SceneNode::Par(ref nodes) => {
                 nodes.iter().any(|node| node.is_paused())
             }
-            &SceneNode::Pause(done) => !done,
             &SceneNode::Talk(TalkPhase::Paused(_)) => true,
             _ => false,
         }
@@ -191,9 +183,6 @@ impl SceneNode {
                 for node in nodes.iter_mut() {
                     node.unpause();
                 }
-            }
-            &mut SceneNode::Pause(ref mut done) => {
-                *done = true;
             }
             &mut SceneNode::Talk(ref mut phase) => {
                 if let TalkPhase::Paused(tag) = *phase {
@@ -220,9 +209,6 @@ impl SceneNode {
             }
             &mut SceneNode::Background(color, ref mut done) => {
                 theater.set_background_color(color);
-                *done = true;
-            }
-            &mut SceneNode::Pause(ref mut done) => {
                 *done = true;
             }
             &mut SceneNode::Sound(_, ref mut done) => {
@@ -280,9 +266,6 @@ impl SceneNode {
                     *done = true;
                 }
                 Some(elapsed)
-            }
-            &mut SceneNode::Pause(done) => {
-                if done { Some(elapsed) } else { None }
             }
             &mut SceneNode::Sound(sound, ref mut done) => {
                 if !*done {

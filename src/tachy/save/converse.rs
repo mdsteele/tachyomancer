@@ -174,6 +174,15 @@ impl ConversationProgress {
         }
     }
 
+    pub fn reset_progress(&mut self) {
+        if self.progress() > 0 {
+            self.data.complete = None;
+            self.data.progress = None;
+            self.data.choices = None;
+            self.needs_save = true;
+        }
+    }
+
     pub fn is_complete(&self) -> bool { self.data.complete.unwrap_or(false) }
 
     pub fn mark_complete(&mut self) {

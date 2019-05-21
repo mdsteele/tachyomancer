@@ -193,6 +193,12 @@ impl Profile {
         self.conversation_progress_mut(conv).increment_progress();
     }
 
+    pub fn reset_conversation_progress(&mut self, conv: Conversation) {
+        if let Some(progress) = self.conversations.get_mut(&conv) {
+            progress.reset_progress();
+        }
+    }
+
     pub fn is_conversation_unlocked(&self, conv: Conversation) -> bool {
         self.conversations.contains_key(&conv) ||
             self.eval_prereq(conv.prereq())

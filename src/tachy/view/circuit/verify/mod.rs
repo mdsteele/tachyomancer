@@ -60,6 +60,9 @@ impl VerificationTray {
             Puzzle::TutorialXor => {
                 self::tutorial::TutorialXorVerifyView::new(right_bottom)
             }
+            Puzzle::TutorialMux => {
+                self::tutorial::TutorialMuxVerifyView::new(right_bottom)
+            }
             Puzzle::AutomateHeliostat => {
                 self::heliostat::HeliostatVerifyView::new(right_bottom)
             }

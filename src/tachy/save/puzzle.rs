@@ -37,6 +37,7 @@ pub enum PuzzleKind {
 pub enum Puzzle {
     TutorialOr,
     TutorialXor,
+    TutorialMux,
     AutomateHeliostat,
     AutomateReactor,
     AutomateRobotArm,
@@ -47,6 +48,7 @@ pub enum Puzzle {
 const ALL_PUZZLES: &[Puzzle] = &[
     Puzzle::TutorialOr,
     Puzzle::TutorialXor,
+    Puzzle::TutorialMux,
     Puzzle::AutomateHeliostat,
     Puzzle::AutomateReactor,
     Puzzle::AutomateRobotArm,
@@ -64,6 +66,7 @@ impl FromStr for Puzzle {
             "AutomateRobotArm" => Ok(Puzzle::AutomateRobotArm),
             "SandboxBehavior" => Ok(Puzzle::SandboxBehavior),
             "SandboxEvent" => Ok(Puzzle::SandboxEvent),
+            "TutorialMux" => Ok(Puzzle::TutorialMux),
             "TutorialOr" => Ok(Puzzle::TutorialOr),
             "TutorialXor" => Ok(Puzzle::TutorialXor),
             _ => Err(()),
@@ -133,6 +136,27 @@ impl Puzzle {
                           be 1 if exactly one input is 1, but not both.\n\
                         * $!Note that ($/a$/ XOR $/b$/) is equivalent to \
                           ($/a$/ OR $/b$/) AND NOT ($/a$/ AND $/b$/).",
+                }
+            }
+            Puzzle::TutorialMux => {
+                &PuzzleData {
+                    title: "2-Bit MUX",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 2-bit $*MUX$* using packers, \
+                        unpackers, and other logic gates.\n\n\
+                        Once this task is completed, you will be able to use \
+                        $*MUX$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct a 2-bit MUX.\n\
+                        * $!The output should be the value of $*in0$* if \
+                          $*ctrl$* is 0, or of $*in1$* if $*ctrl$* is 1.\n\
+                        * $!If $/a$/ and $/b$/ are the inputs and $/c$/ is \
+                          the control, then a MUX is    \
+                          ($/a$/ AND NOT $/c$/) OR ($/b$/ AND $/c$/).",
                 }
             }
             Puzzle::AutomateHeliostat => {

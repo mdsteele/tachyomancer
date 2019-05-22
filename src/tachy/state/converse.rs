@@ -52,6 +52,7 @@ impl ConversationBubble {
         let mut builder = ConversationBuilder::new(conv, profile);
         let _ = match conv {
             Conversation::WakeUp => make_wake_up(profile, &mut builder),
+            Conversation::Basics => make_basics(profile, &mut builder),
             Conversation::RestorePower => {
                 make_restore_power(profile, &mut builder)
             }
@@ -142,8 +143,65 @@ fn make_wake_up(profile: &Profile, builder: &mut ConversationBuilder)
             should help get you back up to speed.  I will send them over to \
             your terminal.");
     }
+    Ok(())
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+fn make_basics(profile: &Profile, builder: &mut ConversationBuilder)
+               -> Result<(), ()> {
+    builder.esra("\
+        Before we begin repairs, it's worth taking a few minutes to \
+        refamiliarize yourself with the circuit fabricator.  In addition, \
+        with our cargo bays ruptured, we have lost all our supplies of a \
+        number of key circuit components that we'll need for later repairs, \
+        so I'm going to walk you through resynthesizing some of these from \
+        scratch, starting with a basic OR gate.");
+    builder.esra("\
+        Fortunately, we still have large stocks of AND and NOT gates, and we \
+        can mass-fabricate OR gates from those.  Follow the datalink below, \
+        and I'll walk you through it.");
     builder.puzzle(profile, Puzzle::TutorialOr)?;
-    builder.you("\"How's that look?\"");
+    builder.esra("\
+        Excellent.  I'll start the FAB running on that design, and soon we'll \
+        have all the OR gates we could want.");
+    builder.you("\"That wasn't so bad.  What's next?\"");
+    builder.esra("\
+        There are still other components we're missing, so let's do a little \
+        more practice.  Follow the datalink below, and I will walk you though \
+        building a XOR gate.");
+    builder.puzzle(profile, Puzzle::TutorialXor)?;
+    builder.esra("\
+        Great.  There is one last exercise I want you to do before we start \
+        the real work.  There's a very important component we need to \
+        synthesize, and a very important concept you'll need to be familiar \
+        with.  The component is a multiplexer, or $YMUX$D, and the concept \
+        is $Ymulti-bit wires$D.  I will explain.");
+    builder.esra("\
+        So far, you've been working with 1-bit wires, which can carry two \
+        different values: zero or one.  However, by using special chips which \
+        I will make available in the next exercise, you can $Ypack$D two \
+        1-bit wires into a single 2-bit wire, or $Yunpack$D a 2-bit wire into \
+        two 1-bit wires.  A 2-bit wire can carry 2x2=4 different values, from \
+        0 to 3.  You can further pack two 2-bit wires into a 4-bit wire, \
+        which can carry 2x2x2x2=16 different values from, 0 to 15.  And so \
+        on.");
+    builder.esra("\
+        Most chips you'll use can work with any size of wires.  For example, \
+        a NOT chip will invert each bit on the wire separately, regardless of \
+        how many bits the wire has.  And later, when you work with arithmatic \
+        chips, you'll be able to add or subtract values for any size of \
+        wire.");
+    builder.esra("\
+        That brings us to the MUX, which allows you to select between two \
+        input values, of any size, based on a 1-bit control wire.  In this \
+        exercise, I'm going to have you build a MUX for 2-bit inputs, using \
+        packers and unpackers.  But once you're done, you'll be able to use \
+        MUXes of any size.");
+    builder.puzzle(profile, Puzzle::TutorialMux)?;
+    builder.esra("\
+        Wonderful.  With our stocks of basic chips replenished, and your \
+        skills in good shape, I think we are ready now to begin repairs.  I \
+        will send over the details of your first task.");
     Ok(())
 }
 

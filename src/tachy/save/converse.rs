@@ -42,11 +42,15 @@ pub enum Prereq {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum Conversation {
     WakeUp,
+    Basics,
     RestorePower,
 }
 
-const ALL_CONVERSATIONS: &[Conversation] =
-    &[Conversation::WakeUp, Conversation::RestorePower];
+const ALL_CONVERSATIONS: &[Conversation] = &[
+    Conversation::WakeUp,
+    Conversation::Basics,
+    Conversation::RestorePower,
+];
 
 impl Conversation {
     /// Returns the first conversation in the game, which is always unlocked.
@@ -58,6 +62,7 @@ impl Conversation {
     pub fn title(self) -> &'static str {
         match self {
             Conversation::WakeUp => "Wakeup Call",
+            Conversation::Basics => "Circuit Basics",
             Conversation::RestorePower => "Restoring Power",
         }
     }
@@ -65,8 +70,9 @@ impl Conversation {
     pub fn prereq(self) -> &'static Prereq {
         match self {
             Conversation::WakeUp => &Prereq::All(&[]),
+            Conversation::Basics => &Prereq::Complete(Conversation::WakeUp),
             Conversation::RestorePower => {
-                &Prereq::Complete(Conversation::WakeUp)
+                &Prereq::Complete(Conversation::Basics)
             }
         }
     }

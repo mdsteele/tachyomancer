@@ -292,3 +292,161 @@ impl PuzzleEval for TutorialXorEval {
 }
 
 //===========================================================================//
+
+pub const MUX_INTERFACES: &[Interface] = &[
+    Interface {
+        name: "Input0",
+        description: "The input to use when the control value is 0.",
+        side: Direction::West,
+        pos: InterfacePosition::Center,
+        ports: &[
+            InterfacePort {
+                name: "in0",
+                description: "",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Two,
+            },
+        ],
+    },
+    Interface {
+        name: "Input1",
+        description: "The input to use when the control value is 1.",
+        side: Direction::South,
+        pos: InterfacePosition::Center,
+        ports: &[
+            InterfacePort {
+                name: "in1",
+                description: "",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Two,
+            },
+        ],
+    },
+    Interface {
+        name: "Control",
+        description: "Indicates which input should be sent to the output.",
+        side: Direction::North,
+        pos: InterfacePosition::Center,
+        ports: &[
+            InterfacePort {
+                name: "ctrl",
+                description: "",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::One,
+            },
+        ],
+    },
+    Interface {
+        name: "Output",
+        description: "Should be the value of $*in0$* if $*ctrl$* is 0, or \
+                      of $*in1$* if $*ctrl$* is 1.",
+        side: Direction::East,
+        pos: InterfacePosition::Center,
+        ports: &[
+            InterfacePort {
+                name: "out",
+                description: "",
+                flow: PortFlow::Recv,
+                color: PortColor::Behavior,
+                size: WireSize::Two,
+            },
+        ],
+    },
+];
+
+pub const MUX_BUBBLES: &[(TutorialBubblePosition, &str)] = &[]; // TODO
+
+//===========================================================================//
+
+pub struct TutorialMuxEval {
+    table_values: Vec<u64>,
+    input0_wire: usize,
+    input1_wire: usize,
+    control_wire: usize,
+    output_wire: usize,
+    output_port: (Coords, Direction),
+}
+
+impl TutorialMuxEval {
+    pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
+        &["in0", "in1", "ctrl", "out"];
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    pub const EXPECTED_TABLE_VALUES: &'static [u64] = &[
+        1, 2, 0, 1,
+        1, 2, 1, 2,
+        3, 1, 0, 3,
+        3, 1, 1, 1,
+        0, 2, 0, 0,
+        0, 2, 1, 2,
+        2, 3, 0, 2,
+        2, 3, 1, 3,
+    ];
+
+    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
+               -> TutorialMuxEval {
+        debug_assert_eq!(slots.len(), 4);
+        debug_assert_eq!(slots[0].len(), 1);
+        debug_assert_eq!(slots[1].len(), 1);
+        debug_assert_eq!(slots[2].len(), 1);
+        debug_assert_eq!(slots[3].len(), 1);
+        TutorialMuxEval {
+            table_values: TutorialMuxEval::EXPECTED_TABLE_VALUES.to_vec(),
+            input0_wire: slots[0][0].1,
+            input1_wire: slots[1][0].1,
+            control_wire: slots[2][0].1,
+            output_wire: slots[3][0].1,
+            output_port: slots[3][0].0,
+        }
+    }
+
+    pub fn table_values(&self) -> &[u64] { &self.table_values }
+}
+
+impl PuzzleEval for TutorialMuxEval {
+    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
+                       -> Option<EvalScore> {
+        let expected = TutorialMuxEval::EXPECTED_TABLE_VALUES;
+        let start = (time_step as usize) * 4;
+        if start >= expected.len() {
+            Some(EvalScore::WireLength)
+        } else {
+            let slice = &expected[start..];
+            state.send_behavior(self.input0_wire, slice[0] as u32);
+            state.send_behavior(self.input1_wire, slice[1] as u32);
+            state.send_behavior(self.control_wire, slice[2] as u32);
+            None
+        }
+    }
+
+    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
+                     -> Vec<EvalError> {
+        let input0 = state.recv_behavior(self.input0_wire).0;
+        let input1 = state.recv_behavior(self.input1_wire).0;
+        let control = state.recv_behavior(self.control_wire).0;
+        let expected = if control == 0 { input0 } else { input1 };
+        let actual = state.recv_behavior(self.output_wire).0;
+        self.table_values[4 * (time_step as usize) + 3] = actual as u64;
+        if actual != expected {
+            let error = EvalError {
+                time_step,
+                port: Some(self.output_port),
+                message: format!("Expected output {} for inputs {} and {} \
+                                  with control {}, but output was {}",
+                                 expected,
+                                 input0,
+                                 input1,
+                                 control,
+                                 actual),
+            };
+            vec![error]
+        } else {
+            vec![]
+        }
+    }
+}
+
+//===========================================================================//

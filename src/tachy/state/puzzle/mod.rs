@@ -28,8 +28,8 @@ mod tutorial;
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
-pub use self::tutorial::{TutorialBubblePosition, TutorialOrEval,
-                         TutorialXorEval};
+pub use self::tutorial::{TutorialBubblePosition, TutorialMuxEval,
+                         TutorialOrEval, TutorialXorEval};
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
 use tachy::save::Puzzle;
@@ -50,6 +50,7 @@ impl PuzzleExt for Puzzle {
         match self {
             Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
             Puzzle::TutorialXor => self::tutorial::XOR_INTERFACES,
+            Puzzle::TutorialMux => self::tutorial::MUX_INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
@@ -64,6 +65,7 @@ impl PuzzleExt for Puzzle {
         match self {
             Puzzle::TutorialOr => self::tutorial::OR_BUBBLES,
             Puzzle::TutorialXor => self::tutorial::XOR_BUBBLES,
+            Puzzle::TutorialMux => self::tutorial::MUX_BUBBLES,
             _ => &[],
         }
     }
@@ -77,6 +79,7 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
     match puzzle {
         Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
         Puzzle::TutorialXor => Box::new(TutorialXorEval::new(slots)),
+        Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::AutomateReactorEval::new(slots))

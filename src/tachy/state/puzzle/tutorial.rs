@@ -217,7 +217,14 @@ pub const XOR_INTERFACES: &[Interface] = &[
     },
 ];
 
-pub const XOR_BUBBLES: &[(TutorialBubblePosition, &str)] = &[]; // TODO
+pub const XOR_BUBBLES: &[(TutorialBubblePosition, &str)] =
+    &[
+        (TutorialBubblePosition::Bounds(Direction::North),
+         "Drag sideways from a wire to split it."),
+        (TutorialBubblePosition::Bounds(Direction::South),
+         "Perpendicular wires can cross over each other.  Click on a \
+          crossing to toggle whether the wires are connected."),
+    ];
 
 //===========================================================================//
 
@@ -357,7 +364,14 @@ pub const MUX_INTERFACES: &[Interface] = &[
     },
 ];
 
-pub const MUX_BUBBLES: &[(TutorialBubblePosition, &str)] = &[]; // TODO
+pub const MUX_BUBBLES: &[(TutorialBubblePosition, &str)] =
+    &[
+        (TutorialBubblePosition::Bounds(Direction::North),
+         "Drag the edges of the board to resize it."),
+        (TutorialBubblePosition::Bounds(Direction::South),
+         "Drag from any grid cell corner in the board to select part of the \
+          circuit and cut/copy/paste."),
+    ];
 
 //===========================================================================//
 

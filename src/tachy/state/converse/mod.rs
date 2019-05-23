@@ -17,28 +17,31 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod check;
-mod chip;
-mod converse;
-mod cutscene;
-mod edit;
-mod eval;
-mod game;
-mod port;
-mod puzzle;
-mod size;
+mod chapter1;
+mod types;
 
-pub use self::check::WireColor;
-pub use self::chip::ChipExt;
-pub use self::converse::{ConversationBubble, ConversationExt, Portrait};
-pub use self::cutscene::{Cutscene, CutsceneScript, Theater};
-pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
-pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore};
-pub use self::game::GameState;
-pub use self::port::{PortColor, PortFlow, PortSpec};
-pub use self::puzzle::{HeliostatEval, Interface, PuzzleExt, RobotArmEval,
-                       TutorialBubblePosition, TutorialMuxEval,
-                       TutorialOrEval, TutorialXorEval};
-pub use self::size::WireSize;
+pub use self::types::{ConversationBubble, Portrait};
+use self::types::ConversationBuilder;
+use tachy::save::{Conversation, Profile};
+
+//===========================================================================//
+
+pub trait ConversationExt {
+    fn bubbles(&self, profile: &Profile) -> Vec<ConversationBubble>;
+}
+
+impl ConversationExt for Conversation {
+    fn bubbles(&self, profile: &Profile) -> Vec<ConversationBubble> {
+        let mut builder = ConversationBuilder::new(*self, profile);
+        let _ = match *self {
+            Conversation::WakeUp => chapter1::wake_up(profile, &mut builder),
+            Conversation::Basics => chapter1::basics(profile, &mut builder),
+            Conversation::RestorePower => {
+                chapter1::restore_power(profile, &mut builder)
+            }
+        };
+        builder.build()
+    }
+}
 
 //===========================================================================//

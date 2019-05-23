@@ -27,7 +27,8 @@ use tachy::geom::{AsFloat, Color3, MatrixExt, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources, Ui};
 use tachy::save::{Conversation, Prefs, Profile, Puzzle};
-use tachy::state::{ConversationBubble, Cutscene, GameState, Portrait};
+use tachy::state::{ConversationBubble, ConversationExt, Cutscene, GameState,
+                   Portrait};
 
 //===========================================================================//
 
@@ -296,7 +297,7 @@ impl BubblesListView {
         let bubble_width = self.rect.width -
             (SCROLLBAR_MARGIN + SCROLLBAR_WIDTH);
         let mut bubble_top: i32 = 0;
-        let bubble_seq = ConversationBubble::sequence(conv, profile);
+        let bubble_seq = conv.bubbles(profile);
         let mut bubble_views = Vec::with_capacity(bubble_seq.len());
         for bubble in bubble_seq {
             if bubble_top > 0 {

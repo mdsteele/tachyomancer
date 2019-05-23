@@ -17,53 +17,15 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::cutscene::Cutscene;
-use tachy::save::{Conversation, Profile, Puzzle};
+use super::super::cutscene::Cutscene;
+use super::types::ConversationBuilder;
+use tachy::save::{Profile, Puzzle};
 
 //===========================================================================//
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[allow(dead_code)]
-pub enum Portrait {
-    Andrei = 0,
-    Cara,
-    Eirene,
-    Esra,
-    Henry,
-    Lisa,
-    Liu,
-    Purge,
-    Trevor,
-}
-
-//===========================================================================//
-
-pub enum ConversationBubble {
-    YouSpeech(String),
-    YouChoice(String, Vec<(String, String)>),
-    NpcSpeech(Portrait, String),
-    Cutscene(Cutscene),
-    Puzzle(Puzzle),
-}
-
-impl ConversationBubble {
-    pub fn sequence(conv: Conversation, profile: &Profile)
-                    -> Vec<ConversationBubble> {
-        let mut builder = ConversationBuilder::new(conv, profile);
-        let _ = match conv {
-            Conversation::WakeUp => make_wake_up(profile, &mut builder),
-            Conversation::Basics => make_basics(profile, &mut builder),
-            Conversation::RestorePower => {
-                make_restore_power(profile, &mut builder)
-            }
-        };
-        builder.build()
-    }
-}
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-fn make_wake_up(profile: &Profile, builder: &mut ConversationBuilder)
-                -> Result<(), ()> {
+pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
+                      -> Result<(), ()> {
     builder.cutscene(Cutscene::Intro);
     builder.esra("Commander $'YOURNAME', please wake up.");
     builder.you("\"Ow, my head...what happened?\"");
@@ -146,9 +108,11 @@ fn make_wake_up(profile: &Profile, builder: &mut ConversationBuilder)
     Ok(())
 }
 
+//===========================================================================//
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
-fn make_basics(profile: &Profile, builder: &mut ConversationBuilder)
-               -> Result<(), ()> {
+pub(super) fn basics(profile: &Profile, builder: &mut ConversationBuilder)
+                     -> Result<(), ()> {
     builder.esra("\
         Before we begin repairs, it's worth taking a few minutes to \
         refamiliarize yourself with the circuit fabricator.  In addition, \
@@ -205,8 +169,11 @@ fn make_basics(profile: &Profile, builder: &mut ConversationBuilder)
     Ok(())
 }
 
-fn make_restore_power(profile: &Profile, builder: &mut ConversationBuilder)
-                      -> Result<(), ()> {
+//===========================================================================//
+
+pub(super) fn restore_power(profile: &Profile,
+                            builder: &mut ConversationBuilder)
+                            -> Result<(), ()> {
     builder.esra("Now that you've been trained on the basics of circuit \
                   design, the first task we need to accomplish is \
                   restoring additional ship power.  That will allow us \
@@ -253,130 +220,6 @@ fn make_restore_power(profile: &Profile, builder: &mut ConversationBuilder)
     builder.cara("Wow, that was great!");
     builder.purge("WE'LL GET YOU NEXT TIME, HUMANS");
     Ok(())
-}
-
-//===========================================================================//
-
-struct ConversationBuilder {
-    conv: Conversation,
-    progress: usize,
-    bubbles: Vec<ConversationBubble>,
-}
-
-impl ConversationBuilder {
-    fn new(conv: Conversation, profile: &Profile) -> ConversationBuilder {
-        ConversationBuilder {
-            conv,
-            progress: profile.conversation_progress(conv),
-            bubbles: Vec::new(),
-        }
-    }
-
-    fn build(self) -> Vec<ConversationBubble> { self.bubbles }
-
-    fn choice<'a, 'b>(&'a mut self, profile: &'b Profile, key: &str)
-                      -> ChoiceBuilder<'a, 'b> {
-        ChoiceBuilder::new(self, profile, key)
-    }
-
-    fn cutscene(&mut self, cutscene: Cutscene) {
-        self.bubbles.push(ConversationBubble::Cutscene(cutscene));
-    }
-
-    fn andrei(&mut self, text: &str) { self.npc(Portrait::Andrei, text); }
-
-    fn cara(&mut self, text: &str) { self.npc(Portrait::Cara, text); }
-
-    fn eirene(&mut self, text: &str) { self.npc(Portrait::Eirene, text); }
-
-    fn esra(&mut self, text: &str) { self.npc(Portrait::Esra, text); }
-
-    fn henry(&mut self, text: &str) { self.npc(Portrait::Henry, text); }
-
-    fn lisa(&mut self, text: &str) { self.npc(Portrait::Lisa, text); }
-
-    fn liu(&mut self, text: &str) { self.npc(Portrait::Liu, text); }
-
-    fn purge(&mut self, text: &str) { self.npc(Portrait::Purge, text); }
-
-    fn trevor(&mut self, text: &str) { self.npc(Portrait::Trevor, text); }
-
-    fn npc(&mut self, portrait: Portrait, text: &str) {
-        self.bubbles
-            .push(ConversationBubble::NpcSpeech(portrait, text.to_string()));
-    }
-
-    fn puzzle(&mut self, profile: &Profile, puzzle: Puzzle) -> Result<(), ()> {
-        self.bubbles.push(ConversationBubble::Puzzle(puzzle));
-        if profile.is_puzzle_solved(puzzle) {
-            Ok(())
-        } else {
-            Err(())
-        }
-    }
-
-    fn you(&mut self, text: &str) {
-        self.bubbles
-            .push(ConversationBubble::YouSpeech(format!("$>{}", text)));
-    }
-}
-
-//===========================================================================//
-
-#[must_use = "must call done() on ChoiceBuilder"]
-struct ChoiceBuilder<'a, 'b> {
-    conversation: &'a mut ConversationBuilder,
-    profile: &'b Profile,
-    key: String,
-    choices: Vec<(String, String)>,
-}
-
-impl<'a, 'b> ChoiceBuilder<'a, 'b> {
-    fn new(conversation: &'a mut ConversationBuilder, profile: &'b Profile,
-           key: &str)
-           -> ChoiceBuilder<'a, 'b> {
-        ChoiceBuilder {
-            conversation,
-            profile,
-            key: key.to_string(),
-            choices: Vec::new(),
-        }
-    }
-
-    fn option(mut self, value: &str, label: &str) -> ChoiceBuilder<'a, 'b> {
-        self.choices.push((value.to_string(), label.to_string()));
-        self
-    }
-
-    fn done(self) -> Result<String, ()> {
-        debug_assert!(!self.choices.is_empty());
-        let choice =
-            self.profile
-                .get_conversation_choice(self.conversation.conv, &self.key);
-        if choice.is_some() ||
-            self.conversation.progress > self.conversation.bubbles.len()
-        {
-            let (value, label) = self.get_choice(choice);
-            let bubble = ConversationBubble::YouSpeech(label);
-            self.conversation.bubbles.push(bubble);
-            Ok(value)
-        } else {
-            let bubble = ConversationBubble::YouChoice(self.key, self.choices);
-            self.conversation.bubbles.push(bubble);
-            Err(())
-        }
-    }
-
-    fn get_choice(&self, opt_choice: Option<&str>) -> (String, String) {
-        if let Some(choice) = opt_choice {
-            for &(ref value, ref label) in self.choices.iter() {
-                if value == choice {
-                    return (value.clone(), label.clone());
-                }
-            }
-        }
-        return self.choices[0].clone();
-    }
 }
 
 //===========================================================================//

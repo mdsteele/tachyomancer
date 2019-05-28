@@ -153,14 +153,14 @@
   </g>
   <!-- Wire (soldering iron) -->
   <g transform="translate(0, 72)">
-    <g transform="translate(1.0, 2.0)">
-      <path d="M 2,2 L 6,3 13,10 L 15,8 L 16,12 L 20,17 L 21,21
-               L 17,20 L 12,16 L 8,15 L 10,13 L 3,6 Z"
+    <g transform="translate(0.25, 1.5)">
+      <path d="M 2,2 L 6,3 13,10 L 15,8 L 16,12 L 21,18
+               A 2.12 2.12 0 0 1 18,21 L 12,16 L 8,15 L 10,13 L 3,6 Z"
             fill="none" stroke="#000" stroke-opacity="0.3" stroke-width="1.5"/>
     </g>
     <g stroke="#eee" stroke-width="1.5">
-      <path d="M 13,10 L 15,8 L 16,12 L 20,17 L 21,21
-               L 17,20 L 12,16 L 8,15 L 10,13"
+      <path d="M 2,2 L 6,3 13,10 L 15,8 L 16,12 L 21,18
+               A 2.12 2.12 0 0 1 18,21 L 12,16 L 8,15 L 10,13 L 3,6 Z"
             fill="#030"/>
       <path d="M 2,2 L 6,3 L 13,10 L 10,13 L 3,6 Z" fill="#788"/>
     </g>

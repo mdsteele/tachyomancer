@@ -77,14 +77,17 @@ impl ConversationBuilder {
         self.bubbles.push(ConversationBubble::Cutscene(cutscene));
     }
 
+    #[allow(dead_code)]
     pub(super) fn andrei(&mut self, text: &str) {
         self.npc(Portrait::Andrei, text);
     }
 
+    #[allow(dead_code)]
     pub(super) fn cara(&mut self, text: &str) {
         self.npc(Portrait::Cara, text);
     }
 
+    #[allow(dead_code)]
     pub(super) fn eirene(&mut self, text: &str) {
         self.npc(Portrait::Eirene, text);
     }
@@ -101,12 +104,15 @@ impl ConversationBuilder {
         self.npc(Portrait::Lisa, text);
     }
 
+    #[allow(dead_code)]
     pub(super) fn liu(&mut self, text: &str) { self.npc(Portrait::Liu, text); }
 
+    #[allow(dead_code)]
     pub(super) fn purge(&mut self, text: &str) {
         self.npc(Portrait::Purge, text);
     }
 
+    #[allow(dead_code)]
     pub(super) fn trevor(&mut self, text: &str) {
         self.npc(Portrait::Trevor, text);
     }

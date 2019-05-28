@@ -37,7 +37,7 @@ pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore};
 pub use self::game::GameState;
 pub use self::port::{PortColor, PortFlow, PortSpec};
 pub use self::puzzle::{HeliostatEval, Interface, PuzzleExt, RobotArmEval,
-                       TutorialBubblePosition, TutorialMuxEval,
+                       SensorsEval, TutorialBubblePosition, TutorialMuxEval,
                        TutorialOrEval, TutorialXorEval};
 pub use self::size::WireSize;
 

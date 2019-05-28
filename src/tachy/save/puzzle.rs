@@ -40,6 +40,7 @@ pub enum Puzzle {
     TutorialMux,
     AutomateHeliostat,
     AutomateReactor,
+    AutomateSensors,
     AutomateRobotArm,
     SandboxBehavior,
     SandboxEvent,
@@ -51,6 +52,7 @@ const ALL_PUZZLES: &[Puzzle] = &[
     Puzzle::TutorialMux,
     Puzzle::AutomateHeliostat,
     Puzzle::AutomateReactor,
+    Puzzle::AutomateSensors,
     Puzzle::AutomateRobotArm,
     Puzzle::SandboxBehavior,
     Puzzle::SandboxEvent,
@@ -63,6 +65,7 @@ impl FromStr for Puzzle {
         match string {
             "AutomateHeliostat" => Ok(Puzzle::AutomateHeliostat),
             "AutomateReactor" => Ok(Puzzle::AutomateReactor),
+            "AutomateSensors" => Ok(Puzzle::AutomateSensors),
             "AutomateRobotArm" => Ok(Puzzle::AutomateRobotArm),
             "SandboxBehavior" => Ok(Puzzle::SandboxBehavior),
             "SandboxEvent" => Ok(Puzzle::SandboxEvent),
@@ -191,7 +194,20 @@ impl Puzzle {
                     description: "\
                         Manipulate the reactor's control rods to regulate \
                         the power output to the desired level.",
-                    instructions: "",
+                    instructions: "TODO",
+                }
+            }
+            Puzzle::AutomateSensors => {
+                &PuzzleData {
+                    title: "Main Sensors",
+                    kind: PuzzleKind::Automate,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (150, 150),
+                    description: "\
+                        Design a replacement signal amplifier for the main \
+                        sensor array.",
+                    instructions: "TODO",
                 }
             }
             Puzzle::AutomateRobotArm => {

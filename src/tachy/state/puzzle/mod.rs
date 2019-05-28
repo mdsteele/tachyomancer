@@ -23,11 +23,13 @@ mod reactor;
 mod rng;
 mod robotarm;
 mod sandbox;
+mod sensors;
 mod tutorial;
 
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
+pub use self::sensors::SensorsEval;
 pub use self::tutorial::{TutorialBubblePosition, TutorialMuxEval,
                          TutorialOrEval, TutorialXorEval};
 use super::eval::PuzzleEval;
@@ -53,6 +55,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::TutorialMux => self::tutorial::MUX_INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
+            Puzzle::AutomateSensors => self::sensors::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
@@ -83,6 +86,9 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::AutomateReactorEval::new(slots))
+        }
+        Puzzle::AutomateSensors => {
+            Box::new(self::sensors::SensorsEval::new(slots))
         }
         Puzzle::AutomateRobotArm => Box::new(RobotArmEval::new(slots)),
         Puzzle::SandboxBehavior => {

@@ -17,34 +17,39 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod chapter1;
-mod types;
-
-pub use self::types::{ConversationBubble, Portrait};
-use self::types::ConversationBuilder;
-use tachy::save::{Conversation, Profile};
+use super::shared::{FabricationTable, PuzzleVerifyView};
+use cgmath::{Matrix4, Point2};
+use tachy::geom::RectSize;
+use tachy::gui::Resources;
+use tachy::state::{CircuitEval, EvalError, SensorsEval};
 
 //===========================================================================//
 
-pub trait ConversationExt {
-    fn bubbles(&self, profile: &Profile) -> Vec<ConversationBubble>;
+pub struct SensorsVerifyView {
+    table: FabricationTable,
 }
 
-impl ConversationExt for Conversation {
-    fn bubbles(&self, profile: &Profile) -> Vec<ConversationBubble> {
-        let mut builder = ConversationBuilder::new(*self, profile);
-        let _ = match *self {
-            Conversation::WakeUp => chapter1::wake_up(profile, &mut builder),
-            Conversation::Basics => chapter1::basics(profile, &mut builder),
-            Conversation::RestorePower => {
-                chapter1::restore_power(profile, &mut builder)
-            }
-            Conversation::StepTwo => chapter1::step_two(profile, &mut builder),
-            Conversation::CaptainsCall => {
-                chapter1::captains_call(profile, &mut builder)
-            }
+impl SensorsVerifyView {
+    pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
+        let table = FabricationTable::new(right_bottom,
+                                          SensorsEval::TABLE_COLUMN_NAMES,
+                                          SensorsEval::EXPECTED_TABLE_VALUES);
+        Box::new(SensorsVerifyView { table })
+    }
+}
+
+impl PuzzleVerifyView for SensorsVerifyView {
+    fn size(&self) -> RectSize<i32> { self.table.size() }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+            circuit_eval: Option<&CircuitEval>) {
+        let (time_step, values, errors) = if let Some(eval) = circuit_eval {
+            let puzzle = eval.puzzle_eval::<SensorsEval>();
+            (Some(eval.time_step()), puzzle.table_values(), eval.errors())
+        } else {
+            (None, SensorsEval::EXPECTED_TABLE_VALUES, &[] as &[EvalError])
         };
-        builder.build()
+        self.table.draw(resources, matrix, time_step, values, errors);
     }
 }
 

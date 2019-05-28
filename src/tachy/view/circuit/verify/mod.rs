@@ -19,6 +19,7 @@
 
 mod heliostat;
 mod robotarm;
+mod sensors;
 mod shared;
 mod tutorial;
 
@@ -69,6 +70,9 @@ impl VerificationTray {
             Puzzle::AutomateReactor => {
                 // TODO: Make a verification view for AutomateReactor
                 self::shared::NullVerifyView::new()
+            }
+            Puzzle::AutomateSensors => {
+                self::sensors::SensorsVerifyView::new(right_bottom)
             }
             Puzzle::AutomateRobotArm => {
                 self::robotarm::RobotArmVerifyView::new(right_bottom)

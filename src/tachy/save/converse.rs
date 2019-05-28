@@ -44,12 +44,16 @@ pub enum Conversation {
     WakeUp,
     Basics,
     RestorePower,
+    StepTwo,
+    CaptainsCall,
 }
 
 const ALL_CONVERSATIONS: &[Conversation] = &[
     Conversation::WakeUp,
     Conversation::Basics,
     Conversation::RestorePower,
+    Conversation::StepTwo,
+    Conversation::CaptainsCall,
 ];
 
 impl Conversation {
@@ -64,6 +68,8 @@ impl Conversation {
             Conversation::WakeUp => "Wakeup Call",
             Conversation::Basics => "Circuit Basics",
             Conversation::RestorePower => "Restoring Power",
+            Conversation::StepTwo => "Step Two",
+            Conversation::CaptainsCall => "Captain's Call",
         }
     }
 
@@ -73,6 +79,20 @@ impl Conversation {
             Conversation::Basics => &Prereq::Complete(Conversation::WakeUp),
             Conversation::RestorePower => {
                 &Prereq::Complete(Conversation::Basics)
+            }
+            Conversation::StepTwo => {
+                &Prereq::Choice(Conversation::RestorePower,
+                                "who",
+                                "henry",
+                                &Prereq::Complete(Conversation::RestorePower),
+                                &Prereq::Any(&[]))
+            }
+            Conversation::CaptainsCall => {
+                &Prereq::Choice(Conversation::RestorePower,
+                                "who",
+                                "henry",
+                                &Prereq::Any(&[]),
+                                &Prereq::Complete(Conversation::RestorePower))
             }
         }
     }

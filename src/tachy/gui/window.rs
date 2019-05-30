@@ -27,6 +27,7 @@ use gl;
 use sdl2;
 use std::mem;
 use std::os::raw::c_void;
+use std::time::Instant;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, RectSize};
 
@@ -54,6 +55,8 @@ pub struct Window<'a> {
     options: WindowOptions,
     audio: AudioQueue,
     next_cursor: NextCursor,
+    last_clock_tick: Instant,
+    redraw_pending: bool,
     debug_counter: i32,
 }
 
@@ -144,6 +147,8 @@ impl<'a> Window<'a> {
             options,
             audio: AudioQueue::new(),
             next_cursor: NextCursor::new(),
+            last_clock_tick: Instant::now(),
+            redraw_pending: false,
             debug_counter: 0,
         };
         Ok(window)
@@ -173,19 +178,31 @@ impl<'a> Window<'a> {
         self.gui_context.sdl_context.mouse().show_cursor(visible);
     }
 
-    pub fn poll_event(&mut self) -> Option<Event> {
+    pub fn next_event(&mut self) -> Event {
+        if self.redraw_pending {
+            self.redraw_pending = false;
+            return Event::Redraw;
+        }
         loop {
-            if let Some(line) = self.gui_context.stdin_reader.pop_line() {
-                return Some(Event::new_debug(&line));
+            if cfg!(debug_assertions) {
+                if let Some(line) = self.gui_context.stdin_reader.pop_line() {
+                    return Event::new_debug(&line);
+                }
             }
             let pump = &mut self.gui_context.event_pump;
             match pump.poll_event() {
-                None => return None,
+                None => {
+                    let now = Instant::now();
+                    let elapsed = now.duration_since(self.last_clock_tick);
+                    self.last_clock_tick = now;
+                    self.redraw_pending = true;
+                    return Event::new_clock_tick(elapsed);
+                }
                 Some(sdl_event) => {
                     if let Some(event) = Event::from_sdl_event(sdl_event,
                                                                pump)
                     {
-                        return Some(event);
+                        return event;
                     }
                 }
             }

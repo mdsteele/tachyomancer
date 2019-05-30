@@ -18,7 +18,6 @@
 // +--------------------------------------------------------------------------+
 
 use super::common::ModeChange;
-use std::time::Instant;
 use tachy::gui::{Event, Window};
 use tachy::state::GameState;
 use tachy::view::{CircuitAction, CircuitView};
@@ -34,11 +33,16 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
         let allowed = grid.allowed_chips();
         CircuitView::new(window.size(), puzzle, allowed, state.prefs())
     };
-    let mut last_tick = Instant::now();
     loop {
-        match window.poll_event() {
-            Some(Event::Quit) => return ModeChange::Quit,
-            Some(event) => {
+        match window.next_event() {
+            Event::Quit => return ModeChange::Quit,
+            Event::Redraw => {
+                window.pump_audio();
+                view.draw(window.resources(), state.edit_grid().unwrap());
+                window.pump_video();
+                state.maybe_autosave_circuit();
+            }
+            event => {
                 match view.on_event(&event,
                                     &mut window.ui(),
                                     state.edit_grid_mut_and_prefs().unwrap()) {
@@ -60,25 +64,6 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     None => {}
                 }
                 window.pump_cursor();
-            }
-            None => {
-                let now = Instant::now();
-                let elapsed = now.duration_since(last_tick);
-                match view.on_event(&Event::new_clock_tick(elapsed),
-                                    &mut window.ui(),
-                                    state.edit_grid_mut_and_prefs().unwrap()) {
-                    Some(CircuitAction::Victory(area, score)) => {
-                        record_score(state, area, score);
-                    }
-                    Some(_) => unreachable!(),
-                    None => {}
-                }
-                window.pump_cursor();
-                last_tick = now;
-                window.pump_audio();
-                view.draw(window.resources(), state.edit_grid().unwrap());
-                window.pump_video();
-                state.maybe_autosave_circuit();
             }
         }
     }

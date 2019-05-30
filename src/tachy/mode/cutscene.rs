@@ -18,7 +18,6 @@
 // +--------------------------------------------------------------------------+
 
 use super::common::ModeChange;
-use std::time::Instant;
 use tachy::gui::{Event, Window};
 use tachy::state::GameState;
 use tachy::view::{CutsceneAction, CutsceneView};
@@ -36,12 +35,16 @@ fn run_internal(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.cutscene().is_some());
     let mut view = CutsceneView::new(window.size());
     view.init(&mut window.ui(), state.cutscene_mut_and_prefs().unwrap());
-    let mut last_tick = Instant::now();
     loop {
         let mut finished = false;
-        match window.poll_event() {
-            Some(Event::Quit) => return ModeChange::Quit,
-            Some(event) => {
+        match window.next_event() {
+            Event::Quit => return ModeChange::Quit,
+            Event::Redraw => {
+                window.pump_audio();
+                view.draw(window.resources(), state.cutscene().unwrap());
+                window.pump_video();
+            }
+            event => {
                 match view.on_event(&event,
                                     &mut window.ui(),
                                     state.cutscene_mut_and_prefs().unwrap()) {
@@ -49,23 +52,6 @@ fn run_internal(state: &mut GameState, window: &mut Window) -> ModeChange {
                     None => {}
                 }
                 window.pump_cursor();
-            }
-            None => {
-                let now = Instant::now();
-                let elapsed = now.duration_since(last_tick);
-                let action =
-                    view.on_event(&Event::new_clock_tick(elapsed),
-                                  &mut window.ui(),
-                                  state.cutscene_mut_and_prefs().unwrap());
-                match action {
-                    Some(CutsceneAction::Finished) => finished = true,
-                    None => {}
-                }
-                window.pump_cursor();
-                last_tick = now;
-                window.pump_audio();
-                view.draw(window.resources(), state.cutscene().unwrap());
-                window.pump_video();
             }
         }
         if finished {

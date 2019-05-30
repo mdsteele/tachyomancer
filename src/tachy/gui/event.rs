@@ -43,6 +43,7 @@ pub enum Event {
     MouseUp(MouseEventData),
     Multitouch(MultitouchEventData),
     Quit,
+    Redraw,
     Scroll(ScrollEventData),
     TextInput(String),
     Unfocus,

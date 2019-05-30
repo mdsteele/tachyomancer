@@ -18,7 +18,6 @@
 // +--------------------------------------------------------------------------+
 
 use super::common::ModeChange;
-use std::time::Instant;
 use tachy::gui::{Event, Window};
 use tachy::state::GameState;
 use tachy::view::{MenuAction, MenuView};
@@ -28,11 +27,15 @@ use tachy::view::{MenuAction, MenuView};
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
     let mut view = MenuView::new(window, state);
-    let mut last_tick = Instant::now();
     loop {
-        match window.poll_event() {
-            Some(Event::Quit) => return ModeChange::Quit,
-            Some(event) => {
+        match window.next_event() {
+            Event::Quit => return ModeChange::Quit,
+            Event::Redraw => {
+                window.pump_audio();
+                view.draw(window.resources(), state);
+                window.pump_video();
+            }
+            event => {
                 match view.on_event(&event, &mut window.ui(), state) {
                     Some(MenuAction::GoToPuzzle(puzzle)) => {
                         match state.unlock_puzzle(puzzle) {
@@ -164,18 +167,6 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     None => {}
                 }
                 window.pump_cursor();
-            }
-            None => {
-                let now = Instant::now();
-                let elapsed = now.duration_since(last_tick);
-                view.on_event(&Event::new_clock_tick(elapsed),
-                              &mut window.ui(),
-                              state);
-                window.pump_cursor();
-                last_tick = now;
-                window.pump_audio();
-                view.draw(window.resources(), state);
-                window.pump_video();
             }
         }
     }

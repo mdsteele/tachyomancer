@@ -186,6 +186,7 @@ impl TextShader {
             Align::BottomCenter => {
                 Vector2::new(-0.5 * (num_chars as f32), -1.0)
             }
+            Align::TopRight => Vector2::new(-(num_chars as f32), 0.0),
             Align::MidRight => Vector2::new(-(num_chars as f32), -0.5),
         };
 

@@ -27,7 +27,8 @@ use gl;
 use sdl2;
 use std::mem;
 use std::os::raw::c_void;
-use tachy::geom::RectSize;
+use tachy::font::Align;
+use tachy::geom::{AsFloat, Color4, RectSize};
 
 //===========================================================================//
 
@@ -53,6 +54,7 @@ pub struct Window<'a> {
     options: WindowOptions,
     audio: AudioQueue,
     next_cursor: NextCursor,
+    debug_counter: i32,
 }
 
 impl<'a> Window<'a> {
@@ -142,6 +144,7 @@ impl<'a> Window<'a> {
             options,
             audio: AudioQueue::new(),
             next_cursor: NextCursor::new(),
+            debug_counter: 0,
         };
         Ok(window)
     }
@@ -199,7 +202,23 @@ impl<'a> Window<'a> {
         self.gui_context.cursors.set(cursor);
     }
 
-    pub fn pump_video(&mut self) { self.sdl_window.gl_swap_window(); }
+    pub fn pump_video(&mut self) {
+        if cfg!(debug_assertions) {
+            let size = self.size().as_f32();
+            let matrix =
+                cgmath::ortho(0.0, size.width, size.height, 0.0, -1.0, 1.0);
+            let font = self.resources.fonts().roman();
+            font.draw_style(&matrix,
+                            20.0,
+                            Align::TopRight,
+                            (size.width - 5.0, 5.0),
+                            &Color4::WHITE,
+                            0.0,
+                            &format!("{:03}", self.debug_counter));
+            self.debug_counter = (self.debug_counter + 1) % 1000;
+        }
+        self.sdl_window.gl_swap_window();
+    }
 }
 
 //===========================================================================//

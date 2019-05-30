@@ -27,24 +27,67 @@ mod value;
 
 use self::data::{ChipData, localize};
 use super::eval::{ChipEval, CircuitInteraction};
-use super::port::{PortConstraint, PortDependency, PortFlow, PortSpec};
+use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
+                  PortSpec};
 use super::size::WireSize;
 use std::cell::RefCell;
 use std::rc::Rc;
 use tachy::geom::{Coords, Orientation};
-use tachy::save::ChipType;
+use tachy::save::{ChipType, Puzzle};
 
 //===========================================================================//
 
 pub trait ChipExt {
+    fn uses_events(&self) -> bool;
+
+    fn unlocked_by(&self) -> Option<Puzzle>;
+
     fn ports(&self, coords: Coords, orient: Orientation) -> Vec<PortSpec>;
+
     fn constraints(&self, coords: Coords, orient: Orientation)
                    -> Vec<PortConstraint>;
+
     fn dependencies(&self, coords: Coords, orient: Orientation)
                     -> Vec<PortDependency>;
 }
 
 impl ChipExt for ChipType {
+    fn uses_events(&self) -> bool {
+        chip_data(*self)
+            .ports
+            .iter()
+            .any(|&(_, color, _, _)| color == PortColor::Event)
+    }
+
+    fn unlocked_by(&self) -> Option<Puzzle> {
+        match *self {
+            ChipType::Const(_) => None,
+            ChipType::Display => None,
+            ChipType::Not => None,
+            ChipType::And => None,
+            ChipType::Or => Some(Puzzle::TutorialOr),
+            ChipType::Xor => Some(Puzzle::TutorialXor),
+            ChipType::Pack | ChipType::Unpack => Some(Puzzle::TutorialXor),
+            ChipType::Mux => Some(Puzzle::TutorialMux),
+            ChipType::Add | ChipType::Sub | ChipType::Mul => {
+                Some(Puzzle::TutorialMux)
+            }
+            ChipType::Cmp | ChipType::CmpEq | ChipType::Eq => {
+                Some(Puzzle::TutorialMux)
+            }
+            ChipType::Break => None,
+            ChipType::Button => None,
+            ChipType::Clock => None,
+            ChipType::Delay => None,
+            ChipType::Demux => None,
+            ChipType::Discard => None,
+            ChipType::Join => None,
+            ChipType::Latest => None,
+            ChipType::Ram => None,
+            ChipType::Sample => None,
+        }
+    }
+
     fn ports(&self, coords: Coords, orient: Orientation) -> Vec<PortSpec> {
         let size = self.size();
         chip_data(*self)

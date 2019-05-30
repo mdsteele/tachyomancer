@@ -88,8 +88,15 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         }
                     }
                     Some(MenuAction::NewCircuit) => {
-                        state.new_edit_grid();
-                        return ModeChange::Next;
+                        match state.new_edit_grid() {
+                            Ok(()) => return ModeChange::Next,
+                            Err(err) => {
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "create new circuit",
+                                                &err);
+                            }
+                        }
                     }
                     Some(MenuAction::RenameCircuit(name)) => {
                         match state.rename_current_circuit(name) {

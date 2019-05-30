@@ -26,7 +26,7 @@ use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gl::Stencil;
 use tachy::gui::{Cursor, Event, Resources, Ui};
-use tachy::save::{CHIP_CATEGORIES, ChipType, Puzzle};
+use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType};
 use tachy::shader::UiShader;
 
 //===========================================================================//
@@ -70,7 +70,7 @@ pub struct PartsTray {
 }
 
 impl PartsTray {
-    pub fn new(window_size: RectSize<i32>, puzzle: Puzzle,
+    pub fn new(window_size: RectSize<i32>, allowed: &ChipSet,
                tutorial_bubble: Option<TutorialBubble>)
                -> PartsTray {
         let num_columns = if window_size.width < 1000 {
@@ -94,7 +94,7 @@ impl PartsTray {
             let allowed_ctypes: Vec<ChipType> = ctypes
                 .iter()
                 .cloned()
-                .filter(|ctype| ctype.is_allowed_in(puzzle))
+                .filter(|&ctype| allowed.contains(ctype))
                 .collect();
             if !allowed_ctypes.is_empty() {
                 num_parts += allowed_ctypes.len();

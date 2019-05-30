@@ -32,13 +32,16 @@ pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::tutorial::{TutorialBubblePosition, TutorialMuxEval,
                          TutorialOrEval, TutorialXorEval};
+use super::chip::ChipExt;
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
-use tachy::save::Puzzle;
+use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType, Profile, Puzzle,
+                  PuzzleKind};
 
 //===========================================================================//
 
 pub trait PuzzleExt {
+    fn allowed_chips(&self, profile: &Profile) -> ChipSet;
     fn interfaces(&self) -> &'static [Interface];
     fn tutorial_bubbles(
         &self)
@@ -48,6 +51,18 @@ pub trait PuzzleExt {
 //===========================================================================//
 
 impl PuzzleExt for Puzzle {
+    fn allowed_chips(&self, profile: &Profile) -> ChipSet {
+        let mut allowed = ChipSet::new();
+        for &(_, ctypes) in CHIP_CATEGORIES.iter() {
+            for &ctype in ctypes.iter() {
+                if is_chip_allowed_in(ctype, *self, profile) {
+                    allowed.insert(ctype);
+                }
+            }
+        }
+        allowed
+    }
+
     fn interfaces(&self) -> &'static [Interface] {
         match self {
             Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
@@ -73,6 +88,29 @@ impl PuzzleExt for Puzzle {
         }
     }
 }
+
+pub fn is_chip_allowed_in(ctype: ChipType, puzzle: Puzzle, profile: &Profile)
+                          -> bool {
+    if !puzzle.allows_events() && ctype.uses_events() {
+        return false;
+    }
+    match puzzle.kind() {
+        PuzzleKind::Tutorial | PuzzleKind::Fabricate |
+        PuzzleKind::Automate => {
+            if ctype.is_interactive() {
+                return false;
+            }
+        }
+        PuzzleKind::Command | PuzzleKind::Sandbox => {}
+    }
+    if let Some(other_puzzle) = ctype.unlocked_by() {
+        if other_puzzle >= puzzle || !profile.is_puzzle_solved(other_puzzle) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 //===========================================================================//
 

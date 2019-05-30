@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::puzzle::{Puzzle, PuzzleKind};
+use std::collections::HashSet;
 use std::str;
 use tachy::geom::CoordsSize;
 
@@ -142,22 +142,10 @@ impl str::FromStr for ChipType {
 }
 
 impl ChipType {
-    pub fn is_allowed_in(self, puzzle: Puzzle) -> bool {
+    pub fn is_interactive(self) -> bool {
         match self {
-            ChipType::Clock | ChipType::Delay | ChipType::Demux |
-            ChipType::Discard | ChipType::Join | ChipType::Latest |
-            ChipType::Sample | ChipType::Break | ChipType::Ram => {
-                puzzle.allows_events()
-            }
-            ChipType::Button => {
-                match puzzle.kind() {
-                    PuzzleKind::Command | PuzzleKind::Sandbox => {
-                        puzzle.allows_events()
-                    }
-                    _ => false,
-                }
-            }
-            _ => true,
+            ChipType::Button => true,
+            _ => false,
         }
     }
 
@@ -222,9 +210,37 @@ impl ChipType {
 
 //===========================================================================//
 
+pub struct ChipSet {
+    ctypes: HashSet<ChipType>,
+}
+
+impl ChipSet {
+    pub fn new() -> ChipSet { ChipSet { ctypes: HashSet::new() } }
+
+    pub fn contains(&self, ctype: ChipType) -> bool {
+        match ctype {
+            ChipType::Const(_) => self.ctypes.contains(&ChipType::Const(0)),
+            _ => self.ctypes.contains(&ctype),
+        }
+    }
+
+    pub fn insert(&mut self, ctype: ChipType) {
+        match ctype {
+            ChipType::Const(_) => {
+                self.ctypes.insert(ChipType::Const(0));
+            }
+            _ => {
+                self.ctypes.insert(ctype);
+            }
+        }
+    }
+}
+
+//===========================================================================//
+
 #[cfg(test)]
 mod tests {
-    use super::{CHIP_CATEGORIES, ChipType};
+    use super::{CHIP_CATEGORIES, ChipSet, ChipType};
 
     #[test]
     fn chip_type_to_and_from_string() {
@@ -239,6 +255,19 @@ mod tests {
         for &ctype in chip_types.iter() {
             assert_eq!(format!("{:?}", ctype).parse(), Ok(ctype));
         }
+    }
+
+    #[test]
+    fn chip_set() {
+        let mut set = ChipSet::new();
+        assert!(!set.contains(ChipType::Const(1)));
+        assert!(!set.contains(ChipType::And));
+        set.insert(ChipType::Const(2));
+        assert!(set.contains(ChipType::Const(1)));
+        assert!(!set.contains(ChipType::And));
+        set.insert(ChipType::And);
+        assert!(set.contains(ChipType::Const(3)));
+        assert!(set.contains(ChipType::And));
     }
 }
 

@@ -462,7 +462,7 @@ impl EditGridView {
                         Keycode::V => {
                             if let Some(selection) =
                                 Selection::from_clipboard(ui.clipboard(),
-                                                          grid.puzzle())
+                                                          grid.allowed_chips())
                             {
                                 self.cancel_interaction(grid);
                                 let size = selection.size().as_f32();

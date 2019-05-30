@@ -29,7 +29,7 @@ use std::time::{Duration, Instant};
 use std::usize;
 use tachy::geom::{Coords, CoordsDelta, CoordsRect, Direction, Orientation,
                   Rect};
-use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
+use tachy::save::{ChipSet, ChipType, CircuitData, Profile, Puzzle, WireShape};
 
 //===========================================================================//
 
@@ -91,6 +91,7 @@ impl GridChange {
 
 pub struct EditGrid {
     puzzle: Puzzle,
+    allowed_chips: ChipSet,
     bounds: CoordsRect,
     interfaces: &'static [Interface],
     fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
@@ -107,9 +108,10 @@ pub struct EditGrid {
 }
 
 impl EditGrid {
-    pub fn new(puzzle: Puzzle) -> EditGrid {
+    pub fn new(puzzle: Puzzle, profile: &Profile) -> EditGrid {
         let mut grid = EditGrid {
             puzzle,
+            allowed_chips: puzzle.allowed_chips(profile),
             bounds: Rect::new(-4, -3, 8, 6),
             interfaces: puzzle.interfaces(),
             fragments: HashMap::new(),
@@ -128,9 +130,12 @@ impl EditGrid {
         grid
     }
 
-    pub fn from_circuit_data(puzzle: Puzzle, data: &CircuitData) -> EditGrid {
+    pub fn from_circuit_data(puzzle: Puzzle, profile: &Profile,
+                             data: &CircuitData)
+                             -> EditGrid {
         let mut grid = EditGrid {
             puzzle,
+            allowed_chips: puzzle.allowed_chips(profile),
             bounds: Rect::new(data.bounds.0,
                               data.bounds.1,
                               data.bounds.2,
@@ -306,6 +311,8 @@ impl EditGrid {
     pub fn mark_unmodified(&mut self) { self.modified_since = None; }
 
     pub fn puzzle(&self) -> Puzzle { self.puzzle }
+
+    pub fn allowed_chips(&self) -> &ChipSet { &self.allowed_chips }
 
     pub fn bounds(&self) -> CoordsRect { self.bounds }
 
@@ -831,7 +838,7 @@ impl EditGrid {
                 }
             }
             GridChange::AddChip(coords, ctype, orient) => {
-                if !ctype.is_allowed_in(self.puzzle) {
+                if !self.allowed_chips.contains(ctype) {
                     return false;
                 }
                 let size = orient * ctype.size();
@@ -1270,6 +1277,11 @@ impl<'a> ExactSizeIterator for WireFragmentsIter<'a> {
 
 //===========================================================================//
 
-// TODO: Tests for to/from_circuit_data.  Make sure we enforce bounds.
+// TODO: Tests for to/from_circuit_data:
+//   - Make sure data format can round-trip.
+//   - Make sure we enforce bounds for chips and wires.
+//   - Make sure we enforce no chips on top of wires or other chips.
+//   - Make sure we enforce is-this-chip-allowed-in-this-puzzle.
+//   - Make sure we enforce wire fragment validity.
 
 //===========================================================================//

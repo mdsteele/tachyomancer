@@ -392,9 +392,9 @@ impl GameState {
 
     pub fn clear_edit_grid(&mut self) { self.edit_grid = None; }
 
-    pub fn new_edit_grid(&mut self) {
-        let puzzle = self.current_puzzle();
+    pub fn new_edit_grid(&mut self) -> Result<(), String> {
         if let Some(ref profile) = self.profile {
+            let puzzle = profile.current_puzzle();
             let mut num: u64 = 1;
             loop {
                 self.circuit_name = format!("Version {}", num);
@@ -403,16 +403,20 @@ impl GameState {
                 }
                 num += 1;
             }
+            debug_log!("Creating new circuit {:?}", self.circuit_name);
+            self.edit_grid = Some(EditGrid::new(puzzle, profile));
+            Ok(())
+        } else {
+            Err("No profile loaded".to_string())
         }
-        debug_log!("Creating new circuit {:?}", self.circuit_name);
-        self.edit_grid = Some(EditGrid::new(puzzle));
     }
 
     pub fn load_edit_grid(&mut self) -> Result<(), String> {
         if let Some(ref profile) = self.profile {
             let puzzle = profile.current_puzzle();
             let data = profile.load_circuit(puzzle, &self.circuit_name)?;
-            self.edit_grid = Some(EditGrid::from_circuit_data(puzzle, &data));
+            self.edit_grid =
+                Some(EditGrid::from_circuit_data(puzzle, profile, &data));
             Ok(())
         } else {
             Err("No profile loaded".to_string())

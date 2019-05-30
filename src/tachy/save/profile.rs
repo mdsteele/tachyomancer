@@ -58,6 +58,18 @@ pub struct Profile {
 }
 
 impl Profile {
+    #[cfg(test)]
+    pub fn for_testing() -> Profile {
+        Profile {
+            name: "Testing".to_string(),
+            base_path: std::env::temp_dir(),
+            data: ProfileData::default(),
+            needs_save: false,
+            conversations: HashMap::new(),
+            puzzles: HashMap::new(),
+        }
+    }
+
     pub fn create_or_load(name: String, base_path: &Path)
                           -> Result<Profile, String> {
         // Create directory if needed:

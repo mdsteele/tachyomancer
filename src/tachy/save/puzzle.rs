@@ -33,7 +33,8 @@ pub enum PuzzleKind {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq,
+         PartialOrd, Serialize)]
 pub enum Puzzle {
     TutorialOr,
     TutorialXor,

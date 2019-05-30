@@ -25,7 +25,7 @@ use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsDelta,
                   CoordsRect, CoordsSize, Direction, MatrixExt, Orientation,
                   Rect};
 use tachy::gui::{Clipboard, Resources};
-use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
+use tachy::save::{ChipSet, ChipType, CircuitData, WireShape};
 use tachy::state::{EditGrid, GridChange, WireColor, WireSize};
 
 //===========================================================================//
@@ -245,7 +245,7 @@ impl Selection {
         }
     }
 
-    pub fn from_clipboard(clipboard: &Clipboard, puzzle: Puzzle)
+    pub fn from_clipboard(clipboard: &Clipboard, allowed: &ChipSet)
                           -> Option<Selection> {
         if let Some(text) = clipboard.get() {
             match CircuitData::deserialize_from_string(&text) {
@@ -254,7 +254,7 @@ impl Selection {
                     let origin = Coords::new(left, top);
                     let chips = data.chips
                         .iter()
-                        .filter(|(_, ctype, _)| ctype.is_allowed_in(puzzle))
+                        .filter(|&(_, ctype, _)| allowed.contains(ctype))
                         .map(|(coords, ctype, orient)| {
                                  (coords - origin, (ctype, orient))
                              })
@@ -552,7 +552,7 @@ mod tests {
     use cgmath::vec2;
     use std::collections::HashMap;
     use tachy::geom::{Coords, CoordsRect, CoordsSize, Direction};
-    use tachy::save::{CircuitData, Puzzle, WireShape};
+    use tachy::save::{CircuitData, Profile, Puzzle, WireShape};
     use tachy::state::EditGrid;
 
     #[test]
@@ -560,7 +560,9 @@ mod tests {
         let mut data = CircuitData::new(0, 0, 10, 10);
         data.wires.insert(Coords::new(3, 5), Direction::East, WireShape::Stub);
         data.wires.insert(Coords::new(4, 5), Direction::West, WireShape::Stub);
-        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr, &data);
+        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr,
+                                                   &Profile::for_testing(),
+                                                   &data);
         assert_eq!(grid.wire_shape_at(Coords::new(3, 5), Direction::East),
                    Some(WireShape::Stub));
         let rect = CoordsRect::new(4, 5, 1, 1);
@@ -580,7 +582,9 @@ mod tests {
         data.wires
             .insert(Coords::new(4, 5), Direction::East, WireShape::Straight);
         data.wires.insert(Coords::new(5, 5), Direction::West, WireShape::Stub);
-        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr, &data);
+        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr,
+                                                   &Profile::for_testing(),
+                                                   &data);
         assert_eq!(grid.wire_shape_at(Coords::new(4, 5), Direction::East),
                    Some(WireShape::Straight));
         assert_eq!(grid.wire_shape_at(Coords::new(5, 5), Direction::West),

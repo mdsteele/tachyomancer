@@ -28,8 +28,12 @@ use tachy::view::{CircuitAction, CircuitView};
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
     debug_assert!(state.edit_grid().is_some());
-    let puzzle = state.current_puzzle();
-    let mut view = CircuitView::new(window.size(), puzzle, state.prefs());
+    let mut view = {
+        let grid = state.edit_grid().unwrap();
+        let puzzle = grid.puzzle();
+        let allowed = grid.allowed_chips();
+        CircuitView::new(window.size(), puzzle, allowed, state.prefs())
+    };
     let mut last_tick = Instant::now();
     loop {
         match window.poll_event() {

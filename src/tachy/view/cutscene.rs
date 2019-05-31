@@ -22,7 +22,7 @@ use cgmath::{self, Matrix4, Point2};
 use std::collections::BTreeMap;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
-use tachy::gui::{AudioQueue, Event, Keycode, Resources, Sound, Ui};
+use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
 use tachy::save::Prefs;
 use tachy::state::{CutsceneScript, Portrait, Theater};
 use unicode_width::UnicodeWidthStr;
@@ -84,9 +84,9 @@ impl CutsceneView {
         }
     }
 
-    pub fn init(&mut self, ui: &mut Ui,
-                (cutscene, prefs): (&mut CutsceneScript, &Prefs)) {
-        cutscene.tick(0.0, &mut TheaterImpl::new(self, ui.audio(), prefs));
+    pub fn init<'a>(&'a mut self, ui: &'a mut Ui<'a>,
+                    (cutscene, prefs): (&mut CutsceneScript, &'a Prefs)) {
+        cutscene.tick(0.0, &mut TheaterImpl::new(self, ui, prefs));
     }
 
     pub fn draw(&self, resources: &Resources, cutscene: &CutsceneScript) {
@@ -142,25 +142,26 @@ impl CutsceneView {
                   message);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    (cutscene, prefs): (&mut CutsceneScript, &Prefs))
-                    -> Option<CutsceneAction> {
+    pub fn on_event<'a>(&'a mut self, event: &Event, ui: &'a mut Ui<'a>,
+                        (cutscene, prefs): (&mut CutsceneScript, &'a Prefs))
+                        -> Option<CutsceneAction> {
         match event {
             Event::ClockTick(tick) => {
                 for bubble in self.talk_bubbles.values_mut() {
-                    bubble.tick(tick.elapsed);
+                    bubble.tick(tick.elapsed, ui);
                 }
                 if self.skip_clicks > 0 {
                     self.skip_click_time -= tick.elapsed;
                     if self.skip_click_time <= 0.0 {
+                        if self.skip_clicks >= CLICKS_TO_SHOW_SKIP {
+                            ui.request_redraw();
+                        }
                         self.skip_clicks = 0;
                         self.skip_click_time = 0.0;
                     }
                 }
                 if cutscene.tick(tick.elapsed,
-                                 &mut TheaterImpl::new(self,
-                                                       ui.audio(),
-                                                       prefs))
+                                 &mut TheaterImpl::new(self, ui, prefs))
                 {
                     return Some(CutsceneAction::Finished);
                 }
@@ -169,11 +170,11 @@ impl CutsceneView {
                 self.maybe_skip(ui, prefs, cutscene);
             }
             Event::KeyDown(key) if key.code == Keycode::Return => {
-                self.unpause(cutscene);
+                self.unpause(ui, cutscene);
             }
             Event::MouseDown(mouse) => {
                 if mouse.left {
-                    self.unpause(cutscene);
+                    self.unpause(ui, cutscene);
                 } else if mouse.right &&
                            cfg!(any(target_os = "android",
                                     target_os = "ios"))
@@ -186,22 +187,27 @@ impl CutsceneView {
         return None;
     }
 
-    fn maybe_skip(&mut self, ui: &mut Ui, prefs: &Prefs,
-                  cutscene: &mut CutsceneScript) {
+    fn maybe_skip<'a>(&'a mut self, ui: &'a mut Ui<'a>, prefs: &'a Prefs,
+                      cutscene: &mut CutsceneScript) {
         if self.skip_clicks >= CLICKS_TO_SHOW_SKIP {
-            cutscene.skip(&mut TheaterImpl::new(self, ui.audio(), prefs));
             self.skip_clicks = 0;
             self.skip_click_time = 0.0;
+            ui.request_redraw();
+            cutscene.skip(&mut TheaterImpl::new(self, ui, prefs));
         } else {
             self.skip_clicks = CLICKS_TO_SHOW_SKIP;
             self.skip_click_time = TIME_TO_HIDE_SKIP;
+            ui.request_redraw();
         }
     }
 
-    fn unpause(&mut self, cutscene: &mut CutsceneScript) {
-        cutscene.unpause();
+    fn unpause(&mut self, ui: &mut Ui, cutscene: &mut CutsceneScript) {
+        if cutscene.is_paused() {
+            cutscene.unpause();
+            ui.request_redraw();
+        }
         for bubble in self.talk_bubbles.values_mut() {
-            bubble.skip_to_end();
+            bubble.skip_to_end(ui);
         }
         if self.skip_clicks >= CLICKS_TO_SHOW_SKIP {
             self.skip_click_time = TIME_TO_HIDE_SKIP;
@@ -209,6 +215,7 @@ impl CutsceneView {
             self.skip_clicks += 1;
             if self.skip_clicks >= CLICKS_TO_SHOW_SKIP {
                 self.skip_click_time = TIME_TO_HIDE_SKIP;
+                ui.request_redraw();
             } else {
                 self.skip_click_time = TIME_BETWEEN_CLICKS;
             }
@@ -279,10 +286,23 @@ impl TalkBubble {
         self.paragraph.draw_partial(resources, matrix, (left, top), millis);
     }
 
-    fn tick(&mut self, elapsed: f64) { self.millis += elapsed * 1000.0; }
+    fn tick(&mut self, elapsed: f64, ui: &mut Ui) {
+        if self.millis < self.paragraph.total_millis() as f64 {
+            self.millis += elapsed * 1000.0;
+            // TODO: Ideally, this would only redraw if a the millis increase
+            //   actually causes more characters to be displayed in the
+            //   paragraph.  As an approximation, maybe we could simply request
+            //   only 30 FPS instead of 60.
+            ui.request_redraw();
+        }
+    }
 
-    fn skip_to_end(&mut self) {
-        self.millis = self.paragraph.total_millis() as f64;
+    fn skip_to_end(&mut self, ui: &mut Ui) {
+        let total_millis = self.paragraph.total_millis() as f64;
+        if self.millis < total_millis {
+            self.millis = total_millis;
+            ui.request_redraw();
+        }
     }
 
     fn is_done(&self) -> bool {
@@ -294,15 +314,14 @@ impl TalkBubble {
 
 struct TheaterImpl<'a> {
     view: &'a mut CutsceneView,
-    audio: &'a mut AudioQueue,
+    ui: &'a mut Ui<'a>,
     prefs: &'a Prefs,
 }
 
 impl<'a> TheaterImpl<'a> {
-    fn new(view: &'a mut CutsceneView, audio: &'a mut AudioQueue,
-           prefs: &'a Prefs)
+    fn new(view: &'a mut CutsceneView, ui: &'a mut Ui<'a>, prefs: &'a Prefs)
            -> TheaterImpl<'a> {
-        TheaterImpl { view, audio, prefs }
+        TheaterImpl { view, ui, prefs }
     }
 }
 
@@ -315,6 +334,7 @@ impl<'a> Theater for TheaterImpl<'a> {
             TalkBubble::new(self.view.size, self.prefs, portrait, pos, format);
         debug_assert!(!self.view.talk_bubbles.contains_key(&tag));
         self.view.talk_bubbles.insert(tag, bubble);
+        self.ui.request_redraw();
         tag
     }
 
@@ -330,12 +350,16 @@ impl<'a> Theater for TheaterImpl<'a> {
     fn remove_talk(&mut self, tag: i32) {
         debug_assert!(self.view.talk_bubbles.contains_key(&tag));
         self.view.talk_bubbles.remove(&tag);
+        self.ui.request_redraw();
     }
 
-    fn play_sound(&mut self, sound: Sound) { self.audio.play_sound(sound); }
+    fn play_sound(&mut self, sound: Sound) {
+        self.ui.audio().play_sound(sound);
+    }
 
     fn set_background_color(&mut self, color: Color3) {
         self.view.bg_color = color;
+        self.ui.request_redraw();
     }
 }
 

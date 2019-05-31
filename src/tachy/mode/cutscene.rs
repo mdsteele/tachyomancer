@@ -45,7 +45,6 @@ fn run_internal(state: &mut GameState, window: &mut Window) -> ModeChange {
                 window.pump_video();
             }
             event => {
-                window.ui().request_redraw(); // TODO: only do this when needed
                 match view.on_event(&event,
                                     &mut window.ui(),
                                     state.cutscene_mut_and_prefs().unwrap()) {

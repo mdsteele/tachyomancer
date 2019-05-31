@@ -47,7 +47,7 @@ pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
     let should = builder
         .choice(profile, "should")
         .option("captain", "\"You should have woken the captain first.\"")
-        .option("what", "\"So what is it that you need me to to?\"")
+        .option("what", "\"So what is it that you need me to do?\"")
         .done()?;
     if should == "captain" {
         builder.esra("\

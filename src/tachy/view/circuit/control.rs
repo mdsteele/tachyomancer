@@ -283,13 +283,13 @@ impl ControlsButton {
                     -> Option<ControlsAction> {
         match event {
             Event::ClockTick(tick) => {
-                self.hover_pulse.on_clock_tick(tick);
+                self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::KeyDown(key) => {
                 if self.is_enabled(status) &&
                     key.code == prefs.hotkey_code(self.hotkey)
                 {
-                    self.hover_pulse.on_click();
+                    self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.action);
                 }
@@ -298,14 +298,14 @@ impl ControlsButton {
                 if self.is_enabled(status) &&
                     self.rect.contains_point(mouse.pt)
                 {
-                    self.hover_pulse.on_click();
+                    self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.action);
                 }
             }
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
-                if self.hover_pulse.set_hovering(hovering) &&
+                if self.hover_pulse.set_hovering(hovering, ui) &&
                     self.is_enabled(status)
                 {
                     ui.audio().play_sound(Sound::ButtonHover);

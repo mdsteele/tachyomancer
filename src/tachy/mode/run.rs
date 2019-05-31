@@ -24,6 +24,7 @@ use tachy::state::GameState;
 //===========================================================================//
 
 pub fn run_mode(state: &mut GameState, window: &mut Window) -> ModeChange {
+    window.ui().request_redraw();
     if state.cutscene().is_some() {
         super::cutscene::run(state, window)
     } else if state.profile().is_none() {

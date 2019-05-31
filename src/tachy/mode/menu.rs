@@ -36,6 +36,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 window.pump_video();
             }
             event => {
+                window.ui().request_redraw(); // TODO: only do this when needed
                 match view.on_event(&event, &mut window.ui(), state) {
                     Some(MenuAction::GoToPuzzle(puzzle)) => {
                         match state.unlock_puzzle(puzzle) {

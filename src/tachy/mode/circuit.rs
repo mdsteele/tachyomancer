@@ -43,6 +43,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 state.maybe_autosave_circuit();
             }
             event => {
+                window.ui().request_redraw(); // TODO: only do this when needed
                 match view.on_event(&event,
                                     &mut window.ui(),
                                     state.edit_grid_mut_and_prefs().unwrap()) {

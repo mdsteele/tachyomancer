@@ -137,6 +137,7 @@ impl BeginView {
                     BeginPhase::Entry | BeginPhase::Confirm => {}
                     BeginPhase::ErrorEmpty | BeginPhase::ErrorTaken => {
                         self.phase = BeginPhase::Entry;
+                        ui.request_redraw();
                     }
                 }
             }
@@ -145,6 +146,7 @@ impl BeginView {
         if let BeginPhase::Confirm = self.phase {
             if let Some(()) = self.back_button.on_event(event, ui, true) {
                 self.phase = BeginPhase::Entry;
+                ui.request_redraw();
             }
             if let Some(()) = self.confirm_button.on_event(event, ui, true) {
                 let name = self.text_entry.text.clone();
@@ -156,11 +158,14 @@ impl BeginView {
                 if name.is_empty() {
                     ui.audio().play_sound(Sound::Beep);
                     self.phase = BeginPhase::ErrorEmpty;
+                    ui.request_redraw();
                 } else if state.has_profile(name) {
                     ui.audio().play_sound(Sound::Beep);
                     self.phase = BeginPhase::ErrorTaken;
+                    ui.request_redraw();
                 } else {
                     self.phase = BeginPhase::Confirm;
+                    ui.request_redraw();
                 }
             }
         }
@@ -197,6 +202,7 @@ impl TextEntry {
                     Keycode::Return => return true,
                     Keycode::Backspace => {
                         if self.text.pop().is_some() {
+                            ui.request_redraw();
                             ui.audio().play_sound(Sound::TypeKey);
                         }
                     }
@@ -209,6 +215,7 @@ impl TextEntry {
                         (chr >= '\u{a1}' && chr <= '\u{ff}')
                     {
                         self.text.push(chr);
+                        ui.request_redraw();
                         ui.audio().play_sound(Sound::TypeKey);
                     }
                 }

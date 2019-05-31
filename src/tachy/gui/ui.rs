@@ -30,18 +30,21 @@ pub struct Ui<'a> {
     clipboard: &'a Clipboard,
     cursor: &'a mut NextCursor,
     event_pump: &'a sdl2::EventPump,
+    redraw_requested: &'a mut bool,
 }
 
 impl<'a> Ui<'a> {
     pub(super) fn new(audio: &'a mut AudioQueue, clipboard: &'a Clipboard,
                       cursor: &'a mut NextCursor,
-                      event_pump: &'a sdl2::EventPump)
+                      event_pump: &'a sdl2::EventPump,
+                      redraw_requested: &'a mut bool)
                       -> Ui<'a> {
         Ui {
             audio,
             clipboard,
             cursor,
             event_pump,
+            redraw_requested,
         }
     }
 
@@ -54,6 +57,8 @@ impl<'a> Ui<'a> {
     pub fn keyboard(&self) -> Keyboard {
         Keyboard { state: self.event_pump.keyboard_state() }
     }
+
+    pub fn request_redraw(&mut self) { *self.redraw_requested = true; }
 }
 
 //===========================================================================//

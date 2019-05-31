@@ -104,20 +104,20 @@ impl Checkbox {
                     -> Option<bool> {
         match event {
             Event::ClockTick(tick) => {
-                self.hover_pulse.on_clock_tick(tick);
+                self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::MouseDown(mouse) => {
                 if enabled && mouse.left &&
                     self.rect.contains_point(mouse.pt)
                 {
-                    self.hover_pulse.on_click();
+                    self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(!checked);
                 }
             }
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
-                if self.hover_pulse.set_hovering(hovering) {
+                if self.hover_pulse.set_hovering(hovering, ui) {
                     ui.audio().play_sound(Sound::ButtonHover);
                 }
             }
@@ -198,7 +198,7 @@ impl HotkeyBox {
                     -> Option<HotkeyBoxAction> {
         match event {
             Event::ClockTick(tick) => {
-                self.hover_pulse.on_clock_tick(tick);
+                self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::KeyDown(key) => {
                 if self.listening && Hotkey::is_valid_keycode(key.code) {
@@ -208,7 +208,7 @@ impl HotkeyBox {
             }
             Event::MouseDown(mouse) if mouse.left => {
                 if self.rect.contains_point(mouse.pt) && !self.listening {
-                    self.hover_pulse.on_click();
+                    self.hover_pulse.on_click(ui);
                     self.listening = true;
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(HotkeyBoxAction::Listening);
@@ -218,7 +218,7 @@ impl HotkeyBox {
             }
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
-                if self.hover_pulse.set_hovering(hovering) {
+                if self.hover_pulse.set_hovering(hovering, ui) {
                     if !self.listening {
                         ui.audio().play_sound(Sound::ButtonHover);
                     }
@@ -253,15 +253,19 @@ impl HoverPulse {
 
     pub fn brightness(&self) -> f32 { self.brightness as f32 }
 
-    pub fn on_click(&mut self) { self.brightness = HOVER_PULSE_CLICK; }
+    pub fn on_click(&mut self, ui: &mut Ui) {
+        self.brightness = HOVER_PULSE_CLICK;
+        ui.request_redraw();
+    }
 
-    pub fn on_clock_tick(&mut self, tick: &ClockEventData) {
+    pub fn on_clock_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
         if self.hovering {
             if self.brightness > HOVER_PULSE_MAX {
                 self.brightness = (self.brightness -
                                        tick.elapsed * HOVER_PULSE_DECAY_RATE)
                     .max(HOVER_PULSE_MAX);
                 self.timer = 0.0;
+                ui.request_redraw();
             } else {
                 self.timer = (self.timer + tick.elapsed) % HOVER_PULSE_PERIOD;
                 let mut param = 2.0 * self.timer / HOVER_PULSE_PERIOD;
@@ -270,22 +274,25 @@ impl HoverPulse {
                 }
                 self.brightness = HOVER_PULSE_MAX -
                     param * (HOVER_PULSE_MAX - HOVER_PULSE_MIN);
+                ui.request_redraw();
             }
-        } else {
+        } else if self.brightness > 0.0 {
             self.brightness = (self.brightness -
                                    tick.elapsed * HOVER_PULSE_DECAY_RATE)
                 .max(0.0);
+            ui.request_redraw();
         }
     }
 
     /// Returns true if we just started hovering.
-    pub fn set_hovering(&mut self, hovering: bool) -> bool {
+    pub fn set_hovering(&mut self, hovering: bool, ui: &mut Ui) -> bool {
         if hovering == self.hovering {
             false
         } else if hovering {
             self.hovering = true;
             self.brightness = self.brightness.max(HOVER_PULSE_MAX);
             self.timer = 0.0;
+            ui.request_redraw();
             true
         } else {
             self.unfocus();
@@ -513,11 +520,11 @@ impl Slider {
                     -> Option<SliderAction> {
         match event {
             Event::ClockTick(tick) => {
-                self.hover_pulse.on_clock_tick(tick);
+                self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::MouseDown(mouse) => {
                 if mouse.left && self.handle_rect().contains_point(mouse.pt) {
-                    self.hover_pulse.on_click();
+                    self.hover_pulse.on_click(ui);
                     self.drag = Some((mouse.pt.x, 0));
                 }
             }
@@ -542,7 +549,7 @@ impl Slider {
                     }
                 } else {
                     let hovering = self.handle_rect().contains_point(mouse.pt);
-                    if self.hover_pulse.set_hovering(hovering) {
+                    if self.hover_pulse.set_hovering(hovering, ui) {
                         ui.audio().play_sound(Sound::ButtonHover);
                     }
                 }
@@ -782,11 +789,11 @@ impl<T: Clone> TextButton<T> {
                     -> Option<T> {
         match event {
             Event::ClockTick(tick) => {
-                self.hover_pulse.on_clock_tick(tick);
+                self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::KeyDown(key) => {
                 if enabled && Some(key.code) == self.keycode {
-                    self.hover_pulse.on_click();
+                    self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.value.clone());
                 }
@@ -795,14 +802,14 @@ impl<T: Clone> TextButton<T> {
                 if enabled && mouse.left &&
                     self.rect.contains_point(mouse.pt)
                 {
-                    self.hover_pulse.on_click();
+                    self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(self.value.clone());
                 }
             }
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
-                if self.hover_pulse.set_hovering(hovering) && enabled {
+                if self.hover_pulse.set_hovering(hovering, ui) && enabled {
                     ui.audio().play_sound(Sound::ButtonHover);
                 }
             }

@@ -56,7 +56,8 @@ pub struct Window<'a> {
     audio: AudioQueue,
     next_cursor: NextCursor,
     last_clock_tick: Instant,
-    redraw_pending: bool,
+    last_event_was_clock_tick: bool,
+    redraw_requested: bool,
     debug_counter: i32,
 }
 
@@ -148,7 +149,8 @@ impl<'a> Window<'a> {
             audio: AudioQueue::new(),
             next_cursor: NextCursor::new(),
             last_clock_tick: Instant::now(),
-            redraw_pending: false,
+            last_event_was_clock_tick: false,
+            redraw_requested: true,
             debug_counter: 0,
         };
         Ok(window)
@@ -171,7 +173,8 @@ impl<'a> Window<'a> {
         Ui::new(&mut self.audio,
                 &self.gui_context.clipboard,
                 &mut self.next_cursor,
-                &self.gui_context.event_pump)
+                &self.gui_context.event_pump,
+                &mut self.redraw_requested)
     }
 
     pub fn set_cursor_visible(&mut self, visible: bool) {
@@ -179,23 +182,35 @@ impl<'a> Window<'a> {
     }
 
     pub fn next_event(&mut self) -> Event {
-        if self.redraw_pending {
-            self.redraw_pending = false;
-            return Event::Redraw;
+        let mut should_block = false;
+        if self.last_event_was_clock_tick {
+            self.last_event_was_clock_tick = false;
+            if self.redraw_requested {
+                self.redraw_requested = false;
+                return Event::Redraw;
+            } else {
+                should_block = true;
+            }
+        }
+        if cfg!(debug_assertions) {
+            if let Some(line) = self.gui_context.stdin_reader.pop_line() {
+                return Event::new_debug(&line);
+            }
         }
         loop {
-            if cfg!(debug_assertions) {
-                if let Some(line) = self.gui_context.stdin_reader.pop_line() {
-                    return Event::new_debug(&line);
-                }
-            }
             let pump = &mut self.gui_context.event_pump;
-            match pump.poll_event() {
+            let maybe_sdl_event = if should_block {
+                should_block = false;
+                pump.wait_event_timeout(30)
+            } else {
+                pump.poll_event()
+            };
+            match maybe_sdl_event {
                 None => {
                     let now = Instant::now();
                     let elapsed = now.duration_since(self.last_clock_tick);
                     self.last_clock_tick = now;
-                    self.redraw_pending = true;
+                    self.last_event_was_clock_tick = true;
                     return Event::new_clock_tick(elapsed);
                 }
                 Some(sdl_event) => {

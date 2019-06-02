@@ -36,15 +36,14 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 window.pump_video();
             }
             event => {
-                window.ui().request_redraw(); // TODO: only do this when needed
                 match view.on_event(&event, &mut window.ui(), state) {
                     Some(MenuAction::GoToPuzzle(puzzle)) => {
                         match state.unlock_puzzle(puzzle) {
                             Ok(()) => {
-                                view.update_puzzle_list(state);
+                                let mut ui = window.ui();
+                                view.update_puzzle_list(&mut ui, state);
                                 state.set_current_puzzle(puzzle);
-                                view.go_to_current_puzzle(&mut window.ui(),
-                                                          state);
+                                view.go_to_current_puzzle(&mut ui, state);
                             }
                             Err(err) => {
                                 view.show_error(&mut window.ui(),
@@ -60,7 +59,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     }
                     Some(MenuAction::CopyCircuit) => {
                         match state.copy_current_circuit() {
-                            Ok(()) => view.update_circuit_list(state),
+                            Ok(()) => {
+                                view.update_circuit_list(&mut window.ui(),
+                                                         state);
+                            }
                             Err(err) => {
                                 view.show_error(&mut window.ui(),
                                                 state,
@@ -71,7 +73,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     }
                     Some(MenuAction::DeleteCircuit) => {
                         match state.delete_current_circuit() {
-                            Ok(()) => view.update_circuit_list(state),
+                            Ok(()) => {
+                                view.update_circuit_list(&mut window.ui(),
+                                                         state);
+                            }
                             Err(err) => {
                                 view.show_error(&mut window.ui(),
                                                 state,
@@ -104,7 +109,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     }
                     Some(MenuAction::RenameCircuit(name)) => {
                         match state.rename_current_circuit(name) {
-                            Ok(()) => view.update_circuit_list(state),
+                            Ok(()) => {
+                                view.update_circuit_list(&mut window.ui(),
+                                                         state);
+                            }
                             Err(err) => {
                                 view.show_error(&mut window.ui(),
                                                 state,
@@ -132,9 +140,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         debug_log!("Switching to profile {:?}", name);
                         match state.create_or_load_profile(name) {
                             Ok(()) => {
-                                view.update_conversation(state);
-                                view.update_puzzle_list(state);
-                                view.update_circuit_list(state);
+                                let mut ui = window.ui();
+                                view.update_conversation(&mut ui, state);
+                                view.update_puzzle_list(&mut ui, state);
+                                view.update_circuit_list(&mut ui, state);
                             }
                             Err(err) => {
                                 view.show_error(&mut window.ui(),
@@ -150,10 +159,11 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 if state.profile().is_none() {
                                     return ModeChange::Next;
                                 } else {
-                                    view.update_profile_list(state);
-                                    view.update_conversation(state);
-                                    view.update_puzzle_list(state);
-                                    view.update_circuit_list(state);
+                                    let mut ui = window.ui();
+                                    view.update_profile_list(&mut ui, state);
+                                    view.update_conversation(&mut ui, state);
+                                    view.update_puzzle_list(&mut ui, state);
+                                    view.update_circuit_list(&mut ui, state);
                                 }
                             }
                             Err(err) => {

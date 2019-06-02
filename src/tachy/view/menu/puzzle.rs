@@ -72,23 +72,26 @@ pub struct PuzzlesView {
 }
 
 impl PuzzlesView {
-    pub fn new(rect: Rect<i32>, state: &GameState) -> PuzzlesView {
+    pub fn new(rect: Rect<i32>, ui: &mut Ui, state: &GameState)
+               -> PuzzlesView {
         let semi_height = (rect.height - ELEMENT_SPACING) / 2;
         PuzzlesView {
             puzzle_list: ListView::new(Rect::new(rect.x,
                                                  rect.y,
                                                  PUZZLE_LIST_WIDTH,
                                                  rect.height),
-                                       &state.current_puzzle(),
-                                       puzzle_list_items(state)),
+                                       ui,
+                                       puzzle_list_items(state),
+                                       &state.current_puzzle()),
             circuit_list: ListView::new(Rect::new(rect.x + PUZZLE_LIST_WIDTH +
                                                       ELEMENT_SPACING,
                                                   rect.bottom() -
                                                       semi_height,
                                                   CIRCUIT_LIST_WIDTH,
                                                   semi_height),
-                                        state.circuit_name(),
-                                        circuit_list_items(state)),
+                                        ui,
+                                        circuit_list_items(state),
+                                        state.circuit_name()),
             description:
                 DescriptionView::new(Rect::new(rect.x + PUZZLE_LIST_WIDTH +
                                                    ELEMENT_SPACING,
@@ -161,7 +164,7 @@ impl PuzzlesView {
             self.puzzle_list.on_event(event, ui, &state.current_puzzle())
         {
             state.set_current_puzzle(puzzle);
-            self.update_circuit_list(state);
+            self.update_circuit_list(ui, state);
         }
         if let Some(circuit_name) =
             self.circuit_list.on_event(event, ui, state.circuit_name())
@@ -187,14 +190,14 @@ impl PuzzlesView {
         return None;
     }
 
-    pub fn update_circuit_list(&mut self, state: &GameState) {
+    pub fn update_circuit_list(&mut self, ui: &mut Ui, state: &GameState) {
         self.circuit_list
-            .set_items(state.circuit_name(), circuit_list_items(state));
+            .set_items(ui, circuit_list_items(state), state.circuit_name());
     }
 
-    pub fn update_puzzle_list(&mut self, state: &GameState) {
+    pub fn update_puzzle_list(&mut self, ui: &mut Ui, state: &GameState) {
         self.puzzle_list
-            .set_items(&state.current_puzzle(), puzzle_list_items(state));
+            .set_items(ui, puzzle_list_items(state), &state.current_puzzle());
     }
 }
 

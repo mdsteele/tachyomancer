@@ -125,13 +125,13 @@ impl PartsTray {
             }
         }
 
-        let mut scrollbar =
+        let scrollbar =
             Scrollbar::new(Rect::new(rect.right() - TRAY_INNER_MARGIN +
                                          SCROLLBAR_MARGIN,
                                      rect.y + TRAY_INNER_MARGIN,
                                      SCROLLBAR_WIDTH,
-                                     rect.height - 2 * TRAY_INNER_MARGIN));
-        scrollbar.set_total_height(top + TRAY_INNER_MARGIN - rect.y);
+                                     rect.height - 2 * TRAY_INNER_MARGIN),
+                           top + TRAY_INNER_MARGIN - rect.y);
         if scrollbar.is_visible() {
             rect.width += 2 * SCROLLBAR_MARGIN + SCROLLBAR_WIDTH -
                 TRAY_INNER_MARGIN;
@@ -208,7 +208,7 @@ impl PartsTray {
                     -> (Option<PartsAction>, bool) {
         let rel_event =
             event.relative_to(Point2::new(-self.slide.distance(), 0));
-        self.scrollbar.on_event(&rel_event);
+        self.scrollbar.on_event(&rel_event, ui);
 
         match event {
             Event::ClockTick(tick) => {
@@ -254,7 +254,7 @@ impl PartsTray {
             }
             Event::Scroll(scroll)
                 if self.slid_rect().contains_point(scroll.pt) => {
-                self.scrollbar.scroll_by(scroll.delta.y);
+                self.scrollbar.scroll_by(scroll.delta.y, ui);
                 return (None, true);
             }
             _ => {}

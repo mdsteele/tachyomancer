@@ -71,7 +71,7 @@ pub struct PrefsView {
 }
 
 impl PrefsView {
-    pub fn new(rect: Rect<i32>, window: &Window, state: &GameState)
+    pub fn new(rect: Rect<i32>, window: &mut Window, state: &GameState)
                -> PrefsView {
         let num_panes = PANES.len() as i32;
         let pane_button_height = (rect.height + PANE_BUTTON_SPACING) /
@@ -108,8 +108,9 @@ impl PrefsView {
                                   rect.width - pane_offset,
                                   rect.height);
         let audio_video_pane = AudioVideoPane::new(pane_rect, window, state);
+        let mut ui = window.ui();
         let hotkeys_pane = HotkeysPane::new(pane_rect);
-        let profiles_pane = ProfilesPane::new(pane_rect, state);
+        let profiles_pane = ProfilesPane::new(pane_rect, &mut ui, state);
 
         PrefsView {
             current_pane: PrefsPane::AudioVideo,
@@ -165,6 +166,7 @@ impl PrefsView {
         if let Some(pane) = next_pane {
             self.on_pane_event(&Event::Unfocus, ui, state);
             self.current_pane = pane;
+            ui.request_redraw();
         }
         if let Some(action) = self.quit_button.on_event(event, ui, true) {
             return Some(action);
@@ -190,8 +192,8 @@ impl PrefsView {
         }
     }
 
-    pub fn update_profile_list(&mut self, state: &GameState) {
-        self.profiles_pane.update_profile_list(state);
+    pub fn update_profile_list(&mut self, ui: &mut Ui, state: &GameState) {
+        self.profiles_pane.update_profile_list(ui, state);
     }
 }
 
@@ -410,12 +412,14 @@ pub struct ProfilesPane {
 }
 
 impl ProfilesPane {
-    pub fn new(rect: Rect<i32>, state: &GameState) -> ProfilesPane {
+    pub fn new(rect: Rect<i32>, ui: &mut Ui, state: &GameState)
+               -> ProfilesPane {
         debug_assert!(state.profile().is_some());
         let profile_list =
             ListView::new(Rect::new(rect.x, rect.y, 300, rect.height),
-                          state.profile().unwrap().name(),
-                          profile_list_items(state));
+                          ui,
+                          profile_list_items(state),
+                          state.profile().unwrap().name());
         let new_button =
             TextButton::new(Rect::new(rect.right() - 150, rect.y, 150, 40),
                             "New Profile",
@@ -459,9 +463,10 @@ impl ProfilesPane {
         return None;
     }
 
-    pub fn update_profile_list(&mut self, state: &GameState) {
-        self.profile_list.set_items(state.profile().unwrap().name(),
-                                    profile_list_items(state));
+    pub fn update_profile_list(&mut self, ui: &mut Ui, state: &GameState) {
+        self.profile_list.set_items(ui,
+                                    profile_list_items(state),
+                                    state.profile().unwrap().name());
     }
 }
 

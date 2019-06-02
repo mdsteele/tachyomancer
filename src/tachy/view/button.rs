@@ -203,6 +203,7 @@ impl HotkeyBox {
             Event::KeyDown(key) => {
                 if self.listening && Hotkey::is_valid_keycode(key.code) {
                     self.listening = false;
+                    ui.request_redraw();
                     return Some(HotkeyBoxAction::Update(key.code));
                 }
             }
@@ -210,10 +211,12 @@ impl HotkeyBox {
                 if self.rect.contains_point(mouse.pt) && !self.listening {
                     self.hover_pulse.on_click(ui);
                     self.listening = true;
+                    ui.request_redraw();
                     ui.audio().play_sound(Sound::ButtonClick);
                     return Some(HotkeyBoxAction::Listening);
-                } else {
+                } else if self.listening {
                     self.listening = false;
+                    ui.request_redraw();
                 }
             }
             Event::MouseMove(mouse) => {
@@ -225,7 +228,10 @@ impl HotkeyBox {
                 }
             }
             Event::Unfocus => {
-                self.listening = false;
+                if self.listening {
+                    self.listening = false;
+                    ui.request_redraw();
+                }
                 self.hover_pulse.unfocus();
             }
             _ => {}
@@ -371,11 +377,12 @@ pub struct Scrollbar {
 }
 
 impl Scrollbar {
-    pub fn new(rect: Rect<i32>) -> Scrollbar {
+    pub fn new(rect: Rect<i32>, total_height: i32) -> Scrollbar {
+        let scroll_max = (total_height - rect.height).max(0);
         Scrollbar {
             rect,
             scroll_top: 0,
-            scroll_max: 0,
+            scroll_max,
             drag: None,
         }
     }
@@ -384,19 +391,32 @@ impl Scrollbar {
 
     pub fn scroll_top(&self) -> i32 { self.scroll_top }
 
-    pub fn set_total_height(&mut self, total_height: i32) {
-        self.scroll_max = (total_height - self.rect.height).max(0);
-        self.scroll_top = self.scroll_top.min(self.scroll_max);
+    pub fn set_total_height(&mut self, total_height: i32, ui: &mut Ui) {
+        let new_scroll_max = (total_height - self.rect.height).max(0);
+        if self.scroll_max != new_scroll_max {
+            self.scroll_max = new_scroll_max;
+            self.scroll_top = self.scroll_top.min(self.scroll_max);
+            ui.request_redraw();
+        }
+        debug_assert!(self.scroll_top <= self.scroll_max);
     }
 
-    pub fn scroll_by(&mut self, delta: i32) {
-        let new_scroll_top = self.scroll_top + delta;
-        self.scroll_top = new_scroll_top.max(0).min(self.scroll_max);
+    pub fn scroll_by(&mut self, delta: i32, ui: &mut Ui) {
+        let new_scroll_top =
+            (self.scroll_top + delta).max(0).min(self.scroll_max);
+        if self.scroll_top != new_scroll_top {
+            self.scroll_top = new_scroll_top;
+            ui.request_redraw();
+        }
     }
 
-    pub fn scroll_to(&mut self, middle: i32) {
-        self.scroll_top =
+    pub fn scroll_to(&mut self, middle: i32, ui: &mut Ui) {
+        let new_scroll_top =
             (middle - self.rect.height / 2).max(0).min(self.scroll_max);
+        if self.scroll_top != new_scroll_top {
+            self.scroll_top = new_scroll_top;
+            ui.request_redraw();
+        }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -420,12 +440,13 @@ impl Scrollbar {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event) {
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui) {
         match event {
             Event::MouseDown(mouse) if mouse.left => {
                 if let Some(handle_rect) = self.handle_rect() {
                     if handle_rect.contains_point(mouse.pt) {
                         self.drag = Some(mouse.pt.y - handle_rect.y);
+                        ui.request_redraw();
                     }
                     // TODO: support jumping up/down page
                 }
@@ -439,13 +460,20 @@ impl Scrollbar {
                                                    self.rect.height);
                     self.scroll_top =
                         new_scroll_top.max(0).min(self.scroll_max);
+                    ui.request_redraw();
                 }
             }
             Event::MouseUp(mouse) if mouse.left => {
-                self.drag = None;
+                if self.drag.is_some() {
+                    self.drag = None;
+                    ui.request_redraw();
+                }
             }
             Event::Unfocus => {
-                self.drag = None;
+                if self.drag.is_some() {
+                    self.drag = None;
+                    ui.request_redraw();
+                }
             }
             _ => {}
         }
@@ -526,10 +554,12 @@ impl Slider {
                 if mouse.left && self.handle_rect().contains_point(mouse.pt) {
                     self.hover_pulse.on_click(ui);
                     self.drag = Some((mouse.pt.x, 0));
+                    ui.request_redraw();
                 }
             }
             Event::MouseMove(mouse) => {
                 if let Some((start, _)) = self.drag.take() {
+                    ui.request_redraw();
                     let old_left = self.handle_left();
                     let delta = mouse.pt.x - start;
                     let range = self.rect.width - self.rect.height;
@@ -556,11 +586,15 @@ impl Slider {
             }
             Event::MouseUp(_) => {
                 if self.drag.take().is_some() {
+                    ui.request_redraw();
                     return Some(SliderAction::Release);
                 }
             }
             Event::Unfocus => {
-                self.drag = None;
+                if self.drag.is_some() {
+                    self.drag = None;
+                    ui.request_redraw();
+                }
                 self.hover_pulse.unfocus();
             }
             _ => {}
@@ -610,6 +644,10 @@ impl TextBox {
 
     pub fn string(&self) -> &str { &self.string }
 
+    fn cursor_blink_is_visible(&self) -> bool {
+        self.cursor_blink < 0.5 * TEXT_BOX_CURSOR_BLINK_PERIOD
+    }
+
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         // Box:
         let rect = self.rect.as_f32();
@@ -623,7 +661,7 @@ impl TextBox {
                    rect.y + 0.5 * rect.height),
                   &self.string);
         // Cursor:
-        if self.cursor_blink < 0.5 * TEXT_BOX_CURSOR_BLINK_PERIOD {
+        if self.cursor_blink_is_visible() {
             let color = Color3::new(0.5, 0.5, 0.0);
             let cursor_rect =
                 Rect::new(rect.x + TEXT_BOX_INNER_MARGIN +
@@ -639,8 +677,13 @@ impl TextBox {
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui) {
         match event {
             Event::ClockTick(tick) => {
+                let was_visible = self.cursor_blink_is_visible();
                 self.cursor_blink = (self.cursor_blink + tick.elapsed) %
                     TEXT_BOX_CURSOR_BLINK_PERIOD;
+                let is_visible = self.cursor_blink_is_visible();
+                if is_visible != was_visible {
+                    ui.request_redraw();
+                }
             }
             Event::KeyDown(key) => {
                 match key.code {
@@ -650,6 +693,7 @@ impl TextBox {
                             self.cursor_byte -= chr.len_utf8();
                             self.cursor_char -= 1;
                             self.cursor_blink = 0.0;
+                            ui.request_redraw();
                             ui.audio().play_sound(Sound::TypeKey);
                         }
                         self.string.push_str(&rest);
@@ -657,18 +701,25 @@ impl TextBox {
                     Keycode::Delete => {
                         if self.cursor_byte < self.string.len() {
                             self.string.remove(self.cursor_byte);
+                            ui.request_redraw();
                             ui.audio().play_sound(Sound::TypeKey);
                         }
                     }
                     Keycode::Up | Keycode::PageUp | Keycode::Home => {
-                        self.cursor_byte = 0;
-                        self.cursor_char = 0;
-                        self.cursor_blink = 0.0;
+                        if self.cursor_byte > 0 {
+                            self.cursor_byte = 0;
+                            self.cursor_char = 0;
+                            self.cursor_blink = 0.0;
+                            ui.request_redraw();
+                        }
                     }
                     Keycode::Down | Keycode::PageDown | Keycode::End => {
-                        self.cursor_byte = self.string.len();
-                        self.cursor_char = self.string.width();
-                        self.cursor_blink = 0.0;
+                        if self.cursor_byte < self.string.len() {
+                            self.cursor_byte = self.string.len();
+                            self.cursor_char = self.string.width();
+                            self.cursor_blink = 0.0;
+                            ui.request_redraw();
+                        }
                     }
                     Keycode::Left => {
                         let (part, _) = self.string.split_at(self.cursor_byte);
@@ -676,6 +727,7 @@ impl TextBox {
                             self.cursor_byte -= chr.len_utf8();
                             self.cursor_char -= 1;
                             self.cursor_blink = 0.0;
+                            ui.request_redraw();
                         }
                     }
                     Keycode::Right => {
@@ -684,6 +736,7 @@ impl TextBox {
                             self.cursor_byte += chr.len_utf8();
                             self.cursor_char += 1;
                             self.cursor_blink = 0.0;
+                            ui.request_redraw();
                         }
                     }
                     _ => {}
@@ -707,6 +760,7 @@ impl TextBox {
                         .sum();
                     self.cursor_char = char_index;
                     self.cursor_blink = 0.0;
+                    ui.request_redraw();
                 }
             }
             Event::MouseMove(mouse) |
@@ -727,6 +781,7 @@ impl TextBox {
                         self.cursor_byte += chr.len_utf8();
                         self.cursor_char += 1;
                         self.cursor_blink = 0.0;
+                        ui.request_redraw();
                         ui.audio().play_sound(Sound::TypeKey);
                     }
                 }

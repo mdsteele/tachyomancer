@@ -84,7 +84,7 @@ pub struct MenuView {
 }
 
 impl MenuView {
-    pub fn new(window: &Window, state: &GameState) -> MenuView {
+    pub fn new(window: &mut Window, state: &GameState) -> MenuView {
         let size = window.size();
         let section_buttons =
             vec![
@@ -98,12 +98,18 @@ impl MenuView {
                                      size.width - 2 * SECTION_MARGIN_HORZ,
                                      size.height - SECTION_TOP -
                                          SECTION_MARGIN_BOTTOM);
+
+        let prefs_view = PrefsView::new(section_rect, window, state);
+        let mut ui = window.ui();
+        let converse_view = ConverseView::new(section_rect, &mut ui, state);
+        let puzzles_view = PuzzlesView::new(section_rect, &mut ui, state);
+
         MenuView {
             size,
             section_buttons,
-            converse_view: ConverseView::new(section_rect, state),
-            prefs_view: PrefsView::new(section_rect, window, state),
-            puzzles_view: PuzzlesView::new(section_rect, state),
+            converse_view,
+            prefs_view,
+            puzzles_view,
             confirmation_dialog: None,
             rename_dialog: None,
             left_section: state.menu_section(),
@@ -197,6 +203,7 @@ impl MenuView {
                     };
                     self.section_anim =
                         track_towards(self.section_anim, anim_goal, tick);
+                    ui.request_redraw();
                     if self.section_anim < 0.0 {
                         debug_assert!(self.section_anim >= -1.0);
                         if goal_section < self.left_section {
@@ -300,20 +307,23 @@ impl MenuView {
                 match self.converse_view.on_event(event, ui, state) {
                     Some(ConverseAction::Complete) => {
                         state.mark_current_conversation_complete();
-                        self.converse_view.update_conversation_list(state);
-                        self.converse_view.update_conversation_bubbles(state);
+                        self.converse_view.update_conversation_list(ui, state);
+                        self.converse_view
+                            .update_conversation_bubbles(ui, state);
                     }
                     Some(ConverseAction::GoToPuzzle(puzzle)) => {
                         return Some(MenuAction::GoToPuzzle(puzzle));
                     }
                     Some(ConverseAction::Increment) => {
                         state.increment_current_conversation_progress();
-                        self.converse_view.update_conversation_bubbles(state);
+                        self.converse_view
+                            .update_conversation_bubbles(ui, state);
                     }
                     Some(ConverseAction::MakeChoice(key, value)) => {
                         state.set_current_conversation_choice(key, value);
                         state.increment_current_conversation_progress();
-                        self.converse_view.update_conversation_bubbles(state);
+                        self.converse_view
+                            .update_conversation_bubbles(ui, state);
                     }
                     Some(ConverseAction::PlayCutscene(cutscene)) => {
                         return Some(MenuAction::PlayCutscene(cutscene));
@@ -421,24 +431,24 @@ impl MenuView {
                                 state: &mut GameState) {
         self.unfocus(ui, state);
         state.set_menu_section(MenuSection::Puzzles);
-        self.update_circuit_list(state);
+        self.update_circuit_list(ui, state);
     }
 
-    pub fn update_circuit_list(&mut self, state: &GameState) {
-        self.puzzles_view.update_circuit_list(state);
+    pub fn update_circuit_list(&mut self, ui: &mut Ui, state: &GameState) {
+        self.puzzles_view.update_circuit_list(ui, state);
     }
 
-    pub fn update_conversation(&mut self, state: &GameState) {
-        self.converse_view.update_conversation_list(state);
-        self.converse_view.update_conversation_bubbles(state);
+    pub fn update_conversation(&mut self, ui: &mut Ui, state: &GameState) {
+        self.converse_view.update_conversation_list(ui, state);
+        self.converse_view.update_conversation_bubbles(ui, state);
     }
 
-    pub fn update_profile_list(&mut self, state: &GameState) {
-        self.prefs_view.update_profile_list(state);
+    pub fn update_profile_list(&mut self, ui: &mut Ui, state: &GameState) {
+        self.prefs_view.update_profile_list(ui, state);
     }
 
-    pub fn update_puzzle_list(&mut self, state: &GameState) {
-        self.puzzles_view.update_puzzle_list(state);
+    pub fn update_puzzle_list(&mut self, ui: &mut Ui, state: &GameState) {
+        self.puzzles_view.update_puzzle_list(ui, state);
     }
 
     fn unfocus(&mut self, ui: &mut Ui, state: &mut GameState) {

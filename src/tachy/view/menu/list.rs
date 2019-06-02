@@ -46,7 +46,8 @@ pub struct ListView<T> {
 }
 
 impl<T: Clone + Eq> ListView<T> {
-    pub fn new<Q>(rect: Rect<i32>, current: &Q, items: Vec<(T, String)>)
+    pub fn new<Q>(rect: Rect<i32>, ui: &mut Ui, items: Vec<(T, String)>,
+                  current: &Q)
                   -> ListView<T>
     where
         Q: PartialEq + ?Sized,
@@ -59,9 +60,9 @@ impl<T: Clone + Eq> ListView<T> {
         let mut list = ListView {
             rect,
             items: Vec::new(),
-            scrollbar: Scrollbar::new(scrollbar_rect),
+            scrollbar: Scrollbar::new(scrollbar_rect, 0),
         };
-        list.set_items(current, items);
+        list.set_items(ui, items, current);
         list
     }
 
@@ -145,7 +146,7 @@ impl<T: Clone + Eq> ListView<T> {
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
-        self.scrollbar.on_event(event);
+        self.scrollbar.on_event(event, ui);
         match event {
             Event::MouseDown(mouse)
                 if mouse.left && self.rect.contains_point(mouse.pt) => {
@@ -166,14 +167,15 @@ impl<T: Clone + Eq> ListView<T> {
                 }
             }
             Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
-                self.scrollbar.scroll_by(scroll.delta.y);
+                self.scrollbar.scroll_by(scroll.delta.y, ui);
             }
             _ => {}
         }
         return None;
     }
 
-    pub fn set_items<Q>(&mut self, current: &Q, items: Vec<(T, String)>)
+    pub fn set_items<Q>(&mut self, ui: &mut Ui, items: Vec<(T, String)>,
+                        current: &Q)
     where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
@@ -181,7 +183,7 @@ impl<T: Clone + Eq> ListView<T> {
         let num_items = items.len() as i32;
         let total_height = num_items * (ITEM_HEIGHT + ITEM_SPACING) -
             ITEM_SPACING;
-        self.scrollbar.set_total_height(total_height);
+        self.scrollbar.set_total_height(total_height, ui);
         let current_index = items
             .iter()
             .position(|(value, _)| value.borrow() == current)
@@ -189,8 +191,9 @@ impl<T: Clone + Eq> ListView<T> {
         let mid_current = (current_index as i32) *
             (ITEM_HEIGHT + ITEM_SPACING) +
             ITEM_HEIGHT / 2;
-        self.scrollbar.scroll_to(mid_current);
+        self.scrollbar.scroll_to(mid_current, ui);
         self.items = items;
+        ui.request_redraw();
     }
 
     fn item_width(&self) -> i32 {

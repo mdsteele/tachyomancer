@@ -74,14 +74,16 @@ pub struct ConverseView {
 }
 
 impl ConverseView {
-    pub fn new(rect: Rect<i32>, state: &GameState) -> ConverseView {
+    pub fn new(rect: Rect<i32>, ui: &mut Ui, state: &GameState)
+               -> ConverseView {
         ConverseView {
             conv_list: ListView::new(Rect::new(rect.x,
                                                rect.y,
                                                CONV_LIST_WIDTH,
                                                rect.height),
-                                     &state.current_conversation(),
-                                     conv_list_items(state)),
+                                     ui,
+                                     conv_list_items(state),
+                                     &state.current_conversation()),
             bubbles_list: BubblesListView::new(Rect::new(rect.x +
                                                              CONV_LIST_WIDTH +
                                                              ELEMENT_SPACING,
@@ -90,6 +92,7 @@ impl ConverseView {
                                                              CONV_LIST_WIDTH -
                                                              ELEMENT_SPACING,
                                                          rect.height),
+                                               ui,
                                                state),
         }
     }
@@ -107,7 +110,7 @@ impl ConverseView {
         match event {
             Event::Debug(key, _) if key == "resetconv" => {
                 state.reset_current_conversation_progress();
-                self.bubbles_list.reset(state);
+                self.bubbles_list.reset(ui, state);
             }
             _ => {}
         }
@@ -115,20 +118,23 @@ impl ConverseView {
             self.conv_list.on_event(event, ui, &state.current_conversation())
         {
             state.set_current_conversation(conv);
-            self.update_conversation_bubbles(state);
+            self.update_conversation_bubbles(ui, state);
             None
         } else {
-            self.bubbles_list.on_event(event)
+            self.bubbles_list.on_event(event, ui)
         }
     }
 
-    pub fn update_conversation_bubbles(&mut self, state: &GameState) {
-        self.bubbles_list.update_conversation(state);
+    pub fn update_conversation_bubbles(&mut self, ui: &mut Ui,
+                                       state: &GameState) {
+        self.bubbles_list.update_conversation(ui, state);
     }
 
-    pub fn update_conversation_list(&mut self, state: &GameState) {
-        self.conv_list
-            .set_items(&state.current_conversation(), conv_list_items(state));
+    pub fn update_conversation_list(&mut self, ui: &mut Ui,
+                                    state: &GameState) {
+        self.conv_list.set_items(ui,
+                                 conv_list_items(state),
+                                 &state.current_conversation());
     }
 }
 
@@ -157,7 +163,8 @@ struct BubblesListView {
 }
 
 impl BubblesListView {
-    fn new(rect: Rect<i32>, state: &GameState) -> BubblesListView {
+    fn new(rect: Rect<i32>, ui: &mut Ui, state: &GameState)
+           -> BubblesListView {
         let scrollbar_rect = Rect::new(rect.right() - SCROLLBAR_WIDTH,
                                        rect.y,
                                        SCROLLBAR_WIDTH,
@@ -168,9 +175,9 @@ impl BubblesListView {
             bubbles: Vec::new(),
             num_bubbles_shown: 0,
             more_button: None,
-            scrollbar: Scrollbar::new(scrollbar_rect),
+            scrollbar: Scrollbar::new(scrollbar_rect, 0),
         };
-        view.update_conversation(state);
+        view.update_conversation(ui, state);
         view
     }
 
@@ -212,12 +219,13 @@ impl BubblesListView {
         self.scrollbar.draw(resources, matrix);
     }
 
-    fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
+    fn on_event(&mut self, event: &Event, ui: &mut Ui)
+                -> Option<ConverseAction> {
         // Handle scrollbar events:
-        self.scrollbar.on_event(event);
+        self.scrollbar.on_event(event, ui);
         match event {
             Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
-                self.scrollbar.scroll_by(scroll.delta.y);
+                self.scrollbar.scroll_by(scroll.delta.y, ui);
             }
             _ => {}
         }
@@ -227,12 +235,12 @@ impl BubblesListView {
             event.relative_to(self.rect.top_left() -
                                   vec2(0, self.scrollbar.scroll_top()));
         for bubble in self.bubbles.iter_mut().take(self.num_bubbles_shown) {
-            if let Some(action) = bubble.on_event(&bubble_event) {
+            if let Some(action) = bubble.on_event(&bubble_event, ui) {
                 return Some(action);
             }
         }
         if let Some(ref mut button) = self.more_button {
-            if button.on_event(&bubble_event) {
+            if button.on_event(&bubble_event, ui) {
                 if self.num_bubbles_shown + 1 < self.bubbles.len() {
                     return Some(ConverseAction::Increment);
                 }
@@ -247,14 +255,15 @@ impl BubblesListView {
         return None;
     }
 
-    fn reset(&mut self, state: &GameState) {
+    fn reset(&mut self, ui: &mut Ui, state: &GameState) {
         self.bubbles.clear();
         self.num_bubbles_shown = 0;
         self.more_button = None;
-        self.update_conversation(state);
+        ui.request_redraw();
+        self.update_conversation(ui, state);
     }
 
-    fn update_conversation(&mut self, state: &GameState) {
+    fn update_conversation(&mut self, ui: &mut Ui, state: &GameState) {
         debug_assert!(state.profile().is_some());
         let profile = state.profile().unwrap();
         let conv = profile.current_conversation();
@@ -264,6 +273,7 @@ impl BubblesListView {
             self.rebuild_bubbles(profile, state.prefs(), conv);
         }
         self.num_bubbles_shown = num_bubbles_shown.min(self.bubbles.len());
+        ui.request_redraw();
 
         self.more_button = if self.num_bubbles_shown < self.bubbles.len() {
             let width = self.rect.width - (SCROLLBAR_MARGIN + SCROLLBAR_WIDTH);
@@ -286,8 +296,8 @@ impl BubblesListView {
         } else {
             0
         };
-        self.scrollbar.set_total_height(total_height);
-        self.scrollbar.scroll_to(total_height);
+        self.scrollbar.set_total_height(total_height, ui);
+        self.scrollbar.scroll_to(total_height, ui);
     }
 
     fn rebuild_bubbles(&mut self, profile: &Profile, prefs: &Prefs,
@@ -368,7 +378,7 @@ impl MoreButton {
                                        "- More -");
     }
 
-    fn on_event(&mut self, event: &Event) -> bool {
+    fn on_event(&mut self, event: &Event, ui: &mut Ui) -> bool {
         match event {
             Event::MouseDown(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
@@ -376,9 +386,18 @@ impl MoreButton {
                 }
             }
             Event::MouseMove(mouse) => {
-                self.hovering = self.rect.contains_point(mouse.pt);
+                let hovering = self.rect.contains_point(mouse.pt);
+                if self.hovering != hovering {
+                    self.hovering = hovering;
+                    ui.request_redraw();
+                }
             }
-            Event::Unfocus => self.hovering = false,
+            Event::Unfocus => {
+                if self.hovering {
+                    self.hovering = false;
+                    ui.request_redraw();
+                }
+            }
             _ => {}
         }
         return false;
@@ -394,7 +413,10 @@ trait BubbleView {
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>);
 
-    fn on_event(&mut self, _event: &Event) -> Option<ConverseAction> { None }
+    fn on_event(&mut self, _event: &Event, _ui: &mut Ui)
+                -> Option<ConverseAction> {
+        None
+    }
 }
 
 //===========================================================================//
@@ -435,7 +457,8 @@ impl BubbleView for CutsceneBubbleView {
                                        "Replay cutscene");
     }
 
-    fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
+    fn on_event(&mut self, event: &Event, ui: &mut Ui)
+                -> Option<ConverseAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
@@ -443,9 +466,18 @@ impl BubbleView for CutsceneBubbleView {
                 }
             }
             Event::MouseMove(mouse) => {
-                self.hovering = self.rect.contains_point(mouse.pt);
+                let hovering = self.rect.contains_point(mouse.pt);
+                if self.hovering != hovering {
+                    self.hovering = hovering;
+                    ui.request_redraw();
+                }
             }
-            Event::Unfocus => self.hovering = false,
+            Event::Unfocus => {
+                if self.hovering {
+                    self.hovering = false;
+                    ui.request_redraw();
+                }
+            }
             _ => {}
         }
         return None;
@@ -550,7 +582,8 @@ impl BubbleView for PuzzleBubbleView {
                                        &label);
     }
 
-    fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
+    fn on_event(&mut self, event: &Event, ui: &mut Ui)
+                -> Option<ConverseAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
@@ -558,9 +591,18 @@ impl BubbleView for PuzzleBubbleView {
                 }
             }
             Event::MouseMove(mouse) => {
-                self.hovering = self.rect.contains_point(mouse.pt);
+                let hovering = self.rect.contains_point(mouse.pt);
+                if self.hovering != hovering {
+                    self.hovering = hovering;
+                    ui.request_redraw();
+                }
             }
-            Event::Unfocus => self.hovering = false,
+            Event::Unfocus => {
+                if self.hovering {
+                    self.hovering = false;
+                    ui.request_redraw();
+                }
+            }
             _ => {}
         }
         return None;
@@ -638,7 +680,8 @@ impl BubbleView for YouChoiceBubbleView {
         }
     }
 
-    fn on_event(&mut self, event: &Event) -> Option<ConverseAction> {
+    fn on_event(&mut self, event: &Event, ui: &mut Ui)
+                -> Option<ConverseAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if let Some(index) = self.choice_for_pt(mouse.pt) {
@@ -648,9 +691,18 @@ impl BubbleView for YouChoiceBubbleView {
                 }
             }
             Event::MouseMove(mouse) => {
-                self.hovering = self.choice_for_pt(mouse.pt);
+                let hovering = self.choice_for_pt(mouse.pt);
+                if self.hovering != hovering {
+                    self.hovering = hovering;
+                    ui.request_redraw();
+                }
             }
-            Event::Unfocus => self.hovering = None,
+            Event::Unfocus => {
+                if self.hovering.is_some() {
+                    self.hovering = None;
+                    ui.request_redraw();
+                }
+            }
             _ => {}
         }
         return None;

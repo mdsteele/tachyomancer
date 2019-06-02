@@ -18,12 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use sdl2;
-use sdl2::clipboard::ClipboardUtil;
 
 //===========================================================================//
 
 pub struct Clipboard {
-    util: ClipboardUtil,
+    util: sdl2::clipboard::ClipboardUtil,
 }
 
 impl Clipboard {
@@ -41,7 +40,7 @@ impl Clipboard {
         }
     }
 
-    pub fn set(&self, text: &str) {
+    pub fn set(&mut self, text: &str) {
         match self.util.set_clipboard_text(text) {
             Ok(()) => {}
             Err(err) => {

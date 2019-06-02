@@ -171,7 +171,7 @@ impl<'a> Window<'a> {
 
     pub fn ui(&mut self) -> Ui {
         Ui::new(&mut self.audio,
-                &self.gui_context.clipboard,
+                &mut self.gui_context.clipboard,
                 &mut self.next_cursor,
                 &self.gui_context.event_pump,
                 &mut self.redraw_requested)

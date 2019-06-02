@@ -344,7 +344,7 @@ impl Selection {
         data.serialize_to_string()
     }
 
-    fn copy_to_clipboard(&self, clipboard: &Clipboard) {
+    fn copy_to_clipboard(&self, clipboard: &mut Clipboard) {
         match self.to_clipboard_text() {
             Ok(text) => clipboard.set(&text),
             Err(err) => {
@@ -372,13 +372,13 @@ fn draw_selection_box(resources: &Resources, matrix: &Matrix4<f32>,
 //===========================================================================//
 
 pub fn copy(grid: &EditGrid, selected_rect: CoordsRect,
-            clipboard: &Clipboard) {
+            clipboard: &mut Clipboard) {
     let (_, selection) = changes_for_cut(grid, selected_rect);
     selection.copy_to_clipboard(clipboard);
 }
 
 pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect,
-           clipboard: &Clipboard) {
+           clipboard: &mut Clipboard) {
     let (changes, selection) = changes_for_cut(grid, selected_rect);
     if !grid.try_mutate(changes) {
         debug_log!("WARNING: cut mutation failed");

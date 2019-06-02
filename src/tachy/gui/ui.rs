@@ -27,14 +27,15 @@ use sdl2::keyboard::Keycode;
 
 pub struct Ui<'a> {
     audio: &'a mut AudioQueue,
-    clipboard: &'a Clipboard,
+    clipboard: &'a mut Clipboard,
     cursor: &'a mut NextCursor,
     event_pump: &'a sdl2::EventPump,
     redraw_requested: &'a mut bool,
 }
 
 impl<'a> Ui<'a> {
-    pub(super) fn new(audio: &'a mut AudioQueue, clipboard: &'a Clipboard,
+    pub(super) fn new(audio: &'a mut AudioQueue,
+                      clipboard: &'a mut Clipboard,
                       cursor: &'a mut NextCursor,
                       event_pump: &'a sdl2::EventPump,
                       redraw_requested: &'a mut bool)
@@ -50,7 +51,7 @@ impl<'a> Ui<'a> {
 
     pub fn audio(&mut self) -> &mut AudioQueue { &mut self.audio }
 
-    pub fn clipboard(&self) -> &Clipboard { self.clipboard }
+    pub fn clipboard(&mut self) -> &mut Clipboard { self.clipboard }
 
     pub fn cursor(&mut self) -> &mut NextCursor { &mut self.cursor }
 

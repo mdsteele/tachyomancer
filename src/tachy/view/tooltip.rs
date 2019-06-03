@@ -20,7 +20,7 @@
 use super::paragraph::Paragraph;
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{Color3, Color4, Rect, RectSize};
-use tachy::gui::{ClockEventData, Resources};
+use tachy::gui::{ClockEventData, Resources, Ui};
 use tachy::save::Prefs;
 
 //===========================================================================//
@@ -76,32 +76,44 @@ impl<T: PartialEq> Tooltip<T> {
         }
     }
 
-    pub fn start_hover(&mut self, tag: T, pt: Point2<i32>) {
+    pub fn start_hover(&mut self, pt: Point2<i32>, ui: &mut Ui, tag: T) {
         if let Some((ref hover_tag, ref mut hover_pt, _)) = self.hover {
             if &tag == hover_tag {
-                *hover_pt = pt;
+                if *hover_pt != pt {
+                    *hover_pt = pt;
+                    if self.paragraph.is_some() {
+                        ui.request_redraw();
+                    }
+                }
                 return;
             }
         }
         self.hover = Some((tag, pt, 0.0));
-        self.paragraph = None;
+        if self.paragraph.is_some() {
+            self.paragraph = None;
+            ui.request_redraw();
+        }
     }
 
-    pub fn stop_hover(&mut self, tag: &T) {
+    pub fn stop_hover(&mut self, ui: &mut Ui, tag: &T) {
         if let Some((ref hover_tag, _, _)) = self.hover {
             if hover_tag != tag {
                 return;
             }
         }
-        self.stop_hover_all();
+        self.stop_hover_all(ui);
     }
 
-    pub fn stop_hover_all(&mut self) {
+    pub fn stop_hover_all(&mut self, ui: &mut Ui) {
         self.hover = None;
-        self.paragraph = None;
+        if self.paragraph.is_some() {
+            self.paragraph = None;
+            ui.request_redraw();
+        }
     }
 
-    pub fn tick<F>(&mut self, tick: &ClockEventData, prefs: &Prefs, func: F)
+    pub fn tick<F>(&mut self, tick: &ClockEventData, ui: &mut Ui,
+                   prefs: &Prefs, func: F)
     where
         F: FnOnce(&T) -> String,
     {
@@ -116,6 +128,7 @@ impl<T: PartialEq> Tooltip<T> {
                                                          TOOLTIP_MAX_WIDTH,
                                                          prefs,
                                                          &func(tag)));
+                ui.request_redraw();
             }
         }
     }

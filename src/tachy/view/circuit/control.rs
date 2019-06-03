@@ -184,7 +184,7 @@ impl ControlsTray {
         }
         match event {
             Event::ClockTick(tick) => {
-                self.tooltip.tick(tick, prefs, |action| {
+                self.tooltip.tick(tick, ui, prefs, |action| {
                     action.tooltip_format().to_string()
                 });
             }
@@ -305,18 +305,20 @@ impl ControlsButton {
             }
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
+                if hovering {
+                    tooltip.start_hover(mouse.pt, ui, self.action);
+                } else {
+                    tooltip.stop_hover(ui, &self.action);
+                }
                 if self.hover_pulse.set_hovering(hovering, ui) &&
                     self.is_enabled(status)
                 {
                     ui.audio().play_sound(Sound::ButtonHover);
-                    tooltip.start_hover(self.action, mouse.pt);
-                } else {
-                    tooltip.stop_hover(&self.action);
                 }
             }
             Event::Unfocus => {
                 self.hover_pulse.unfocus();
-                tooltip.stop_hover(&self.action);
+                tooltip.stop_hover(ui, &self.action);
             }
             _ => {}
         }

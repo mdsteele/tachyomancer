@@ -393,7 +393,7 @@ impl EditGridView {
         match event {
             Event::ClockTick(tick) => {
                 self.tooltip
-                    .tick(tick, prefs, |tag| tooltip_format(grid, tag));
+                    .tick(tick, ui, prefs, |tag| tooltip_format(grid, tag));
                 // Scroll if we're holding down any scroll key(s):
                 let (left, right, up, down) = {
                     let keyboard = ui.keyboard();
@@ -441,7 +441,7 @@ impl EditGridView {
                 }
             }
             Event::KeyDown(key) => {
-                self.tooltip.stop_hover_all();
+                self.tooltip.stop_hover_all(ui);
                 if key.code == Keycode::Backspace ||
                     key.code == Keycode::Delete
                 {
@@ -513,7 +513,7 @@ impl EditGridView {
             }
             Event::MouseDown(mouse) if mouse.left => {
                 let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
-                self.tooltip.stop_hover_all();
+                self.tooltip.stop_hover_all(ui);
                 if grid.eval().is_some() {
                     if let Some((coords, ctype, _)) =
                         grid.chip_at(grid_pt.as_i32_floor())
@@ -618,9 +618,9 @@ impl EditGridView {
                             if let Some(tag) =
                                 self.tooltip_tag_for_grid_pt(grid, grid_pt)
                             {
-                                self.tooltip.start_hover(tag, mouse.pt);
+                                self.tooltip.start_hover(mouse.pt, ui, tag);
                             } else {
-                                self.tooltip.stop_hover_all();
+                                self.tooltip.stop_hover_all(ui);
                             }
                         }
                     }
@@ -683,15 +683,15 @@ impl EditGridView {
                 }
             }
             Event::Multitouch(touch) => {
-                self.tooltip.stop_hover_all();
+                self.tooltip.stop_hover_all(ui);
                 self.zoom_by(touch.scale, ui);
             }
             Event::Scroll(scroll) => {
-                self.tooltip.stop_hover_all();
+                self.tooltip.stop_hover_all(ui);
                 self.scroll_by_screen_dist(scroll.delta.x, scroll.delta.y, ui);
             }
             Event::Unfocus => {
-                self.tooltip.stop_hover_all();
+                self.tooltip.stop_hover_all(ui);
             }
             _ => {}
         }

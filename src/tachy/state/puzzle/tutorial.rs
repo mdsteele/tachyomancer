@@ -35,13 +35,13 @@ pub enum TutorialBubblePosition {
 
 pub const OR_INTERFACES: &[Interface] = &[
     Interface {
-        name: "Input1",
+        name: "In1",
         description: "First input (0 or 1).",
         side: Direction::West,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "in1",
+                name: "In1",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -50,13 +50,13 @@ pub const OR_INTERFACES: &[Interface] = &[
         ],
     },
     Interface {
-        name: "Input2",
+        name: "In2",
         description: "Second input (0 or 1).",
         side: Direction::South,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "in2",
+                name: "In2",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -65,7 +65,7 @@ pub const OR_INTERFACES: &[Interface] = &[
         ],
     },
     Interface {
-        name: "Output",
+        name: "Out",
         description: "\
             Should be 1 if either input is 1.\n\
             Should be 0 if both inputs are 0.",
@@ -73,7 +73,7 @@ pub const OR_INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "out",
+                name: "Out",
                 description: "",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,
@@ -105,7 +105,7 @@ pub struct TutorialOrEval {
 
 impl TutorialOrEval {
     pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
-        &["in1", "in2", "out"];
+        &["In1", "In2", "Out"];
 
     pub const EXPECTED_TABLE_VALUES: &'static [u64] =
         &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1];
@@ -169,13 +169,13 @@ impl PuzzleEval for TutorialOrEval {
 
 pub const XOR_INTERFACES: &[Interface] = &[
     Interface {
-        name: "Input1",
+        name: "In1",
         description: "First input (0 or 1).",
         side: Direction::West,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "in1",
+                name: "In1",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -184,13 +184,13 @@ pub const XOR_INTERFACES: &[Interface] = &[
         ],
     },
     Interface {
-        name: "Input2",
+        name: "In2",
         description: "Second input (0 or 1).",
         side: Direction::South,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "in2",
+                name: "In2",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -199,7 +199,7 @@ pub const XOR_INTERFACES: &[Interface] = &[
         ],
     },
     Interface {
-        name: "Output",
+        name: "Out",
         description: "\
             Should be 1 if exactly one input is 1.\n\
             Should be 0 if the inputs are both 0 or both 1.",
@@ -207,7 +207,7 @@ pub const XOR_INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "out",
+                name: "Out",
                 description: "",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,
@@ -238,7 +238,7 @@ pub struct TutorialXorEval {
 
 impl TutorialXorEval {
     pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
-        &["in1", "in2", "out"];
+        &["In1", "In2", "Out"];
 
     pub const EXPECTED_TABLE_VALUES: &'static [u64] =
         &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0];
@@ -302,13 +302,13 @@ impl PuzzleEval for TutorialXorEval {
 
 pub const MUX_INTERFACES: &[Interface] = &[
     Interface {
-        name: "Input0",
+        name: "In0",
         description: "The input to use when the control value is 0.",
         side: Direction::West,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "in0",
+                name: "In0",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -317,13 +317,13 @@ pub const MUX_INTERFACES: &[Interface] = &[
         ],
     },
     Interface {
-        name: "Input1",
+        name: "In1",
         description: "The input to use when the control value is 1.",
         side: Direction::South,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "in1",
+                name: "In1",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -332,13 +332,13 @@ pub const MUX_INTERFACES: &[Interface] = &[
         ],
     },
     Interface {
-        name: "Control",
+        name: "Ctrl",
         description: "Indicates which input should be sent to the output.",
         side: Direction::North,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "ctrl",
+                name: "Ctrl",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -347,14 +347,14 @@ pub const MUX_INTERFACES: &[Interface] = &[
         ],
     },
     Interface {
-        name: "Output",
-        description: "Should be the value of $*in0$* if $*ctrl$* is 0, or \
-                      of $*in1$* if $*ctrl$* is 1.",
+        name: "Out",
+        description: "Should be the value of $*In0$* if $*Ctrl$* is 0, or \
+                      of $*In1$* if $*Ctrl$* is 1.",
         side: Direction::East,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "out",
+                name: "Out",
                 description: "",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,
@@ -386,7 +386,7 @@ pub struct TutorialMuxEval {
 
 impl TutorialMuxEval {
     pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
-        &["in0", "in1", "ctrl", "out"];
+        &["In0", "In1", "Ctrl", "Out"];
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
     pub const EXPECTED_TABLE_VALUES: &'static [u64] = &[

@@ -212,7 +212,7 @@ impl PartsTray {
 
         match event {
             Event::ClockTick(tick) => {
-                self.slide.on_tick(tick);
+                self.slide.on_tick(tick, ui);
             }
             Event::MouseDown(mouse) if mouse.left => {
                 let rel_mouse_pt = mouse.pt + vec2(self.slide.distance(), 0);

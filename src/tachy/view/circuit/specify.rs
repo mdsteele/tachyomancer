@@ -111,7 +111,7 @@ impl SpecificationTray {
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui) -> bool {
         match event {
             Event::ClockTick(tick) => {
-                self.slide.on_tick(tick);
+                self.slide.on_tick(tick, ui);
             }
             Event::MouseDown(mouse) => {
                 let rel_mouse_pt = mouse.pt - vec2(self.slide.distance(), 0);

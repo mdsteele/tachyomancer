@@ -20,6 +20,7 @@
 use cgmath::Point2;
 use std::collections::{HashMap, HashSet};
 use tachy::geom::{AsFloat, AsInt, Coords, CoordsRect, Direction, Orientation};
+use tachy::gui::{Sound, Ui};
 use tachy::save::{ChipType, WireShape};
 use tachy::state::{ChipExt, EditGrid, GridChange};
 
@@ -63,25 +64,37 @@ impl ChipDrag {
         old_coords.as_f32() + (self.drag_current - self.drag_start)
     }
 
-    pub fn flip_horz(&mut self) { self.reorient = self.reorient.flip_horz(); }
+    pub fn flip_horz(&mut self, ui: &mut Ui) {
+        self.reorient = self.reorient.flip_horz();
+        ui.request_redraw();
+    }
 
-    pub fn flip_vert(&mut self) { self.reorient = self.reorient.flip_vert(); }
+    pub fn flip_vert(&mut self, ui: &mut Ui) {
+        self.reorient = self.reorient.flip_vert();
+        ui.request_redraw();
+    }
 
-    pub fn rotate_cw(&mut self) { self.reorient = self.reorient.rotate_cw(); }
+    pub fn rotate_cw(&mut self, ui: &mut Ui) {
+        self.reorient = self.reorient.rotate_cw();
+        ui.request_redraw();
+    }
 
-    pub fn rotate_ccw(&mut self) {
+    pub fn rotate_ccw(&mut self, ui: &mut Ui) {
         self.reorient = self.reorient.rotate_ccw();
+        ui.request_redraw();
     }
 
-    pub fn move_to(&mut self, grid_pt: Point2<f32>) {
+    pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui) {
         self.drag_current = grid_pt;
+        ui.request_redraw();
     }
 
-    pub fn cancel(self, grid: &mut EditGrid) -> bool {
+    pub fn cancel(self, ui: &mut Ui, grid: &mut EditGrid) -> bool {
+        ui.request_redraw();
         grid.roll_back_provisional_changes()
     }
 
-    pub fn drop_onto_board(self, grid: &mut EditGrid) {
+    pub fn drop_onto_board(self, ui: &mut Ui, grid: &mut EditGrid) {
         let new_coords: Coords = self.chip_topleft().as_i32_round();
         let new_orient = self.reorient * self.old_orient;
         let new_size = new_orient * self.chip_type.size();
@@ -125,13 +138,17 @@ impl ChipDrag {
                                          self.reorient * self.old_orient));
         if grid.try_mutate_provisionally(changes) {
             grid.commit_provisional_changes();
+            ui.audio().play_sound(Sound::DropChip);
         } else {
             grid.roll_back_provisional_changes();
         }
+        ui.request_redraw();
     }
 
-    pub fn drop_into_parts_tray(self, grid: &mut EditGrid) {
+    pub fn drop_into_parts_tray(self, ui: &mut Ui, grid: &mut EditGrid) {
         grid.commit_provisional_changes();
+        ui.request_redraw();
+        ui.audio().play_sound(Sound::DropChip);
     }
 }
 

@@ -24,7 +24,7 @@ use std::collections::HashMap;
 use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsDelta,
                   CoordsRect, CoordsSize, Direction, MatrixExt, Orientation,
                   Rect};
-use tachy::gui::{Clipboard, Resources};
+use tachy::gui::{Clipboard, Resources, Sound, Ui};
 use tachy::save::{ChipSet, ChipType, CircuitData, WireShape};
 use tachy::state::{EditGrid, GridChange, WireColor, WireSize};
 
@@ -66,13 +66,17 @@ impl SelectingDrag {
 
     pub fn selected_rect(&self) -> CoordsRect { self.rect }
 
-    pub fn move_to(&mut self, grid_pt: Point2<f32>) {
+    pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui) {
         let coords = grid_pt.as_i32_round();
-        self.rect = Rect::new(self.start.x.min(coords.x),
-                              self.start.y.min(coords.y),
-                              (self.start.x - coords.x).abs(),
-                              (self.start.y - coords.y).abs());
-        self.rect = self.rect.intersection(self.bounds);
+        let new_rect = Rect::new(self.start.x.min(coords.x),
+                                 self.start.y.min(coords.y),
+                                 (self.start.x - coords.x).abs(),
+                                 (self.start.y - coords.y).abs());
+        let new_rect = new_rect.intersection(self.bounds);
+        if self.rect != new_rect {
+            self.rect = new_rect;
+            ui.request_redraw();
+        }
     }
 
     pub fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>,
@@ -109,22 +113,29 @@ impl SelectionDrag {
 
     fn top_left_grid_pt(&self) -> Point2<f32> { self.grid_pt - self.grab_rel }
 
-    pub fn move_to(&mut self, grid_pt: Point2<f32>) { self.grid_pt = grid_pt; }
+    pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui) {
+        self.grid_pt = grid_pt;
+        ui.request_redraw();
+    }
 
-    pub fn flip_horz(&mut self) {
+    pub fn flip_horz(&mut self, ui: &mut Ui) {
         self.selection.reorient(Orientation::default().flip_horz());
+        ui.request_redraw();
     }
 
-    pub fn flip_vert(&mut self) {
+    pub fn flip_vert(&mut self, ui: &mut Ui) {
         self.selection.reorient(Orientation::default().flip_vert());
+        ui.request_redraw();
     }
 
-    pub fn rotate_cw(&mut self) {
+    pub fn rotate_cw(&mut self, ui: &mut Ui) {
         self.selection.reorient(Orientation::default().rotate_cw());
+        ui.request_redraw();
     }
 
-    pub fn rotate_ccw(&mut self) {
+    pub fn rotate_ccw(&mut self, ui: &mut Ui) {
         self.selection.reorient(Orientation::default().rotate_ccw());
+        ui.request_redraw();
     }
 
     pub fn draw_selection(&self, resources: &Resources,
@@ -184,16 +195,26 @@ impl SelectionDrag {
         draw_selection_box(resources, matrix, rect, grid_cell_size, offset);
     }
 
-    pub fn cancel(self, grid: &mut EditGrid) -> bool {
-        grid.roll_back_provisional_changes()
+    /// Cancels/undoes the in-progress selection drag.  Returns true if any
+    /// provisional changes were rolled back.
+    pub fn cancel(self, ui: &mut Ui, grid: &mut EditGrid) -> bool {
+        if grid.roll_back_provisional_changes() {
+            ui.request_redraw();
+            true
+        } else {
+            false
+        }
     }
 
-    pub fn finish(self, grid: &mut EditGrid) -> Option<CoordsRect> {
+    pub fn finish(self, ui: &mut Ui, grid: &mut EditGrid)
+                  -> Option<CoordsRect> {
+        ui.request_redraw();
         let top_left_coords = self.top_left_grid_pt().as_i32_round();
         let changes =
             changes_for_paste(grid, &self.selection, top_left_coords);
         if grid.try_mutate_provisionally(changes) {
             grid.commit_provisional_changes();
+            ui.audio().play_sound(Sound::DropChip);
             if self.original_selected_rect.is_some() {
                 Some(Rect::with_size(top_left_coords, self.selection.size()))
             } else {

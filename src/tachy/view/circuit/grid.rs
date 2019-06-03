@@ -357,28 +357,28 @@ impl EditGridView {
         return Cursor::default();
     }
 
-    fn on_hotkey(&mut self, hotkey: Hotkey) {
+    fn on_hotkey(&mut self, hotkey: Hotkey, ui: &mut Ui) {
         if hotkey == Hotkey::ZoomIn {
-            self.zoom_by(ZOOM_PER_KEYDOWN);
+            self.zoom_by(ZOOM_PER_KEYDOWN, ui);
         } else if hotkey == Hotkey::ZoomOut {
-            self.zoom_by(1.0 / ZOOM_PER_KEYDOWN);
+            self.zoom_by(1.0 / ZOOM_PER_KEYDOWN, ui);
         } else {
             match self.interaction {
                 Interaction::DraggingChip(ref mut drag) => {
                     match hotkey {
-                        Hotkey::FlipHorz => drag.flip_horz(),
-                        Hotkey::FlipVert => drag.flip_vert(),
-                        Hotkey::RotateCcw => drag.rotate_ccw(),
-                        Hotkey::RotateCw => drag.rotate_cw(),
+                        Hotkey::FlipHorz => drag.flip_horz(ui),
+                        Hotkey::FlipVert => drag.flip_vert(ui),
+                        Hotkey::RotateCcw => drag.rotate_ccw(ui),
+                        Hotkey::RotateCw => drag.rotate_cw(ui),
                         _ => {}
                     }
                 }
                 Interaction::DraggingSelection(ref mut drag) => {
                     match hotkey {
-                        Hotkey::FlipHorz => drag.flip_horz(),
-                        Hotkey::FlipVert => drag.flip_vert(),
-                        Hotkey::RotateCcw => drag.rotate_ccw(),
-                        Hotkey::RotateCw => drag.rotate_cw(),
+                        Hotkey::FlipHorz => drag.flip_horz(ui),
+                        Hotkey::FlipVert => drag.flip_vert(ui),
+                        Hotkey::RotateCcw => drag.rotate_ccw(ui),
+                        Hotkey::RotateCw => drag.rotate_cw(ui),
                         _ => {}
                     }
                 }
@@ -395,26 +395,25 @@ impl EditGridView {
                 self.tooltip
                     .tick(tick, prefs, |tag| tooltip_format(grid, tag));
                 // Scroll if we're holding down any scroll key(s):
-                let keyboard = ui.keyboard();
-                let left = keyboard
-                    .is_held(prefs.hotkey_code(Hotkey::ScrollLeft));
-                let right =
-                    keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollRight));
-                let up = keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollUp));
-                let down = keyboard
-                    .is_held(prefs.hotkey_code(Hotkey::ScrollDown));
+                let (left, right, up, down) = {
+                    let keyboard = ui.keyboard();
+                    (keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollLeft)),
+                     keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollRight)),
+                     keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollUp)),
+                     keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollDown)))
+                };
                 let dist = ((SCROLL_GRID_CELLS_PER_SECOND * tick.elapsed) *
                                 (GRID_CELL_SIZE as f64))
                     .round() as i32;
                 if left && !right {
-                    self.scroll_by_screen_dist(-dist, 0);
+                    self.scroll_by_screen_dist(-dist, 0, ui);
                 } else if right && !left {
-                    self.scroll_by_screen_dist(dist, 0);
+                    self.scroll_by_screen_dist(dist, 0, ui);
                 }
                 if up && !down {
-                    self.scroll_by_screen_dist(0, -dist);
+                    self.scroll_by_screen_dist(0, -dist, ui);
                 } else if down && !up {
-                    self.scroll_by_screen_dist(0, dist);
+                    self.scroll_by_screen_dist(0, dist, ui);
                 }
                 // Spring back to scroll bounds:
                 let expand = (self.size * (0.25 / self.zoom)).as_i32_round();
@@ -423,18 +422,22 @@ impl EditGridView {
                 if self.scroll.x < scroll_limit.x {
                     self.scroll.x =
                         track_towards(self.scroll.x, scroll_limit.x, tick);
+                    ui.request_redraw();
                 } else if self.scroll.x > scroll_limit.right() {
                     self.scroll.x = track_towards(self.scroll.x,
                                                   scroll_limit.right(),
                                                   tick);
+                    ui.request_redraw();
                 }
                 if self.scroll.y < scroll_limit.y {
                     self.scroll.y =
                         track_towards(self.scroll.y, scroll_limit.y, tick);
+                    ui.request_redraw();
                 } else if self.scroll.y > scroll_limit.bottom() {
                     self.scroll.y = track_towards(self.scroll.y,
                                                   scroll_limit.bottom(),
                                                   tick);
+                    ui.request_redraw();
                 }
             }
             Event::KeyDown(key) => {
@@ -445,12 +448,14 @@ impl EditGridView {
                     if let Interaction::RectSelected(rect) = self.interaction {
                         select::delete(grid, rect);
                         self.interaction = Interaction::Nothing;
+                        ui.request_redraw();
                     }
                 } else if key.command {
                     match key.code {
                         Keycode::A => {
                             self.interaction =
                                 Interaction::RectSelected(grid.bounds());
+                            ui.request_redraw();
                         }
                         Keycode::C => {
                             if let Interaction::RectSelected(rect) =
@@ -464,7 +469,7 @@ impl EditGridView {
                                 Selection::from_clipboard(ui.clipboard(),
                                                           grid.allowed_chips())
                             {
-                                self.cancel_interaction(grid);
+                                self.cancel_interaction(ui, grid);
                                 let size = selection.size().as_f32();
                                 let rel = vec2(size.width, size.height) * 0.5;
                                 let grid_pt =
@@ -475,6 +480,7 @@ impl EditGridView {
                                                               None);
                                 self.interaction =
                                     Interaction::DraggingSelection(drag);
+                                ui.request_redraw();
                             }
                         }
                         Keycode::X => {
@@ -483,21 +489,26 @@ impl EditGridView {
                             {
                                 select::cut(grid, rect, ui.clipboard());
                                 self.interaction = Interaction::Nothing;
+                                ui.request_redraw();
                             }
                         }
                         Keycode::Z if key.shift => {
-                            self.cancel_interaction(grid);
-                            grid.redo();
+                            self.cancel_interaction(ui, grid);
+                            if grid.redo() {
+                                ui.request_redraw();
+                            }
                         }
                         Keycode::Z => {
-                            if !self.cancel_interaction(grid) {
-                                grid.undo();
+                            if !self.cancel_interaction(ui, grid) {
+                                if grid.undo() {
+                                    ui.request_redraw();
+                                }
                             }
                         }
                         _ => {}
                     }
                 } else if let Some(hotkey) = prefs.hotkey_for_code(key.code) {
-                    self.on_hotkey(hotkey);
+                    self.on_hotkey(hotkey, ui);
                 }
             }
             Event::MouseDown(mouse) if mouse.left => {
@@ -533,7 +544,7 @@ impl EditGridView {
                         return None;
                     }
                     Interaction::DraggingSelection(drag) => {
-                        if let Some(rect) = drag.finish(grid) {
+                        if let Some(rect) = drag.finish(ui, grid) {
                             self.interaction = Interaction::RectSelected(rect);
                         }
                         return None;
@@ -546,6 +557,7 @@ impl EditGridView {
                     let drag = SelectingDrag::new(grid.bounds(),
                                                   grid_pt.as_i32_round());
                     self.interaction = Interaction::SelectingRect(drag);
+                    ui.request_redraw();
                     return None;
                 }
                 let mouse_coords = grid_pt.as_i32_floor();
@@ -572,7 +584,7 @@ impl EditGridView {
                     }
                 } else {
                     let mut drag = WireDrag::new();
-                    if drag.move_to(grid_pt, grid) {
+                    if drag.move_to(grid_pt, ui, grid) {
                         self.interaction = Interaction::DraggingWires(drag);
                     } else {
                         debug_log!("wire drag done (down)");
@@ -592,6 +604,7 @@ impl EditGridView {
                 let change = GridChange::ToggleCrossWire(coords);
                 if grid.try_mutate(vec![change]) {
                     // TODO: Play sound for toggling cross wire.
+                    ui.request_redraw();
                 }
             }
             Event::MouseMove(mouse) => {
@@ -612,21 +625,19 @@ impl EditGridView {
                         }
                     }
                     Interaction::DraggingBounds(ref mut drag) => {
-                        if drag.move_to(grid_pt, grid) {
-                            // TODO: Play sound for bounds drag changing
-                        }
+                        drag.move_to(grid_pt, ui, grid);
                     }
                     Interaction::DraggingChip(ref mut drag) => {
-                        drag.move_to(grid_pt);
+                        drag.move_to(grid_pt, ui);
                     }
                     Interaction::SelectingRect(ref mut drag) => {
-                        drag.move_to(grid_pt);
+                        drag.move_to(grid_pt, ui);
                     }
                     Interaction::DraggingSelection(ref mut drag) => {
-                        drag.move_to(grid_pt);
+                        drag.move_to(grid_pt, ui);
                     }
                     Interaction::DraggingWires(ref mut drag) => {
-                        if !drag.move_to(grid_pt, grid) {
+                        if !drag.move_to(grid_pt, ui, grid) {
                             debug_log!("wire drag done (move)");
                             should_stop_interaction = true;
                         }
@@ -644,8 +655,7 @@ impl EditGridView {
                             drag.finish(grid);
                         }
                         Interaction::DraggingChip(drag) => {
-                            drag.drop_onto_board(grid);
-                            ui.audio().play_sound(Sound::DropChip);
+                            drag.drop_onto_board(ui, grid);
                         }
                         Interaction::SelectingRect(drag) => {
                             let rect = drag.selected_rect();
@@ -658,13 +668,13 @@ impl EditGridView {
                             self.interaction = Interaction::RectSelected(rect);
                         }
                         Interaction::DraggingSelection(drag) => {
-                            if let Some(rect) = drag.finish(grid) {
+                            if let Some(rect) = drag.finish(ui, grid) {
                                 self.interaction =
                                     Interaction::RectSelected(rect);
                             }
                         }
                         Interaction::DraggingWires(drag) => {
-                            drag.finish(grid);
+                            drag.finish(ui, grid);
                         }
                     }
                     let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
@@ -674,11 +684,11 @@ impl EditGridView {
             }
             Event::Multitouch(touch) => {
                 self.tooltip.stop_hover_all();
-                self.zoom_by(touch.scale);
+                self.zoom_by(touch.scale, ui);
             }
             Event::Scroll(scroll) => {
                 self.tooltip.stop_hover_all();
-                self.scroll_by_screen_dist(scroll.delta.x, scroll.delta.y);
+                self.scroll_by_screen_dist(scroll.delta.x, scroll.delta.y, ui);
             }
             Event::Unfocus => {
                 self.tooltip.stop_hover_all();
@@ -688,20 +698,22 @@ impl EditGridView {
         return None;
     }
 
-    pub fn grab_from_parts_tray(&mut self, ctype: ChipType,
-                                screen_pt: Point2<i32>) {
+    pub fn grab_from_parts_tray(&mut self, screen_pt: Point2<i32>,
+                                ui: &mut Ui, ctype: ChipType) {
         let size = ctype.size();
         let start = 0.5 * Point2::new(size.width, size.height).as_f32();
         let mut drag =
             ChipDrag::new(ctype, Orientation::default(), None, start);
-        drag.move_to(self.screen_pt_to_grid_pt(screen_pt));
+        drag.move_to(self.screen_pt_to_grid_pt(screen_pt), ui);
         self.interaction = Interaction::DraggingChip(drag);
+        ui.request_redraw();
+        ui.audio().play_sound(Sound::GrabChip);
     }
 
-    pub fn drop_into_parts_tray(&mut self, grid: &mut EditGrid) {
+    pub fn drop_into_parts_tray(&mut self, ui: &mut Ui, grid: &mut EditGrid) {
         match self.interaction.take() {
             Interaction::DraggingChip(drag) => {
-                drag.drop_into_parts_tray(grid);
+                drag.drop_into_parts_tray(ui, grid);
             }
             other => self.interaction = other,
         }
@@ -709,24 +721,27 @@ impl EditGridView {
 
     /// Ceases the current interaction (if any) and sets `self.interaction` to
     /// `Nothing`.  Returns true if any provisional changes were rolled back.
-    fn cancel_interaction(&mut self, grid: &mut EditGrid) -> bool {
+    fn cancel_interaction(&mut self, ui: &mut Ui, grid: &mut EditGrid)
+                          -> bool {
         match self.interaction.take() {
-            Interaction::DraggingChip(drag) => drag.cancel(grid),
-            Interaction::DraggingSelection(drag) => drag.cancel(grid),
+            Interaction::DraggingChip(drag) => drag.cancel(ui, grid),
+            Interaction::DraggingSelection(drag) => drag.cancel(ui, grid),
             Interaction::DraggingWires(drag) => {
-                drag.finish(grid);
+                drag.finish(ui, grid);
                 false
             }
             _ => false,
         }
     }
 
-    fn zoom_by(&mut self, factor: f32) {
+    fn zoom_by(&mut self, factor: f32, ui: &mut Ui) {
         self.zoom = ZOOM_MIN.max(self.zoom * factor).min(ZOOM_MAX);
+        ui.request_redraw();
     }
 
-    fn scroll_by_screen_dist(&mut self, x: i32, y: i32) {
+    fn scroll_by_screen_dist(&mut self, x: i32, y: i32, ui: &mut Ui) {
         self.scroll += (vec2(x, y).as_f32() / self.zoom).as_i32_round();
+        ui.request_redraw();
     }
 
     fn screen_pt_to_grid_pt(&self, screen_pt: Point2<i32>) -> Point2<f32> {

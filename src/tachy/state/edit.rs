@@ -406,8 +406,9 @@ impl EditGrid {
         return true;
     }
 
-    pub fn undo(&mut self) {
-        self.roll_back_provisional_changes();
+    /// Returns true if any changes were made to the grid.
+    pub fn undo(&mut self) -> bool {
+        let mut changed = self.roll_back_provisional_changes();
         if let Some(changes) = self.undo_stack.pop() {
             for change in changes.iter() {
                 if !self.mutate_one(change) {
@@ -417,10 +418,13 @@ impl EditGrid {
             self.redo_stack.push(GridChange::invert_group(changes));
             self.typecheck_wires();
             self.mark_modified();
+            changed = true;
         }
+        changed
     }
 
-    pub fn redo(&mut self) {
+    /// Returns true if any changes were made to the grid.
+    pub fn redo(&mut self) -> bool {
         if let Some(changes) = self.redo_stack.pop() {
             debug_assert!(self.provisional_changes.is_empty());
             for change in changes.iter() {
@@ -431,6 +435,9 @@ impl EditGrid {
             self.undo_stack.push(GridChange::invert_group(changes));
             self.typecheck_wires();
             self.mark_modified();
+            true
+        } else {
+            false
         }
     }
 

@@ -19,6 +19,7 @@
 
 use cgmath::{Point2, vec2};
 use tachy::geom::{AsInt, Coords, Direction, Polygon};
+use tachy::gui::Ui;
 use tachy::save::WireShape;
 use tachy::state::{EditGrid, GridChange};
 
@@ -218,8 +219,10 @@ impl WireDrag {
         }
     }
 
-    pub fn move_to(&mut self, grid_pt: Point2<f32>, grid: &mut EditGrid)
+    pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui,
+                   grid: &mut EditGrid)
                    -> bool {
+        ui.request_redraw(); // TODO: only if changes were made
         let last_pt = self.last_pt;
         self.last_pt = Some(grid_pt);
         if let Some(start) = last_pt {
@@ -427,7 +430,8 @@ impl WireDrag {
         more
     }
 
-    pub fn finish(mut self, grid: &mut EditGrid) {
+    pub fn finish(mut self, ui: &mut Ui, grid: &mut EditGrid) {
+        ui.request_redraw(); // TODO: only if changes were made
         match (self.changed, self.prev, self.curr) {
             (_, Some(Zone::East(coords1)), Some(Zone::Center(coords2))) => {
                 if coords1 == coords2 {

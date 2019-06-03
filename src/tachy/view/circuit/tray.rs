@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use tachy::gui::ClockEventData;
+use tachy::gui::{ClockEventData, Ui};
 
 //===========================================================================//
 
@@ -40,9 +40,13 @@ impl TraySlide {
 
     pub fn distance(&self) -> i32 { self.slide.round() as i32 }
 
-    pub fn on_tick(&mut self, tick: &ClockEventData) {
+    pub fn on_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
         let goal = if self.shown { 0.0 } else { self.max_slide };
-        self.slide = track_towards(self.slide, goal, tick);
+        let new_slide = track_towards(self.slide, goal, tick);
+        if self.slide != new_slide {
+            self.slide = new_slide;
+            ui.request_redraw();
+        }
     }
 }
 

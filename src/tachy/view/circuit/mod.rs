@@ -144,7 +144,7 @@ impl CircuitView {
             match dialog.on_event(event, ui, is_valid_const) {
                 Some(Some(text)) => {
                     if let Ok(new_value) = text.parse::<u32>() {
-                        change_const_chip_value(grid, coords, new_value);
+                        change_const_chip_value(ui, grid, coords, new_value);
                     }
                 }
                 Some(None) => {}
@@ -175,10 +175,11 @@ impl CircuitView {
                             self.seconds_since_time_step -=
                                 SECONDS_PER_TIME_STEP;
                             result = eval.step_time();
+                            ui.request_redraw();
                         }
                     }
                 }
-                action = self.on_eval_result(result, grid, prefs);
+                action = self.on_eval_result(result, ui, grid, prefs);
             }
             Event::KeyDown(key) => {
                 if key.code == Keycode::Escape {
@@ -201,6 +202,7 @@ impl CircuitView {
                         self.seconds_since_time_step = 0.0;
                         self.controls_status = ControlsStatus::Stopped;
                         grid.stop_eval();
+                        ui.request_redraw();
                     }
                 }
                 Some(ControlsAction::RunOrPause) => {
@@ -211,16 +213,19 @@ impl CircuitView {
                             self.seconds_since_time_step = 0.0;
                             self.controls_status = ControlsStatus::Running;
                             grid.start_eval();
+                            ui.request_redraw();
                         }
                         ControlsStatus::Running => {
                             debug_assert!(grid.eval().is_some());
                             self.seconds_since_time_step = 0.0;
                             self.controls_status = ControlsStatus::Paused;
+                            ui.request_redraw();
                         }
                         ControlsStatus::Paused => {
                             debug_assert!(grid.eval().is_some());
                             self.seconds_since_time_step = 0.0;
                             self.controls_status = ControlsStatus::Running;
+                            ui.request_redraw();
                         }
                         ControlsStatus::Finished => {
                             debug_assert!(grid.eval().is_some());
@@ -233,12 +238,14 @@ impl CircuitView {
                         self.seconds_since_time_step = 0.0;
                         self.controls_status = ControlsStatus::Paused;
                         grid.start_eval();
+                        ui.request_redraw();
                     }
                     let mut result = EvalResult::Continue;
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_time();
+                        ui.request_redraw();
                     }
-                    action = self.on_eval_result(result, grid, prefs);
+                    action = self.on_eval_result(result, ui, grid, prefs);
                 }
                 Some(ControlsAction::StepCycle) => {
                     if grid.eval().is_none() {
@@ -246,12 +253,14 @@ impl CircuitView {
                         self.seconds_since_time_step = 0.0;
                         self.controls_status = ControlsStatus::Paused;
                         grid.start_eval();
+                        ui.request_redraw();
                     }
                     let mut result = EvalResult::Continue;
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_cycle();
+                        ui.request_redraw();
                     }
-                    action = self.on_eval_result(result, grid, prefs);
+                    action = self.on_eval_result(result, ui, grid, prefs);
                 }
                 Some(ControlsAction::StepSubcycle) => {
                     if grid.eval().is_none() {
@@ -259,12 +268,14 @@ impl CircuitView {
                         self.seconds_since_time_step = 0.0;
                         self.controls_status = ControlsStatus::Paused;
                         grid.start_eval();
+                        ui.request_redraw();
                     }
                     let mut result = EvalResult::Continue;
                     if let Some(eval) = grid.eval_mut() {
                         result = eval.step_subcycle();
+                        ui.request_redraw();
                     }
-                    action = self.on_eval_result(result, grid, prefs);
+                    action = self.on_eval_result(result, ui, grid, prefs);
                 }
             }
             return action;
@@ -273,13 +284,10 @@ impl CircuitView {
         let (opt_action, stop) = self.parts_tray.on_event(event, ui);
         match opt_action {
             Some(PartsAction::Grab(ctype, pt)) => {
-                self.edit_grid.grab_from_parts_tray(ctype, pt);
-                ui.audio().play_sound(Sound::GrabChip);
+                self.edit_grid.grab_from_parts_tray(pt, ui, ctype);
             }
             Some(PartsAction::Drop) => {
-                self.edit_grid.drop_into_parts_tray(grid);
-                // TODO: Only play sound if we were actually holding a chip
-                ui.audio().play_sound(Sound::DropChip);
+                self.edit_grid.drop_into_parts_tray(ui, grid);
             }
             None => {}
         }
@@ -307,14 +315,15 @@ impl CircuitView {
                                                 &value.to_string(),
                                                 u32::MAX.to_string().len());
                 self.edit_const_dialog = Some((dialog, coords));
+                ui.request_redraw();
             }
             None => {}
         }
         return action;
     }
 
-    fn on_eval_result(&mut self, result: EvalResult, grid: &mut EditGrid,
-                      prefs: &Prefs)
+    fn on_eval_result(&mut self, result: EvalResult, ui: &mut Ui,
+                      grid: &mut EditGrid, prefs: &Prefs)
                       -> Option<CircuitAction> {
         match result {
             EvalResult::Continue => None,
@@ -322,6 +331,7 @@ impl CircuitView {
                 debug_log!("Breakpoint: {:?}", coords_vec);
                 self.seconds_since_time_step = 0.0;
                 self.controls_status = ControlsStatus::Paused;
+                ui.request_redraw();
                 None
             }
             EvalResult::Victory(score) => {
@@ -351,11 +361,13 @@ impl CircuitView {
                     Some(ButtonDialogBox::new(size, prefs, &format, buttons));
                 // TODO: Unfocus other views
                 self.controls_status = ControlsStatus::Stopped;
+                ui.request_redraw();
                 Some(CircuitAction::Victory(area, score))
             }
             EvalResult::Failure => {
                 debug_log!("Failure!");
                 self.controls_status = ControlsStatus::Finished;
+                ui.request_redraw();
                 None
             }
         }
@@ -364,7 +376,7 @@ impl CircuitView {
 
 fn is_valid_const(text: &str) -> bool { text.parse::<u32>().is_ok() }
 
-fn change_const_chip_value(grid: &mut EditGrid, coords: Coords,
+fn change_const_chip_value(ui: &mut Ui, grid: &mut EditGrid, coords: Coords,
                            new_value: u32) {
     if let Some((coords, ChipType::Const(old_value), orient)) =
         grid.chip_at(coords)
@@ -377,7 +389,9 @@ fn change_const_chip_value(grid: &mut EditGrid, coords: Coords,
                                 ChipType::Const(new_value),
                                 orient),
         ];
-        if !grid.try_mutate(changes) {
+        if grid.try_mutate(changes) {
+            ui.request_redraw();
+        } else {
             debug_log!("WARNING: change_const_chip_value mutation failed");
         }
     }

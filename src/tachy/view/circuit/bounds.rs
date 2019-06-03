@@ -19,7 +19,7 @@
 
 use cgmath::Point2;
 use tachy::geom::{AsFloat, AsInt, CoordsDelta, CoordsRect, Rect};
-use tachy::gui::{Cursor, NextCursor};
+use tachy::gui::{Cursor, NextCursor, Ui};
 use tachy::state::{EditGrid, GridChange};
 
 //===========================================================================//
@@ -125,7 +125,8 @@ impl BoundsDrag {
         next_cursor.request(self.handle.cursor());
     }
 
-    pub fn move_to(&mut self, grid_pt: Point2<f32>, grid: &EditGrid) -> bool {
+    pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui,
+                   grid: &EditGrid) {
         self.drag_current_grid_pt = grid_pt;
         let delta: CoordsDelta = (self.drag_current_grid_pt -
                                       self.drag_start_grid_pt)
@@ -163,9 +164,8 @@ impl BoundsDrag {
         if new_bounds != self.bounds {
             self.bounds = new_bounds;
             self.acceptable = grid.can_have_bounds(self.bounds);
-            true
-        } else {
-            false
+            ui.request_redraw();
+            // TODO: Play sound for bounds drag changing
         }
     }
 

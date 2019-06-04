@@ -118,6 +118,7 @@ impl ConverseView {
             self.conv_list.on_event(event, ui, &state.current_conversation())
         {
             state.set_current_conversation(conv);
+            ui.request_redraw();
             self.update_conversation_bubbles(ui, state);
             None
         } else {

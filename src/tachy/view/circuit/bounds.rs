@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::Point2;
-use tachy::geom::{AsFloat, AsInt, CoordsDelta, CoordsRect, Rect};
+use tachy::geom::{AsFloat, AsInt, CoordsDelta, CoordsRect, CoordsSize, Rect};
 use tachy::gui::{Cursor, NextCursor, Ui};
 use tachy::state::{EditGrid, GridChange};
 
@@ -97,6 +97,7 @@ impl BoundsHandle {
 //===========================================================================//
 
 pub struct BoundsDrag {
+    min_size: CoordsSize,
     handle: BoundsHandle,
     drag_start_grid_pt: Point2<f32>,
     drag_current_grid_pt: Point2<f32>,
@@ -109,6 +110,7 @@ impl BoundsDrag {
                grid: &mut EditGrid)
                -> BoundsDrag {
         BoundsDrag {
+            min_size: grid.min_bounds_size(),
             handle,
             drag_start_grid_pt: start_grid_pt,
             drag_current_grid_pt: start_grid_pt,
@@ -137,12 +139,12 @@ impl BoundsDrag {
         match self.handle {
             BoundsHandle::TopLeft | BoundsHandle::Left |
             BoundsHandle::BottomLeft => {
-                left = (left + delta.x).min(right - 1);
+                left = (left + delta.x).min(right - self.min_size.width);
             }
             BoundsHandle::TopRight |
             BoundsHandle::Right |
             BoundsHandle::BottomRight => {
-                right = (right + delta.x).max(left + 1);
+                right = (right + delta.x).max(left + self.min_size.width);
             }
             BoundsHandle::Top | BoundsHandle::Bottom => {}
         }
@@ -151,12 +153,12 @@ impl BoundsDrag {
         match self.handle {
             BoundsHandle::TopLeft | BoundsHandle::Top |
             BoundsHandle::TopRight => {
-                top = (top + delta.y).min(bottom - 1);
+                top = (top + delta.y).min(bottom - self.min_size.height);
             }
             BoundsHandle::BottomLeft |
             BoundsHandle::Bottom |
             BoundsHandle::BottomRight => {
-                bottom = (bottom + delta.y).max(top + 1);
+                bottom = (bottom + delta.y).max(top + self.min_size.height);
             }
             BoundsHandle::Left | BoundsHandle::Right => {}
         }

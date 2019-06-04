@@ -164,12 +164,14 @@ impl PuzzlesView {
             self.puzzle_list.on_event(event, ui, &state.current_puzzle())
         {
             state.set_current_puzzle(puzzle);
+            ui.request_redraw();
             self.update_circuit_list(ui, state);
         }
         if let Some(circuit_name) =
             self.circuit_list.on_event(event, ui, state.circuit_name())
         {
             state.set_circuit_name(circuit_name);
+            ui.request_redraw();
         }
         // TODO: edit/delete/rename/copy buttons are not always enabled
         if let Some(action) = self.edit_button.on_event(event, ui, true) {

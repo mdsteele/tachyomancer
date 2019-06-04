@@ -23,7 +23,6 @@ use tachy::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction};
 
 //===========================================================================//
 
-#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub(super) enum InterfacePosition {
     Left(i32),
@@ -52,6 +51,43 @@ pub struct Interface {
 }
 
 impl Interface {
+    pub fn min_bounds_size(interfaces: &[Interface]) -> CoordsSize {
+        let mut min_width: i32 = 1;
+        let mut min_height: i32 = 1;
+        for dir in Direction::all() {
+            let mut min_left: i32 = 0;
+            let mut min_center: i32 = 0;
+            let mut min_right: i32 = 0;
+            for interface in interfaces.iter() {
+                if interface.side == dir {
+                    let num_ports = interface.ports.len() as i32;
+                    match interface.pos {
+                        InterfacePosition::Left(offset) => {
+                            min_left = min_left.max(num_ports + offset);
+                        }
+                        InterfacePosition::Center => {
+                            min_center = min_center.max(num_ports);
+                        }
+                        InterfacePosition::Right(offset) => {
+                            min_right = min_right.max(num_ports + offset);
+                        }
+                    }
+                    let min_size = if min_center > 0 {
+                        min_left.max(min_right) + min_center
+                    } else {
+                        min_left + min_right
+                    };
+                    if dir.is_vertical() {
+                        min_width = min_width.max(min_size);
+                    } else {
+                        min_height = min_height.max(min_size);
+                    }
+                }
+            }
+        }
+        CoordsSize::new(min_width, min_height)
+    }
+
     pub fn top_left(&self, bounds: CoordsRect) -> Coords {
         let span = match self.side {
             Direction::East | Direction::West => bounds.height,

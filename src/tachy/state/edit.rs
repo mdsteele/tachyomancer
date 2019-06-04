@@ -27,8 +27,8 @@ use std::collections::{HashMap, hash_map};
 use std::mem;
 use std::time::{Duration, Instant};
 use std::usize;
-use tachy::geom::{Coords, CoordsDelta, CoordsRect, Direction, Orientation,
-                  Rect};
+use tachy::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
+                  Orientation, Rect};
 use tachy::save::{ChipSet, ChipType, CircuitData, Profile, Puzzle, WireShape};
 
 //===========================================================================//
@@ -44,6 +44,7 @@ enum ChipCell {
 
 //===========================================================================//
 
+// TODO: Get rid of most of the wire changes in favor of ReplaceWires.
 #[derive(Debug)]
 pub enum GridChange {
     /// Adds a wire stub between two adjacent cells.
@@ -316,7 +317,15 @@ impl EditGrid {
 
     pub fn bounds(&self) -> CoordsRect { self.bounds }
 
+    pub fn min_bounds_size(&self) -> CoordsSize {
+        Interface::min_bounds_size(self.interfaces)
+    }
+
     pub fn can_have_bounds(&self, bounds: CoordsRect) -> bool {
+        let min_size = self.min_bounds_size();
+        if bounds.width < min_size.width || bounds.height < min_size.height {
+            return false;
+        }
         for &coords in self.chips.keys() {
             if !bounds.contains_point(coords) {
                 return false;

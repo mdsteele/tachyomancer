@@ -22,6 +22,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::usize;
+use strum::IntoEnumIterator;
 
 //===========================================================================//
 
@@ -39,7 +40,8 @@ pub enum Prereq {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, EnumIter, Eq, Hash, PartialEq,
+         Serialize)]
 pub enum Conversation {
     WakeUp,
     Basics,
@@ -48,20 +50,12 @@ pub enum Conversation {
     CaptainsCall,
 }
 
-const ALL_CONVERSATIONS: &[Conversation] = &[
-    Conversation::WakeUp,
-    Conversation::Basics,
-    Conversation::RestorePower,
-    Conversation::StepTwo,
-    Conversation::CaptainsCall,
-];
-
 impl Conversation {
     /// Returns the first conversation in the game, which is always unlocked.
     pub fn first() -> Conversation { Conversation::WakeUp }
 
     /// Returns an iterator over all conversations.
-    pub fn all() -> AllConversationsIter { AllConversationsIter { index: 0 } }
+    pub fn all() -> ConversationIter { Conversation::iter() }
 
     pub fn title(self) -> &'static str {
         match self {
@@ -237,26 +231,6 @@ impl ConversationProgress {
         }
         self.data.choices.as_mut().unwrap().insert(key, value);
         self.needs_save = true;
-    }
-}
-
-//===========================================================================//
-
-pub struct AllConversationsIter {
-    index: usize,
-}
-
-impl<'a> Iterator for AllConversationsIter {
-    type Item = Conversation;
-
-    fn next(&mut self) -> Option<Conversation> {
-        if self.index < ALL_CONVERSATIONS.len() {
-            let conv = ALL_CONVERSATIONS[self.index];
-            self.index += 1;
-            Some(conv)
-        } else {
-            None
-        }
     }
 }
 

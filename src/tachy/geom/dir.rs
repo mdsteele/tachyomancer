@@ -20,10 +20,11 @@
 use super::coords::{Coords, CoordsDelta};
 use cgmath::{Deg, vec2};
 use std::ops;
+use strum::IntoEnumIterator;
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumIter, Eq, Hash, PartialEq)]
 pub enum Direction {
     East,
     South,
@@ -31,15 +32,8 @@ pub enum Direction {
     North,
 }
 
-const ALL_DIRECTIONS: &[Direction] = &[
-    Direction::East,
-    Direction::South,
-    Direction::North,
-    Direction::West,
-];
-
 impl Direction {
-    pub fn all() -> AllDirectionsIter { AllDirectionsIter { index: 0 } }
+    pub fn all() -> DirectionIter { Direction::iter() }
 
     pub fn delta(self) -> CoordsDelta {
         match self {
@@ -115,26 +109,6 @@ impl ops::Neg for Direction {
             Direction::South => Direction::North,
             Direction::West => Direction::East,
             Direction::North => Direction::South,
-        }
-    }
-}
-
-//===========================================================================//
-
-pub struct AllDirectionsIter {
-    index: usize,
-}
-
-impl<'a> Iterator for AllDirectionsIter {
-    type Item = Direction;
-
-    fn next(&mut self) -> Option<Direction> {
-        if self.index < ALL_DIRECTIONS.len() {
-            let direction = ALL_DIRECTIONS[self.index];
-            self.index += 1;
-            Some(direction)
-        } else {
-            None
         }
     }
 }

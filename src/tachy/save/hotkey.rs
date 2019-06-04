@@ -21,10 +21,12 @@ pub use sdl2::keyboard::Keycode;
 use serde;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
+use strum::IntoEnumIterator;
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, EnumCount, EnumIter, EnumString, Eq, Hash, Ord,
+         PartialEq, PartialOrd)]
 pub enum Hotkey {
     EvalReset,
     EvalRunPause,
@@ -43,27 +45,9 @@ pub enum Hotkey {
     ZoomOut,
 }
 
-const ALL_HOTKEYS: &[Hotkey] = &[
-    Hotkey::EvalReset,
-    Hotkey::EvalRunPause,
-    Hotkey::EvalStepCycle,
-    Hotkey::EvalStepSubcycle,
-    Hotkey::EvalStepTime,
-    Hotkey::FlipHorz,
-    Hotkey::FlipVert,
-    Hotkey::RotateCcw,
-    Hotkey::RotateCw,
-    Hotkey::ScrollDown,
-    Hotkey::ScrollLeft,
-    Hotkey::ScrollRight,
-    Hotkey::ScrollUp,
-    Hotkey::ZoomIn,
-    Hotkey::ZoomOut,
-];
-
 impl Hotkey {
     /// Returns an iterator over all hotkeys.
-    pub fn all() -> AllHotkeysIter { AllHotkeysIter { index: 0 } }
+    pub fn all() -> HotkeyIter { Hotkey::iter() }
 
     pub fn name(self) -> &'static str {
         match self {
@@ -135,50 +119,6 @@ impl Hotkey {
     }
 }
 
-impl FromStr for Hotkey {
-    type Err = ();
-    fn from_str(string: &str) -> Result<Hotkey, ()> {
-        match string {
-            "EvalReset" => Ok(Hotkey::EvalReset),
-            "EvalRunPause" => Ok(Hotkey::EvalRunPause),
-            "EvalStepCycle" => Ok(Hotkey::EvalStepCycle),
-            "EvalStepSubcycle" => Ok(Hotkey::EvalStepSubcycle),
-            "EvalStepTime" => Ok(Hotkey::EvalStepTime),
-            "FlipHorz" => Ok(Hotkey::FlipHorz),
-            "FlipVert" => Ok(Hotkey::FlipVert),
-            "RotateCcw" => Ok(Hotkey::RotateCcw),
-            "RotateCw" => Ok(Hotkey::RotateCw),
-            "ScrollDown" => Ok(Hotkey::ScrollDown),
-            "ScrollLeft" => Ok(Hotkey::ScrollLeft),
-            "ScrollRight" => Ok(Hotkey::ScrollRight),
-            "ScrollUp" => Ok(Hotkey::ScrollUp),
-            "ZoomIn" => Ok(Hotkey::ZoomIn),
-            "ZoomOut" => Ok(Hotkey::ZoomOut),
-            _ => Err(()),
-        }
-    }
-}
-
-//===========================================================================//
-
-pub struct AllHotkeysIter {
-    index: usize,
-}
-
-impl<'a> Iterator for AllHotkeysIter {
-    type Item = Hotkey;
-
-    fn next(&mut self) -> Option<Hotkey> {
-        if self.index < ALL_HOTKEYS.len() {
-            let conv = ALL_HOTKEYS[self.index];
-            self.index += 1;
-            Some(conv)
-        } else {
-            None
-        }
-    }
-}
-
 //===========================================================================//
 
 pub struct HotkeyCodes {
@@ -221,7 +161,7 @@ impl HotkeyCodes {
         }
         self.hotkeys.insert(new_code, hotkey);
         self.keycodes.insert(hotkey, new_code);
-        debug_assert_eq!(self.keycodes.len(), ALL_HOTKEYS.len());
+        debug_assert_eq!(self.keycodes.len(), HOTKEY_COUNT);
         debug_assert_eq!(self.hotkeys.len(), self.keycodes.len());
     }
 }

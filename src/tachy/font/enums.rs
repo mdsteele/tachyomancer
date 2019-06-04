@@ -17,8 +17,6 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use std::str::FromStr;
-
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -46,7 +44,7 @@ pub enum Align {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumString, Eq, PartialEq)]
 pub enum Font {
     Alien,
     Bold,
@@ -65,24 +63,10 @@ impl Font {
     pub(super) fn png_name_and_data(self) -> (&'static str, &'static [u8]) {
         match self {
             Font::Alien => ("font/galactico", GALACTICO_PNG_DATA),
-            Font::Bold => {
-                ("font/inconsolata-boldr", INCONSOLATA_BOLD_PNG_DATA)
-            }
+            Font::Bold => ("font/inconsolata-bold", INCONSOLATA_BOLD_PNG_DATA),
             Font::Roman => {
                 ("font/inconsolata-regular", INCONSOLATA_REGULAR_PNG_DATA)
             }
-        }
-    }
-}
-
-impl FromStr for Font {
-    type Err = ();
-    fn from_str(string: &str) -> Result<Font, ()> {
-        match string {
-            "Alien" => Ok(Font::Alien),
-            "Bold" => Ok(Font::Bold),
-            "Roman" => Ok(Font::Roman),
-            _ => Err(()),
         }
     }
 }

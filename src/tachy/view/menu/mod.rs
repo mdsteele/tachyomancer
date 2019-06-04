@@ -29,8 +29,8 @@ use super::button::RadioButton;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath::{self, Matrix4};
 use tachy::geom::{AsFloat, Color3, MatrixExt, Rect, RectSize};
-use tachy::gui::{ClockEventData, Event, Keycode, Resources, Ui, Window,
-                 WindowOptions};
+use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Ui,
+                 Window, WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
 use tachy::state::{Cutscene, GameState};
 
@@ -174,6 +174,7 @@ impl MenuView {
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
                     state: &mut GameState)
                     -> Option<MenuAction> {
+        ui.cursor().request(Cursor::default());
         match event {
             Event::ClockTick(tick) => {
                 debug_assert!(self.left_section <= self.right_section);

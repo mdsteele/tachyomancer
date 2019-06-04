@@ -32,15 +32,14 @@ mod wire;
 
 pub use self::chip::{CHIP_CATEGORIES, ChipSet, ChipType};
 pub use self::circuit::CircuitData;
-pub use self::converse::{AllConversationsIter, Conversation,
-                         ConversationProgress};
+pub use self::converse::{Conversation, ConversationIter, ConversationProgress};
 pub use self::dir::{ProfileNamesIter, SaveDir};
-pub use self::hotkey::Hotkey;
+pub use self::hotkey::{Hotkey, HotkeyIter};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
 pub use self::profile::Profile;
 pub use self::progress::{CIRCUIT_NAME_MAX_WIDTH, CircuitNamesIter};
-pub use self::puzzle::{AllPuzzlesIter, Puzzle, PuzzleKind};
+pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
 pub use self::wire::WireShape;
 
 //===========================================================================//

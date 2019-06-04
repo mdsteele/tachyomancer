@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use std::str::FromStr;
+use strum::IntoEnumIterator;
 
 //===========================================================================//
 
@@ -33,8 +33,8 @@ pub enum PuzzleKind {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq,
-         PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, EnumIter, EnumString, Eq, Hash,
+         Ord, PartialEq, PartialOrd, Serialize)]
 pub enum Puzzle {
     TutorialOr,
     TutorialXor,
@@ -47,43 +47,12 @@ pub enum Puzzle {
     SandboxEvent,
 }
 
-const ALL_PUZZLES: &[Puzzle] = &[
-    Puzzle::TutorialOr,
-    Puzzle::TutorialXor,
-    Puzzle::TutorialMux,
-    Puzzle::AutomateHeliostat,
-    Puzzle::AutomateReactor,
-    Puzzle::AutomateSensors,
-    Puzzle::AutomateRobotArm,
-    Puzzle::SandboxBehavior,
-    Puzzle::SandboxEvent,
-];
-
-// TODO: Consider using strum crate for this (and other enums).
-impl FromStr for Puzzle {
-    type Err = ();
-    fn from_str(string: &str) -> Result<Puzzle, ()> {
-        match string {
-            "AutomateHeliostat" => Ok(Puzzle::AutomateHeliostat),
-            "AutomateReactor" => Ok(Puzzle::AutomateReactor),
-            "AutomateSensors" => Ok(Puzzle::AutomateSensors),
-            "AutomateRobotArm" => Ok(Puzzle::AutomateRobotArm),
-            "SandboxBehavior" => Ok(Puzzle::SandboxBehavior),
-            "SandboxEvent" => Ok(Puzzle::SandboxEvent),
-            "TutorialMux" => Ok(Puzzle::TutorialMux),
-            "TutorialOr" => Ok(Puzzle::TutorialOr),
-            "TutorialXor" => Ok(Puzzle::TutorialXor),
-            _ => Err(()),
-        }
-    }
-}
-
 impl Puzzle {
     /// Returns the first puzzle in the game, which is always unlocked.
     pub fn first() -> Puzzle { Puzzle::TutorialOr }
 
     /// Returns an iterator over all puzzles.
-    pub fn all() -> AllPuzzlesIter { AllPuzzlesIter { index: 0 } }
+    pub fn all() -> PuzzleIter { Puzzle::iter() }
 
     pub fn title(self) -> &'static str { self.data().title }
 
@@ -270,20 +239,16 @@ struct PuzzleData {
 
 //===========================================================================//
 
-pub struct AllPuzzlesIter {
-    index: usize,
-}
+#[cfg(test)]
+mod tests {
+    use super::Puzzle;
+    use std::str::FromStr;
 
-impl<'a> Iterator for AllPuzzlesIter {
-    type Item = Puzzle;
-
-    fn next(&mut self) -> Option<Puzzle> {
-        if self.index < ALL_PUZZLES.len() {
-            let puzzle = ALL_PUZZLES[self.index];
-            self.index += 1;
-            Some(puzzle)
-        } else {
-            None
+    #[test]
+    fn puzzle_to_and_from_string() {
+        for puzzle in Puzzle::all() {
+            let string = format!("{:?}", puzzle);
+            assert_eq!(Puzzle::from_str(&string), Ok(puzzle));
         }
     }
 }

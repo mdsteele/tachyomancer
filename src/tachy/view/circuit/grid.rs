@@ -23,6 +23,7 @@ use super::select::{self, SelectingDrag, Selection, SelectionDrag};
 use super::super::chip::ChipModel;
 use super::super::tooltip::Tooltip;
 use super::super::wire::WireModel;
+use super::tooltip::GridTooltipTag;
 use super::tutorial::TutorialBubble;
 use super::wiredrag::WireDrag;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
@@ -65,6 +66,7 @@ pub struct EditGridView {
     wire_model: WireModel,
     interaction: Interaction,
     tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
+    hover_wire: Option<usize>,
     tooltip: Tooltip<GridTooltipTag>,
 }
 
@@ -79,6 +81,7 @@ impl EditGridView {
             wire_model: WireModel::new(),
             interaction: Interaction::Nothing,
             tutorial_bubbles,
+            hover_wire: None,
             tooltip: Tooltip::new(window_size),
         }
     }
@@ -186,7 +189,12 @@ impl EditGridView {
         for (coords, dir, shape, size, color, has_error) in
             grid.wire_fragments()
         {
-            let color = if has_error {
+            let selected = grid.wire_index_at(coords, dir) == self.hover_wire;
+            // TODO: When a wire with an error is selected, we should hilight
+            //   the causes of the error (e.g. the two sender ports, or the
+            //   wire loop, or whatever).
+            let color = if has_error || selected {
+                // TODO: don't use error color for selected wires
                 WireColor::Ambiguous
             } else {
                 color
@@ -393,7 +401,7 @@ impl EditGridView {
         match event {
             Event::ClockTick(tick) => {
                 self.tooltip
-                    .tick(tick, ui, prefs, |tag| tooltip_format(grid, tag));
+                    .tick(tick, ui, prefs, |tag| tag.tooltip_format(grid));
                 // Scroll if we're holding down any scroll key(s):
                 let (left, right, up, down) = {
                     let keyboard = ui.keyboard();
@@ -441,14 +449,23 @@ impl EditGridView {
                 }
             }
             Event::KeyDown(key) => {
-                self.tooltip.stop_hover_all(ui);
                 if key.code == Keycode::Backspace ||
                     key.code == Keycode::Delete
                 {
-                    if let Interaction::RectSelected(rect) = self.interaction {
-                        select::delete(grid, rect);
-                        self.interaction = Interaction::Nothing;
-                        ui.request_redraw();
+                    match self.interaction {
+                        Interaction::Nothing => {
+                            if let Some(wire) = self.hover_wire {
+                                select::delete_wire(grid, wire);
+                                self.hover_wire = None;
+                                ui.request_redraw();
+                            }
+                        }
+                        Interaction::RectSelected(rect) => {
+                            select::delete(grid, rect);
+                            self.interaction = Interaction::Nothing;
+                            ui.request_redraw();
+                        }
+                        _ => {}
                     }
                 } else if key.command {
                     match key.code {
@@ -510,10 +527,11 @@ impl EditGridView {
                 } else if let Some(hotkey) = prefs.hotkey_for_code(key.code) {
                     self.on_hotkey(hotkey, ui);
                 }
+                self.stop_hover(ui);
             }
             Event::MouseDown(mouse) if mouse.left => {
                 let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
-                self.tooltip.stop_hover_all(ui);
+                self.stop_hover(ui);
                 if grid.eval().is_some() {
                     if let Some((coords, ctype, _)) =
                         grid.chip_at(grid_pt.as_i32_floor())
@@ -616,11 +634,22 @@ impl EditGridView {
                     Interaction::RectSelected(_) => {
                         if !mouse.left && !mouse.right {
                             if let Some(tag) =
-                                self.tooltip_tag_for_grid_pt(grid, grid_pt)
+                                GridTooltipTag::for_grid_pt(grid, grid_pt)
                             {
+                                if let GridTooltipTag::Wire(wire) = tag {
+                                    if self.interaction.is_nothing() &&
+                                        self.hover_wire != Some(wire)
+                                    {
+                                        self.hover_wire = Some(wire);
+                                        ui.request_redraw();
+                                    }
+                                } else if self.hover_wire.is_some() {
+                                    self.hover_wire = None;
+                                    ui.request_redraw();
+                                }
                                 self.tooltip.start_hover(mouse.pt, ui, tag);
                             } else {
-                                self.tooltip.stop_hover_all(ui);
+                                self.stop_hover(ui);
                             }
                         }
                     }
@@ -683,19 +712,27 @@ impl EditGridView {
                 }
             }
             Event::Multitouch(touch) => {
-                self.tooltip.stop_hover_all(ui);
+                self.stop_hover(ui);
                 self.zoom_by(touch.scale, ui);
             }
             Event::Scroll(scroll) => {
-                self.tooltip.stop_hover_all(ui);
+                self.stop_hover(ui);
                 self.scroll_by_screen_dist(scroll.delta.x, scroll.delta.y, ui);
             }
             Event::Unfocus => {
-                self.tooltip.stop_hover_all(ui);
+                self.stop_hover(ui);
             }
             _ => {}
         }
         return None;
+    }
+
+    fn stop_hover(&mut self, ui: &mut Ui) {
+        self.tooltip.stop_hover_all(ui);
+        if self.hover_wire.is_some() {
+            self.hover_wire = None;
+            ui.request_redraw();
+        }
     }
 
     pub fn grab_from_parts_tray(&mut self, screen_pt: Point2<i32>,
@@ -755,41 +792,6 @@ impl EditGridView {
     fn coords_for_screen_pt(&self, screen_pt: Point2<i32>) -> Coords {
         self.screen_pt_to_grid_pt(screen_pt).as_i32_floor()
     }
-
-    fn tooltip_tag_for_grid_pt(&self, grid: &EditGrid, grid_pt: Point2<f32>)
-                               -> Option<GridTooltipTag> {
-        let coords: Coords = grid_pt.as_i32_floor();
-        if let Some((coords, ctype, _)) = grid.chip_at(coords) {
-            return Some(GridTooltipTag::Chip(coords, ctype));
-        }
-        if let Some((index, _)) = grid.interface_at(coords) {
-            return Some(GridTooltipTag::Interface(index));
-        }
-        // TODO: Figure out if we're actually visibly over the wire shape,
-        //   rather than just treating each wire shape as a triangle.
-        let x = grid_pt.x - (coords.x as f32);
-        let y = grid_pt.y - (coords.y as f32);
-        let dir = if x > y {
-            if x > (1.0 - y) {
-                Direction::East
-            } else {
-                Direction::North
-            }
-        } else {
-            if y > (1.0 - x) {
-                Direction::South
-            } else {
-                Direction::West
-            }
-        };
-        if let Some(index) = grid.wire_index_at(coords, dir) {
-            // TODO: When hovering over a wire with an error, we should hilight
-            //   the causes of the error (e.g. the two sender ports, or the
-            //   wire loop, or whatever).
-            return Some(GridTooltipTag::Wire(index));
-        }
-        return None;
-    }
 }
 
 fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
@@ -799,16 +801,6 @@ fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
     matrix * Matrix4::trans2(cx, cy) *
         Matrix4::from_angle_z(dir.angle_from_east()) *
         Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
-}
-
-fn tooltip_format(grid: &EditGrid, tag: &GridTooltipTag) -> String {
-    match *tag {
-        GridTooltipTag::Chip(_, ctype) => ctype.tooltip_format(),
-        GridTooltipTag::Interface(index) => {
-            grid.interfaces()[index].tooltip_format()
-        }
-        GridTooltipTag::Wire(index) => grid.wire_tooltip_format(index),
-    }
 }
 
 fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {
@@ -831,18 +823,16 @@ enum Interaction {
 }
 
 impl Interaction {
+    fn is_nothing(&self) -> bool {
+        match self {
+            Interaction::Nothing => true,
+            _ => false,
+        }
+    }
+
     fn take(&mut self) -> Interaction {
         mem::replace(self, Interaction::Nothing)
     }
-}
-
-//===========================================================================//
-
-#[derive(Eq, PartialEq)]
-enum GridTooltipTag {
-    Chip(Coords, ChipType),
-    Interface(usize),
-    Wire(usize),
 }
 
 //===========================================================================//

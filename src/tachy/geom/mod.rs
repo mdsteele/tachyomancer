@@ -32,7 +32,7 @@ pub use self::coords::{Coords, CoordsDelta, CoordsRect, CoordsSize};
 pub use self::dir::{Direction, DirectionIter};
 pub use self::matrix::MatrixExt;
 pub use self::orient::Orientation;
-pub use self::polygon::Polygon;
+pub use self::polygon::{Polygon, PolygonRef};
 pub use self::rect::{Rect, RectPointsIter, RectSize};
 
 //===========================================================================//

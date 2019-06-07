@@ -29,6 +29,78 @@ pub struct Polygon {
 impl Polygon {
     pub fn new(vertices: Vec<Point2<f32>>) -> Polygon { Polygon { vertices } }
 
+    pub fn as_ref(&self) -> PolygonRef {
+        PolygonRef::new(self.vertices.as_slice())
+    }
+
+    #[allow(dead_code)]
+    pub fn contains_point(&self, pt: Point2<f32>) -> bool {
+        self.as_ref().contains_point(pt)
+    }
+
+    /// Given the endpoints of a linear path, returns the index of the first
+    /// polygon edge intersected by the path and the point where the
+    /// intersection occurs, if any.
+    pub fn edge_intersection(&self, start: Point2<f32>, end: Point2<f32>)
+                             -> Option<(usize, Point2<f32>)> {
+        self.as_ref().edge_intersection(start, end)
+    }
+}
+
+//===========================================================================//
+
+#[derive(Clone, Copy, Debug)]
+pub struct PolygonRef<'a> {
+    vertices: &'a [Point2<f32>],
+}
+
+impl<'a> PolygonRef<'a> {
+    pub const fn new(vertices: &'a [Point2<f32>]) -> PolygonRef<'a> {
+        PolygonRef { vertices }
+    }
+
+    pub fn contains_point(&self, pt: Point2<f32>) -> bool {
+        // We're going to do a simple ray-casting test, where we imagine
+        // casting a ray from the point in the +X direction; if we intersect an
+        // even number of edges, then we must be outside the polygon.  So we
+        // start by assuming that we're outside (inside = false), and invert
+        // for each edge we intersect.
+        let mut inside = false;
+        for edge in self.edges() {
+            // Common case: if the edge is completely above or below the ray,
+            // then skip it.
+            if (edge.p1.y > pt.y && edge.p2.y > pt.y) ||
+                (edge.p1.y <= pt.y && edge.p2.y <= pt.y)
+            {
+                continue;
+            }
+            // Okay, the edge straddles the X-axis passing through the point.
+            // But if both vertices are to the left of the point, then we can
+            // skip this edge.
+            if edge.p1.x < pt.x && edge.p2.x < pt.x {
+                continue;
+            }
+            // Conversely, if both vertices are to the right of the point, then
+            // we definitely hit the edge.
+            if edge.p1.x > pt.x && edge.p2.x > pt.x {
+                inside = !inside;
+                continue;
+            }
+            // Otherwise, we can't easily be sure.  Compute the intersection of
+            // the edge with the X-axis passing through the point.  If the
+            // X-coordinate of the intersection is to the right of the point,
+            // then this is an edge-crossing.
+            if pt.x <=
+                edge.p1.x +
+                    (pt.y - edge.p1.y) * (edge.p2.x - edge.p1.x) /
+                        (edge.p2.y - edge.p1.y)
+            {
+                inside = !inside;
+            }
+        }
+        inside
+    }
+
     /// Given the endpoints of a linear path, returns the index of the first
     /// polygon edge intersected by the path and the point where the
     /// intersection occurs, if any.
@@ -44,7 +116,7 @@ impl Polygon {
         hit
     }
 
-    fn edges(&self) -> PolygonEdges { PolygonEdges::new(&self.vertices) }
+    fn edges(&self) -> PolygonEdges { PolygonEdges::new(self.vertices) }
 }
 
 //===========================================================================//
@@ -160,7 +232,7 @@ mod tests {
             Point2::new(2.0, -1.0),
             Point2::new(-1.0, 2.0),
         ]);
-        let edges: Vec<LineSegment> = polygon.edges().collect();
+        let edges: Vec<LineSegment> = polygon.as_ref().edges().collect();
         assert_eq!(edges.len(), 3);
     }
 
@@ -180,6 +252,18 @@ mod tests {
         assert_eq!(polygon.edge_intersection(Point2::new(5.0, 2.0),
                                              Point2::new(-1.0, 10.0)),
                    None);
+    }
+
+    #[test]
+    fn polygon_contains_point() {
+        let polygon = Polygon::new(vec![
+            Point2::new(-1.0, -1.0),
+            Point2::new(2.0, -1.0),
+            Point2::new(-1.0, 2.0),
+        ]);
+        assert!(polygon.contains_point(Point2::new(0.0, 0.0)));
+        assert!(!polygon.contains_point(Point2::new(1.0, 1.0)));
+        assert!(!polygon.contains_point(Point2::new(-3.0, 2.0)));
     }
 }
 

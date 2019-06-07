@@ -414,6 +414,16 @@ pub fn delete(grid: &mut EditGrid, selected_rect: CoordsRect) {
     }
 }
 
+pub fn delete_wire(grid: &mut EditGrid, wire_index: usize) {
+    let old_wires: HashMap<(Coords, Direction), WireShape> =
+        grid.wire_fragments_for_wire_index(wire_index).collect();
+    let new_wires = HashMap::<(Coords, Direction), WireShape>::new();
+    let changes = vec![GridChange::ReplaceWires(old_wires, new_wires)];
+    if !grid.try_mutate(changes) {
+        debug_log!("WARNING: delete_wire mutation failed");
+    }
+}
+
 pub fn cut_provisionally(grid: &mut EditGrid, selected_rect: CoordsRect)
                          -> Selection {
     let (changes, selection) = changes_for_cut(grid, selected_rect);

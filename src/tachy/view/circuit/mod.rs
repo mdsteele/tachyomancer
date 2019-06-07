@@ -24,6 +24,7 @@ mod grid;
 mod parts;
 mod select;
 mod specify;
+mod tooltip;
 mod tray;
 mod tutorial;
 mod verify;

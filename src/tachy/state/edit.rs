@@ -23,7 +23,7 @@ use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::{Interface, PuzzleExt, new_puzzle_eval};
 use super::size::WireSize;
-use std::collections::{HashMap, hash_map};
+use std::collections::{HashMap, hash_map, hash_set};
 use std::mem;
 use std::time::{Duration, Instant};
 use std::usize;
@@ -353,6 +353,14 @@ impl EditGrid {
         WireFragmentsIter {
             inner: self.fragments.iter(),
             wires: &self.wires,
+        }
+    }
+
+    pub fn wire_fragments_for_wire_index(&self, wire_index: usize)
+                                         -> WireFragmentsForWireIter {
+        WireFragmentsForWireIter {
+            inner: self.wires[wire_index].fragments.iter(),
+            fragments: &self.fragments,
         }
     }
 
@@ -1266,7 +1274,7 @@ impl<'a> Iterator for ChipsIter<'a> {
 
 pub struct WireFragmentsIter<'a> {
     inner: hash_map::Iter<'a, (Coords, Direction), (WireShape, usize)>,
-    wires: &'a Vec<WireInfo>,
+    wires: &'a [WireInfo],
 }
 
 impl<'a> Iterator for WireFragmentsIter<'a> {
@@ -1288,6 +1296,32 @@ impl<'a> Iterator for WireFragmentsIter<'a> {
 }
 
 impl<'a> ExactSizeIterator for WireFragmentsIter<'a> {
+    fn len(&self) -> usize { self.inner.len() }
+}
+
+//===========================================================================//
+
+pub struct WireFragmentsForWireIter<'a> {
+    inner: hash_set::Iter<'a, (Coords, Direction)>,
+    fragments: &'a HashMap<(Coords, Direction), (WireShape, usize)>,
+}
+
+impl<'a> Iterator for WireFragmentsForWireIter<'a> {
+    type Item = ((Coords, Direction), WireShape);
+
+    fn next(&mut self) -> Option<((Coords, Direction), WireShape)> {
+        if let Some(&(coords, dir)) = self.inner.next() {
+            let (shape, _) = self.fragments[&(coords, dir)];
+            Some(((coords, dir), shape))
+        } else {
+            None
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+}
+
+impl<'a> ExactSizeIterator for WireFragmentsForWireIter<'a> {
     fn len(&self) -> usize { self.inner.len() }
 }
 

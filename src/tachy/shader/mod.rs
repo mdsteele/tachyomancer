@@ -25,7 +25,7 @@ pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
 pub use self::ui::UiShader;
 use cgmath::{Matrix4, Vector2, Vector4};
-use tachy::geom::{Color3, Color4, MatrixExt, Rect};
+use tachy::geom::{Color3, MatrixExt, Rect};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 VertexArray, VertexBuffer};
 
@@ -239,24 +239,31 @@ impl SolidShader {
 pub struct WireShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
-    wire_color: ShaderUniform<Color4>,
+    wire_color: ShaderUniform<Color3>,
+    hilight: ShaderUniform<f32>,
 }
 
 impl WireShader {
     fn new(program: ShaderProgram) -> Result<WireShader, String> {
         let mvp = program.get_uniform("MVP")?;
         let wire_color = program.get_uniform("WireColor")?;
+        let hilight = program.get_uniform("Hilight")?;
         Ok(WireShader {
                program,
                mvp,
                wire_color,
+               hilight,
            })
     }
 
     pub fn bind(&self) { self.program.bind(); }
 
-    pub fn set_wire_color(&self, color: &Color4) {
+    pub fn set_wire_color(&self, color: &Color3) {
         self.wire_color.set(color);
+    }
+
+    pub fn set_hilighted(&self, hilighted: bool) {
+        self.hilight.set(&(if hilighted { 1.0 } else { 0.0 }));
     }
 
     pub fn set_mvp(&self, mvp: &Matrix4<f32>) { self.mvp.set(mvp); }

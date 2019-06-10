@@ -34,10 +34,15 @@ pub struct Texture1D {
 }
 
 impl Texture1D {
-    /// Creates a new one-color texture.  The length of the data array must be
-    /// a power of two, with one byte for each pixel.
-    pub fn new_red(data: &[u8]) -> Result<Texture1D, String> {
-        let width = data.len();
+    /// Creates a new RGBA texture.  The length of the data array must be a
+    /// power of two, with four bytes for each pixel.
+    pub fn new_rgba(data: &[u8]) -> Result<Texture1D, String> {
+        if data.len() % 4 != 0 {
+            return Err(format!("RGBA texture data has length of {}, \
+                                which is not a multiple of 4",
+                               data.len()));
+        }
+        let width = data.len() / 4;
         if !width.is_power_of_two() {
             return Err(format!("1D texture has width of {}, \
                                 which is not a power of 2",
@@ -49,10 +54,10 @@ impl Texture1D {
             gl::BindTexture(gl::TEXTURE_1D, name);
             gl::TexImage1D(gl::TEXTURE_1D,
                            0,
-                           gl::R8 as GLint,
+                           gl::RGBA8 as GLint,
                            width as GLsizei,
                            0,
-                           gl::RED,
+                           gl::RGBA,
                            gl::UNSIGNED_BYTE,
                            data.as_ptr() as *const c_void);
             gl::TexParameteri(gl::TEXTURE_1D,

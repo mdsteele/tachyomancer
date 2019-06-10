@@ -18,15 +18,15 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::Matrix4;
-use tachy::geom::Color4;
+use tachy::geom::Color3;
 use tachy::gl::{Primitive, VertexArray, VertexBuffer};
 use tachy::gui::Resources;
 use tachy::state::{WireColor, WireSize};
 
 //===========================================================================//
 
-const WIRE_COLOR_ERROR: Color4 = Color4::new(1.0, 0.0, 0.0, 1.0);
-const WIRE_COLOR_UNKNOWN: Color4 = Color4::new(0.65, 0.65, 0.65, 1.0);
+const WIRE_COLOR_ERROR: Color3 = Color3::new(1.0, 0.0, 0.0);
+const WIRE_COLOR_UNKNOWN: Color3 = Color3::new(0.65, 0.65, 0.65);
 
 const VERTICES_PER_WIRE_SIZE: usize = 52;
 
@@ -37,13 +37,12 @@ const COS_67_5: f32 = 0.38268343236508984;
 // param for each wire size:
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const SIZES: &[(f32, f32, f32, f32)] = &[
-    ( 2./32.,  0./128.,   2./128.,   4./128.), // 0-bit
-    ( 3./32.,  4./128.,   7./128.,  10./128.), // 1-bit
-    ( 5./32., 10./128.,  15./128.,  20./128.), // 2-bit
-    ( 8./32., 20./128.,  28./128.,  36./128.), // 4-bit
-    (11./32., 36./128.,  47./128.,  58./128.), // 8-bit
-    (15./32., 58./128.,  73./128.,  88./128.), // 16-bit
-    (20./32., 88./128., 108./128., 128./128.), // 32-bit
+    ( 5./32.,  0./128.,   5./128.,  10./128.), // 0-bit
+    ( 6./32., 10./128.,  16./128.,  22./128.), // 1-bit
+    ( 8./32., 22./128.,  30./128.,  38./128.), // 2-bit
+    (11./32., 38./128.,  49./128.,  60./128.), // 4-bit
+    (14./32., 60./128.,  74./128.,  88./128.), // 8-bit
+    (18./32., 88./128., 106./128., 124./128.), // 16-bit
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -131,7 +130,6 @@ fn wire_size_start(size: WireSize) -> usize {
         WireSize::Four => 3,
         WireSize::Eight => 4,
         WireSize::Sixteen => 5,
-        WireSize::ThirtyTwo => 6,
     };
     index * VERTICES_PER_WIRE_SIZE
 }
@@ -158,11 +156,12 @@ impl WireModel {
 
     /// Draws an east wire stub in the box from (-1, -1) to (1, 1).
     pub fn draw_stub(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                     color: WireColor, size: WireSize) {
+                     color: WireColor, size: WireSize, selected: bool) {
         let shader = resources.shaders().wire();
         shader.bind();
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
+        shader.set_hilighted(selected);
         resources.textures().wire().bind();
         self.varray.bind();
         let start = wire_size_start(size) + 0;
@@ -172,11 +171,12 @@ impl WireModel {
     /// Draws a horizontal straight wire in the box from (-1, -1) to (1, 1).
     pub fn draw_straight(&self, resources: &Resources,
                          matrix: &Matrix4<f32>, color: WireColor,
-                         size: WireSize) {
+                         size: WireSize, selected: bool) {
         let shader = resources.shaders().wire();
         shader.bind();
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
+        shader.set_hilighted(selected);
         resources.textures().wire().bind();
         self.varray.bind();
         let start = wire_size_start(size) + 9;
@@ -184,12 +184,13 @@ impl WireModel {
     }
 
     /// Draws a south/east wire corner in the box from (-1, -1) to (1, 1).
-    pub fn draw_corner(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                       color: WireColor, size: WireSize) {
+    pub fn draw_turn(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                     color: WireColor, size: WireSize, selected: bool) {
         let shader = resources.shaders().wire();
         shader.bind();
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
+        shader.set_hilighted(selected);
         resources.textures().wire().bind();
         self.varray.bind();
         let start = wire_size_start(size) + 13;
@@ -198,11 +199,12 @@ impl WireModel {
 
     /// Draws a south/east/north wire tee in the box from (-1, -1) to (1, 1).
     pub fn draw_tee(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                    color: WireColor, size: WireSize) {
+                    color: WireColor, size: WireSize, selected: bool) {
         let shader = resources.shaders().wire();
         shader.bind();
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
+        shader.set_hilighted(selected);
         resources.textures().wire().bind();
         self.varray.bind();
         let start = wire_size_start(size) + 21;
@@ -211,11 +213,12 @@ impl WireModel {
 
     /// Draws a wire cross in the box from (-1, -1) to (1, 1).
     pub fn draw_cross(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                      color: WireColor, size: WireSize) {
+                      color: WireColor, size: WireSize, selected: bool) {
         let shader = resources.shaders().wire();
         shader.bind();
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
+        shader.set_hilighted(selected);
         resources.textures().wire().bind();
         self.varray.bind();
         let start = wire_size_start(size) + 34;
@@ -223,12 +226,12 @@ impl WireModel {
     }
 }
 
-fn wire_color(color: WireColor) -> &'static Color4 {
+fn wire_color(color: WireColor) -> &'static Color3 {
     match color {
         WireColor::Unknown => &WIRE_COLOR_UNKNOWN,
         WireColor::Ambiguous => &WIRE_COLOR_ERROR,
-        WireColor::Behavior => &Color4::ORANGE3,
-        WireColor::Event => &Color4::CYAN3,
+        WireColor::Behavior => &Color3::ORANGE3,
+        WireColor::Event => &Color3::CYAN3,
     }
 }
 

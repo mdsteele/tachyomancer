@@ -59,20 +59,13 @@ const CONST_CHIP_DATA_16: &ChipData = &ChipData {
     dependencies: &[],
 };
 
-const CONST_CHIP_DATA_32: &ChipData = &ChipData {
-    ports: CONST_PORTS,
-    constraints: &[AbstractConstraint::AtLeast(0, WireSize::ThirtyTwo)],
-    dependencies: &[],
-};
-
-pub fn const_chip_data(value: u32) -> &'static ChipData {
+pub fn const_chip_data(value: u16) -> &'static ChipData {
     match WireSize::min_for_value(value) {
         WireSize::Zero | WireSize::One => CONST_CHIP_DATA_1,
         WireSize::Two => CONST_CHIP_DATA_2,
         WireSize::Four => CONST_CHIP_DATA_4,
         WireSize::Eight => CONST_CHIP_DATA_8,
         WireSize::Sixteen => CONST_CHIP_DATA_16,
-        WireSize::ThirtyTwo => CONST_CHIP_DATA_32,
     }
 }
 
@@ -82,11 +75,11 @@ pub struct ConstChipEval {
 }
 
 impl ConstChipEval {
-    pub fn new_evals(value: u32, slots: &[(usize, WireSize)])
+    pub fn new_evals(value: u16, slots: &[(usize, WireSize)])
                      -> Vec<(usize, Box<ChipEval>)> {
         debug_assert_eq!(slots.len(), const_chip_data(value).ports.len());
         let chip_eval = ConstChipEval {
-            value,
+            value: value.into(),
             output: slots[0].0,
         };
         vec![(0, Box::new(chip_eval))]

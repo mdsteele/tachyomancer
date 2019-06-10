@@ -38,7 +38,7 @@ use self::tutorial::TutorialBubble;
 use self::verify::VerificationTray;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath;
-use std::u32;
+use std::u16;
 use tachy::geom::{Coords, Direction, RectSize};
 use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
 use tachy::save::{ChipSet, ChipType, Prefs, Puzzle};
@@ -144,7 +144,7 @@ impl CircuitView {
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
             match dialog.on_event(event, ui, is_valid_const) {
                 Some(Some(text)) => {
-                    if let Ok(new_value) = text.parse::<u32>() {
+                    if let Ok(new_value) = text.parse::<u16>() {
                         change_const_chip_value(ui, grid, coords, new_value);
                     }
                 }
@@ -314,7 +314,7 @@ impl CircuitView {
                                                 prefs,
                                                 "Choose new const value:",
                                                 &value.to_string(),
-                                                u32::MAX.to_string().len());
+                                                u16::MAX.to_string().len());
                 self.edit_const_dialog = Some((dialog, coords));
                 ui.request_redraw();
             }
@@ -375,10 +375,10 @@ impl CircuitView {
     }
 }
 
-fn is_valid_const(text: &str) -> bool { text.parse::<u32>().is_ok() }
+fn is_valid_const(text: &str) -> bool { text.parse::<u16>().is_ok() }
 
 fn change_const_chip_value(ui: &mut Ui, grid: &mut EditGrid, coords: Coords,
-                           new_value: u32) {
+                           new_value: u16) {
     if let Some((coords, ChipType::Const(old_value), orient)) =
         grid.chip_at(coords)
     {

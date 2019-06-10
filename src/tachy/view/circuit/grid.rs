@@ -54,7 +54,7 @@ const ZOOM_PER_KEYDOWN: f32 = 1.415; // slightly more than sqrt(2)
 //===========================================================================//
 
 pub enum EditGridAction {
-    EditConst(Coords, u32),
+    EditConst(Coords, u16),
 }
 
 //===========================================================================//
@@ -193,8 +193,7 @@ impl EditGridView {
             // TODO: When a wire with an error is selected, we should hilight
             //   the causes of the error (e.g. the two sender ports, or the
             //   wire loop, or whatever).
-            let color = if has_error || selected {
-                // TODO: don't use error color for selected wires
+            let color = if has_error {
                 WireColor::Ambiguous
             } else {
                 color
@@ -202,27 +201,32 @@ impl EditGridView {
             match (shape, dir) {
                 (WireShape::Stub, _) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model.draw_stub(resources, &matrix, color, size);
+                    self.wire_model
+                        .draw_stub(resources, &matrix, color, size, selected);
                 }
                 (WireShape::Straight, Direction::East) |
                 (WireShape::Straight, Direction::North) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model
-                        .draw_straight(resources, &matrix, color, size);
+                    self.wire_model.draw_straight(resources,
+                                                  &matrix,
+                                                  color,
+                                                  size,
+                                                  selected);
                 }
                 (WireShape::TurnLeft, _) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
                     self.wire_model
-                        .draw_corner(resources, &matrix, color, size);
+                        .draw_turn(resources, &matrix, color, size, selected);
                 }
                 (WireShape::SplitTee, _) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model.draw_tee(resources, &matrix, color, size);
+                    self.wire_model
+                        .draw_tee(resources, &matrix, color, size, selected);
                 }
                 (WireShape::Cross, Direction::East) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
                     self.wire_model
-                        .draw_cross(resources, &matrix, color, size);
+                        .draw_cross(resources, &matrix, color, size, selected);
                 }
                 _ => {}
             }

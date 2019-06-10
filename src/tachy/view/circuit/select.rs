@@ -153,28 +153,36 @@ impl SelectionDrag {
                     (WireShape::Stub, _) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model.draw_stub(resources, &mat, color, size);
+                        wire_model
+                            .draw_stub(resources, &mat, color, size, false);
                     }
                     (WireShape::Straight, Direction::East) |
                     (WireShape::Straight, Direction::North) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model.draw_straight(resources, &mat, color, size);
+                        wire_model.draw_straight(resources,
+                                                 &mat,
+                                                 color,
+                                                 size,
+                                                 false);
                     }
                     (WireShape::TurnLeft, _) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model.draw_corner(resources, &mat, color, size);
+                        wire_model
+                            .draw_turn(resources, &mat, color, size, false);
                     }
                     (WireShape::SplitTee, _) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model.draw_tee(resources, &mat, color, size);
+                        wire_model
+                            .draw_tee(resources, &mat, color, size, false);
                     }
                     (WireShape::Cross, Direction::East) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model.draw_cross(resources, &mat, color, size);
+                        wire_model
+                            .draw_cross(resources, &mat, color, size, false);
                     }
                     _ => {}
                 }

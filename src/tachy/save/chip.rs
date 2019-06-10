@@ -26,7 +26,7 @@ use tachy::geom::CoordsSize;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChipType {
     // Value:
-    Const(u32),
+    Const(u16),
     Pack,
     Unpack,
     // Arithmetic:
@@ -241,13 +241,14 @@ impl ChipSet {
 #[cfg(test)]
 mod tests {
     use super::{CHIP_CATEGORIES, ChipSet, ChipType};
+    use std::u16;
 
     #[test]
     fn chip_type_to_and_from_string() {
         let mut chip_types = vec![
             ChipType::Const(0),
             ChipType::Const(13),
-            ChipType::Const(0xffffffff),
+            ChipType::Const(u16::MAX),
         ];
         for &(_, ctypes) in CHIP_CATEGORIES.iter() {
             chip_types.extend_from_slice(ctypes);

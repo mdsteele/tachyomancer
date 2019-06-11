@@ -39,6 +39,7 @@ pub enum Puzzle {
     TutorialOr,
     TutorialXor,
     TutorialMux,
+    TutorialAdd,
     AutomateHeliostat,
     AutomateReactor,
     AutomateSensors,
@@ -130,6 +131,28 @@ impl Puzzle {
                         * $!If $/a$/ and $/b$/ are the inputs and $/c$/ is \
                           the control, then a MUX is    \
                           ($/a$/ AND NOT $/c$/) OR ($/b$/ AND $/c$/).",
+                }
+            }
+            Puzzle::TutorialAdd => {
+                &PuzzleData {
+                    title: "4-Bit Adder",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 4-bit adder using 2-bit adders, \
+                        packers and unpackers.\n\n\
+                        Once this task is completed, you will be able to use \
+                        generic $*Add$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct a 4-bit adder.\n\
+                        * $!The output should be the sum of $*in1$* and \
+                          $*in2$*.  This sum will never be more than 15.\n\
+                        * $!You can use $*Unpack$* chips to separate the \
+                          4-bit inputs into hi and lo 2-bit values that the \
+                          2-bit adders can accept.  Remember to handle carry \
+                          bits appropriately.",
                 }
             }
             Puzzle::AutomateHeliostat => {

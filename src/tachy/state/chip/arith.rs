@@ -73,6 +73,59 @@ impl ChipEval for AddChipEval {
 
 //===========================================================================//
 
+pub const ADD_2BIT_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::North),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Two),
+        AbstractConstraint::Exact(1, WireSize::Two),
+        AbstractConstraint::Exact(2, WireSize::Two),
+        AbstractConstraint::Exact(3, WireSize::Two),
+    ],
+    dependencies: &[(0, 2), (1, 2), (0, 3), (1, 3)],
+};
+
+pub struct Add2BitChipEval {
+    input1: usize,
+    input2: usize,
+    output: usize,
+    carry: usize,
+}
+
+impl Add2BitChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), ADD_2BIT_CHIP_DATA.ports.len());
+        let chip_eval = Add2BitChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+            carry: slots[3].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for Add2BitChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input1, changed1) = state.recv_behavior(self.input1);
+        let (input2, changed2) = state.recv_behavior(self.input2);
+        if changed1 || changed2 {
+            let sum = input1 + input2;
+            let lo = sum & 0b11;
+            let hi = (sum >> 2) & 0b11;
+            state.send_behavior(self.output, lo);
+            state.send_behavior(self.carry, hi);
+        }
+    }
+}
+
+//===========================================================================//
+
 pub const MUL_CHIP_DATA: &ChipData = ADD_CHIP_DATA;
 
 pub struct MulChipEval {

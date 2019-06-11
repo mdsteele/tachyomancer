@@ -31,6 +31,7 @@ pub enum ChipType {
     Unpack,
     // Arithmetic:
     Add,
+    Add2Bit,
     Sub,
     Mul,
     // Comparison:
@@ -67,6 +68,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
     ]),
     ("Arithmetic", &[
         ChipType::Add,
+        ChipType::Add2Bit,
         ChipType::Sub,
         ChipType::Mul,
     ]),
@@ -104,6 +106,7 @@ impl str::FromStr for ChipType {
 
     fn from_str(string: &str) -> Result<ChipType, String> {
         match string {
+            "Add2Bit" => Ok(ChipType::Add2Bit),
             "Add" => Ok(ChipType::Add),
             "And" => Ok(ChipType::And),
             "Break" => Ok(ChipType::Break),
@@ -142,13 +145,6 @@ impl str::FromStr for ChipType {
 }
 
 impl ChipType {
-    pub fn is_interactive(self) -> bool {
-        match self {
-            ChipType::Button => true,
-            _ => false,
-        }
-    }
-
     /// Returns the width and height of the chip in its default orientation.
     pub fn size(self) -> CoordsSize {
         match self {
@@ -165,6 +161,7 @@ impl ChipType {
             ChipType::Not => "Bitwise NOT".to_string(),
             ChipType::Or => "Bitwise OR".to_string(),
             ChipType::Xor => "Bitwise XOR".to_string(),
+            ChipType::Add2Bit => "2-Bit Add".to_string(),
             other => format!("{:?}", other),
         };
         let description = match self {

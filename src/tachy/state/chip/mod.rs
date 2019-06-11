@@ -37,10 +37,19 @@ use tachy::save::{ChipType, Puzzle};
 
 //===========================================================================//
 
+pub enum ChipAvailability {
+    Always,
+    InteractiveOnly,
+    OnlyIn(&'static [Puzzle]),
+    UnlockedBy(Puzzle),
+}
+
+//===========================================================================//
+
 pub trait ChipExt {
     fn uses_events(&self) -> bool;
 
-    fn unlocked_by(&self) -> Option<Puzzle>;
+    fn availibility(&self) -> ChipAvailability;
 
     fn ports(&self, coords: Coords, orient: Orientation) -> Vec<PortSpec>;
 
@@ -59,32 +68,30 @@ impl ChipExt for ChipType {
             .any(|&(_, color, _, _)| color == PortColor::Event)
     }
 
-    fn unlocked_by(&self) -> Option<Puzzle> {
+    fn availibility(&self) -> ChipAvailability {
         match *self {
-            ChipType::Const(_) => None,
-            ChipType::Display => None,
-            ChipType::Not => None,
-            ChipType::And => None,
-            ChipType::Or => Some(Puzzle::TutorialOr),
-            ChipType::Xor => Some(Puzzle::TutorialXor),
-            ChipType::Pack | ChipType::Unpack => Some(Puzzle::TutorialXor),
-            ChipType::Mux => Some(Puzzle::TutorialMux),
-            ChipType::Add | ChipType::Sub | ChipType::Mul => {
-                Some(Puzzle::TutorialMux)
+            ChipType::Const(_) |
+            ChipType::Display |
+            ChipType::Not |
+            ChipType::And => ChipAvailability::Always,
+            ChipType::Or => ChipAvailability::UnlockedBy(Puzzle::TutorialOr),
+            ChipType::Xor | ChipType::Pack | ChipType::Unpack => {
+                ChipAvailability::UnlockedBy(Puzzle::TutorialXor)
             }
+            ChipType::Mux => ChipAvailability::UnlockedBy(Puzzle::TutorialMux),
+            ChipType::Add2Bit => {
+                ChipAvailability::OnlyIn(&[Puzzle::TutorialAdd])
+            }
+            ChipType::Add | ChipType::Sub | ChipType::Mul |
             ChipType::Cmp | ChipType::CmpEq | ChipType::Eq => {
-                Some(Puzzle::TutorialMux)
+                ChipAvailability::UnlockedBy(Puzzle::TutorialAdd)
             }
-            ChipType::Break => None,
-            ChipType::Button => None,
-            ChipType::Clock => None,
-            ChipType::Delay => None,
-            ChipType::Demux => None,
-            ChipType::Discard => None,
-            ChipType::Join => None,
-            ChipType::Latest => None,
-            ChipType::Ram => None,
-            ChipType::Sample => None,
+            ChipType::Break | ChipType::Clock | ChipType::Delay |
+            ChipType::Demux | ChipType::Discard | ChipType::Join |
+            ChipType::Latest | ChipType::Ram | ChipType::Sample => {
+                ChipAvailability::Always
+            }
+            ChipType::Button => ChipAvailability::InteractiveOnly,
         }
     }
 
@@ -139,6 +146,7 @@ impl ChipExt for ChipType {
 
 fn chip_data(ctype: ChipType) -> &'static ChipData {
     match ctype {
+        ChipType::Add2Bit => self::arith::ADD_2BIT_CHIP_DATA,
         ChipType::Add => self::arith::ADD_CHIP_DATA,
         ChipType::And => self::logic::AND_CHIP_DATA,
         ChipType::Break => self::special::BREAK_CHIP_DATA,
@@ -175,6 +183,7 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
                              -> Vec<(usize, Box<ChipEval>)> {
     debug_assert_eq!(slots.len(), chip_data(ctype).ports.len());
     match ctype {
+        ChipType::Add2Bit => self::arith::Add2BitChipEval::new_evals(slots),
         ChipType::Add => self::arith::AddChipEval::new_evals(slots),
         ChipType::And => self::logic::AndChipEval::new_evals(slots),
         ChipType::Break => {

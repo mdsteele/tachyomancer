@@ -138,6 +138,7 @@ impl ChipModel {
 fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
     match ctype {
         ChipType::Add => ChipIcon::Add,
+        ChipType::Add2Bit => ChipIcon::Add,
         ChipType::And => ChipIcon::And,
         ChipType::Clock => ChipIcon::Clock,
         ChipType::Cmp => ChipIcon::Cmp,

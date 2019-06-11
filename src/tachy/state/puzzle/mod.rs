@@ -30,9 +30,9 @@ pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
-pub use self::tutorial::{TutorialBubblePosition, TutorialMuxEval,
-                         TutorialOrEval, TutorialXorEval};
-use super::chip::ChipExt;
+pub use self::tutorial::{TutorialAddEval, TutorialBubblePosition,
+                         TutorialMuxEval, TutorialOrEval, TutorialXorEval};
+use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
 use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType, Profile, Puzzle,
@@ -68,6 +68,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
             Puzzle::TutorialXor => self::tutorial::XOR_INTERFACES,
             Puzzle::TutorialMux => self::tutorial::MUX_INTERFACES,
+            Puzzle::TutorialAdd => self::tutorial::ADD_INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
@@ -94,21 +95,20 @@ pub fn is_chip_allowed_in(ctype: ChipType, puzzle: Puzzle, profile: &Profile)
     if !puzzle.allows_events() && ctype.uses_events() {
         return false;
     }
-    match puzzle.kind() {
-        PuzzleKind::Tutorial | PuzzleKind::Fabricate |
-        PuzzleKind::Automate => {
-            if ctype.is_interactive() {
-                return false;
+    match ctype.availibility() {
+        ChipAvailability::Always => true,
+        ChipAvailability::InteractiveOnly => {
+            match puzzle.kind() {
+                PuzzleKind::Tutorial | PuzzleKind::Fabricate |
+                PuzzleKind::Automate => false,
+                PuzzleKind::Command | PuzzleKind::Sandbox => true,
             }
         }
-        PuzzleKind::Command | PuzzleKind::Sandbox => {}
-    }
-    if let Some(other_puzzle) = ctype.unlocked_by() {
-        if other_puzzle >= puzzle || !profile.is_puzzle_solved(other_puzzle) {
-            return false;
+        ChipAvailability::OnlyIn(puzzles) => puzzles.contains(&puzzle),
+        ChipAvailability::UnlockedBy(other_puzzle) => {
+            other_puzzle < puzzle && profile.is_puzzle_solved(other_puzzle)
         }
     }
-    return true;
 }
 
 
@@ -121,6 +121,7 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
         Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
         Puzzle::TutorialXor => Box::new(TutorialXorEval::new(slots)),
         Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
+        Puzzle::TutorialAdd => Box::new(TutorialAddEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::AutomateReactorEval::new(slots))

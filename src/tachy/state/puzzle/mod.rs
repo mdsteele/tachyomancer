@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod fabricate;
 mod heliostat;
 mod iface;
 mod reactor;
@@ -26,12 +27,13 @@ mod sandbox;
 mod sensors;
 mod tutorial;
 
+pub use self::fabricate::FabricateXorEval;
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::tutorial::{TutorialAddEval, TutorialBubblePosition,
-                         TutorialMuxEval, TutorialOrEval, TutorialXorEval};
+                         TutorialMuxEval, TutorialOrEval};
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
@@ -65,16 +67,16 @@ impl PuzzleExt for Puzzle {
 
     fn interfaces(&self) -> &'static [Interface] {
         match self {
-            Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
-            Puzzle::TutorialXor => self::tutorial::XOR_INTERFACES,
-            Puzzle::TutorialMux => self::tutorial::MUX_INTERFACES,
-            Puzzle::TutorialAdd => self::tutorial::ADD_INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
-            Puzzle::AutomateSensors => self::sensors::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
+            Puzzle::AutomateSensors => self::sensors::INTERFACES,
+            Puzzle::FabricateXor => self::fabricate::XOR_INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
+            Puzzle::TutorialAdd => self::tutorial::ADD_INTERFACES,
+            Puzzle::TutorialMux => self::tutorial::MUX_INTERFACES,
+            Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
         }
     }
 
@@ -83,8 +85,8 @@ impl PuzzleExt for Puzzle {
         -> &'static [(TutorialBubblePosition, &'static str)] {
         match self {
             Puzzle::TutorialOr => self::tutorial::OR_BUBBLES,
-            Puzzle::TutorialXor => self::tutorial::XOR_BUBBLES,
             Puzzle::TutorialMux => self::tutorial::MUX_BUBBLES,
+            Puzzle::TutorialAdd => self::tutorial::ADD_BUBBLES,
             _ => &[],
         }
     }
@@ -118,24 +120,24 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
                        slots: Vec<Vec<((Coords, Direction), usize)>>)
                        -> Box<PuzzleEval> {
     match puzzle {
-        Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
-        Puzzle::TutorialXor => Box::new(TutorialXorEval::new(slots)),
-        Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
-        Puzzle::TutorialAdd => Box::new(TutorialAddEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::AutomateReactorEval::new(slots))
         }
+        Puzzle::AutomateRobotArm => Box::new(RobotArmEval::new(slots)),
         Puzzle::AutomateSensors => {
             Box::new(self::sensors::SensorsEval::new(slots))
         }
-        Puzzle::AutomateRobotArm => Box::new(RobotArmEval::new(slots)),
+        Puzzle::FabricateXor => Box::new(FabricateXorEval::new(slots)),
         Puzzle::SandboxBehavior => {
             Box::new(self::sandbox::SandboxBehaviorEval::new(slots))
         }
         Puzzle::SandboxEvent => {
             Box::new(self::sandbox::SandboxEventEval::new(slots))
         }
+        Puzzle::TutorialAdd => Box::new(TutorialAddEval::new(slots)),
+        Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
+        Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
     }
 }
 

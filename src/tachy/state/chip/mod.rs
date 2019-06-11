@@ -75,10 +75,12 @@ impl ChipExt for ChipType {
             ChipType::Not |
             ChipType::And => ChipAvailability::Always,
             ChipType::Or => ChipAvailability::UnlockedBy(Puzzle::TutorialOr),
-            ChipType::Xor | ChipType::Pack | ChipType::Unpack => {
-                ChipAvailability::UnlockedBy(Puzzle::TutorialXor)
+            ChipType::Xor => {
+                ChipAvailability::UnlockedBy(Puzzle::FabricateXor)
             }
-            ChipType::Mux => ChipAvailability::UnlockedBy(Puzzle::TutorialMux),
+            ChipType::Mux | ChipType::Pack | ChipType::Unpack => {
+                ChipAvailability::UnlockedBy(Puzzle::TutorialMux)
+            }
             ChipType::Add2Bit => {
                 ChipAvailability::OnlyIn(&[Puzzle::TutorialAdd])
             }

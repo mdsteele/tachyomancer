@@ -37,7 +37,7 @@ pub enum PuzzleKind {
          Ord, PartialEq, PartialOrd, Serialize)]
 pub enum Puzzle {
     TutorialOr,
-    TutorialXor,
+    FabricateXor,
     TutorialMux,
     TutorialAdd,
     AutomateHeliostat,
@@ -92,15 +92,15 @@ impl Puzzle {
                           NOT ((NOT $/a$/) AND (NOT $/b$/)).",
                 }
             }
-            Puzzle::TutorialXor => {
+            Puzzle::FabricateXor => {
                 &PuzzleData {
                     title: "1-Bit XOR Gate",
-                    kind: PuzzleKind::Tutorial,
+                    kind: PuzzleKind::Fabricate,
                     allow_events: false,
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
-                        Tutorial: Build a 1-bit $*XOR$* gate out of $*AND$*, \
+                        Build a 1-bit $*XOR$* gate out of $*AND$*, \
                         $*OR$*, and $*NOT$* gates.\n\n\
                         Once this task is completed, you will be able to use \
                         $*XOR$* gates in future tasks.",

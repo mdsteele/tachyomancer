@@ -21,9 +21,8 @@ mod heliostat;
 mod robotarm;
 mod sensors;
 mod shared;
-mod tutorial;
 
-use self::shared::PuzzleVerifyView;
+use self::shared::{FabricationVerifyView, PuzzleVerifyView};
 use super::tray::TraySlide;
 use cgmath::{Deg, Matrix4, Point2, vec2};
 use tachy::font::Align;
@@ -31,7 +30,8 @@ use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::gui::{Cursor, Event, Resources, Ui};
 use tachy::save::Puzzle;
 use tachy::shader::UiShader;
-use tachy::state::CircuitEval;
+use tachy::state::{CircuitEval, FabricateXorEval, TutorialAddEval,
+                   TutorialMuxEval, TutorialOrEval};
 
 //===========================================================================//
 
@@ -56,16 +56,16 @@ impl VerificationTray {
                                        window_size.height - TRAY_INNER_MARGIN);
         let subview = match current_puzzle {
             Puzzle::TutorialOr => {
-                self::tutorial::TutorialOrVerifyView::new(right_bottom)
+                FabricationVerifyView::<TutorialOrEval>::new(right_bottom)
             }
-            Puzzle::TutorialXor => {
-                self::tutorial::TutorialXorVerifyView::new(right_bottom)
+            Puzzle::FabricateXor => {
+                FabricationVerifyView::<FabricateXorEval>::new(right_bottom)
             }
             Puzzle::TutorialMux => {
-                self::tutorial::TutorialMuxVerifyView::new(right_bottom)
+                FabricationVerifyView::<TutorialMuxEval>::new(right_bottom)
             }
             Puzzle::TutorialAdd => {
-                self::tutorial::TutorialAddVerifyView::new(right_bottom)
+                FabricationVerifyView::<TutorialAddEval>::new(right_bottom)
             }
             Puzzle::AutomateHeliostat => {
                 self::heliostat::HeliostatVerifyView::new(right_bottom)

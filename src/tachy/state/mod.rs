@@ -33,12 +33,14 @@ pub use self::chip::ChipExt;
 pub use self::converse::{ConversationBubble, ConversationExt, Portrait};
 pub use self::cutscene::{Cutscene, CutsceneScript, Theater};
 pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
-pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore};
+pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore,
+                     FabricationEval};
 pub use self::game::GameState;
 pub use self::port::{PortColor, PortFlow, PortSpec};
-pub use self::puzzle::{HeliostatEval, Interface, PuzzleExt, RobotArmEval,
-                       SensorsEval, TutorialAddEval, TutorialBubblePosition,
-                       TutorialMuxEval, TutorialOrEval, TutorialXorEval};
+pub use self::puzzle::{FabricateXorEval, HeliostatEval, Interface, PuzzleExt,
+                       RobotArmEval, SensorsEval, TutorialAddEval,
+                       TutorialBubblePosition, TutorialMuxEval,
+                       TutorialOrEval};
 pub use self::size::WireSize;
 
 //===========================================================================//

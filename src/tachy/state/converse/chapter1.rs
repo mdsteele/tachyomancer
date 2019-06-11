@@ -136,7 +136,7 @@ pub(super) fn basics(profile: &Profile, builder: &mut ConversationBuilder)
         There are still other components we're missing, so let's do a little \
         more practice.  Follow the datalink below, and I will walk you though \
         building a XOR gate.");
-    builder.puzzle(profile, Puzzle::TutorialXor)?;
+    builder.puzzle(profile, Puzzle::FabricateXor)?;
     builder.esra("\
         Great.  There is one last exercise I want you to do before we start \
         the real work.  There's a very important component we need to \

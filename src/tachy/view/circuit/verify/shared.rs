@@ -19,11 +19,12 @@
 
 use cgmath::{Matrix4, Point2};
 use std::collections::HashSet;
+use std::marker::PhantomData;
 use std::u32;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color3, Rect, RectSize};
 use tachy::gui::Resources;
-use tachy::state::{CircuitEval, EvalError};
+use tachy::state::{CircuitEval, EvalError, FabricationEval};
 
 //===========================================================================//
 
@@ -47,6 +48,40 @@ impl PuzzleVerifyView for NullVerifyView {
 
     fn draw(&self, _resources: &Resources, _matrix: &Matrix4<f32>,
             _circuit_eval: Option<&CircuitEval>) {
+    }
+}
+
+//===========================================================================//
+
+pub struct FabricationVerifyView<T> {
+    table: FabricationTable,
+    phantom: PhantomData<T>,
+}
+
+impl<T: FabricationEval> FabricationVerifyView<T> {
+    pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
+        let table = FabricationTable::new(right_bottom,
+                                          T::table_column_names(),
+                                          T::expected_table_values());
+        Box::new(FabricationVerifyView::<T> {
+                     table,
+                     phantom: PhantomData,
+                 })
+    }
+}
+
+impl<T: FabricationEval> PuzzleVerifyView for FabricationVerifyView<T> {
+    fn size(&self) -> RectSize<i32> { self.table.size() }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+            circuit_eval: Option<&CircuitEval>) {
+        let (time_step, values, errors) = if let Some(eval) = circuit_eval {
+            let puzzle = eval.puzzle_eval::<T>();
+            (Some(eval.time_step()), puzzle.table_values(), eval.errors())
+        } else {
+            (None, T::expected_table_values(), &[] as &[EvalError])
+        };
+        self.table.draw(resources, matrix, time_step, values, errors);
     }
 }
 

@@ -18,7 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 use super::iface::{Interface, InterfacePort, InterfacePosition};
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, EvalScore, FabricationEval,
+                         PuzzleEval};
 use tachy::geom::{Coords, Direction};
 use tachy::state::{PortColor, PortFlow, WireSize};
 
@@ -104,12 +105,6 @@ pub struct TutorialOrEval {
 }
 
 impl TutorialOrEval {
-    pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
-        &["In1", "In2", "Out"];
-
-    pub const EXPECTED_TABLE_VALUES: &'static [u64] =
-        &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1];
-
     pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
                -> TutorialOrEval {
         debug_assert_eq!(slots.len(), 3);
@@ -117,15 +112,13 @@ impl TutorialOrEval {
         debug_assert_eq!(slots[1].len(), 1);
         debug_assert_eq!(slots[2].len(), 1);
         TutorialOrEval {
-            table_values: TutorialOrEval::EXPECTED_TABLE_VALUES.to_vec(),
+            table_values: TutorialOrEval::expected_table_values().to_vec(),
             input1_wire: slots[0][0].1,
             input2_wire: slots[1][0].1,
             output_wire: slots[2][0].1,
             output_port: slots[2][0].0,
         }
     }
-
-    pub fn table_values(&self) -> &[u64] { &self.table_values }
 }
 
 impl PuzzleEval for TutorialOrEval {
@@ -165,137 +158,16 @@ impl PuzzleEval for TutorialOrEval {
     }
 }
 
-//===========================================================================//
-
-pub const XOR_INTERFACES: &[Interface] = &[
-    Interface {
-        name: "In1",
-        description: "First input (0 or 1).",
-        side: Direction::West,
-        pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In1",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
-    },
-    Interface {
-        name: "In2",
-        description: "Second input (0 or 1).",
-        side: Direction::South,
-        pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In2",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
-    },
-    Interface {
-        name: "Out",
-        description: "\
-            Should be 1 if exactly one input is 1.\n\
-            Should be 0 if the inputs are both 0 or both 1.",
-        side: Direction::East,
-        pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
-    },
-];
-
-pub const XOR_BUBBLES: &[(TutorialBubblePosition, &str)] =
-    &[
-        (TutorialBubblePosition::Bounds(Direction::North),
-         "Drag sideways from a wire to split it."),
-        (TutorialBubblePosition::Bounds(Direction::South),
-         "Perpendicular wires can cross over each other.  Click on a \
-          crossing to toggle whether the wires are connected."),
-    ];
-
-//===========================================================================//
-
-pub struct TutorialXorEval {
-    table_values: Vec<u64>,
-    input1_wire: usize,
-    input2_wire: usize,
-    output_wire: usize,
-    output_port: (Coords, Direction),
-}
-
-impl TutorialXorEval {
-    pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
-        &["In1", "In2", "Out"];
-
-    pub const EXPECTED_TABLE_VALUES: &'static [u64] =
-        &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0];
-
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> TutorialXorEval {
-        debug_assert_eq!(slots.len(), 3);
-        debug_assert_eq!(slots[0].len(), 1);
-        debug_assert_eq!(slots[1].len(), 1);
-        debug_assert_eq!(slots[2].len(), 1);
-        TutorialXorEval {
-            table_values: TutorialXorEval::EXPECTED_TABLE_VALUES.to_vec(),
-            input1_wire: slots[0][0].1,
-            input2_wire: slots[1][0].1,
-            output_wire: slots[2][0].1,
-            output_port: slots[2][0].0,
-        }
+impl FabricationEval for TutorialOrEval {
+    fn table_column_names() -> &'static [&'static str] {
+        &["In1", "In2", "Out"]
     }
 
-    pub fn table_values(&self) -> &[u64] { &self.table_values }
-}
-
-impl PuzzleEval for TutorialXorEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
-        if time_step >= 4 {
-            Some(EvalScore::WireLength)
-        } else {
-            state.send_behavior(self.input1_wire, time_step & 0x1);
-            state.send_behavior(self.input2_wire, (time_step & 0x2) >> 1);
-            None
-        }
+    fn expected_table_values() -> &'static [u64] {
+        &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1]
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
-        let input1 = state.recv_behavior(self.input1_wire).0;
-        let input2 = state.recv_behavior(self.input2_wire).0;
-        let expected = input1 ^ input2;
-        let actual = state.recv_behavior(self.output_wire).0;
-        self.table_values[3 * (time_step as usize) + 2] = actual as u64;
-        if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!("Expected output {} for inputs {} and {}, \
-                                  but output was {}",
-                                 expected,
-                                 input1,
-                                 input2,
-                                 actual),
-            };
-            vec![error]
-        } else {
-            vec![]
-        }
-    }
+    fn table_values(&self) -> &[u64] { &self.table_values }
 }
 
 //===========================================================================//
@@ -367,10 +239,10 @@ pub const MUX_INTERFACES: &[Interface] = &[
 pub const MUX_BUBBLES: &[(TutorialBubblePosition, &str)] =
     &[
         (TutorialBubblePosition::Bounds(Direction::North),
-         "Drag the edges of the board to resize it."),
+         "Drag sideways from a wire to split it."),
         (TutorialBubblePosition::Bounds(Direction::South),
-         "Drag from any grid cell corner in the board to select part of the \
-          circuit and cut/copy/paste."),
+         "Perpendicular wires can cross over each other.  Click on a \
+          crossing to toggle whether the wires are connected."),
     ];
 
 //===========================================================================//
@@ -385,21 +257,6 @@ pub struct TutorialMuxEval {
 }
 
 impl TutorialMuxEval {
-    pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
-        &["In0", "In1", "Ctrl", "Out"];
-
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    pub const EXPECTED_TABLE_VALUES: &'static [u64] = &[
-        1, 2, 0, 1,
-        1, 2, 1, 2,
-        3, 1, 0, 3,
-        3, 1, 1, 1,
-        0, 2, 0, 0,
-        0, 2, 1, 2,
-        2, 3, 0, 2,
-        2, 3, 1, 3,
-    ];
-
     pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
                -> TutorialMuxEval {
         debug_assert_eq!(slots.len(), 4);
@@ -408,7 +265,7 @@ impl TutorialMuxEval {
         debug_assert_eq!(slots[2].len(), 1);
         debug_assert_eq!(slots[3].len(), 1);
         TutorialMuxEval {
-            table_values: TutorialMuxEval::EXPECTED_TABLE_VALUES.to_vec(),
+            table_values: TutorialMuxEval::expected_table_values().to_vec(),
             input0_wire: slots[0][0].1,
             input1_wire: slots[1][0].1,
             control_wire: slots[2][0].1,
@@ -416,14 +273,12 @@ impl TutorialMuxEval {
             output_port: slots[3][0].0,
         }
     }
-
-    pub fn table_values(&self) -> &[u64] { &self.table_values }
 }
 
 impl PuzzleEval for TutorialMuxEval {
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
-        let expected = TutorialMuxEval::EXPECTED_TABLE_VALUES;
+        let expected = TutorialMuxEval::expected_table_values();
         let start = (time_step as usize) * 4;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
@@ -461,6 +316,28 @@ impl PuzzleEval for TutorialMuxEval {
             vec![]
         }
     }
+}
+
+impl FabricationEval for TutorialMuxEval {
+    fn table_column_names() -> &'static [&'static str] {
+        &["In0", "In1", "Ctrl", "Out"]
+    }
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn expected_table_values() -> &'static [u64] {
+        &[
+            1, 2, 0, 1,
+            1, 2, 1, 2,
+            3, 1, 0, 3,
+            3, 1, 1, 1,
+            0, 2, 0, 0,
+            0, 2, 1, 2,
+            2, 3, 0, 2,
+            2, 3, 1, 3,
+        ]
+    }
+
+    fn table_values(&self) -> &[u64] { &self.table_values }
 }
 
 //===========================================================================//
@@ -515,6 +392,15 @@ pub const ADD_INTERFACES: &[Interface] = &[
     },
 ];
 
+pub const ADD_BUBBLES: &[(TutorialBubblePosition, &str)] =
+    &[
+        (TutorialBubblePosition::Bounds(Direction::North),
+         "Drag the edges of the board to resize it."),
+        (TutorialBubblePosition::Bounds(Direction::South),
+         "Drag from any grid cell corner in the board to select part of the \
+          circuit and cut/copy/paste."),
+    ];
+
 //===========================================================================//
 
 pub struct TutorialAddEval {
@@ -526,22 +412,6 @@ pub struct TutorialAddEval {
 }
 
 impl TutorialAddEval {
-    pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
-        &["In1", "In2", "Out"];
-
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    pub const EXPECTED_TABLE_VALUES: &'static [u64] = &[
-        2, 1, 3,
-        5, 7, 12,
-        8, 2, 10,
-        4, 4, 8,
-        7, 7, 14,
-        3, 6, 9,
-        6, 5, 11,
-        1, 3, 4,
-        0, 15, 15,
-    ];
-
     pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
                -> TutorialAddEval {
         debug_assert_eq!(slots.len(), 3);
@@ -549,21 +419,19 @@ impl TutorialAddEval {
         debug_assert_eq!(slots[1].len(), 1);
         debug_assert_eq!(slots[2].len(), 1);
         TutorialAddEval {
-            table_values: TutorialAddEval::EXPECTED_TABLE_VALUES.to_vec(),
+            table_values: TutorialAddEval::expected_table_values().to_vec(),
             input1_wire: slots[0][0].1,
             input2_wire: slots[1][0].1,
             output_wire: slots[2][0].1,
             output_port: slots[2][0].0,
         }
     }
-
-    pub fn table_values(&self) -> &[u64] { &self.table_values }
 }
 
 impl PuzzleEval for TutorialAddEval {
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
-        let expected = TutorialAddEval::EXPECTED_TABLE_VALUES;
+        let expected = TutorialAddEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
@@ -598,6 +466,29 @@ impl PuzzleEval for TutorialAddEval {
             vec![]
         }
     }
+}
+
+impl FabricationEval for TutorialAddEval {
+    fn table_column_names() -> &'static [&'static str] {
+        &["In1", "In2", "Out"]
+    }
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn expected_table_values() -> &'static [u64] {
+        &[
+            2, 1, 3,
+            5, 7, 12,
+            8, 2, 10,
+            4, 4, 8,
+            7, 7, 14,
+            3, 6, 9,
+            6, 5, 11,
+            1, 3, 4,
+            0, 15, 15,
+        ]
+    }
+
+    fn table_values(&self) -> &[u64] { &self.table_values }
 }
 
 //===========================================================================//

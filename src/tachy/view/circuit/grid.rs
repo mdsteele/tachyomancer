@@ -127,7 +127,13 @@ impl EditGridView {
 
     fn draw_tutorial_bubbles(&self, resources: &Resources, grid: &EditGrid) {
         let matrix = self.unzoomed_matrix();
-        let bounds = grid.bounds().as_f32().expand(BOUNDS_MARGIN) *
+        let bounds =
+            if let Interaction::DraggingBounds(ref drag) = self.interaction {
+                drag.bounds()
+            } else {
+                grid.bounds()
+            };
+        let bounds = bounds.as_f32().expand(BOUNDS_MARGIN) *
             ((GRID_CELL_SIZE as f32) * self.zoom);
         let margin: i32 = 8;
         for &(dir, ref bubble) in self.tutorial_bubbles.iter() {

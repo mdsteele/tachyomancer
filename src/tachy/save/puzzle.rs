@@ -114,18 +114,18 @@ impl Puzzle {
             }
             Puzzle::TutorialMux => {
                 &PuzzleData {
-                    title: "2-Bit MUX",
+                    title: "1-Bit MUX",
                     kind: PuzzleKind::Tutorial,
                     allow_events: false,
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
-                        Tutorial: Build a 2-bit $*MUX$* using packers, \
-                        unpackers, and other logic gates.\n\n\
+                        Tutorial: Build a 1-bit $*MUX$* using other logic \
+                        gates.\n\n\
                         Once this task is completed, you will be able to use \
                         $*MUX$* chips in future tasks.",
                     instructions: "\
-                        * $!Your goal is to construct a 2-bit MUX.\n\
+                        * $!Your goal is to construct a 1-bit MUX.\n\
                         * $!The output should be the value of $*in0$* if \
                           $*ctrl$* is 0, or of $*in1$* if $*ctrl$* is 1.\n\
                         * $!If $/a$/ and $/b$/ are the inputs and $/c$/ is \

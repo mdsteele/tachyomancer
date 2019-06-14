@@ -2,9 +2,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="64" height="64">
   <g fill="none" stroke="black" stroke-width="4"
      transform="rotate(180, 32, 32)">
-    <path d="M 22,32 L 34,20 L 46,32 L 34,44 Z" fill="black"
-          fill-opacity="0.3"/>
+    <path d="M 22,32 L 34,20 L 46,32 L 34,44 Z"
+          fill="black" fill-opacity="0.3"
+          transform="translate(6,0)"/>
     <path d="M 0,35 H 64"/>
-    <path d="M 64,29 H 15 V 64"/>
+    <path d="M 64,29 H 21 V 64"/>
+    <g fill="none" stroke="black" stroke-width="1.5">
+      <g transform="translate(31,57)">
+        <path d="M -4,-4 v 8 m 0,-4 h 4 m 0,-4 v 8 m 4,0 v -8"/>
+      </g>
+      <g transform="translate(7,24) scale(1,-1)">
+        <path d="M -4,5 h 8 v -4"/>
+        <circle cx="0" cy="0" r="3.5"
+                transform="translate(0.25,-3) scale(1,0.75)"/>
+      </g>
+    </g>
   </g>
 </svg>

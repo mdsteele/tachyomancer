@@ -97,7 +97,7 @@ impl ChipEval for ConstChipEval {
 pub const PACK_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South),
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::North),
         (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
     ],
     constraints: &[

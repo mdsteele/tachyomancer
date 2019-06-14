@@ -25,7 +25,7 @@ pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
 pub use self::ui::UiShader;
 use cgmath::{Matrix4, Vector2, Vector4};
-use tachy::geom::{Color3, MatrixExt, Rect};
+use tachy::geom::{Color3, Color4, MatrixExt, Rect};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 VertexArray, VertexBuffer};
 
@@ -36,6 +36,9 @@ const BOARD_FRAG_CODE: &[u8] = include_bytes!("board.frag");
 
 const CHIP_VERT_CODE: &[u8] = include_bytes!("chip.vert");
 const CHIP_FRAG_CODE: &[u8] = include_bytes!("chip.frag");
+
+const ICON_VERT_CODE: &[u8] = include_bytes!("icon.vert");
+const ICON_FRAG_CODE: &[u8] = include_bytes!("icon.frag");
 
 const SOLID_VERT_CODE: &[u8] = include_bytes!("solid.vert");
 const SOLID_FRAG_CODE: &[u8] = include_bytes!("solid.frag");
@@ -48,6 +51,7 @@ const WIRE_FRAG_CODE: &[u8] = include_bytes!("wire.frag");
 pub struct Shaders {
     board: BoardShader,
     chip: ChipShader,
+    icon: IconShader,
     port: PortShader,
     portrait: PortraitShader,
     solid: SolidShader,
@@ -70,6 +74,8 @@ impl Shaders {
             Shader::new(ShaderType::Fragment, "chip.frag", CHIP_FRAG_CODE)?;
         let chip_prog = ShaderProgram::new(&[&chip_vert, &chip_frag])?;
         let chip = ChipShader::new(chip_prog)?;
+
+        let icon = IconShader::new()?;
 
         let port = PortShader::new()?;
 
@@ -94,6 +100,7 @@ impl Shaders {
         let shaders = Shaders {
             board,
             chip,
+            icon,
             port,
             portrait,
             solid,
@@ -106,6 +113,8 @@ impl Shaders {
     pub fn board(&self) -> &BoardShader { &self.board }
 
     pub fn chip(&self) -> &ChipShader { &self.chip }
+
+    pub fn icon(&self) -> &IconShader { &self.icon }
 
     pub fn port(&self) -> &PortShader { &self.port }
 
@@ -191,6 +200,53 @@ impl ChipShader {
         self.icon_coords.set(&icon_coords);
         self.icon_color.set(&icon_color);
         self.varray.bind();
+        self.varray.draw(Primitive::TriangleStrip, 0, 4);
+    }
+}
+
+//===========================================================================//
+
+pub struct IconShader {
+    program: ShaderProgram,
+    color: ShaderUniform<Color4>,
+    icon_index: ShaderUniform<u32>,
+    mvp: ShaderUniform<Matrix4<f32>>,
+    varray: VertexArray,
+    rect_vbuffer: VertexBuffer<u8>,
+}
+
+impl IconShader {
+    fn new() -> Result<IconShader, String> {
+        let vert =
+            Shader::new(ShaderType::Vertex, "icon.vert", ICON_VERT_CODE)?;
+        let frag =
+            Shader::new(ShaderType::Fragment, "icon.frag", ICON_FRAG_CODE)?;
+        let program = ShaderProgram::new(&[&vert, &frag])?;
+        let color = program.get_uniform("IconColor")?;
+        let icon_index = program.get_uniform("IconIndex")?;
+        let mvp = program.get_uniform("MVP")?;
+        let varray = VertexArray::new(1);
+        let rect_vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
+        Ok(IconShader {
+               program,
+               color,
+               icon_index,
+               mvp,
+               varray,
+               rect_vbuffer,
+           })
+    }
+
+    pub fn draw(&self, matrix: &Matrix4<f32>, rect: Rect<f32>, index: u32,
+                color: &Color4) {
+        self.program.bind();
+        self.color.set(color);
+        self.icon_index.set(&index);
+        let mvp = matrix * Matrix4::trans2(rect.x, rect.y) *
+            Matrix4::scale2(rect.width, rect.height);
+        self.mvp.set(&mvp);
+        self.varray.bind();
+        self.rect_vbuffer.attribi(0, 2, 0, 0);
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
     }
 }

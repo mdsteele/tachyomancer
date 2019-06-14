@@ -37,6 +37,7 @@ fn main() {
     converter.font_to_texture("inconsolata-bold");
     converter.font_to_texture("inconsolata-regular");
     converter.generate_chip_icons();
+    converter.generate_list_icons();
     converter.generate_portraits_texture();
     converter.svg_to_png(&PathBuf::from("src/tachy/gui/cursor.svg"),
                          &PathBuf::from("texture/cursor.png"),
@@ -60,6 +61,10 @@ const DIST_SPREAD: usize = 6;
 const CHIP_ICON_SIZE: usize = 64;
 const CHIP_TEXTURE_COLS: usize = 8;
 const CHIP_TEXTURE_ROWS: usize = 8;
+
+const LIST_ICON_SIZE: usize = 32;
+const LIST_TEXTURE_COLS: usize = 4;
+const LIST_TEXTURE_ROWS: usize = 4;
 
 const PORTRAIT_WIDTH: usize = 68;
 const PORTRAIT_HEIGHT: usize = 85;
@@ -196,6 +201,51 @@ impl Converter {
             writeln!(icon_rs, "    {} = {},", icon_name, index).unwrap();
         }
         writeln!(icon_rs, "    Blank = {},", icon_names.len()).unwrap();
+        writeln!(icon_rs, "}}").unwrap();
+    }
+
+    fn generate_list_icons(&self) {
+        // Convert list icon SVGs to PNGs:
+        let svg_dir = PathBuf::from("src/tachy/texture/listicon");
+        let mut png_paths = Vec::<PathBuf>::new();
+        let mut icon_names = Vec::<String>::new();
+        for entry in svg_dir.read_dir().unwrap() {
+            let svg_path = entry.unwrap().path();
+            if svg_path.extension() != Some("svg".as_ref()) {
+                continue;
+            }
+            let svg_name = svg_path.file_stem().unwrap();
+            let png_relpath =
+                PathBuf::from("listicon").join(svg_name).with_extension("png");
+            let png_path =
+                self.svg_to_png(&svg_path,
+                                &png_relpath,
+                                icns::PixelFormat::Alpha);
+            png_paths.push(png_path);
+            icon_names.push(capitalize(svg_name.to_str().unwrap()));
+        }
+        png_paths.sort();
+
+        // Combine icon PNGs into a single texture PNG:
+        self.sprite_images((LIST_ICON_SIZE, LIST_ICON_SIZE),
+                           icns::PixelFormat::Alpha,
+                           &png_paths,
+                           (LIST_ICON_SIZE * LIST_TEXTURE_COLS,
+                            LIST_ICON_SIZE * LIST_TEXTURE_ROWS),
+                           icns::PixelFormat::Gray,
+                           &PathBuf::from("texture/list_icons.png"));
+
+        // Generate ListIcon enum:
+        icon_names.sort();
+        let icon_rs_relpath = PathBuf::from("texture/list_icons.rs");
+        eprintln!("Generating: {:?}", icon_rs_relpath);
+        let icon_rs_path = self.out_dir.join(&icon_rs_relpath);
+        let mut icon_rs = File::create(&icon_rs_path).unwrap();
+        writeln!(icon_rs, "#[derive(Clone, Copy, Eq, PartialEq)]").unwrap();
+        writeln!(icon_rs, "pub enum ListIcon {{").unwrap();
+        for (index, icon_name) in icon_names.iter().enumerate() {
+            writeln!(icon_rs, "    {} = {},", icon_name, index).unwrap();
+        }
         writeln!(icon_rs, "}}").unwrap();
     }
 

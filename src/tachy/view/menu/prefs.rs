@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::list::ListView;
+use super::list::{ListIcon, ListView};
 use super::super::button::{Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton,
                            RadioCheckbox, Slider, SliderAction, TextButton};
 use cgmath::{Matrix4, Point2};
@@ -470,10 +470,11 @@ impl ProfilesPane {
     }
 }
 
-fn profile_list_items(state: &GameState) -> Vec<(String, String)> {
+fn profile_list_items(state: &GameState)
+                      -> Vec<(String, String, Option<ListIcon>)> {
     state
         .profile_names()
-        .map(|name| (name.to_string(), name.to_string()))
+        .map(|name| (name.to_string(), name.to_string(), None))
         .collect()
 }
 

@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::list::ListView;
+use super::list::{ListIcon, ListView};
 use super::super::button::TextButton;
 use super::super::paragraph::Paragraph;
 use cgmath::{Deg, Matrix4};
@@ -25,7 +25,7 @@ use std::cell::RefCell;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect};
 use tachy::gui::{Event, Resources, Ui};
-use tachy::save::{Prefs, Puzzle};
+use tachy::save::{Prefs, Puzzle, PuzzleKind};
 use tachy::state::GameState;
 
 //===========================================================================//
@@ -203,27 +203,36 @@ impl PuzzlesView {
     }
 }
 
-fn circuit_list_items(state: &GameState) -> Vec<(String, String)> {
+fn circuit_list_items(state: &GameState)
+                      -> Vec<(String, String, Option<ListIcon>)> {
     if let Some(profile) = state.profile() {
         profile
             .circuit_names(profile.current_puzzle())
-            .map(|name| (name.to_string(), name.to_string()))
+            .map(|name| (name.to_string(), name.to_string(), None))
             .collect()
     } else {
         Vec::new()
     }
 }
 
-fn puzzle_list_items(state: &GameState) -> Vec<(Puzzle, String)> {
+fn puzzle_list_items(state: &GameState)
+                     -> Vec<(Puzzle, String, Option<ListIcon>)> {
     Puzzle::all()
         .filter(|&puzzle| state.is_puzzle_unlocked(puzzle))
         .map(|puzzle| {
-                 let mut label = puzzle.title().to_string();
-                 if !state.is_puzzle_solved(puzzle) {
-                     label = format!("* {}", label);
-                 }
-                 (puzzle, label)
-             })
+            let mut label = puzzle.title().to_string();
+            if !state.is_puzzle_solved(puzzle) {
+                label = format!("* {}", label);
+            }
+            let icon = match puzzle.kind() {
+                PuzzleKind::Automate => ListIcon::Automate,
+                PuzzleKind::Command => ListIcon::Command,
+                PuzzleKind::Fabricate => ListIcon::Fabricate,
+                PuzzleKind::Sandbox => ListIcon::Sandbox,
+                PuzzleKind::Tutorial => ListIcon::Tutorial,
+            };
+            (puzzle, label, Some(icon))
+        })
         .collect()
 }
 

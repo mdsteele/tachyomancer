@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::list::ListView;
+use super::list::{ListIcon, ListView};
 use super::super::button::Scrollbar;
 use super::super::paragraph::Paragraph;
 use cgmath::{Matrix4, Point2, vec2};
@@ -139,7 +139,8 @@ impl ConverseView {
     }
 }
 
-fn conv_list_items(state: &GameState) -> Vec<(Conversation, String)> {
+fn conv_list_items(state: &GameState)
+                   -> Vec<(Conversation, String, Option<ListIcon>)> {
     Conversation::all()
         .filter(|&conv| state.is_conversation_unlocked(conv))
         .map(|conv| {
@@ -147,7 +148,7 @@ fn conv_list_items(state: &GameState) -> Vec<(Conversation, String)> {
                  if !state.is_conversation_complete(conv) {
                      label = format!("* {}", label);
                  }
-                 (conv, label)
+                 (conv, label, None)
              })
         .collect()
 }

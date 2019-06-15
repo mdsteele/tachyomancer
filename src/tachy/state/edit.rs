@@ -480,6 +480,10 @@ impl EditGrid {
         }
     }
 
+    pub fn has_provisional_changes(&self) -> bool {
+        !self.provisional_changes.is_empty()
+    }
+
     pub fn commit_provisional_changes(&mut self) -> bool {
         if self.provisional_changes.is_empty() {
             return false;

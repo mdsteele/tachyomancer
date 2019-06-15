@@ -40,7 +40,6 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 window.pump_audio();
                 view.draw(window.resources(), state.edit_grid().unwrap());
                 window.pump_video();
-                state.maybe_autosave_circuit();
             }
             event => {
                 match view.on_event(&event,
@@ -64,6 +63,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     None => {}
                 }
                 window.pump_cursor();
+                state.maybe_autosave_circuit();
             }
         }
     }

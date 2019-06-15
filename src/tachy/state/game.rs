@@ -83,7 +83,9 @@ impl GameState {
 
     pub fn maybe_autosave_circuit(&mut self) {
         if let Some(ref mut grid) = self.edit_grid {
-            if grid.has_been_modified_for_at_least(AUTOSAVE_DURATION) {
+            if grid.has_been_modified_for_at_least(AUTOSAVE_DURATION) &&
+                !grid.has_provisional_changes()
+            {
                 grid.mark_unmodified();
                 if let Some(ref mut profile) = self.profile {
                     let puzzle = profile.current_puzzle();

@@ -24,7 +24,7 @@ use tachy::geom::{Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
 use tachy::gui::Resources;
 use tachy::save::ChipType;
 use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
-                   PortSpec};
+                   PortSpec, WireSize};
 
 //===========================================================================//
 
@@ -236,7 +236,15 @@ fn draw_port(resources: &Resources, matrix: &Matrix4<f32>, port: &PortSpec) {
     shader.set_port_flow_and_color(port.flow == PortFlow::Send,
                                    port.color == PortColor::Event);
     resources.textures().brushed_metal().bind();
-    shader.draw();
+    let width_scale = match port.max_size {
+        WireSize::Zero => 0.25,
+        WireSize::One => 0.4,
+        WireSize::Two => 0.5,
+        WireSize::Four => 0.65,
+        WireSize::Eight => 0.8,
+        WireSize::Sixteen => 1.0,
+    };
+    shader.draw(width_scale);
 }
 
 //===========================================================================//

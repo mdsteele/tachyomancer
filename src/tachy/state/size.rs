@@ -48,7 +48,7 @@ impl WireSize {
         }
     }
 
-    fn half(self) -> WireSize {
+    pub fn half(self) -> WireSize {
         match self {
             WireSize::Zero => WireSize::Zero,
             WireSize::One => WireSize::Zero,

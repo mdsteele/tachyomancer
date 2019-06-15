@@ -25,11 +25,12 @@ mod logic;
 mod special;
 mod value;
 
-use self::data::{ChipData, localize};
+use self::data::{AbstractConstraint, ChipData, localize};
 use super::eval::{ChipEval, CircuitInteraction};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
                   PortSpec};
 use super::size::WireSize;
+use cgmath::Bounded;
 use std::cell::RefCell;
 use std::rc::Rc;
 use tachy::geom::{Coords, Orientation};
@@ -99,16 +100,35 @@ impl ChipExt for ChipType {
 
     fn ports(&self, coords: Coords, orient: Orientation) -> Vec<PortSpec> {
         let size = self.size();
-        chip_data(*self)
-            .ports
+        let data = chip_data(*self);
+        data.ports
             .iter()
-            .map(|&(flow, color, delta, dir)| {
+            .enumerate()
+            .map(|(index, &(flow, color, delta, dir))| {
+                let mut max_size = WireSize::max_value();
+                for constraint in data.constraints.iter() {
+                    match *constraint {
+                        AbstractConstraint::Exact(i, s) if i == index => {
+                            max_size = s;
+                            break;
+                        }
+                        AbstractConstraint::AtMost(i, s) if i == index => {
+                            max_size = max_size.min(s);
+                        }
+                        AbstractConstraint::Double(_, i) if i == index => {
+                            max_size = max_size
+                                .min(WireSize::max_value().half());
+                        }
+                        _ => {}
+                    }
+                }
                 PortSpec {
                     flow,
                     color,
                     coords: coords +
                         orient.transform_in_size(delta.into(), size),
                     dir: orient * dir,
+                    max_size,
                 }
             })
             .collect()

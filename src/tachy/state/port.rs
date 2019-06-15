@@ -52,6 +52,7 @@ pub struct PortSpec {
     pub color: PortColor,
     pub coords: Coords,
     pub dir: Direction,
+    pub max_size: WireSize,
 }
 
 impl PortSpec {

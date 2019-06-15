@@ -60,6 +60,7 @@ pub struct PortShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
     flow_and_color: ShaderUniform<u32>,
+    width_scale: ShaderUniform<f32>,
     color_tint: ShaderUniform<Color4>,
     port_varray: VertexArray,
     _port_vbuffer: VertexBuffer<f32>,
@@ -76,6 +77,7 @@ impl PortShader {
 
         let mvp = program.get_uniform("MVP")?;
         let flow_and_color = program.get_uniform("FlowAndColor")?;
+        let width_scale = program.get_uniform("WidthScale")?;
         let color_tint = program.get_uniform("ColorTint")?;
 
         let port_varray = VertexArray::new(2);
@@ -89,6 +91,7 @@ impl PortShader {
             program,
             mvp,
             flow_and_color,
+            width_scale,
             color_tint,
             port_varray,
             _port_vbuffer: port_vbuffer,
@@ -118,7 +121,8 @@ impl PortShader {
         self.flow_and_color.set(&value);
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&self, width_scale: f32) {
+        self.width_scale.set(&width_scale);
         self.port_varray.draw(Primitive::TriangleFan, 0, NUM_PORT_VERTICES);
     }
 }

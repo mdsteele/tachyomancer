@@ -143,6 +143,7 @@ impl Interface {
                     color: port.color,
                     coords: top_left + delta * (index as i32),
                     dir: port_dir,
+                    max_size: port.size,
                 };
                 (port.name, spec)
             })

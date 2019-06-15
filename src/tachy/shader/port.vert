@@ -5,6 +5,7 @@ layout(location = 1) in uint vertexEdge;
 
 uniform mat4 MVP;
 uniform uint FlowAndColor;
+uniform float WidthScale;
 
 out vec2 textureUV;
 
@@ -26,7 +27,7 @@ void main() {
     }
     x += 0.06 * delta;
   }
-  gl_Position = MVP * vec4(x, y, 0, 1);
+  gl_Position = MVP * vec4(x, y * WidthScale, 0, 1);
 
   float u = 0.5 * (y + 1);
   float v = x;

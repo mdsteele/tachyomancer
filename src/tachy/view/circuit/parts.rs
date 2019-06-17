@@ -204,7 +204,7 @@ impl PartsTray {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, enabled: bool)
                     -> (Option<PartsAction>, bool) {
         let rel_event =
             event.relative_to(Point2::new(-self.slide.distance(), 0));
@@ -223,25 +223,31 @@ impl PartsTray {
                     self.slide.toggle();
                     return (None, true);
                 } else if self.rect.contains_point(rel_mouse_pt) {
-                    let rel_scrolled_pt = rel_mouse_pt +
-                        vec2(0, self.scrollbar.scroll_top());
-                    for part in self.parts.iter() {
-                        if part.rect.contains_point(rel_scrolled_pt) {
-                            let action = PartsAction::Grab(part.ctype,
-                                                           mouse.pt);
-                            return (Some(action), true);
+                    if enabled {
+                        let rel_scrolled_pt = rel_mouse_pt +
+                            vec2(0, self.scrollbar.scroll_top());
+                        for part in self.parts.iter() {
+                            if part.rect.contains_point(rel_scrolled_pt) {
+                                let action = PartsAction::Grab(part.ctype,
+                                                               mouse.pt);
+                                return (Some(action), true);
+                            }
                         }
                     }
                     return (None, true);
                 }
             }
             Event::MouseMove(mouse) => {
-                if let Some(cursor) = self.cursor_for_mouse_pt(mouse.pt) {
+                if let Some(cursor) =
+                    self.cursor_for_mouse_pt(mouse.pt, enabled)
+                {
                     ui.cursor().request(cursor);
                 }
             }
             Event::MouseUp(mouse) => {
-                if let Some(cursor) = self.cursor_for_mouse_pt(mouse.pt) {
+                if let Some(cursor) =
+                    self.cursor_for_mouse_pt(mouse.pt, enabled)
+                {
                     ui.cursor().request(cursor);
                 }
                 if mouse.left && self.slid_rect().contains_point(mouse.pt) {
@@ -262,7 +268,8 @@ impl PartsTray {
         return (None, false);
     }
 
-    fn cursor_for_mouse_pt(&self, mouse_pt: Point2<i32>) -> Option<Cursor> {
+    fn cursor_for_mouse_pt(&self, mouse_pt: Point2<i32>, enabled: bool)
+                           -> Option<Cursor> {
         let rel_mouse_pt = mouse_pt + vec2(self.slide.distance(), 0);
         let tab_rect = UiShader::tray_tab_rect(self.rect.as_f32(),
                                                TRAY_TAB_HEIGHT,
@@ -274,7 +281,11 @@ impl PartsTray {
                 vec2(0, self.scrollbar.scroll_top());
             for part in self.parts.iter() {
                 if part.rect.contains_point(rel_scrolled_pt) {
-                    return Some(Cursor::HandOpen);
+                    if enabled {
+                        return Some(Cursor::HandOpen);
+                    } else {
+                        return Some(Cursor::NoSign);
+                    }
                 }
             }
             return Some(Cursor::default());

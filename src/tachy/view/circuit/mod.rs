@@ -282,7 +282,8 @@ impl CircuitView {
             return action;
         }
 
-        let (opt_action, stop) = self.parts_tray.on_event(event, ui);
+        let (opt_action, stop) =
+            self.parts_tray.on_event(event, ui, grid.eval().is_none());
         match opt_action {
             Some(PartsAction::Grab(ctype, pt)) => {
                 self.edit_grid.grab_from_parts_tray(pt, ui, ctype);

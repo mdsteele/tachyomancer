@@ -42,6 +42,18 @@
       <rect x="5" y="13" width="5" height="1"/>
     </g>
   </g>
+  <!-- No Sign -->
+  <g transform="translate(72, 0)">
+    <path d="M 1,11 A 10 10 0 1 0 21,11 A 10 10 0 1 0 1,11
+             M 5,14 A 7 7 0 0 1 14,5 Z
+             M 17,8 A 7 7 0 0 1 8,17 Z"
+          transform="translate(0.75, 1.5)"
+          fill="none" stroke="#000" stroke-opacity="0.3" stroke-width="1.5"/>
+    <path d="M 1,11 A 10 10 0 1 0 21,11 A 10 10 0 1 0 1,11
+             M 5,14 A 7 7 0 0 1 14,5 Z
+             M 17,8 A 7 7 0 0 1 8,17 Z"
+          fill="#900" stroke="#eee" stroke-width="1.5"/>
+  </g>
   <!-- Resize East/West -->
   <g transform="translate(0, 24) scale(1.5, 1.5)">
     <path d="M 1,7 L 5,3 L 5,6 L 9,6 L 9,3 L 13,7 L 9,11 L 9,8 L 5,8 L 5,11 Z"

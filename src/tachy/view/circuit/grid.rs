@@ -350,6 +350,8 @@ impl EditGridView {
                         grid.chip_at(coords)
                     {
                         return Cursor::HandPointing;
+                    } else {
+                        return Cursor::NoSign;
                     }
                 } else if SelectingDrag::is_near_vertex(grid_pt,
                                                         grid.bounds())

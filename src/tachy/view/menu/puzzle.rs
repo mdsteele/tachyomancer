@@ -25,8 +25,8 @@ use std::cell::RefCell;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect};
 use tachy::gui::{Event, Resources, Ui};
-use tachy::save::{Prefs, Puzzle, PuzzleKind};
-use tachy::state::GameState;
+use tachy::save::{Conversation, Prefs, Puzzle, PuzzleKind};
+use tachy::state::{GameState, PuzzleExt};
 
 //===========================================================================//
 
@@ -50,6 +50,7 @@ const GRAPH_TICK_THICKNESS: f32 = 2.0;
 
 #[derive(Clone, Copy)]
 pub enum PuzzlesAction {
+    GoToConversation(Conversation),
     Copy,
     Delete,
     Edit,
@@ -62,6 +63,7 @@ pub enum PuzzlesAction {
 pub struct PuzzlesView {
     puzzle_list: ListView<Puzzle>,
     circuit_list: ListView<String>,
+    back_button: TextButton<()>,
     description: DescriptionView,
     graph: GraphView,
     copy_button: TextButton<PuzzlesAction>,
@@ -138,6 +140,13 @@ impl PuzzlesView {
                                                    40),
                                          "Copy",
                                          PuzzlesAction::Copy),
+            back_button: TextButton::new(Rect::new(rect.right() - 200,
+                                                   rect.bottom() - 200 -
+                                                       4 * ELEMENT_SPACING,
+                                                   80,
+                                                   40),
+                                         "Back",
+                                         ()),
         }
     }
 
@@ -145,6 +154,7 @@ impl PuzzlesView {
                 state: &GameState) {
         let puzzle = state.current_puzzle();
         self.puzzle_list.draw(resources, matrix, &puzzle);
+        self.back_button.draw(resources, matrix, true);
         self.description.draw(resources, matrix, puzzle, state.prefs());
         let scores = state.puzzle_scores(puzzle);
         self.graph.draw(resources, matrix, puzzle, scores);
@@ -172,6 +182,14 @@ impl PuzzlesView {
         {
             state.set_circuit_name(circuit_name);
             ui.request_redraw();
+        }
+        if let Some(()) = self.back_button.on_event(event, ui, true) {
+            let puzzle = state.current_puzzle();
+            for &conv in puzzle.origin_conversations() {
+                if state.is_conversation_unlocked(conv) {
+                    return Some(PuzzlesAction::GoToConversation(conv));
+                }
+            }
         }
         // TODO: edit/delete/rename/copy buttons are not always enabled
         if let Some(action) = self.edit_button.on_event(event, ui, true) {

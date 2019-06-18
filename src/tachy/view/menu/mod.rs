@@ -31,7 +31,7 @@ use cgmath::{self, Matrix4};
 use tachy::geom::{AsFloat, Color3, MatrixExt, Rect, RectSize};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Ui,
                  Window, WindowOptions};
-use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, MenuSection, Puzzle};
+use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Puzzle};
 use tachy::state::{Cutscene, GameState};
 
 //===========================================================================//
@@ -53,6 +53,7 @@ const SECTION_TOP: i32 = SECTION_BUTTON_MARGIN_TOP + SECTION_BUTTON_HEIGHT +
 pub enum MenuAction {
     GoToPuzzle(Puzzle),
     PlayCutscene(Cutscene),
+    GoToConversation(Conversation),
     CopyCircuit,
     DeleteCircuit,
     EditCircuit,
@@ -334,6 +335,9 @@ impl MenuView {
             }
             MenuSection::Puzzles => {
                 match self.puzzles_view.on_event(event, ui, state) {
+                    Some(PuzzlesAction::GoToConversation(conv)) => {
+                        return Some(MenuAction::GoToConversation(conv));
+                    }
                     Some(PuzzlesAction::Copy) => {
                         return Some(MenuAction::CopyCircuit);
                     }
@@ -426,6 +430,13 @@ impl MenuView {
         let dialog =
             ButtonDialogBox::new(self.size, state.prefs(), &format, buttons);
         self.confirmation_dialog = Some(dialog);
+    }
+
+    pub fn go_to_current_conversation(&mut self, ui: &mut Ui,
+                                      state: &mut GameState) {
+        self.unfocus(ui, state);
+        state.set_menu_section(MenuSection::Messages);
+        self.update_conversation(ui, state);
     }
 
     pub fn go_to_current_puzzle(&mut self, ui: &mut Ui,

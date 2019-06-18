@@ -37,12 +37,13 @@ pub use self::tutorial::{TutorialAddEval, TutorialBubblePosition,
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
-use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType, Profile, Puzzle,
-                  PuzzleKind};
+use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType, Conversation, Profile,
+                  Puzzle, PuzzleKind};
 
 //===========================================================================//
 
 pub trait PuzzleExt {
+    fn origin_conversations(&self) -> &'static [Conversation];
     fn allowed_chips(&self, profile: &Profile) -> ChipSet;
     fn interfaces(&self) -> &'static [Interface];
     fn tutorial_bubbles(
@@ -53,6 +54,18 @@ pub trait PuzzleExt {
 //===========================================================================//
 
 impl PuzzleExt for Puzzle {
+    fn origin_conversations(&self) -> &'static [Conversation] {
+        match self {
+            Puzzle::AutomateHeliostat => &[Conversation::RestorePower],
+            Puzzle::AutomateReactor => &[Conversation::StepTwo],
+            Puzzle::AutomateSensors => &[Conversation::CaptainsCall],
+            Puzzle::TutorialAdd => &[Conversation::Basics],
+            Puzzle::TutorialMux => &[Conversation::Basics],
+            Puzzle::TutorialOr => &[Conversation::Basics],
+            _ => &[], // TODO: origin_conversations for other puzzles
+        }
+    }
+
     fn allowed_chips(&self, profile: &Profile) -> ChipSet {
         let mut allowed = ChipSet::new();
         for &(_, ctypes) in CHIP_CATEGORIES.iter() {

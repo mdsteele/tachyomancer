@@ -118,12 +118,47 @@ impl ops::Neg for Direction {
 #[cfg(test)]
 mod tests {
     use super::{Coords, Direction};
+    use cgmath::{Angle, Deg};
+
+    #[test]
+    fn direction_delta_angle() {
+        for dir in Direction::all() {
+            let delta = dir.delta();
+            let angle = dir.angle_from_east();
+            assert_eq!(Deg::atan2(delta.y as f32, delta.x as f32), angle);
+        }
+    }
+
+    #[test]
+    fn direction_flip() {
+        for dir in Direction::all() {
+            assert_eq!(dir.is_vertical(), dir.flip_vert().is_vertical());
+            if dir.is_vertical() {
+                assert_eq!(dir.flip_vert(), -dir);
+            } else {
+                assert_eq!(dir.flip_vert(), dir);
+            }
+        }
+    }
+
+    #[test]
+    fn direction_rotate() {
+        for dir in Direction::all() {
+            assert_ne!(dir, dir.rotate_cw());
+            assert_ne!(dir, dir.rotate_ccw());
+            assert_eq!(dir, dir.rotate_cw().rotate_ccw());
+            assert_eq!(dir, dir.rotate_ccw().rotate_cw());
+            assert_eq!(dir.is_vertical(), !dir.rotate_cw().is_vertical());
+            assert_eq!(dir.is_vertical(), !dir.rotate_ccw().is_vertical());
+        }
+    }
 
     #[test]
     fn direction_add_sub_neg() {
         let coords = Coords { x: 3, y: -4 };
         for dir in Direction::all() {
             let opp = -dir;
+            assert_ne!(dir, opp);
             assert_eq!(dir, -opp);
             assert_eq!(coords + dir, coords - opp);
             assert_eq!(coords - dir, coords + opp);

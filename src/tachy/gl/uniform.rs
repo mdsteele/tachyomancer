@@ -21,7 +21,7 @@ use cgmath::{Matrix4, Vector2, Vector4};
 use gl;
 use gl::types::{GLenum, GLint};
 use std::marker::PhantomData;
-use tachy::geom::{Color3, Color4, Rect};
+use tachy::geom::{Color3, Color4, Rect, RectSize};
 
 //===========================================================================//
 
@@ -92,6 +92,15 @@ impl UniformValue for Rect<f32> {
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform4f(loc, self.x, self.y, self.width, self.height);
+        }
+    }
+}
+
+impl UniformValue for RectSize<f32> {
+    fn gl_type() -> GLenum { gl::FLOAT_VEC2 }
+    fn set_uniform(&self, loc: GLint) {
+        unsafe {
+            gl::Uniform2f(loc, self.width, self.height);
         }
     }
 }

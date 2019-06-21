@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod frame;
 mod index;
 mod program;
 mod shader;
@@ -25,6 +26,7 @@ mod texture;
 mod uniform;
 mod vertex;
 
+pub use self::frame::FrameBuffer;
 pub use self::index::IndexBuffer;
 pub use self::program::ShaderProgram;
 pub use self::shader::{Shader, ShaderType};

@@ -40,7 +40,7 @@ use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath;
 use std::u16;
 use tachy::geom::{Coords, Direction, RectSize};
-use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
+use tachy::gui::{Event, Keycode, Resources, Sound, Ui, Window};
 use tachy::save::{ChipSet, ChipType, Prefs, Puzzle};
 use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
                    TutorialBubblePosition};
@@ -74,9 +74,10 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window_size: RectSize<i32>, puzzle: Puzzle,
-               allowed: &ChipSet, prefs: &Prefs)
+    pub fn new(window: &Window, puzzle: Puzzle, allowed: &ChipSet,
+               prefs: &Prefs)
                -> CircuitView {
+        let window_size = window.size();
         // TODO: Don't show any tutorial bubbles if puzzle is solved.
         let bubbles = puzzle.tutorial_bubbles();
         let bounds_bubbles: Vec<(Direction, TutorialBubble)> = bubbles
@@ -105,7 +106,7 @@ impl CircuitView {
             controls_tray: ControlsTray::new(window_size,
                                              puzzle,
                                              controls_bubble),
-            parts_tray: PartsTray::new(window_size, allowed, parts_bubble),
+            parts_tray: PartsTray::new(window, allowed, parts_bubble),
             specification_tray: SpecificationTray::new(window_size,
                                                        puzzle,
                                                        prefs),
@@ -123,7 +124,7 @@ impl CircuitView {
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
         self.verification_tray.draw(resources, &projection, grid.eval());
         self.specification_tray.draw(resources, &projection);
-        self.parts_tray.draw(resources, &projection);
+        self.parts_tray.draw(resources, &projection, grid.eval().is_none());
         self.controls_tray.draw(resources, &projection, self.controls_status);
         self.edit_grid.draw_dragged(resources);
         self.edit_grid.draw_tooltip(resources, &projection);

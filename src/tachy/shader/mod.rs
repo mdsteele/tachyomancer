@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod frame;
 mod port;
 mod portrait;
 mod ui;
 
+pub use self::frame::FrameBufferShader;
 pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
 pub use self::ui::UiShader;
@@ -51,6 +53,7 @@ const WIRE_FRAG_CODE: &[u8] = include_bytes!("wire.frag");
 pub struct Shaders {
     board: BoardShader,
     chip: ChipShader,
+    frame: FrameBufferShader,
     icon: IconShader,
     port: PortShader,
     portrait: PortraitShader,
@@ -74,6 +77,8 @@ impl Shaders {
             Shader::new(ShaderType::Fragment, "chip.frag", CHIP_FRAG_CODE)?;
         let chip_prog = ShaderProgram::new(&[&chip_vert, &chip_frag])?;
         let chip = ChipShader::new(chip_prog)?;
+
+        let frame = FrameBufferShader::new()?;
 
         let icon = IconShader::new()?;
 
@@ -100,6 +105,7 @@ impl Shaders {
         let shaders = Shaders {
             board,
             chip,
+            frame,
             icon,
             port,
             portrait,
@@ -113,6 +119,8 @@ impl Shaders {
     pub fn board(&self) -> &BoardShader { &self.board }
 
     pub fn chip(&self) -> &ChipShader { &self.chip }
+
+    pub fn frame(&self) -> &FrameBufferShader { &self.frame }
 
     pub fn icon(&self) -> &IconShader { &self.icon }
 

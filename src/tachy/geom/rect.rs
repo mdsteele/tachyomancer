@@ -52,6 +52,14 @@ impl AsFloat for RectSize<i32> {
     }
 }
 
+impl AsFloat for RectSize<usize> {
+    type Output32 = RectSize<f32>;
+
+    fn as_f32(&self) -> RectSize<f32> {
+        RectSize::new(self.width as f32, self.height as f32)
+    }
+}
+
 impl AsInt for RectSize<f32> {
     type Output32 = RectSize<i32>;
 
@@ -276,8 +284,17 @@ impl ExactSizeIterator for RectPointsIter<i32> {}
 
 #[cfg(test)]
 mod tests {
-    use super::Rect;
+    use super::{Rect, RectSize};
+    use super::super::cast::AsFloat;
     use cgmath::Point2;
+
+    #[test]
+    fn rect_size_as_float() {
+        assert_eq!(RectSize::<i32>::new(3, -4).as_f32(),
+                   RectSize::<f32>::new(3.0, -4.0));
+        assert_eq!(RectSize::<usize>::new(3, 4).as_f32(),
+                   RectSize::<f32>::new(3.0, 4.0));
+    }
 
     #[test]
     fn rect_contains_point() {

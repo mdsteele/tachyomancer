@@ -31,7 +31,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
         let grid = state.edit_grid().unwrap();
         let puzzle = grid.puzzle();
         let allowed = grid.allowed_chips();
-        CircuitView::new(window.size(), puzzle, allowed, state.prefs())
+        CircuitView::new(window, puzzle, allowed, state.prefs())
     };
     loop {
         match window.next_event() {

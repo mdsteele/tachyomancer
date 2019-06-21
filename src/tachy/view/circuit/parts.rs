@@ -23,9 +23,9 @@ use super::tray::TraySlide;
 use super::tutorial::TutorialBubble;
 use cgmath::{Deg, Matrix4, Point2, vec2};
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, MatrixExt, Orientation, Rect, RectSize};
-use tachy::gl::Stencil;
-use tachy::gui::{Cursor, Event, Resources, Ui};
+use tachy::geom::{AsFloat, Color4, MatrixExt, Orientation, Rect};
+use tachy::gl::{FrameBuffer, Stencil};
+use tachy::gui::{Cursor, Event, Resources, Ui, Window};
 use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType};
 use tachy::shader::UiShader;
 
@@ -61,8 +61,8 @@ pub enum PartsAction {
 
 pub struct PartsTray {
     rect: Rect<i32>,
-    category_labels: Vec<CategoryLabel>,
-    parts: Vec<Part>,
+    parts: Vec<(Rect<i32>, ChipType)>,
+    fbo: FrameBuffer,
     scrollbar: Scrollbar,
     slide: TraySlide,
     tutorial_bubble: Option<TutorialBubble>,
@@ -70,9 +70,10 @@ pub struct PartsTray {
 }
 
 impl PartsTray {
-    pub fn new(window_size: RectSize<i32>, allowed: &ChipSet,
+    pub fn new(window: &Window, allowed: &ChipSet,
                tutorial_bubble: Option<TutorialBubble>)
                -> PartsTray {
+        let window_size = window.size();
         let num_columns = if window_size.width < 1000 {
             2
         } else if window_size.width < 1200 {
@@ -80,9 +81,9 @@ impl PartsTray {
         } else {
             4
         };
-        let tray_width = 2 * TRAY_INNER_MARGIN +
-            num_columns * (PART_WIDTH + PART_SPACING) -
+        let fbo_width = num_columns * (PART_WIDTH + PART_SPACING) -
             PART_SPACING - 2 * PART_INNER_MARGIN;
+        let tray_width = 2 * TRAY_INNER_MARGIN + fbo_width;
         let mut rect = Rect::new(0,
                                  TRAY_OUTER_MARGIN,
                                  tray_width,
@@ -103,17 +104,18 @@ impl PartsTray {
         }
 
         let mut category_labels =
-            Vec::<CategoryLabel>::with_capacity(categories.len());
-        let mut parts = Vec::<Part>::with_capacity(num_parts);
-        let mut top = rect.y + TRAY_INNER_MARGIN;
+            Vec::<(i32, &'static str)>::with_capacity(categories.len());
+        let mut parts = Vec::<(Rect<i32>, ChipType)>::with_capacity(num_parts);
+        let mut top = 0;
         for (name, ctypes) in categories {
-            category_labels.push(CategoryLabel::new(top, name));
+            category_labels.push((top, name));
             top += CATEGORY_LABEL_HEIGHT - PART_INNER_MARGIN;
             let mut col = 0;
             for ctype in ctypes {
-                let left = TRAY_INNER_MARGIN - PART_INNER_MARGIN +
-                    col * (PART_WIDTH + PART_SPACING);
-                parts.push(Part::new(left, top, ctype));
+                let left = col * (PART_WIDTH + PART_SPACING) -
+                    PART_INNER_MARGIN;
+                let part_rect = Rect::new(left, top, PART_WIDTH, PART_HEIGHT);
+                parts.push((part_rect, ctype));
                 col += 1;
                 if col >= num_columns {
                     col = 0;
@@ -125,13 +127,46 @@ impl PartsTray {
             }
         }
 
+        let fbo_height = top + TRAY_INNER_MARGIN;
+        let fbo = FrameBuffer::new(fbo_width as usize, fbo_height as usize);
+        fbo.bind();
+        {
+            let resources = window.resources();
+            let projection = cgmath::ortho(0.0,
+                                           fbo_width as f32,
+                                           0.0,
+                                           fbo_height as f32,
+                                           -1.0,
+                                           1.0);
+            for &(top, text) in category_labels.iter() {
+                resources.fonts().roman().draw(&projection,
+                                               CATEGORY_LABEL_FONT_SIZE,
+                                               Align::TopLeft,
+                                               (0.0, top as f32),
+                                               text);
+            }
+            for &(part_rect, ctype) in parts.iter() {
+                let chip_size = ctype.size();
+                let chip_dim = chip_size.width.max(chip_size.height) as f32;
+                let rect = part_rect.expand(-PART_INNER_MARGIN).as_f32();
+                let matrix = projection * Matrix4::trans2(rect.x, rect.y) *
+                    Matrix4::from_scale(rect.width / chip_dim);
+                ChipModel::draw_chip(resources,
+                                     &matrix,
+                                     ctype,
+                                     Orientation::default(),
+                                     None);
+            }
+        }
+        fbo.unbind(window.size());
+
         let scrollbar =
             Scrollbar::new(Rect::new(rect.right() - TRAY_INNER_MARGIN +
                                          SCROLLBAR_MARGIN,
                                      rect.y + TRAY_INNER_MARGIN,
                                      SCROLLBAR_WIDTH,
                                      rect.height - 2 * TRAY_INNER_MARGIN),
-                           top + TRAY_INNER_MARGIN - rect.y);
+                           fbo_height);
         if scrollbar.is_visible() {
             rect.width += 2 * SCROLLBAR_MARGIN + SCROLLBAR_WIDTH -
                 TRAY_INNER_MARGIN;
@@ -139,8 +174,8 @@ impl PartsTray {
 
         PartsTray {
             rect,
-            category_labels,
             parts,
+            fbo,
             scrollbar,
             slide: TraySlide::new(rect.width),
             tutorial_bubble,
@@ -151,14 +186,15 @@ impl PartsTray {
         self.rect - vec2(self.slide.distance(), 0)
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                enabled: bool) {
         let matrix = matrix *
             Matrix4::trans2(-self.slide.distance() as f32, 0.0);
         {
             let stencil = Stencil::new();
             self.draw_box(resources, &matrix);
             stencil.enable_clipping();
-            self.draw_parts(resources, &matrix);
+            self.draw_parts(resources, &matrix, enabled);
         }
         self.scrollbar.draw(resources, &matrix);
         if let Some(ref bubble) = self.tutorial_bubble {
@@ -193,15 +229,16 @@ impl PartsTray {
                   TRAY_TAB_TEXT);
     }
 
-    fn draw_parts(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let scroll = self.scrollbar.scroll_top() as f32;
-        let matrix = matrix * Matrix4::trans2(0.0, -scroll);
-        for label in self.category_labels.iter() {
-            label.draw(resources, &matrix);
-        }
-        for part in self.parts.iter() {
-            part.draw(resources, &matrix);
-        }
+    fn draw_parts(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                  enabled: bool) {
+        let scroll = self.scrollbar.scroll_top();
+        let left_top = Point2::new(self.rect.x + TRAY_INNER_MARGIN,
+                                   self.rect.y + TRAY_INNER_MARGIN - scroll)
+            .as_f32();
+        resources
+            .shaders()
+            .frame()
+            .draw(matrix, &self.fbo, left_top, !enabled);
     }
 
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui, enabled: bool)
@@ -224,14 +261,11 @@ impl PartsTray {
                     return (None, true);
                 } else if self.rect.contains_point(rel_mouse_pt) {
                     if enabled {
-                        let rel_scrolled_pt = rel_mouse_pt +
-                            vec2(0, self.scrollbar.scroll_top());
-                        for part in self.parts.iter() {
-                            if part.rect.contains_point(rel_scrolled_pt) {
-                                let action = PartsAction::Grab(part.ctype,
-                                                               mouse.pt);
-                                return (Some(action), true);
-                            }
+                        if let Some(ctype) =
+                            self.part_under_rel_mouse_pt(rel_mouse_pt)
+                        {
+                            let action = PartsAction::Grab(ctype, mouse.pt);
+                            return (Some(action), true);
                         }
                     }
                     return (None, true);
@@ -277,69 +311,30 @@ impl PartsTray {
         if tab_rect.contains_point(rel_mouse_pt.as_f32()) {
             return Some(Cursor::default());
         } else if self.rect.contains_point(rel_mouse_pt) {
-            let rel_scrolled_pt = rel_mouse_pt +
-                vec2(0, self.scrollbar.scroll_top());
-            for part in self.parts.iter() {
-                if part.rect.contains_point(rel_scrolled_pt) {
-                    if enabled {
-                        return Some(Cursor::HandOpen);
-                    } else {
-                        return Some(Cursor::NoSign);
-                    }
+            if self.part_under_rel_mouse_pt(rel_mouse_pt).is_some() {
+                if enabled {
+                    return Some(Cursor::HandOpen);
+                } else {
+                    return Some(Cursor::NoSign);
                 }
             }
             return Some(Cursor::default());
         }
         return None;
     }
-}
 
-//===========================================================================//
-
-struct CategoryLabel {
-    top: i32,
-    text: &'static str,
-}
-
-impl CategoryLabel {
-    fn new(top: i32, text: &'static str) -> CategoryLabel {
-        CategoryLabel { top, text }
-    }
-
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        resources.fonts().roman().draw(matrix,
-                                       CATEGORY_LABEL_FONT_SIZE,
-                                       Align::TopLeft,
-                                       (TRAY_INNER_MARGIN as f32,
-                                        self.top as f32),
-                                       self.text);
-    }
-}
-
-//===========================================================================//
-
-struct Part {
-    rect: Rect<i32>,
-    ctype: ChipType,
-}
-
-impl Part {
-    fn new(left: i32, top: i32, ctype: ChipType) -> Part {
-        let rect = Rect::new(left, top, PART_WIDTH, PART_HEIGHT);
-        Part { rect, ctype }
-    }
-
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let chip_size = self.ctype.size();
-        let chip_dim = chip_size.width.max(chip_size.height) as f32;
-        let rect = self.rect.expand(-PART_INNER_MARGIN).as_f32();
-        let matrix = matrix * Matrix4::trans2(rect.x, rect.y) *
-            Matrix4::from_scale(rect.width / chip_dim);
-        ChipModel::draw_chip(resources,
-                             &matrix,
-                             self.ctype,
-                             Orientation::default(),
-                             None);
+    fn part_under_rel_mouse_pt(&self, rel_mouse_pt: Point2<i32>)
+                               -> Option<ChipType> {
+        let rel_scrolled_pt = rel_mouse_pt -
+            vec2(self.rect.x + TRAY_INNER_MARGIN,
+                 self.rect.y + TRAY_INNER_MARGIN) +
+            vec2(0, self.scrollbar.scroll_top());
+        for &(part_rect, ctype) in self.parts.iter() {
+            if part_rect.contains_point(rel_scrolled_pt) {
+                return Some(ctype);
+            }
+        }
+        return None;
     }
 }
 

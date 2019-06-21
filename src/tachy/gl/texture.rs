@@ -27,7 +27,7 @@ use std::os::raw::c_void;
 //===========================================================================//
 
 pub struct Texture1D {
-    name: GLuint,
+    id: GLuint,
     // This PhantomData ensures that this struct is not Send or Sync, which
     // helps ensure that we keep all our OpenGL stuff on the main thread.
     phantom: PhantomData<*mut ()>,
@@ -48,10 +48,10 @@ impl Texture1D {
                                 which is not a power of 2",
                                width));
         }
-        let mut name: GLuint = 0;
+        let mut id: GLuint = 0;
         unsafe {
-            gl::GenTextures(1, &mut name);
-            gl::BindTexture(gl::TEXTURE_1D, name);
+            gl::GenTextures(1, &mut id);
+            gl::BindTexture(gl::TEXTURE_1D, id);
             gl::TexImage1D(gl::TEXTURE_1D,
                            0,
                            gl::RGBA8 as GLint,
@@ -67,9 +67,10 @@ impl Texture1D {
                               gl::TEXTURE_MIN_FILTER,
                               gl::LINEAR_MIPMAP_LINEAR as GLint);
             gl::GenerateMipmap(gl::TEXTURE_1D);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         return Ok(Texture1D {
-                      name,
+                      id,
                       phantom: PhantomData,
                   });
     }
@@ -77,7 +78,8 @@ impl Texture1D {
     /// Sets this as the current texture.
     pub fn bind(&self) {
         unsafe {
-            gl::BindTexture(gl::TEXTURE_1D, self.name);
+            gl::BindTexture(gl::TEXTURE_1D, self.id);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
@@ -86,7 +88,8 @@ impl Texture1D {
 impl Drop for Texture1D {
     fn drop(&mut self) {
         unsafe {
-            gl::DeleteTextures(1, &self.name);
+            gl::DeleteTextures(1, &self.id);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
@@ -94,7 +97,8 @@ impl Drop for Texture1D {
 //===========================================================================//
 
 pub struct Texture2D {
-    name: GLuint,
+    id: GLuint,
+    target: GLenum,
     // This PhantomData ensures that this struct is not Send or Sync, which
     // helps ensure that we keep all our OpenGL stuff on the main thread.
     phantom: PhantomData<*mut ()>,
@@ -135,7 +139,7 @@ impl Texture2D {
                                  jpeg_name,
                                  err)
                      })?;
-        return Ok(Texture2D::new(width, height, &data, format));
+        return Ok(Texture2D::new(width, height, data.as_ptr(), format));
     }
 
     /// Creates a new texture from PNG data.  The width and height must each be
@@ -182,16 +186,18 @@ impl Texture2D {
                                  png_name,
                                  err)
                      })?;
-        return Ok(Texture2D::new(width, height, &data, format));
+        return Ok(Texture2D::new(width, height, data.as_ptr(), format));
     }
 
-    fn new(width: usize, height: usize, data: &[u8],
-           (format, internal_format): (GLenum, GLenum))
-           -> Texture2D {
-        let mut name: GLuint = 0;
+    pub(super) fn new(width: usize, height: usize, data: *const u8,
+                      (format, internal_format): (GLenum, GLenum))
+                      -> Texture2D {
+        debug_assert!(width.is_power_of_two());
+        debug_assert!(height.is_power_of_two());
+        let mut id: GLuint = 0;
         unsafe {
-            gl::GenTextures(1, &mut name);
-            gl::BindTexture(gl::TEXTURE_2D, name);
+            gl::GenTextures(1, &mut id);
+            gl::BindTexture(gl::TEXTURE_2D, id);
             gl::TexImage2D(gl::TEXTURE_2D,
                            0,
                            internal_format as GLint,
@@ -200,24 +206,53 @@ impl Texture2D {
                            0,
                            format,
                            gl::UNSIGNED_BYTE,
-                           data.as_ptr() as *const c_void);
+                           data as *const c_void);
             gl::TexParameteri(gl::TEXTURE_2D,
                               gl::TEXTURE_MAG_FILTER,
                               gl::LINEAR as GLint);
             gl::TexParameteri(gl::TEXTURE_2D,
                               gl::TEXTURE_MIN_FILTER,
                               gl::LINEAR as GLint);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         Texture2D {
-            name,
+            id,
+            target: gl::TEXTURE_2D,
             phantom: PhantomData,
         }
     }
 
+    pub(super) fn new_multisample(width: usize, height: usize,
+                                  internal_format: GLenum)
+                                  -> Texture2D {
+        debug_assert!(width.is_power_of_two());
+        debug_assert!(height.is_power_of_two());
+        let mut id: GLuint = 0;
+        unsafe {
+            gl::GenTextures(1, &mut id);
+            gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, id);
+            gl::TexImage2DMultisample(gl::TEXTURE_2D_MULTISAMPLE,
+                                      4,
+                                      internal_format,
+                                      width as GLsizei,
+                                      height as GLsizei,
+                                      gl::FALSE);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
+        }
+        Texture2D {
+            id,
+            target: gl::TEXTURE_2D_MULTISAMPLE,
+            phantom: PhantomData,
+        }
+    }
+
+    pub(super) fn id(&self) -> GLuint { self.id }
+
     /// Sets this as the current texture.
     pub fn bind(&self) {
         unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, self.name);
+            gl::BindTexture(self.target, self.id);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
@@ -226,7 +261,8 @@ impl Texture2D {
 impl Drop for Texture2D {
     fn drop(&mut self) {
         unsafe {
-            gl::DeleteTextures(1, &self.name);
+            gl::DeleteTextures(1, &self.id);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }

@@ -19,7 +19,7 @@
 
 //===========================================================================//
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color3 {
     pub r: f32,
     pub g: f32,
@@ -60,7 +60,7 @@ impl Color3 {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color4 {
     pub r: f32,
     pub g: f32,
@@ -108,6 +108,31 @@ impl Color4 {
     pub const PURPLE5: Color4 = Color3::PURPLE5.with_alpha(1.0);
 
     pub const YELLOW3: Color4 = Color3::YELLOW3.with_alpha(1.0);
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::{Color3, Color4};
+
+    #[test]
+    fn color3_with_alpha() {
+        assert_eq!(Color3::new(0.1, 0.2, 0.3).with_alpha(0.4),
+                   Color4::new(0.1, 0.2, 0.3, 0.4));
+    }
+
+    #[test]
+    fn color4_mix() {
+        let color1 = Color4::new(0.25, 0.75, 1.0, 0.5);
+        let color2 = Color4::new(0.75, 0.0, 0.25, 1.0);
+        assert_eq!(color1.mix(color2, 0.0), color1);
+        assert_eq!(color1.mix(color2, 0.25),
+                   Color4::new(0.375, 0.5625, 0.8125, 0.625));
+        assert_eq!(color1.mix(color2, 0.5),
+                   Color4::new(0.5, 0.375, 0.625, 0.75));
+        assert_eq!(color1.mix(color2, 1.0), color2);
+    }
 }
 
 //===========================================================================//

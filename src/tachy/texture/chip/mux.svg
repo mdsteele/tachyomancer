@@ -3,7 +3,7 @@
   <g fill="none" stroke="black" stroke-width="4">
     <path d="M 22,12 v 40 L 42,44 V 20 z" fill="black" fill-opacity="0.3"/>
     <path d="M 0,27 H 21"/>
-    <path d="M 21,37 H 13 V 64"/>
+    <path d="M 21,37 H 13 V 64" stroke-linejoin="round"/>
     <path d="M 43,32 H 64"/>
     <path d="M 32,0 V 16"/>
   </g>

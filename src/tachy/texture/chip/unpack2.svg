@@ -6,7 +6,7 @@
           fill="black" fill-opacity="0.3"
           transform="translate(6,0)"/>
     <path d="M 0,35 H 64"/>
-    <path d="M 64,29 H 21 V 64"/>
+    <path d="M 64,29 H 21 V 64" stroke-linejoin="round"/>
     <g fill="none" stroke="black" stroke-width="1.5">
       <g transform="translate(31,57)">
         <path d="M -4,-4 v 8 m 0,-4 h 4 m 0,-4 v 8 m 4,0 v -8"/>

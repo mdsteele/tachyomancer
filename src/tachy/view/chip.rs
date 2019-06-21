@@ -156,7 +156,10 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         ChipType::Const(_) => ChipIcon::Const,
         ChipType::Delay => ChipIcon::Delay,
         ChipType::Demux => ChipIcon::Demux,
+        ChipType::Discard => ChipIcon::Discard,
         ChipType::Eq => ChipIcon::Eq,
+        ChipType::Join => ChipIcon::Join,
+        ChipType::Latest => ChipIcon::Latest,
         ChipType::Mul => ChipIcon::Mul,
         ChipType::Mux => ChipIcon::Mux,
         ChipType::Not => ChipIcon::Not,
@@ -168,6 +171,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
                 ChipIcon::Pack1
             }
         }
+        ChipType::Sample => ChipIcon::Sample,
         ChipType::Sub => {
             if orient.is_rotated_90() {
                 ChipIcon::Sub2
@@ -189,7 +193,9 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
 
 fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
     match chip_icon {
-        ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux => Color3::CYAN2,
+        ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux |
+        ChipIcon::Discard | ChipIcon::Join | ChipIcon::Latest |
+        ChipIcon::Sample => Color3::CYAN2,
         _ => Color3::ORANGE2,
     }
 }

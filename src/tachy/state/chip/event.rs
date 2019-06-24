@@ -215,6 +215,53 @@ impl ChipEval for DiscardChipEval {
 
 //===========================================================================//
 
+pub const INC_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Equal(0, 1),
+        AbstractConstraint::Equal(0, 2),
+        AbstractConstraint::Equal(1, 2),
+    ],
+    dependencies: &[(0, 2), (1, 2)],
+};
+
+pub struct IncChipEval {
+    size: WireSize,
+    input1: usize,
+    input2: usize,
+    output: usize,
+}
+
+impl IncChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), INC_CHIP_DATA.ports.len());
+        let chip_eval = IncChipEval {
+            size: slots[2].1,
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for IncChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(input1) = state.recv_event(self.input1) {
+            let input2 = state.recv_behavior(self.input2).0;
+            let output = (input1 + input2) & self.size.mask();
+            state.send_event(self.output, output);
+        }
+    }
+}
+
+//===========================================================================//
+
 pub const JOIN_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),

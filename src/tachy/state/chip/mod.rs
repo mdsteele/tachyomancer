@@ -90,10 +90,9 @@ impl ChipExt for ChipType {
                 ChipAvailability::UnlockedBy(Puzzle::TutorialAdd)
             }
             ChipType::Break | ChipType::Clock | ChipType::Delay |
-            ChipType::Demux | ChipType::Discard | ChipType::Join |
-            ChipType::Latest | ChipType::Ram | ChipType::Sample => {
-                ChipAvailability::Always
-            }
+            ChipType::Demux | ChipType::Discard | ChipType::Inc |
+            ChipType::Join | ChipType::Latest | ChipType::Ram |
+            ChipType::Sample => ChipAvailability::Always,
             ChipType::Button => ChipAvailability::InteractiveOnly,
         }
     }
@@ -182,6 +181,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Discard => self::event::DISCARD_CHIP_DATA,
         ChipType::Display => self::special::DISPLAY_CHIP_DATA,
         ChipType::Eq => self::compare::EQ_CHIP_DATA,
+        ChipType::Inc => self::event::INC_CHIP_DATA,
         ChipType::Join => self::event::JOIN_CHIP_DATA,
         ChipType::Latest => self::event::LATEST_CHIP_DATA,
         ChipType::Mul => self::arith::MUL_CHIP_DATA,
@@ -227,6 +227,7 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
         ChipType::Discard => self::event::DiscardChipEval::new_evals(slots),
         ChipType::Display => vec![],
         ChipType::Eq => self::compare::EqChipEval::new_evals(slots),
+        ChipType::Inc => self::event::IncChipEval::new_evals(slots),
         ChipType::Join => self::event::JoinChipEval::new_evals(slots),
         ChipType::Latest => self::event::LatestChipEval::new_evals(slots),
         ChipType::Mul => self::arith::MulChipEval::new_evals(slots),

@@ -90,9 +90,13 @@ impl ChipExt for ChipType {
                 ChipAvailability::UnlockedBy(Puzzle::TutorialAdd)
             }
             ChipType::Break | ChipType::Clock | ChipType::Delay |
-            ChipType::Demux | ChipType::Discard | ChipType::Inc |
-            ChipType::Join | ChipType::Latest | ChipType::Ram |
-            ChipType::Sample => ChipAvailability::Always,
+            ChipType::Demux | ChipType::Discard | ChipType::Join |
+            ChipType::Latest | ChipType::Ram | ChipType::Sample => {
+                ChipAvailability::Always
+            }
+            ChipType::Inc => {
+                ChipAvailability::UnlockedBy(Puzzle::FabricateInc)
+            }
             ChipType::Button => ChipAvailability::InteractiveOnly,
         }
     }

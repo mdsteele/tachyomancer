@@ -27,7 +27,7 @@ mod sandbox;
 mod sensors;
 mod tutorial;
 
-pub use self::fabricate::FabricateXorEval;
+pub use self::fabricate::{FabricateIncEval, FabricateXorEval};
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
@@ -84,6 +84,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
+            Puzzle::FabricateInc => self::fabricate::INC_INTERFACES,
             Puzzle::FabricateXor => self::fabricate::XOR_INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
@@ -141,6 +142,7 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
         Puzzle::AutomateSensors => {
             Box::new(self::sensors::SensorsEval::new(slots))
         }
+        Puzzle::FabricateInc => Box::new(FabricateIncEval::new(slots)),
         Puzzle::FabricateXor => Box::new(FabricateXorEval::new(slots)),
         Puzzle::SandboxBehavior => {
             Box::new(self::sandbox::SandboxBehaviorEval::new(slots))

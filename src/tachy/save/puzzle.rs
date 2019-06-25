@@ -43,6 +43,7 @@ pub enum Puzzle {
     AutomateHeliostat,
     AutomateReactor,
     AutomateSensors,
+    FabricateInc,
     AutomateRobotArm,
     SandboxBehavior,
     SandboxEvent,
@@ -201,6 +202,25 @@ impl Puzzle {
                         Design a replacement signal amplifier for the main \
                         sensor array.",
                     instructions: "TODO",
+                }
+            }
+            Puzzle::FabricateInc => {
+                &PuzzleData {
+                    title: "4-Bit Incrementor",
+                    kind: PuzzleKind::Fabricate,
+                    allow_events: true,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Build a 4-bit incrementor using more basic event and \
+                        behavior chips.\n\n\
+                        Once this task is completed, you will be able to use \
+                        generic $*Inc$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct an incrementor.\n\
+                        * $!When an input event arrives, the circuit should \
+                          add the input behavior value to the event value, \
+                          and emit an output event with the sum.",
                 }
             }
             Puzzle::AutomateRobotArm => {

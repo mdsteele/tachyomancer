@@ -37,10 +37,10 @@ pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore,
                      FabricationEval};
 pub use self::game::GameState;
 pub use self::port::{PortColor, PortFlow, PortSpec};
-pub use self::puzzle::{FabricateXorEval, HeliostatEval, Interface, PuzzleExt,
-                       RobotArmEval, SensorsEval, TutorialAddEval,
-                       TutorialBubblePosition, TutorialMuxEval,
-                       TutorialOrEval};
+pub use self::puzzle::{FabricateIncEval, FabricateXorEval, HeliostatEval,
+                       Interface, PuzzleExt, RobotArmEval, SensorsEval,
+                       TutorialAddEval, TutorialBubblePosition,
+                       TutorialMuxEval, TutorialOrEval};
 pub use self::size::WireSize;
 
 //===========================================================================//

@@ -25,6 +25,7 @@ mod rng;
 mod robotarm;
 mod sandbox;
 mod sensors;
+mod shared;
 mod tutorial;
 
 pub use self::fabricate::{FabricateIncEval, FabricateXorEval};
@@ -33,7 +34,7 @@ pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::tutorial::{TutorialAddEval, TutorialBubblePosition,
-                         TutorialMuxEval, TutorialOrEval};
+                         TutorialDemuxEval, TutorialMuxEval, TutorialOrEval};
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
@@ -89,6 +90,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
             Puzzle::TutorialAdd => self::tutorial::ADD_INTERFACES,
+            Puzzle::TutorialDemux => self::tutorial::DEMUX_INTERFACES,
             Puzzle::TutorialMux => self::tutorial::MUX_INTERFACES,
             Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
         }
@@ -98,9 +100,10 @@ impl PuzzleExt for Puzzle {
         &self)
         -> &'static [(TutorialBubblePosition, &'static str)] {
         match self {
-            Puzzle::TutorialOr => self::tutorial::OR_BUBBLES,
-            Puzzle::TutorialMux => self::tutorial::MUX_BUBBLES,
             Puzzle::TutorialAdd => self::tutorial::ADD_BUBBLES,
+            Puzzle::TutorialDemux => self::tutorial::DEMUX_BUBBLES,
+            Puzzle::TutorialMux => self::tutorial::MUX_BUBBLES,
+            Puzzle::TutorialOr => self::tutorial::OR_BUBBLES,
             _ => &[],
         }
     }
@@ -151,6 +154,7 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
             Box::new(self::sandbox::SandboxEventEval::new(slots))
         }
         Puzzle::TutorialAdd => Box::new(TutorialAddEval::new(slots)),
+        Puzzle::TutorialDemux => Box::new(TutorialDemuxEval::new(slots)),
         Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
         Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
     }

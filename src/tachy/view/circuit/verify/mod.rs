@@ -31,7 +31,8 @@ use tachy::gui::{Cursor, Event, Resources, Ui};
 use tachy::save::Puzzle;
 use tachy::shader::UiShader;
 use tachy::state::{CircuitEval, FabricateIncEval, FabricateXorEval,
-                   TutorialAddEval, TutorialMuxEval, TutorialOrEval};
+                   TutorialAddEval, TutorialDemuxEval, TutorialMuxEval,
+                   TutorialOrEval};
 
 //===========================================================================//
 
@@ -76,6 +77,9 @@ impl VerificationTray {
             }
             Puzzle::AutomateSensors => {
                 self::sensors::SensorsVerifyView::new(right_bottom)
+            }
+            Puzzle::TutorialDemux => {
+                FabricationVerifyView::<TutorialDemuxEval>::new(right_bottom)
             }
             Puzzle::FabricateInc => {
                 FabricationVerifyView::<FabricateIncEval>::new(right_bottom)

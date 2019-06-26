@@ -43,6 +43,7 @@ pub enum Puzzle {
     AutomateHeliostat,
     AutomateReactor,
     AutomateSensors,
+    TutorialDemux,
     FabricateInc,
     AutomateRobotArm,
     SandboxBehavior,
@@ -202,6 +203,25 @@ impl Puzzle {
                         Design a replacement signal amplifier for the main \
                         sensor array.",
                     instructions: "TODO",
+                }
+            }
+            Puzzle::TutorialDemux => {
+                &PuzzleData {
+                    title: "1-Bit DEMUX",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: true,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 1-bit $*DEMUX$* using event filter \
+                        chips.\n\n\
+                        Once this task is completed, you will be able to use \
+                        $*DEMUX$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct a 1-bit DEMUX.\n\
+                        * $!When an event arrives on $*In$*, it should be \
+                          sent to $*Out0$* if $*Ctrl$* is 0, or to $*Out1$* \
+                          if $*Ctrl$* is 1.",
                 }
             }
             Puzzle::FabricateInc => {

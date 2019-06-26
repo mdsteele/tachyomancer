@@ -40,7 +40,7 @@ pub use self::port::{PortColor, PortFlow, PortSpec};
 pub use self::puzzle::{FabricateIncEval, FabricateXorEval, HeliostatEval,
                        Interface, PuzzleExt, RobotArmEval, SensorsEval,
                        TutorialAddEval, TutorialBubblePosition,
-                       TutorialMuxEval, TutorialOrEval};
+                       TutorialDemuxEval, TutorialMuxEval, TutorialOrEval};
 pub use self::size::WireSize;
 
 //===========================================================================//

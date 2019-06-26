@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::iface::{Interface, InterfacePort, InterfacePosition};
+use super::shared;
 use super::super::eval::{CircuitState, EvalError, EvalScore, FabricationEval,
                          PuzzleEval};
 use std::u32;
@@ -213,6 +214,7 @@ pub struct FabricateIncEval {
     input_b_wire: usize,
     output_wire: usize,
     output_port: (Coords, Direction),
+    has_received_output_event: bool,
 }
 
 impl FabricateIncEval {
@@ -228,6 +230,7 @@ impl FabricateIncEval {
             input_b_wire: slots[1][0].1,
             output_wire: slots[2][0].1,
             output_port: slots[2][0].0,
+            has_received_output_event: false,
         }
     }
 }
@@ -235,6 +238,7 @@ impl FabricateIncEval {
 impl PuzzleEval for FabricateIncEval {
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
+        self.has_received_output_event = false;
         let expected = FabricateIncEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected.len() {
@@ -249,51 +253,41 @@ impl PuzzleEval for FabricateIncEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
-        let expected = FabricateIncEval::expected_table_values();
+    fn end_cycle(&mut self, time_step: u32, state: &CircuitState)
+                 -> Vec<EvalError> {
+        let expected_table = FabricateIncEval::expected_table_values();
         let start = (time_step as usize) * 3;
-        if start >= expected.len() {
+        if start >= expected_table.len() {
             return vec![];
         }
-        let expected_output = expected[start + 2];
-        if let Some(actual_output) = state.recv_event(self.output_wire) {
-            self.table_values[3 * (time_step as usize) + 2] = actual_output as
-                u64;
-            if expected_output > (u32::MAX as u64) {
-                let error = EvalError {
-                    time_step,
-                    port: Some(self.output_port),
-                    message: format!("No output event expected, but got \
-                                      output event value of {}",
-                                     actual_output),
-                };
-                return vec![error];
-            } else if actual_output != (expected_output as u32) {
-                let error = EvalError {
-                    time_step,
-                    port: Some(self.output_port),
-                    message: format!("Expected output event value of {}, \
-                                      but output event value of {}",
-                                     expected_output,
-                                     actual_output),
-                };
-                return vec![error];
-            }
-        } else {
-            self.table_values[3 * (time_step as usize) + 2] = u64::MAX;
-            if expected_output <= (u32::MAX as u64) {
-                let error = EvalError {
-                    time_step,
-                    port: Some(self.output_port),
-                    message: format!("Expected output event value of {}, but \
-                                      got no output event",
-                                     expected_output),
-                };
-                return vec![error];
-            }
+        let expected_output = expected_table[start + 2];
+
+        let opt_actual_output = state.recv_event(self.output_wire);
+        self.table_values[start + 2] =
+            shared::opt_u32_to_u64(opt_actual_output);
+
+        let mut errors = Vec::new();
+        shared::end_cycle_check_event_output(
+            opt_actual_output, expected_output,
+            &mut self.has_received_output_event, self.output_port, time_step,
+            &mut errors);
+        return errors;
+    }
+
+    fn end_time_step(&mut self, time_step: u32, _state: &CircuitState)
+                     -> Vec<EvalError> {
+        let expected_table = FabricateIncEval::expected_table_values();
+        let start = (time_step as usize) * 3;
+        if start >= expected_table.len() {
+            return vec![];
         }
-        return vec![];
+        let expected_output = expected_table[start + 2];
+
+        let mut errors = Vec::new();
+        shared::end_time_step_check_event_output(
+            expected_output, self.has_received_output_event, self.output_port,
+            time_step, &mut errors);
+        return errors;
     }
 }
 

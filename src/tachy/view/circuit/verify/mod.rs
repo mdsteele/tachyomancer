@@ -32,7 +32,8 @@ use tachy::save::Puzzle;
 use tachy::shader::UiShader;
 use tachy::state::{CircuitEval, FabricateHalveEval, FabricateIncEval,
                    FabricateMulEval, FabricateXorEval, TutorialAddEval,
-                   TutorialDemuxEval, TutorialMuxEval, TutorialOrEval};
+                   TutorialDemuxEval, TutorialMuxEval, TutorialOrEval,
+                   TutorialSumEval};
 
 //===========================================================================//
 
@@ -81,8 +82,13 @@ impl VerificationTray {
             Puzzle::FabricateXor => {
                 FabricationVerifyView::<FabricateXorEval>::new(right_bottom)
             }
+            Puzzle::SandboxBehavior => self::shared::NullVerifyView::new(),
+            Puzzle::SandboxEvent => self::shared::NullVerifyView::new(),
             Puzzle::TutorialAdd => {
                 FabricationVerifyView::<TutorialAddEval>::new(right_bottom)
+            }
+            Puzzle::TutorialDemux => {
+                FabricationVerifyView::<TutorialDemuxEval>::new(right_bottom)
             }
             Puzzle::TutorialMux => {
                 FabricationVerifyView::<TutorialMuxEval>::new(right_bottom)
@@ -90,11 +96,9 @@ impl VerificationTray {
             Puzzle::TutorialOr => {
                 FabricationVerifyView::<TutorialOrEval>::new(right_bottom)
             }
-            Puzzle::TutorialDemux => {
-                FabricationVerifyView::<TutorialDemuxEval>::new(right_bottom)
+            Puzzle::TutorialSum => {
+                FabricationVerifyView::<TutorialSumEval>::new(right_bottom)
             }
-            Puzzle::SandboxBehavior => self::shared::NullVerifyView::new(),
-            Puzzle::SandboxEvent => self::shared::NullVerifyView::new(),
         };
         let subview_size = subview.size();
         let rect = if subview_size.is_empty() {

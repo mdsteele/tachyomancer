@@ -46,6 +46,7 @@ pub enum Puzzle {
     AutomateReactor,
     AutomateSensors,
     TutorialDemux,
+    TutorialSum,
     FabricateInc,
     AutomateRobotArm,
     SandboxBehavior,
@@ -75,128 +76,6 @@ impl Puzzle {
 
     fn data(self) -> &'static PuzzleData {
         match self {
-            Puzzle::TutorialOr => {
-                &PuzzleData {
-                    title: "1-Bit OR Gate",
-                    kind: PuzzleKind::Tutorial,
-                    allow_events: false,
-                    score_units: "Wire Length",
-                    graph_bounds: (50, 50),
-                    description: "\
-                        Tutorial: Build a 1-bit $*OR$* gate out of $*AND$* \
-                        and $*NOT$* gates.\n\n\
-                        Once this task is completed, you will be able to use \
-                        $*OR$* gates in future tasks.",
-                    instructions: "\
-                        * $!Your goal is to construct an $*OR$* gate.\n\
-                        * $!The output on the right side of the board should \
-                          be 1 if either input is 1, or 0 if both inputs are \
-                          0.\n\
-                        * $!Note that ($/a$/ OR $/b$/) is equivalent to \
-                          NOT ((NOT $/a$/) AND (NOT $/b$/)).",
-                }
-            }
-            Puzzle::FabricateXor => {
-                &PuzzleData {
-                    title: "1-Bit XOR Gate",
-                    kind: PuzzleKind::Fabricate,
-                    allow_events: false,
-                    score_units: "Wire Length",
-                    graph_bounds: (50, 50),
-                    description: "\
-                        Build a 1-bit $*XOR$* gate out of $*AND$*, \
-                        $*OR$*, and $*NOT$* gates.\n\n\
-                        Once this task is completed, you will be able to use \
-                        $*XOR$* gates in future tasks.",
-                    instructions: "\
-                        * $!Your goal is to construct a $*XOR$* gate.\n\
-                        * $!The output on the right side of the board should \
-                          be 1 if exactly one input is 1, but not both.\n\
-                        * $!Note that ($/a$/ XOR $/b$/) is equivalent to \
-                          ($/a$/ OR $/b$/) AND NOT ($/a$/ AND $/b$/).",
-                }
-            }
-            Puzzle::TutorialMux => {
-                &PuzzleData {
-                    title: "1-Bit MUX",
-                    kind: PuzzleKind::Tutorial,
-                    allow_events: false,
-                    score_units: "Wire Length",
-                    graph_bounds: (50, 50),
-                    description: "\
-                        Tutorial: Build a 1-bit $*MUX$* using other logic \
-                        gates.\n\n\
-                        Once this task is completed, you will be able to use \
-                        $*MUX$* chips in future tasks.",
-                    instructions: "\
-                        * $!Your goal is to construct a 1-bit MUX.\n\
-                        * $!The output should be the value of $*in0$* if \
-                          $*ctrl$* is 0, or of $*in1$* if $*ctrl$* is 1.\n\
-                        * $!If $/a$/ and $/b$/ are the inputs and $/c$/ is \
-                          the control, then a MUX is    \
-                          ($/a$/ AND NOT $/c$/) OR ($/b$/ AND $/c$/).",
-                }
-            }
-            Puzzle::TutorialAdd => {
-                &PuzzleData {
-                    title: "4-Bit Adder",
-                    kind: PuzzleKind::Tutorial,
-                    allow_events: false,
-                    score_units: "Wire Length",
-                    graph_bounds: (50, 50),
-                    description: "\
-                        Tutorial: Build a 4-bit adder using 2-bit adders, \
-                        packers and unpackers.\n\n\
-                        Once this task is completed, you will be able to use \
-                        generic $*Add$* chips in future tasks.",
-                    instructions: "\
-                        * $!Your goal is to construct a 4-bit adder.\n\
-                        * $!The output should be the sum of $*In1$* and \
-                          $*In2$*.  This sum will never be more than 15.\n\
-                        * $!You can use $*Unpack$* chips to separate the \
-                          4-bit inputs into hi and lo 2-bit values that the \
-                          2-bit adders can accept.  Remember to handle carry \
-                          bits appropriately.",
-                }
-            }
-            Puzzle::FabricateHalve => {
-                &PuzzleData {
-                    title: "4-Bit Halver",
-                    kind: PuzzleKind::Fabricate,
-                    allow_events: false,
-                    score_units: "Wire Length",
-                    graph_bounds: (50, 50),
-                    description: "\
-                        Build a 4-bit halver using packers and unpackers.\n\n\
-                        Once this task is completed, you will be able to use \
-                        generic $*Halve$* chips in future tasks.",
-                    instructions: "\
-                        * $!The output should be half the value of the input, \
-                          rounded down.\n\
-                        * $!This can be achieved by unpacking the input into \
-                          four 1-bit wires, then packing the highest three \
-                          wires of the input into the lowest three wires of \
-                          the output.",
-                }
-            }
-            Puzzle::FabricateMul => {
-                &PuzzleData {
-                    title: "8-Bit Multiplier",
-                    kind: PuzzleKind::Fabricate,
-                    allow_events: false,
-                    score_units: "Wire Length",
-                    graph_bounds: (50, 100),
-                    description: "\
-                        Build an 8-bit multiplier using 4-bit multipliers.\n\n\
-                        Once this task is completed, you will be able to use \
-                        generic $*Mul$* chips in future tasks.",
-                    instructions: "\
-                        * $!Your goal is to construct an 8-bit multiplier.\n\
-                        * $!The output should be the product of $*In1$* and \
-                          $*In2$*.  This product will never be more than \
-                          255.",
-                }
-            }
             Puzzle::AutomateHeliostat => {
                 &PuzzleData {
                     title: "Heliostat",
@@ -232,6 +111,18 @@ impl Puzzle {
                     instructions: "TODO",
                 }
             }
+            Puzzle::AutomateRobotArm => {
+                &PuzzleData {
+                    title: "Manipulator Arm",
+                    kind: PuzzleKind::Automate,
+                    allow_events: true,
+                    score_units: "Time",
+                    graph_bounds: (150, 150),
+                    description: "\
+                        Operate a robotic arm in response to radio commands.",
+                    instructions: "",
+                }
+            }
             Puzzle::AutomateSensors => {
                 &PuzzleData {
                     title: "Main Sensors",
@@ -245,23 +136,24 @@ impl Puzzle {
                     instructions: "TODO",
                 }
             }
-            Puzzle::TutorialDemux => {
+            Puzzle::FabricateHalve => {
                 &PuzzleData {
-                    title: "1-Bit DEMUX",
-                    kind: PuzzleKind::Tutorial,
-                    allow_events: true,
+                    title: "4-Bit Halver",
+                    kind: PuzzleKind::Fabricate,
+                    allow_events: false,
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
-                        Tutorial: Build a 1-bit $*DEMUX$* using event filter \
-                        chips.\n\n\
+                        Build a 4-bit halver using packers and unpackers.\n\n\
                         Once this task is completed, you will be able to use \
-                        $*DEMUX$* chips in future tasks.",
+                        generic $*Halve$* chips in future tasks.",
                     instructions: "\
-                        * $!Your goal is to construct a 1-bit DEMUX.\n\
-                        * $!When an event arrives on $*In$*, it should be \
-                          sent to $*Out0$* if $*Ctrl$* is 0, or to $*Out1$* \
-                          if $*Ctrl$* is 1.",
+                        * $!The output should be half the value of the input, \
+                          rounded down.\n\
+                        * $!This can be achieved by unpacking the input into \
+                          four 1-bit wires, then packing the highest three \
+                          wires of the input into the lowest three wires of \
+                          the output.",
                 }
             }
             Puzzle::FabricateInc => {
@@ -283,16 +175,42 @@ impl Puzzle {
                           and emit an output event with the sum.",
                 }
             }
-            Puzzle::AutomateRobotArm => {
+            Puzzle::FabricateMul => {
                 &PuzzleData {
-                    title: "Manipulator Arm",
-                    kind: PuzzleKind::Automate,
-                    allow_events: true,
-                    score_units: "Time",
-                    graph_bounds: (150, 150),
+                    title: "8-Bit Multiplier",
+                    kind: PuzzleKind::Fabricate,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 100),
                     description: "\
-                        Operate a robotic arm in response to radio commands.",
-                    instructions: "",
+                        Build an 8-bit multiplier using 4-bit multipliers.\n\n\
+                        Once this task is completed, you will be able to use \
+                        generic $*Mul$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct an 8-bit multiplier.\n\
+                        * $!The output should be the product of $*In1$* and \
+                          $*In2$*.  This product will never be more than \
+                          255.",
+                }
+            }
+            Puzzle::FabricateXor => {
+                &PuzzleData {
+                    title: "1-Bit XOR Gate",
+                    kind: PuzzleKind::Fabricate,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Build a 1-bit $*XOR$* gate out of $*AND$*, \
+                        $*OR$*, and $*NOT$* gates.\n\n\
+                        Once this task is completed, you will be able to use \
+                        $*XOR$* gates in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct a $*XOR$* gate.\n\
+                        * $!The output on the right side of the board should \
+                          be 1 if exactly one input is 1, but not both.\n\
+                        * $!Note that ($/a$/ XOR $/b$/) is equivalent to \
+                          ($/a$/ OR $/b$/) AND NOT ($/a$/ AND $/b$/).",
                 }
             }
             Puzzle::SandboxBehavior => {
@@ -322,6 +240,113 @@ impl Puzzle {
                         use this area for prototyping, experimentation, or \
                         freeform design.",
                     instructions: "",
+                }
+            }
+            Puzzle::TutorialAdd => {
+                &PuzzleData {
+                    title: "4-Bit Adder",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 4-bit adder using 2-bit adders, \
+                        packers and unpackers.\n\n\
+                        Once this task is completed, you will be able to use \
+                        generic $*Add$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct a 4-bit adder.\n\
+                        * $!The output should be the sum of $*In1$* and \
+                          $*In2$*.  This sum will never be more than 15.\n\
+                        * $!You can use $*Unpack$* chips to separate the \
+                          4-bit inputs into hi and lo 2-bit values that the \
+                          2-bit adders can accept.  Remember to handle carry \
+                          bits appropriately.",
+                }
+            }
+            Puzzle::TutorialDemux => {
+                &PuzzleData {
+                    title: "1-Bit DEMUX",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: true,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 1-bit $*DEMUX$* using event filter \
+                        chips.\n\n\
+                        Once this task is completed, you will be able to use \
+                        $*DEMUX$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct a 1-bit DEMUX.\n\
+                        * $!When an event arrives on $*In$*, it should be \
+                          sent to $*Out0$* if $*Ctrl$* is 0, or to $*Out1$* \
+                          if $*Ctrl$* is 1.",
+                }
+            }
+            Puzzle::TutorialMux => {
+                &PuzzleData {
+                    title: "1-Bit MUX",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 1-bit $*MUX$* using other logic \
+                        gates.\n\n\
+                        Once this task is completed, you will be able to use \
+                        $*MUX$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct a 1-bit MUX.\n\
+                        * $!The output should be the value of $*in0$* if \
+                          $*ctrl$* is 0, or of $*in1$* if $*ctrl$* is 1.\n\
+                        * $!If $/a$/ and $/b$/ are the inputs and $/c$/ is \
+                          the control, then a MUX is    \
+                          ($/a$/ AND NOT $/c$/) OR ($/b$/ AND $/c$/).",
+                }
+            }
+            Puzzle::TutorialOr => {
+                &PuzzleData {
+                    title: "1-Bit OR Gate",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Tutorial: Build a 1-bit $*OR$* gate out of $*AND$* \
+                        and $*NOT$* gates.\n\n\
+                        Once this task is completed, you will be able to use \
+                        $*OR$* gates in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct an $*OR$* gate.\n\
+                        * $!The output on the right side of the board should \
+                          be 1 if either input is 1, or 0 if both inputs are \
+                          0.\n\
+                        * $!Note that ($/a$/ OR $/b$/) is equivalent to \
+                          NOT ((NOT $/a$/) AND (NOT $/b$/)).",
+                }
+            }
+            Puzzle::TutorialSum => {
+                &PuzzleData {
+                    title: "Resettable Sum",
+                    kind: PuzzleKind::Tutorial,
+                    allow_events: true,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 100),
+                    description: "\
+                        Tutorial: Build a circuit for tracking a running \
+                        total, and that can also be reset back to zero.\n\n\
+                        Once this task is completed, you will be able to use \
+                        $*Sum$* chips in future tasks.",
+                    instructions: "\
+                        * $!The output should start at zero.  When an input \
+                          event arrives, its value should be added to the \
+                          running total output.\n\
+                        * $!When a reset event arrives, the output should be \
+                          reset back to zero.\n\
+                        * $!If a reset and input event arrive simultaneously, \
+                          the reset should occur just $/before$/ the input is \
+                          added in, so that the output for that time step is \
+                          the value of the input event.",
                 }
             }
         }

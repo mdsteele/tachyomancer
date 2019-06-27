@@ -22,6 +22,15 @@ use std::u32;
 use std::u64;
 use tachy::geom::{Coords, Direction};
 
+//===========================================================================/
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum TutorialBubblePosition {
+    Bounds(Direction),
+    ControlsTray,
+    PartsTray,
+}
+
 //===========================================================================//
 
 pub fn u64_to_opt_u32(value: u64) -> Option<u32> {

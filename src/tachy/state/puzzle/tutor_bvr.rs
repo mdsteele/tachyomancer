@@ -18,22 +18,13 @@
 // +--------------------------------------------------------------------------+
 
 use super::iface::{Interface, InterfacePort, InterfacePosition};
-use super::shared;
+use super::shared::TutorialBubblePosition;
 use super::super::eval::{CircuitState, EvalError, EvalScore, FabricationEval,
                          PuzzleEval};
 use std::u32;
 use std::u64;
 use tachy::geom::{Coords, Direction};
 use tachy::state::{PortColor, PortFlow, WireSize};
-
-//===========================================================================/
-
-#[derive(Clone, Copy, Eq, PartialEq)]
-pub enum TutorialBubblePosition {
-    Bounds(Direction),
-    ControlsTray,
-    PartsTray,
-}
 
 //===========================================================================//
 
@@ -96,8 +87,6 @@ pub const OR_BUBBLES: &[(TutorialBubblePosition, &str)] =
         (TutorialBubblePosition::ControlsTray,
          "When you're ready, press\nthe play button to test\nyour design."),
     ];
-
-//===========================================================================//
 
 pub struct TutorialOrEval {
     table_values: Vec<u64>,
@@ -247,8 +236,6 @@ pub const MUX_BUBBLES: &[(TutorialBubblePosition, &str)] =
          "Perpendicular wires can cross over each other.  Click on a \
           crossing to toggle whether the wires are connected."),
     ];
-
-//===========================================================================//
 
 pub struct TutorialMuxEval {
     table_values: Vec<u64>,
@@ -404,8 +391,6 @@ pub const ADD_BUBBLES: &[(TutorialBubblePosition, &str)] =
           circuit and cut/copy/paste."),
     ];
 
-//===========================================================================//
-
 pub struct TutorialAddEval {
     table_values: Vec<u64>,
     input1_wire: usize,
@@ -488,205 +473,6 @@ impl FabricationEval for TutorialAddEval {
             6, 5, 11,
             1, 3, 4,
             0, 15, 15,
-        ]
-    }
-
-    fn table_values(&self) -> &[u64] { &self.table_values }
-}
-
-//===========================================================================//
-
-pub const DEMUX_INTERFACES: &[Interface] = &[
-    Interface {
-        name: "In",
-        description: "Input events arrive here.",
-        side: Direction::West,
-        pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Event,
-                size: WireSize::One,
-            },
-        ],
-    },
-    Interface {
-        name: "Ctrl",
-        description: "Indicates which output the event should be sent to.",
-        side: Direction::North,
-        pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Ctrl",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
-    },
-    Interface {
-        name: "Out0",
-        description: "Input events should be sent here when $*Ctrl$* is 0.",
-        side: Direction::East,
-        pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out0",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Event,
-                size: WireSize::One,
-            },
-        ],
-    },
-    Interface {
-        name: "Out1",
-        description: "Input events should be sent here when $*Ctrl$* is 1.",
-        side: Direction::South,
-        pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out1",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Event,
-                size: WireSize::One,
-            },
-        ],
-    },
-];
-
-pub const DEMUX_BUBBLES: &[(TutorialBubblePosition, &str)] =
-    &[
-        (TutorialBubblePosition::Bounds(Direction::North),
-         "A wire can carry either $Obehaviors$D or $Cevents$D, depending on \
-          which color of ports it is connected to."),
-        (TutorialBubblePosition::Bounds(Direction::East),
-         "Splitting an event wire allows sending the same event to multiple \
-          receiver ports.  Then each copy of the event can be filtered \
-          separately."),
-    ];
-
-//===========================================================================//
-
-pub struct TutorialDemuxEval {
-    table_values: Vec<u64>,
-    input_wire: usize,
-    control_wire: usize,
-    output0_wire: usize,
-    output0_port: (Coords, Direction),
-    output1_wire: usize,
-    output1_port: (Coords, Direction),
-    has_received_output0_event: bool,
-    has_received_output1_event: bool,
-}
-
-impl TutorialDemuxEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> TutorialDemuxEval {
-        debug_assert_eq!(slots.len(), 4);
-        debug_assert_eq!(slots[0].len(), 1);
-        debug_assert_eq!(slots[1].len(), 1);
-        debug_assert_eq!(slots[2].len(), 1);
-        debug_assert_eq!(slots[3].len(), 1);
-        TutorialDemuxEval {
-            table_values: TutorialDemuxEval::expected_table_values().to_vec(),
-            input_wire: slots[0][0].1,
-            control_wire: slots[1][0].1,
-            output0_wire: slots[2][0].1,
-            output0_port: slots[2][0].0,
-            output1_wire: slots[3][0].1,
-            output1_port: slots[3][0].0,
-            has_received_output0_event: false,
-            has_received_output1_event: false,
-        }
-    }
-}
-
-impl PuzzleEval for TutorialDemuxEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
-        self.has_received_output0_event = false;
-        self.has_received_output1_event = false;
-        let expected = TutorialDemuxEval::expected_table_values();
-        let start = (time_step as usize) * 4;
-        if start >= expected.len() {
-            Some(EvalScore::WireLength)
-        } else {
-            let slice = &expected[start..];
-            if slice[0] < (u32::MAX as u64) {
-                state.send_event(self.input_wire, slice[0] as u32);
-            }
-            state.send_behavior(self.control_wire, slice[1] as u32);
-            None
-        }
-    }
-
-    fn end_cycle(&mut self, time_step: u32, state: &CircuitState)
-                 -> Vec<EvalError> {
-        let expected_table = TutorialDemuxEval::expected_table_values();
-        let start = (time_step as usize) * 4;
-        if start >= expected_table.len() {
-            return vec![];
-        }
-        let expected_output0 = expected_table[start + 2];
-        let expected_output1 = expected_table[start + 3];
-
-        let opt_output0 = state.recv_event(self.output0_wire);
-        self.table_values[start + 2] = shared::opt_u32_to_u64(opt_output0);
-        let opt_output1 = state.recv_event(self.output1_wire);
-        self.table_values[start + 3] = shared::opt_u32_to_u64(opt_output1);
-
-        let mut errors = Vec::new();
-        shared::end_cycle_check_event_output(
-            opt_output0, expected_output0,
-            &mut self.has_received_output0_event, self.output0_port, time_step,
-            &mut errors);
-        shared::end_cycle_check_event_output(
-            opt_output1, expected_output1,
-            &mut self.has_received_output1_event, self.output1_port, time_step,
-            &mut errors);
-        return errors;
-    }
-
-    fn end_time_step(&mut self, time_step: u32, _state: &CircuitState)
-                     -> Vec<EvalError> {
-        let expected_table = TutorialDemuxEval::expected_table_values();
-        let start = (time_step as usize) * 4;
-        if start >= expected_table.len() {
-            return vec![];
-        }
-        let expected_output0 = expected_table[start + 2];
-        let expected_output1 = expected_table[start + 3];
-
-        let mut errors = Vec::new();
-        shared::end_time_step_check_event_output(
-            expected_output0, self.has_received_output0_event,
-            self.output0_port, time_step, &mut errors);
-        shared::end_time_step_check_event_output(
-            expected_output1, self.has_received_output1_event,
-            self.output1_port, time_step, &mut errors);
-        return errors;
-    }
-}
-
-impl FabricationEval for TutorialDemuxEval {
-    fn table_column_names() -> &'static [&'static str] {
-        &["In", "Ctrl", "Out0", "Out1"]
-    }
-
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn expected_table_values() -> &'static [u64] {
-        &[
-            0, 0, 0, u64::MAX,
-            0, 1, u64::MAX, 0,
-            u64::MAX, 0, u64::MAX, u64::MAX,
-            1, 1, u64::MAX, 1,
-            1, 0, 1, u64::MAX,
-            u64::MAX, 1, u64::MAX, u64::MAX,
         ]
     }
 

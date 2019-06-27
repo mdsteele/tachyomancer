@@ -26,7 +26,8 @@ mod robotarm;
 mod sandbox;
 mod sensors;
 mod shared;
-mod tutorial;
+mod tutor_bvr;
+mod tutor_evt;
 
 pub use self::fabricate::{FabricateHalveEval, FabricateIncEval,
                           FabricateMulEval, FabricateXorEval};
@@ -34,8 +35,9 @@ pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
-pub use self::tutorial::{TutorialAddEval, TutorialBubblePosition,
-                         TutorialDemuxEval, TutorialMuxEval, TutorialOrEval};
+pub use self::shared::TutorialBubblePosition;
+pub use self::tutor_bvr::{TutorialAddEval, TutorialMuxEval, TutorialOrEval};
+pub use self::tutor_evt::{TutorialDemuxEval, TutorialSumEval};
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
 use tachy::geom::{Coords, Direction};
@@ -92,10 +94,11 @@ impl PuzzleExt for Puzzle {
             Puzzle::FabricateXor => self::fabricate::XOR_INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
-            Puzzle::TutorialAdd => self::tutorial::ADD_INTERFACES,
-            Puzzle::TutorialDemux => self::tutorial::DEMUX_INTERFACES,
-            Puzzle::TutorialMux => self::tutorial::MUX_INTERFACES,
-            Puzzle::TutorialOr => self::tutorial::OR_INTERFACES,
+            Puzzle::TutorialAdd => self::tutor_bvr::ADD_INTERFACES,
+            Puzzle::TutorialDemux => self::tutor_evt::DEMUX_INTERFACES,
+            Puzzle::TutorialMux => self::tutor_bvr::MUX_INTERFACES,
+            Puzzle::TutorialOr => self::tutor_bvr::OR_INTERFACES,
+            Puzzle::TutorialSum => self::tutor_evt::SUM_INTERFACES,
         }
     }
 
@@ -103,10 +106,11 @@ impl PuzzleExt for Puzzle {
         &self)
         -> &'static [(TutorialBubblePosition, &'static str)] {
         match self {
-            Puzzle::TutorialAdd => self::tutorial::ADD_BUBBLES,
-            Puzzle::TutorialDemux => self::tutorial::DEMUX_BUBBLES,
-            Puzzle::TutorialMux => self::tutorial::MUX_BUBBLES,
-            Puzzle::TutorialOr => self::tutorial::OR_BUBBLES,
+            Puzzle::TutorialAdd => self::tutor_bvr::ADD_BUBBLES,
+            Puzzle::TutorialDemux => self::tutor_evt::DEMUX_BUBBLES,
+            Puzzle::TutorialMux => self::tutor_bvr::MUX_BUBBLES,
+            Puzzle::TutorialOr => self::tutor_bvr::OR_BUBBLES,
+            Puzzle::TutorialSum => self::tutor_evt::SUM_BUBBLES,
             _ => &[],
         }
     }
@@ -163,6 +167,7 @@ pub(super) fn new_puzzle_eval(puzzle: Puzzle,
         Puzzle::TutorialDemux => Box::new(TutorialDemuxEval::new(slots)),
         Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
         Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
+        Puzzle::TutorialSum => Box::new(TutorialSumEval::new(slots)),
     }
 }
 

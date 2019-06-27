@@ -30,9 +30,9 @@ use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::gui::{Cursor, Event, Resources, Ui};
 use tachy::save::Puzzle;
 use tachy::shader::UiShader;
-use tachy::state::{CircuitEval, FabricateIncEval, FabricateXorEval,
-                   TutorialAddEval, TutorialDemuxEval, TutorialMuxEval,
-                   TutorialOrEval};
+use tachy::state::{CircuitEval, FabricateIncEval, FabricateMulEval,
+                   FabricateXorEval, TutorialAddEval, TutorialDemuxEval,
+                   TutorialMuxEval, TutorialOrEval};
 
 //===========================================================================//
 
@@ -56,18 +56,6 @@ impl VerificationTray {
         let right_bottom = Point2::new(window_size.width - TRAY_INNER_MARGIN,
                                        window_size.height - TRAY_INNER_MARGIN);
         let subview = match current_puzzle {
-            Puzzle::TutorialOr => {
-                FabricationVerifyView::<TutorialOrEval>::new(right_bottom)
-            }
-            Puzzle::FabricateXor => {
-                FabricationVerifyView::<FabricateXorEval>::new(right_bottom)
-            }
-            Puzzle::TutorialMux => {
-                FabricationVerifyView::<TutorialMuxEval>::new(right_bottom)
-            }
-            Puzzle::TutorialAdd => {
-                FabricationVerifyView::<TutorialAddEval>::new(right_bottom)
-            }
             Puzzle::AutomateHeliostat => {
                 self::heliostat::HeliostatVerifyView::new(right_bottom)
             }
@@ -75,17 +63,32 @@ impl VerificationTray {
                 // TODO: Make a verification view for AutomateReactor
                 self::shared::NullVerifyView::new()
             }
+            Puzzle::AutomateRobotArm => {
+                self::robotarm::RobotArmVerifyView::new(right_bottom)
+            }
             Puzzle::AutomateSensors => {
                 self::sensors::SensorsVerifyView::new(right_bottom)
-            }
-            Puzzle::TutorialDemux => {
-                FabricationVerifyView::<TutorialDemuxEval>::new(right_bottom)
             }
             Puzzle::FabricateInc => {
                 FabricationVerifyView::<FabricateIncEval>::new(right_bottom)
             }
-            Puzzle::AutomateRobotArm => {
-                self::robotarm::RobotArmVerifyView::new(right_bottom)
+            Puzzle::FabricateMul => {
+                FabricationVerifyView::<FabricateMulEval>::new(right_bottom)
+            }
+            Puzzle::FabricateXor => {
+                FabricationVerifyView::<FabricateXorEval>::new(right_bottom)
+            }
+            Puzzle::TutorialAdd => {
+                FabricationVerifyView::<TutorialAddEval>::new(right_bottom)
+            }
+            Puzzle::TutorialMux => {
+                FabricationVerifyView::<TutorialMuxEval>::new(right_bottom)
+            }
+            Puzzle::TutorialOr => {
+                FabricationVerifyView::<TutorialOrEval>::new(right_bottom)
+            }
+            Puzzle::TutorialDemux => {
+                FabricationVerifyView::<TutorialDemuxEval>::new(right_bottom)
             }
             Puzzle::SandboxBehavior => self::shared::NullVerifyView::new(),
             Puzzle::SandboxEvent => self::shared::NullVerifyView::new(),

@@ -40,6 +40,7 @@ pub enum Puzzle {
     FabricateXor,
     TutorialMux,
     TutorialAdd,
+    FabricateMul,
     AutomateHeliostat,
     AutomateReactor,
     AutomateSensors,
@@ -149,12 +150,30 @@ impl Puzzle {
                         generic $*Add$* chips in future tasks.",
                     instructions: "\
                         * $!Your goal is to construct a 4-bit adder.\n\
-                        * $!The output should be the sum of $*in1$* and \
-                          $*in2$*.  This sum will never be more than 15.\n\
+                        * $!The output should be the sum of $*In1$* and \
+                          $*In2$*.  This sum will never be more than 15.\n\
                         * $!You can use $*Unpack$* chips to separate the \
                           4-bit inputs into hi and lo 2-bit values that the \
                           2-bit adders can accept.  Remember to handle carry \
                           bits appropriately.",
+                }
+            }
+            Puzzle::FabricateMul => {
+                &PuzzleData {
+                    title: "8-Bit Multiplier",
+                    kind: PuzzleKind::Fabricate,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 100),
+                    description: "\
+                        Build an 8-bit multiplier using 4-bit multipliers.\n\n\
+                        Once this task is completed, you will be able to use \
+                        generic $*Mul$* chips in future tasks.",
+                    instructions: "\
+                        * $!Your goal is to construct an 8-bit multiplier.\n\
+                        * $!The output should be the product of $*In1$* and \
+                          $*In2$*.  This product will never be more than \
+                          255.",
                 }
             }
             Puzzle::AutomateHeliostat => {

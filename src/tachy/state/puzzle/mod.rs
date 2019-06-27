@@ -28,7 +28,8 @@ mod sensors;
 mod shared;
 mod tutorial;
 
-pub use self::fabricate::{FabricateIncEval, FabricateXorEval};
+pub use self::fabricate::{FabricateIncEval, FabricateMulEval,
+                          FabricateXorEval};
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
@@ -86,6 +87,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
             Puzzle::FabricateInc => self::fabricate::INC_INTERFACES,
+            Puzzle::FabricateMul => self::fabricate::MUL_INTERFACES,
             Puzzle::FabricateXor => self::fabricate::XOR_INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
@@ -124,6 +126,7 @@ pub fn is_chip_allowed_in(ctype: ChipType, puzzle: Puzzle, profile: &Profile)
             }
         }
         ChipAvailability::OnlyIn(puzzles) => puzzles.contains(&puzzle),
+        ChipAvailability::StartingWith(other_puzzle) => puzzle >= other_puzzle,
         ChipAvailability::UnlockedBy(other_puzzle) => {
             other_puzzle < puzzle && profile.is_puzzle_solved(other_puzzle)
         }
@@ -146,6 +149,7 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
             Box::new(self::sensors::SensorsEval::new(slots))
         }
         Puzzle::FabricateInc => Box::new(FabricateIncEval::new(slots)),
+        Puzzle::FabricateMul => Box::new(FabricateMulEval::new(slots)),
         Puzzle::FabricateXor => Box::new(FabricateXorEval::new(slots)),
         Puzzle::SandboxBehavior => {
             Box::new(self::sandbox::SandboxBehaviorEval::new(slots))

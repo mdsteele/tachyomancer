@@ -25,40 +25,35 @@ use tachy::geom::CoordsSize;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChipType {
-    // Value:
-    Const(u16),
-    Pack,
-    Unpack,
-    // Arithmetic:
     Add,
     Add2Bit,
-    Sub,
-    Mul,
-    // Comparison:
+    And,
+    Break,
+    Button,
+    Clock,
     Cmp,
     CmpEq,
-    Eq,
-    // Logic:
-    Not,
-    And,
-    Or,
-    Xor,
-    Mux,
-    // Events:
-    Clock,
+    Const(u16),
     Delay,
     Demux,
     Discard,
+    Display,
+    Eq,
     Filter,
     Inc,
     Join,
     Latest,
-    Sample,
-    // Special:
-    Break,
+    Mul,
+    Mul4Bit,
+    Mux,
+    Not,
+    Or,
+    Pack,
     Ram,
-    Display,
-    Button,
+    Sample,
+    Sub,
+    Unpack,
+    Xor,
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -67,12 +62,17 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Const(1),
         ChipType::Pack,
         ChipType::Unpack,
+        ChipType::Discard,
+        ChipType::Sample,
+        ChipType::Join,
     ]),
     ("Arithmetic", &[
         ChipType::Add,
         ChipType::Add2Bit,
+        ChipType::Inc,
         ChipType::Sub,
         ChipType::Mul,
+        ChipType::Mul4Bit,
     ]),
     ("Comparison", &[
         ChipType::Cmp,
@@ -85,22 +85,20 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Or,
         ChipType::Xor,
         ChipType::Mux,
-    ]),
-    ("Events", &[
-        ChipType::Clock,
-        ChipType::Delay,
-        ChipType::Demux,
-        ChipType::Discard,
         ChipType::Filter,
-        ChipType::Inc,
-        ChipType::Join,
-        ChipType::Latest,
-        ChipType::Sample,
+        ChipType::Demux,
     ]),
-    ("Special", &[
-        ChipType::Break,
+    ("Timing", &[
+        ChipType::Delay,
+        ChipType::Clock,
+    ]),
+    ("Memory", &[
+        ChipType::Latest,
         ChipType::Ram,
+    ]),
+    ("Debug", &[
         ChipType::Display,
+        ChipType::Break,
         ChipType::Button,
     ]),
 ];
@@ -110,8 +108,8 @@ impl str::FromStr for ChipType {
 
     fn from_str(string: &str) -> Result<ChipType, String> {
         match string {
-            "Add2Bit" => Ok(ChipType::Add2Bit),
             "Add" => Ok(ChipType::Add),
+            "Add2Bit" => Ok(ChipType::Add2Bit),
             "And" => Ok(ChipType::And),
             "Break" => Ok(ChipType::Break),
             "Button" => Ok(ChipType::Button),
@@ -128,6 +126,7 @@ impl str::FromStr for ChipType {
             "Join" => Ok(ChipType::Join),
             "Latest" => Ok(ChipType::Latest),
             "Mul" => Ok(ChipType::Mul),
+            "Mul4Bit" => Ok(ChipType::Mul4Bit),
             "Mux" => Ok(ChipType::Mux),
             "Not" => Ok(ChipType::Not),
             "Or" => Ok(ChipType::Or),
@@ -162,12 +161,13 @@ impl ChipType {
 
     pub fn tooltip_format(self) -> String {
         let name = match self {
+            ChipType::Add2Bit => "2-Bit Add".to_string(),
             ChipType::And => "Bitwise AND".to_string(),
             ChipType::Const(_) => "Constant".to_string(),
+            ChipType::Mul4Bit => "4-Bit Mul".to_string(),
             ChipType::Not => "Bitwise NOT".to_string(),
             ChipType::Or => "Bitwise OR".to_string(),
             ChipType::Xor => "Bitwise XOR".to_string(),
-            ChipType::Add2Bit => "2-Bit Add".to_string(),
             other => format!("{:?}", other),
         };
         let description = match self {

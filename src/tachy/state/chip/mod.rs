@@ -42,6 +42,7 @@ pub enum ChipAvailability {
     Always,
     InteractiveOnly,
     OnlyIn(&'static [Puzzle]),
+    StartingWith(Puzzle),
     UnlockedBy(Puzzle),
 }
 
@@ -85,9 +86,17 @@ impl ChipExt for ChipType {
             ChipType::Add2Bit => {
                 ChipAvailability::OnlyIn(&[Puzzle::TutorialAdd])
             }
-            ChipType::Add | ChipType::Sub | ChipType::Mul |
-            ChipType::Cmp | ChipType::CmpEq | ChipType::Eq => {
+            ChipType::Add | ChipType::Sub => {
                 ChipAvailability::UnlockedBy(Puzzle::TutorialAdd)
+            }
+            ChipType::Mul4Bit => {
+                ChipAvailability::OnlyIn(&[Puzzle::FabricateMul])
+            }
+            ChipType::Mul => {
+                ChipAvailability::UnlockedBy(Puzzle::FabricateMul)
+            }
+            ChipType::Cmp | ChipType::CmpEq | ChipType::Eq => {
+                ChipAvailability::StartingWith(Puzzle::AutomateHeliostat)
             }
             ChipType::Filter => {
                 ChipAvailability::OnlyIn(&[Puzzle::TutorialDemux])
@@ -174,8 +183,8 @@ impl ChipExt for ChipType {
 
 fn chip_data(ctype: ChipType) -> &'static ChipData {
     match ctype {
-        ChipType::Add2Bit => self::arith::ADD_2BIT_CHIP_DATA,
         ChipType::Add => self::arith::ADD_CHIP_DATA,
+        ChipType::Add2Bit => self::arith::ADD_2BIT_CHIP_DATA,
         ChipType::And => self::logic::AND_CHIP_DATA,
         ChipType::Break => self::special::BREAK_CHIP_DATA,
         ChipType::Button => self::special::BUTTON_CHIP_DATA,
@@ -193,6 +202,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Join => self::event::JOIN_CHIP_DATA,
         ChipType::Latest => self::event::LATEST_CHIP_DATA,
         ChipType::Mul => self::arith::MUL_CHIP_DATA,
+        ChipType::Mul4Bit => self::arith::MUL_4BIT_CHIP_DATA,
         ChipType::Mux => self::logic::MUX_CHIP_DATA,
         ChipType::Not => self::logic::NOT_CHIP_DATA,
         ChipType::Or => self::logic::OR_CHIP_DATA,
@@ -213,8 +223,8 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
                              -> Vec<(usize, Box<ChipEval>)> {
     debug_assert_eq!(slots.len(), chip_data(ctype).ports.len());
     match ctype {
-        ChipType::Add2Bit => self::arith::Add2BitChipEval::new_evals(slots),
         ChipType::Add => self::arith::AddChipEval::new_evals(slots),
+        ChipType::Add2Bit => self::arith::Add2BitChipEval::new_evals(slots),
         ChipType::And => self::logic::AndChipEval::new_evals(slots),
         ChipType::Break => {
             self::special::BreakChipEval::new_evals(slots, coords)
@@ -240,6 +250,7 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
         ChipType::Join => self::event::JoinChipEval::new_evals(slots),
         ChipType::Latest => self::event::LatestChipEval::new_evals(slots),
         ChipType::Mul => self::arith::MulChipEval::new_evals(slots),
+        ChipType::Mul4Bit => self::arith::Mul4BitChipEval::new_evals(slots),
         ChipType::Mux => self::logic::MuxChipEval::new_evals(slots),
         ChipType::Not => self::logic::NotChipEval::new_evals(slots),
         ChipType::Or => self::logic::OrChipEval::new_evals(slots),

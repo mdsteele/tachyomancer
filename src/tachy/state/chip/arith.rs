@@ -163,6 +163,59 @@ impl ChipEval for MulChipEval {
 
 //===========================================================================//
 
+pub const MUL_4BIT_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::North),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Four),
+        AbstractConstraint::Exact(1, WireSize::Four),
+        AbstractConstraint::Exact(2, WireSize::Four),
+        AbstractConstraint::Exact(3, WireSize::Four),
+    ],
+    dependencies: &[(0, 2), (1, 2), (0, 3), (1, 3)],
+};
+
+pub struct Mul4BitChipEval {
+    input1: usize,
+    input2: usize,
+    output: usize,
+    carry: usize,
+}
+
+impl Mul4BitChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), MUL_4BIT_CHIP_DATA.ports.len());
+        let chip_eval = Mul4BitChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+            carry: slots[3].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for Mul4BitChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input1, changed1) = state.recv_behavior(self.input1);
+        let (input2, changed2) = state.recv_behavior(self.input2);
+        if changed1 || changed2 {
+            let product = input1 * input2;
+            let lo = product & 0xf;
+            let hi = (product >> 4) & 0xf;
+            state.send_behavior(self.output, lo);
+            state.send_behavior(self.carry, hi);
+        }
+    }
+}
+
+//===========================================================================//
+
 pub const SUB_CHIP_DATA: &ChipData = ADD_CHIP_DATA;
 
 pub struct SubChipEval {

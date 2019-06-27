@@ -138,7 +138,13 @@ impl ChipModel {
 fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
     match ctype {
         ChipType::Add => ChipIcon::Add,
-        ChipType::Add2Bit => ChipIcon::Add,
+        ChipType::Add2Bit => {
+            if orient.is_mirrored() {
+                ChipIcon::Add2bit2
+            } else {
+                ChipIcon::Add2bit1
+            }
+        }
         ChipType::And => ChipIcon::And,
         ChipType::Clock => ChipIcon::Clock,
         ChipType::Cmp => ChipIcon::Cmp,
@@ -163,6 +169,13 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         ChipType::Join => ChipIcon::Join,
         ChipType::Latest => ChipIcon::Latest,
         ChipType::Mul => ChipIcon::Mul,
+        ChipType::Mul4Bit => {
+            if orient.is_mirrored() {
+                ChipIcon::Mul4bit2
+            } else {
+                ChipIcon::Mul4bit1
+            }
+        }
         ChipType::Mux => ChipIcon::Mux,
         ChipType::Not => ChipIcon::Not,
         ChipType::Or => ChipIcon::Or,

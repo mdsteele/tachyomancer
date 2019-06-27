@@ -40,6 +40,7 @@ pub enum Puzzle {
     FabricateXor,
     TutorialMux,
     TutorialAdd,
+    FabricateHalve,
     FabricateMul,
     AutomateHeliostat,
     AutomateReactor,
@@ -156,6 +157,26 @@ impl Puzzle {
                           4-bit inputs into hi and lo 2-bit values that the \
                           2-bit adders can accept.  Remember to handle carry \
                           bits appropriately.",
+                }
+            }
+            Puzzle::FabricateHalve => {
+                &PuzzleData {
+                    title: "4-Bit Halver",
+                    kind: PuzzleKind::Fabricate,
+                    allow_events: false,
+                    score_units: "Wire Length",
+                    graph_bounds: (50, 50),
+                    description: "\
+                        Build a 4-bit halver using packers and unpackers.\n\n\
+                        Once this task is completed, you will be able to use \
+                        generic $*Halve$* chips in future tasks.",
+                    instructions: "\
+                        * $!The output should be half the value of the input, \
+                          rounded down.\n\
+                        * $!This can be achieved by unpacking the input into \
+                          four 1-bit wires, then packing the highest three \
+                          wires of the input into the lowest three wires of \
+                          the output.",
                 }
             }
             Puzzle::FabricateMul => {

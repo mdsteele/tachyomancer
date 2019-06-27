@@ -89,6 +89,9 @@ impl ChipExt for ChipType {
             ChipType::Add | ChipType::Sub => {
                 ChipAvailability::UnlockedBy(Puzzle::TutorialAdd)
             }
+            ChipType::Halve => {
+                ChipAvailability::UnlockedBy(Puzzle::FabricateHalve)
+            }
             ChipType::Mul4Bit => {
                 ChipAvailability::OnlyIn(&[Puzzle::FabricateMul])
             }
@@ -198,6 +201,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Display => self::special::DISPLAY_CHIP_DATA,
         ChipType::Eq => self::compare::EQ_CHIP_DATA,
         ChipType::Filter => self::event::FILTER_CHIP_DATA,
+        ChipType::Halve => self::arith::HALVE_CHIP_DATA,
         ChipType::Inc => self::event::INC_CHIP_DATA,
         ChipType::Join => self::event::JOIN_CHIP_DATA,
         ChipType::Latest => self::event::LATEST_CHIP_DATA,
@@ -246,6 +250,7 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
         ChipType::Display => vec![],
         ChipType::Eq => self::compare::EqChipEval::new_evals(slots),
         ChipType::Filter => self::event::FilterChipEval::new_evals(slots),
+        ChipType::Halve => self::arith::HalveChipEval::new_evals(slots),
         ChipType::Inc => self::event::IncChipEval::new_evals(slots),
         ChipType::Join => self::event::JoinChipEval::new_evals(slots),
         ChipType::Latest => self::event::LatestChipEval::new_evals(slots),

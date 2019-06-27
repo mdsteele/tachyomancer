@@ -6,6 +6,5 @@
           transform="translate(17, 32) skewY(-20)"/>
     <rect x="0" y="-3" width="26" height="6"
           transform="translate(17, 32) skewY(20)"/>
-    <polygon points="32,0 39,7 25,7"/>
   </g>
 </svg>

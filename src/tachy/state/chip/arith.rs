@@ -126,6 +126,43 @@ impl ChipEval for Add2BitChipEval {
 
 //===========================================================================//
 
+pub const HALVE_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+    ],
+    constraints: &[AbstractConstraint::Equal(0, 1)],
+    dependencies: &[(0, 1)],
+};
+
+pub struct HalveChipEval {
+    input: usize,
+    output: usize,
+}
+
+impl HalveChipEval {
+    pub fn new_evals(slots: &[(usize, WireSize)])
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), HALVE_CHIP_DATA.ports.len());
+        let chip_eval = HalveChipEval {
+            input: slots[0].0,
+            output: slots[1].0,
+        };
+        vec![(1, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for HalveChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let (input, changed) = state.recv_behavior(self.input);
+        if changed {
+            state.send_behavior(self.output, input >> 1);
+        }
+    }
+}
+
+//===========================================================================//
+
 pub const MUL_CHIP_DATA: &ChipData = ADD_CHIP_DATA;
 
 pub struct MulChipEval {

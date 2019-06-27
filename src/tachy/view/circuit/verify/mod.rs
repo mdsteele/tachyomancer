@@ -30,9 +30,9 @@ use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::gui::{Cursor, Event, Resources, Ui};
 use tachy::save::Puzzle;
 use tachy::shader::UiShader;
-use tachy::state::{CircuitEval, FabricateIncEval, FabricateMulEval,
-                   FabricateXorEval, TutorialAddEval, TutorialDemuxEval,
-                   TutorialMuxEval, TutorialOrEval};
+use tachy::state::{CircuitEval, FabricateHalveEval, FabricateIncEval,
+                   FabricateMulEval, FabricateXorEval, TutorialAddEval,
+                   TutorialDemuxEval, TutorialMuxEval, TutorialOrEval};
 
 //===========================================================================//
 
@@ -68,6 +68,9 @@ impl VerificationTray {
             }
             Puzzle::AutomateSensors => {
                 self::sensors::SensorsVerifyView::new(right_bottom)
+            }
+            Puzzle::FabricateHalve => {
+                FabricationVerifyView::<FabricateHalveEval>::new(right_bottom)
             }
             Puzzle::FabricateInc => {
                 FabricationVerifyView::<FabricateIncEval>::new(right_bottom)

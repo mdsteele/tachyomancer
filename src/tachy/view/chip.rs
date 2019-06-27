@@ -165,6 +165,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         ChipType::Discard => ChipIcon::Discard,
         ChipType::Eq => ChipIcon::Eq,
         ChipType::Filter => ChipIcon::Filter,
+        ChipType::Halve => ChipIcon::Halve,
         ChipType::Inc => ChipIcon::Inc,
         ChipType::Join => ChipIcon::Join,
         ChipType::Latest => ChipIcon::Latest,
@@ -187,13 +188,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
             }
         }
         ChipType::Sample => ChipIcon::Sample,
-        ChipType::Sub => {
-            if orient.is_rotated_90() {
-                ChipIcon::Sub2
-            } else {
-                ChipIcon::Sub1
-            }
-        }
+        ChipType::Sub => ChipIcon::Sub,
         ChipType::Unpack => {
             if orient.is_mirrored() {
                 ChipIcon::Unpack2
@@ -215,10 +210,22 @@ fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
     }
 }
 
+fn chip_icon_is_fixed(chip_icon: ChipIcon) -> bool {
+    match chip_icon {
+        ChipIcon::Halve | ChipIcon::Sub => true,
+        _ => false,
+    }
+}
+
 fn draw_chip_icon(resources: &Resources, matrix: &Matrix4<f32>,
                   orient: Orientation, size: CoordsSize, icon: ChipIcon) {
     let width = size.width as f32 - 2.0 * MARGIN;
     let height = size.height as f32 - 2.0 * MARGIN;
+    let orient = if chip_icon_is_fixed(icon) {
+        Orientation::default()
+    } else {
+        orient
+    };
     let matrix = matrix * Matrix4::trans2(MARGIN, MARGIN) *
         Matrix4::scale2(width, height) *
         Matrix4::trans2(0.5, 0.5) * orient.matrix() *

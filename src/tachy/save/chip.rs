@@ -40,6 +40,7 @@ pub enum ChipType {
     Display,
     Eq,
     Filter,
+    Halve,
     Inc,
     Join,
     Latest,
@@ -73,6 +74,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Sub,
         ChipType::Mul,
         ChipType::Mul4Bit,
+        ChipType::Halve,
     ]),
     ("Comparison", &[
         ChipType::Cmp,
@@ -122,6 +124,7 @@ impl str::FromStr for ChipType {
             "Display" => Ok(ChipType::Display),
             "Eq" => Ok(ChipType::Eq),
             "Filter" => Ok(ChipType::Filter),
+            "Halve" => Ok(ChipType::Halve),
             "Inc" => Ok(ChipType::Inc),
             "Join" => Ok(ChipType::Join),
             "Latest" => Ok(ChipType::Latest),

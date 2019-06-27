@@ -78,8 +78,6 @@ pub const XOR_INTERFACES: &[Interface] = &[
     },
 ];
 
-//===========================================================================//
-
 pub struct FabricateXorEval {
     table_values: Vec<u64>,
     input1_wire: usize,
@@ -206,8 +204,6 @@ pub const MUL_INTERFACES: &[Interface] = &[
     },
 ];
 
-//===========================================================================//
-
 pub struct FabricateMulEval {
     table_values: Vec<u64>,
     input1_wire: usize,
@@ -299,6 +295,111 @@ impl FabricationEval for FabricateMulEval {
 
 //===========================================================================//
 
+pub const HALVE_INTERFACES: &[Interface] = &[
+    Interface {
+        name: "In",
+        description: "Input (from 0 to 15).",
+        side: Direction::West,
+        pos: InterfacePosition::Center,
+        ports: &[
+            InterfacePort {
+                name: "In",
+                description: "",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+        ],
+    },
+    Interface {
+        name: "Out",
+        description: "Should be half the value of the input, rounded down.",
+        side: Direction::East,
+        pos: InterfacePosition::Center,
+        ports: &[
+            InterfacePort {
+                name: "Out",
+                description: "",
+                flow: PortFlow::Recv,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+        ],
+    },
+];
+
+pub struct FabricateHalveEval {
+    table_values: Vec<u64>,
+    input_wire: usize,
+    output_wire: usize,
+    output_port: (Coords, Direction),
+}
+
+impl FabricateHalveEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
+               -> FabricateHalveEval {
+        debug_assert_eq!(slots.len(), 2);
+        debug_assert_eq!(slots[0].len(), 1);
+        debug_assert_eq!(slots[1].len(), 1);
+        FabricateHalveEval {
+            table_values: FabricateHalveEval::expected_table_values().to_vec(),
+            input_wire: slots[0][0].1,
+            output_wire: slots[1][0].1,
+            output_port: slots[1][0].0,
+        }
+    }
+}
+
+impl PuzzleEval for FabricateHalveEval {
+    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
+                       -> Option<EvalScore> {
+        let expected = FabricateHalveEval::expected_table_values();
+        let start = (time_step as usize) * 2;
+        if start >= expected.len() {
+            Some(EvalScore::WireLength)
+        } else {
+            state.send_behavior(self.input_wire, expected[start] as u32);
+            None
+        }
+    }
+
+    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
+                     -> Vec<EvalError> {
+        let input = state.recv_behavior(self.input_wire).0;
+        let expected = input >> 1;
+        let actual = state.recv_behavior(self.output_wire).0;
+        self.table_values[2 * (time_step as usize) + 1] = actual as u64;
+        if actual != expected {
+            let error = EvalError {
+                time_step,
+                port: Some(self.output_port),
+                message: format!("Expected output {} for input {}, but output \
+                                  was {}",
+                                 expected,
+                                 input,
+                                 actual),
+            };
+            vec![error]
+        } else {
+            vec![]
+        }
+    }
+}
+
+impl FabricationEval for FabricateHalveEval {
+    fn table_column_names() -> &'static [&'static str] { &["In", "Out"] }
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn expected_table_values() -> &'static [u64] {
+        &[0, 0, 1, 0, 2, 1, 3, 1, 4, 2, 5, 2, 6, 3, 7, 3,
+          8, 4, 9, 4, 10, 5, 11, 5, 12, 6, 13, 6, 14, 7, 15, 7]
+    }
+
+    fn table_values(&self) -> &[u64] { &self.table_values }
+}
+
+//===========================================================================//
+
 pub const INC_INTERFACES: &[Interface] = &[
     Interface {
         name: "InE",
@@ -348,8 +449,6 @@ pub const INC_INTERFACES: &[Interface] = &[
         ],
     },
 ];
-
-//===========================================================================//
 
 pub struct FabricateIncEval {
     table_values: Vec<u64>,

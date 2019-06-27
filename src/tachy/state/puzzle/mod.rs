@@ -28,8 +28,8 @@ mod sensors;
 mod shared;
 mod tutorial;
 
-pub use self::fabricate::{FabricateIncEval, FabricateMulEval,
-                          FabricateXorEval};
+pub use self::fabricate::{FabricateHalveEval, FabricateIncEval,
+                          FabricateMulEval, FabricateXorEval};
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::robotarm::RobotArmEval;
@@ -86,6 +86,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
+            Puzzle::FabricateHalve => self::fabricate::HALVE_INTERFACES,
             Puzzle::FabricateInc => self::fabricate::INC_INTERFACES,
             Puzzle::FabricateMul => self::fabricate::MUL_INTERFACES,
             Puzzle::FabricateXor => self::fabricate::XOR_INTERFACES,
@@ -111,8 +112,8 @@ impl PuzzleExt for Puzzle {
     }
 }
 
-pub fn is_chip_allowed_in(ctype: ChipType, puzzle: Puzzle, profile: &Profile)
-                          -> bool {
+fn is_chip_allowed_in(ctype: ChipType, puzzle: Puzzle, profile: &Profile)
+                      -> bool {
     if !puzzle.allows_events() && ctype.uses_events() {
         return false;
     }
@@ -136,9 +137,9 @@ pub fn is_chip_allowed_in(ctype: ChipType, puzzle: Puzzle, profile: &Profile)
 
 //===========================================================================//
 
-pub fn new_puzzle_eval(puzzle: Puzzle,
-                       slots: Vec<Vec<((Coords, Direction), usize)>>)
-                       -> Box<PuzzleEval> {
+pub(super) fn new_puzzle_eval(puzzle: Puzzle,
+                              slots: Vec<Vec<((Coords, Direction), usize)>>)
+                              -> Box<PuzzleEval> {
     match puzzle {
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateReactor => {
@@ -148,6 +149,7 @@ pub fn new_puzzle_eval(puzzle: Puzzle,
         Puzzle::AutomateSensors => {
             Box::new(self::sensors::SensorsEval::new(slots))
         }
+        Puzzle::FabricateHalve => Box::new(FabricateHalveEval::new(slots)),
         Puzzle::FabricateInc => Box::new(FabricateIncEval::new(slots)),
         Puzzle::FabricateMul => Box::new(FabricateMulEval::new(slots)),
         Puzzle::FabricateXor => Box::new(FabricateXorEval::new(slots)),

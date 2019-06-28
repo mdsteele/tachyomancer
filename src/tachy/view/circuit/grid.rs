@@ -354,9 +354,6 @@ impl EditGridView {
                     }
                     return Cursor::NoSign;
                 }
-                if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
-                    return Cursor::Crosshair;
-                }
                 if let Some((chip_coords, ctype, orient)) =
                     grid.chip_at(coords)
                 {
@@ -373,6 +370,9 @@ impl EditGridView {
                     {
                         return Cursor::HandOpen;
                     }
+                }
+                if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
+                    return Cursor::Crosshair;
                 }
                 if grid.bounds()
                     .as_f32()
@@ -599,15 +599,6 @@ impl EditGridView {
                     }
                     _ => return None,
                 }
-                // TODO: Don't allow starting selection on a vertex that is
-                //   e.g. the center of a 2x2 chip.
-                if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
-                    let drag = SelectingDrag::new(grid.bounds(),
-                                                  grid_pt.as_i32_round());
-                    self.interaction = Interaction::SelectingRect(drag);
-                    ui.request_redraw();
-                    return None;
-                }
                 let mouse_coords = grid_pt.as_i32_floor();
                 if let Some((coords, _, iface)) =
                     grid.interface_at(mouse_coords)
@@ -645,6 +636,13 @@ impl EditGridView {
                         }
                         return None;
                     }
+                }
+                if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
+                    let drag = SelectingDrag::new(grid.bounds(),
+                                                  grid_pt.as_i32_round());
+                    self.interaction = Interaction::SelectingRect(drag);
+                    ui.request_redraw();
+                    return None;
                 }
                 if grid.bounds()
                     .as_f32()

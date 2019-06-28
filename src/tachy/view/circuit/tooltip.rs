@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::chip::{chip_grid_rect, interface_grid_rect};
 use cgmath::Point2;
 use tachy::geom::{AsInt, Coords, Direction, PolygonRef};
 use tachy::save::{ChipType, WireShape};
@@ -35,11 +36,15 @@ impl GridTooltipTag {
     pub fn for_grid_pt(grid: &EditGrid, grid_pt: Point2<f32>)
                        -> Option<GridTooltipTag> {
         let coords: Coords = grid_pt.as_i32_floor();
-        if let Some((coords, ctype, _)) = grid.chip_at(coords) {
-            return Some(GridTooltipTag::Chip(coords, ctype));
+        if let Some((coords, ctype, orient)) = grid.chip_at(coords) {
+            if chip_grid_rect(coords, ctype, orient).contains_point(grid_pt) {
+                return Some(GridTooltipTag::Chip(coords, ctype));
+            }
         }
-        if let Some((index, _)) = grid.interface_at(coords) {
-            return Some(GridTooltipTag::Interface(index));
+        if let Some((coords, index, iface)) = grid.interface_at(coords) {
+            if interface_grid_rect(coords, iface).contains_point(grid_pt) {
+                return Some(GridTooltipTag::Interface(index));
+            }
         }
 
         let sub_pt = Point2::new(grid_pt.x - (coords.x as f32),

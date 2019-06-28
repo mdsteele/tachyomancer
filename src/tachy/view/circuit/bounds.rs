@@ -17,8 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::chip::CHIP_MARGIN;
 use cgmath::Point2;
-use tachy::geom::{AsFloat, AsInt, CoordsDelta, CoordsRect, CoordsSize, Rect};
+use tachy::geom::{AsFloat, AsInt, CoordsDelta, CoordsRect, CoordsSize,
+                  Direction, Rect};
 use tachy::gui::{Cursor, NextCursor, Ui};
 use tachy::state::{EditGrid, GridChange};
 
@@ -42,9 +44,18 @@ pub enum BoundsHandle {
 }
 
 impl BoundsHandle {
+    pub fn for_side(side: Direction) -> BoundsHandle {
+        match side {
+            Direction::East => BoundsHandle::Right,
+            Direction::South => BoundsHandle::Bottom,
+            Direction::West => BoundsHandle::Left,
+            Direction::North => BoundsHandle::Top,
+        }
+    }
+
     pub fn for_grid_pt(grid_pt: Point2<f32>, grid: &EditGrid)
                        -> Option<BoundsHandle> {
-        let inner = grid.bounds().as_f32();
+        let inner = grid.bounds().as_f32().expand(CHIP_MARGIN);
         if inner.contains_point(grid_pt) {
             return None;
         }

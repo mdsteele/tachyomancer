@@ -20,7 +20,8 @@
 use super::bounds::{BOUNDS_MARGIN, BoundsDrag, BoundsHandle};
 use super::chipdrag::ChipDrag;
 use super::select::{self, SelectingDrag, Selection, SelectionDrag};
-use super::super::chip::ChipModel;
+use super::super::chip::{CHIP_MARGIN, ChipModel, chip_grid_rect,
+                         interface_grid_rect};
 use super::super::tooltip::Tooltip;
 use super::super::wire::WireModel;
 use super::tooltip::GridTooltipTag;
@@ -350,21 +351,38 @@ impl EditGridView {
                         grid.chip_at(coords)
                     {
                         return Cursor::HandPointing;
-                    } else {
-                        return Cursor::NoSign;
                     }
-                } else if SelectingDrag::is_near_vertex(grid_pt,
-                                                        grid.bounds())
-                {
+                    return Cursor::NoSign;
+                }
+                if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
                     return Cursor::Crosshair;
-                } else if let Some(handle) =
-                    BoundsHandle::for_grid_pt(grid_pt, grid)
+                }
+                if let Some((chip_coords, ctype, orient)) =
+                    grid.chip_at(coords)
                 {
-                    return handle.cursor();
-                } else if grid.chip_at(coords).is_some() {
-                    return Cursor::HandOpen;
-                } else if grid.bounds().contains_point(coords) {
+                    let chip_rect = chip_grid_rect(chip_coords, ctype, orient);
+                    if chip_rect.contains_point(grid_pt) {
+                        return Cursor::HandOpen;
+                    }
+                }
+                if let Some((iface_coords, _, iface)) =
+                    grid.interface_at(coords)
+                {
+                    if interface_grid_rect(iface_coords, iface)
+                        .contains_point(grid_pt)
+                    {
+                        return Cursor::HandOpen;
+                    }
+                }
+                if grid.bounds()
+                    .as_f32()
+                    .expand(CHIP_MARGIN)
+                    .contains_point(grid_pt)
+                {
                     return Cursor::Wire;
+                }
+                if let Some(bh) = BoundsHandle::for_grid_pt(grid_pt, grid) {
+                    return bh.cursor();
                 }
             }
             Interaction::RectSelected(rect) => {
@@ -591,28 +609,48 @@ impl EditGridView {
                     return None;
                 }
                 let mouse_coords = grid_pt.as_i32_floor();
-                if !grid.bounds().contains_point(mouse_coords) {
-                    if let Some(handle) = BoundsHandle::for_grid_pt(grid_pt,
-                                                                    grid)
+                if let Some((coords, _, iface)) =
+                    grid.interface_at(mouse_coords)
+                {
+                    if interface_grid_rect(coords, iface)
+                        .contains_point(grid_pt)
                     {
+                        let handle = BoundsHandle::for_side(iface.side());
                         let drag = BoundsDrag::new(handle, grid_pt, grid);
                         self.interaction = Interaction::DraggingBounds(drag);
+                        return None;
                     }
-                } else if let Some((coords, ctype, orient)) =
+                }
+                if let Some(handle) = BoundsHandle::for_grid_pt(grid_pt,
+                                                                grid)
+                {
+                    let drag = BoundsDrag::new(handle, grid_pt, grid);
+                    self.interaction = Interaction::DraggingBounds(drag);
+                    return None;
+                }
+                if let Some((coords, ctype, orient)) =
                     grid.chip_at(mouse_coords)
                 {
-                    // TODO: If mouse is within chip cell but near edge of
-                    //   chip, allow for wire dragging.
-                    let change = GridChange::RemoveChip(coords, ctype, orient);
-                    if grid.try_mutate_provisionally(vec![change]) {
-                        let drag = ChipDrag::new(ctype,
-                                                 orient,
-                                                 Some(coords),
-                                                 grid_pt);
-                        self.interaction = Interaction::DraggingChip(drag);
-                        ui.audio().play_sound(Sound::GrabChip);
+                    let chip_rect = chip_grid_rect(coords, ctype, orient);
+                    if chip_rect.contains_point(grid_pt) {
+                        let change =
+                            GridChange::RemoveChip(coords, ctype, orient);
+                        if grid.try_mutate_provisionally(vec![change]) {
+                            let drag = ChipDrag::new(ctype,
+                                                     orient,
+                                                     Some(coords),
+                                                     grid_pt);
+                            self.interaction = Interaction::DraggingChip(drag);
+                            ui.audio().play_sound(Sound::GrabChip);
+                        }
+                        return None;
                     }
-                } else {
+                }
+                if grid.bounds()
+                    .as_f32()
+                    .expand(CHIP_MARGIN)
+                    .contains_point(grid_pt)
+                {
                     let mut drag = WireDrag::new();
                     if drag.move_to(grid_pt, ui, grid) {
                         self.interaction = Interaction::DraggingWires(drag);

@@ -119,6 +119,8 @@ impl Interface {
         size.into()
     }
 
+    pub fn side(&self) -> Direction { self.side }
+
     pub fn ports(&self, bounds: CoordsRect) -> Vec<(&'static str, PortSpec)> {
         self.ports_with_top_left(self.top_left(bounds))
     }

@@ -69,11 +69,11 @@ pub enum GridChange {
 }
 
 impl GridChange {
-    pub fn invert_group(changes: Vec<GridChange>) -> Vec<GridChange> {
+    fn invert_group(changes: Vec<GridChange>) -> Vec<GridChange> {
         changes.into_iter().rev().map(GridChange::invert).collect()
     }
 
-    pub fn invert(self) -> GridChange {
+    fn invert(self) -> GridChange {
         match self {
             GridChange::AddStubWire(c, d) => GridChange::RemoveStubWire(c, d),
             GridChange::RemoveStubWire(c, d) => GridChange::AddStubWire(c, d),
@@ -390,12 +390,12 @@ impl EditGrid {
     }
 
     pub fn interface_at(&self, coords: Coords)
-                        -> Option<(usize, &'static Interface)> {
+                        -> Option<(Coords, usize, &'static Interface)> {
         for (index, interface) in self.interfaces.iter().enumerate() {
-            let rect = Rect::with_size(interface.top_left(self.bounds),
-                                       interface.size());
+            let top_left = interface.top_left(self.bounds);
+            let rect = Rect::with_size(top_left, interface.size());
             if rect.contains_point(coords) {
-                return Some((index, interface));
+                return Some((top_left, index, interface));
             }
         }
         return None;

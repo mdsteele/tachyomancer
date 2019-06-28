@@ -19,8 +19,8 @@
 
 use cgmath::{Matrix4, vec2};
 use tachy::font::{Align, Font};
-use tachy::geom::{Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
-                  Orientation, Rect};
+use tachy::geom::{AsFloat, Color3, Color4, Coords, CoordsSize, Direction,
+                  MatrixExt, Orientation, Rect};
 use tachy::gui::Resources;
 use tachy::save::ChipType;
 use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
@@ -29,7 +29,26 @@ use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
 //===========================================================================//
 
 const INTERFACE_LABEL_COLOR: Color4 = Color4::new(0.75, 0.75, 0.75, 1.0);
-const MARGIN: f32 = 0.12;
+
+//===========================================================================//
+
+/// The margin around chip rects, in grid cell units.
+pub const CHIP_MARGIN: f32 = 0.12;
+
+pub fn chip_grid_rect(chip_coords: Coords, ctype: ChipType,
+                      orient: Orientation)
+                      -> Rect<f32> {
+    Rect::with_size(chip_coords, orient * ctype.size())
+        .as_f32()
+        .expand(-CHIP_MARGIN)
+}
+
+pub fn interface_grid_rect(iface_coords: Coords, interface: &Interface)
+                           -> Rect<f32> {
+    Rect::with_size(iface_coords, interface.size())
+        .as_f32()
+        .expand(-CHIP_MARGIN)
+}
 
 //===========================================================================//
 
@@ -52,10 +71,10 @@ impl ChipModel {
 
         // Draw body:
         let size = interface.size();
-        let width = size.width as f32 - 2.0 * MARGIN;
-        let height = size.height as f32 - 2.0 * MARGIN;
+        let width = size.width as f32 - 2.0 * CHIP_MARGIN;
+        let height = size.height as f32 - 2.0 * CHIP_MARGIN;
         let color = Color3::new(0.3, 0.3, 0.3);
-        let rect = Rect::new(MARGIN, MARGIN, width, height);
+        let rect = Rect::new(CHIP_MARGIN, CHIP_MARGIN, width, height);
         resources.shaders().solid().fill_rect(matrix, color, rect);
 
         // Draw port labels:
@@ -219,14 +238,14 @@ fn chip_icon_is_fixed(chip_icon: ChipIcon) -> bool {
 
 fn draw_chip_icon(resources: &Resources, matrix: &Matrix4<f32>,
                   orient: Orientation, size: CoordsSize, icon: ChipIcon) {
-    let width = size.width as f32 - 2.0 * MARGIN;
-    let height = size.height as f32 - 2.0 * MARGIN;
+    let width = size.width as f32 - 2.0 * CHIP_MARGIN;
+    let height = size.height as f32 - 2.0 * CHIP_MARGIN;
     let orient = if chip_icon_is_fixed(icon) {
         Orientation::default()
     } else {
         orient
     };
-    let matrix = matrix * Matrix4::trans2(MARGIN, MARGIN) *
+    let matrix = matrix * Matrix4::trans2(CHIP_MARGIN, CHIP_MARGIN) *
         Matrix4::scale2(width, height) *
         Matrix4::trans2(0.5, 0.5) * orient.matrix() *
         Matrix4::trans2(-0.5, -0.5);

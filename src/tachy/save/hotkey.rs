@@ -134,7 +134,7 @@ impl HotkeyCodes {
     }
 
     pub fn hotkey(&self, keycode: Keycode) -> Option<Hotkey> {
-        self.hotkeys.get(&keycode).cloned()
+        self.hotkeys.get(&keycode).copied()
     }
 
     pub fn keycode(&self, hotkey: Hotkey) -> Keycode {

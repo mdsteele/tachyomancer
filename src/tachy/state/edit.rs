@@ -23,7 +23,7 @@ use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::{Interface, PuzzleExt, new_puzzle_eval};
 use super::size::WireSize;
-use std::collections::{HashMap, hash_map, hash_set};
+use std::collections::{HashMap, HashSet, hash_map, hash_set};
 use std::mem;
 use std::time::{Duration, Instant};
 use std::usize;
@@ -1014,9 +1014,13 @@ impl EditGrid {
         let mut wires_for_ports = HashMap::<(Coords, Direction), usize>::new();
         let mut groups_for_ports =
             HashMap::<(Coords, Direction), usize>::new();
+        let mut null_wires = HashSet::<usize>::new();
         for (group_index, group) in self.wire_groups.iter().enumerate() {
             for &wire_index in group.iter() {
                 let wire = &self.wires[wire_index];
+                if wire.fragments.is_empty() {
+                    null_wires.insert(wire_index);
+                }
                 for (&loc, &(flow, _)) in wire.ports.iter() {
                     debug_assert!(!wires_for_ports.contains_key(&loc));
                     wires_for_ports.insert(loc, wire_index);
@@ -1071,6 +1075,7 @@ impl EditGrid {
         };
 
         self.eval = Some(CircuitEval::new(self.wires.len(),
+                                          null_wires,
                                           chip_evals,
                                           puzzle_eval,
                                           interact));

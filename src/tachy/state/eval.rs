@@ -19,7 +19,7 @@
 
 use downcast_rs::Downcast;
 use std::cell::{RefCell, RefMut};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::rc::Rc;
 use tachy::geom::{Coords, Direction};
@@ -63,7 +63,8 @@ pub struct CircuitEval {
 }
 
 impl CircuitEval {
-    pub fn new(num_wires: usize, chip_groups: Vec<Vec<Box<ChipEval>>>,
+    pub fn new(num_wires: usize, null_wires: HashSet<usize>,
+               chip_groups: Vec<Vec<Box<ChipEval>>>,
                puzzle: Box<PuzzleEval>,
                interact: Rc<RefCell<CircuitInteraction>>)
                -> CircuitEval {
@@ -74,7 +75,7 @@ impl CircuitEval {
             errors: Vec::new(),
             chips: chip_groups,
             puzzle,
-            state: CircuitState::new(num_wires),
+            state: CircuitState::new(num_wires, null_wires),
             interact,
         }
     }
@@ -208,14 +209,20 @@ impl CircuitEval {
 //===========================================================================//
 
 pub struct CircuitState {
+    // "Null" wires are ports that have no wire fragments connected to them.
+    // We treat them as wires for ease of evaluation, but we don't count the
+    // circuit state as having "changed" for the purposes of debug stepping
+    // when one of these ports changes values.
+    null_wires: HashSet<usize>,
     values: Vec<(u32, bool)>,
     breakpoints: Vec<Coords>,
     changed: bool,
 }
 
 impl CircuitState {
-    fn new(num_values: usize) -> CircuitState {
+    fn new(num_values: usize, null_wires: HashSet<usize>) -> CircuitState {
         CircuitState {
+            null_wires,
             values: vec![(0, false); num_values],
             breakpoints: vec![],
             changed: false,
@@ -236,13 +243,13 @@ impl CircuitState {
     pub fn send_behavior(&mut self, slot: usize, value: u32) {
         if self.values[slot].0 != value {
             self.values[slot] = (value, true);
-            self.changed = true; // TODO: don't marked changed for null wires
+            self.changed = !self.null_wires.contains(&slot);
         }
     }
 
     pub fn send_event(&mut self, slot: usize, value: u32) {
         self.values[slot] = (value, true);
-        self.changed = true; // TODO: don't marked changed for null wires
+        self.changed = !self.null_wires.contains(&slot);
     }
 
     pub fn breakpoint(&mut self, coords: Coords) {

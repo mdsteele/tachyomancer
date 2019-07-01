@@ -227,6 +227,7 @@ mod tests {
     use super::{AndChipEval, NotChipEval};
     use super::super::super::eval::{ChipEval, CircuitInteraction,
                                     NullPuzzleEval};
+    use std::collections::HashSet;
     use tachy::state::{CircuitEval, WireSize};
 
     #[test]
@@ -260,6 +261,7 @@ mod tests {
             ],
         ];
         let mut eval = CircuitEval::new(6,
+                                        HashSet::new(),
                                         chips,
                                         Box::new(NullPuzzleEval()),
                                         CircuitInteraction::new());

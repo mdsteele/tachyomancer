@@ -4,14 +4,17 @@ in float fragment_tex_param;
 
 uniform vec3 WireColor;
 uniform sampler1D WireTexture;
-uniform float Hilight;
+uniform vec4 HilightColor;
 
 out vec4 color;
 
-const vec3 HilightColor = vec3(0.592, 0.949, 0.988);
-
 void main() {
   vec4 tex = texture(WireTexture, fragment_tex_param);
-  color = vec4(WireColor.rgb * tex.r + HilightColor * (Hilight * tex.b),
-               tex.g + Hilight * tex.a);
+  float wire_brightness = tex.r;
+  float wire_alpha = tex.g;
+  float hilight_brightness = tex.b;
+  float hilight_alpha = tex.a;
+  color = vec4(WireColor * wire_brightness +
+               HilightColor.rgb * hilight_brightness,
+               wire_alpha + HilightColor.a * hilight_alpha);
 }

@@ -147,14 +147,15 @@ impl SelectionDrag {
         {
             let matrix = matrix * Matrix4::trans2v(offset * grid_cell_size);
             let color = WireColor::Unknown;
-            let size = WireSize::Two;
+            let size = WireSize::One;
+            let hilight = &Color4::TRANSPARENT;
             for (&(delta, dir), &shape) in self.selection.wires.iter() {
                 match (shape, dir) {
                     (WireShape::Stub, _) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
                         wire_model
-                            .draw_stub(resources, &mat, color, size, false);
+                            .draw_stub(resources, &mat, color, size, hilight);
                     }
                     (WireShape::Straight, Direction::East) |
                     (WireShape::Straight, Direction::North) => {
@@ -164,25 +165,25 @@ impl SelectionDrag {
                                                  &mat,
                                                  color,
                                                  size,
-                                                 false);
+                                                 hilight);
                     }
                     (WireShape::TurnLeft, _) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
                         wire_model
-                            .draw_turn(resources, &mat, color, size, false);
+                            .draw_turn(resources, &mat, color, size, hilight);
                     }
                     (WireShape::SplitTee, _) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
                         wire_model
-                            .draw_tee(resources, &mat, color, size, false);
+                            .draw_tee(resources, &mat, color, size, hilight);
                     }
                     (WireShape::Cross, Direction::East) => {
                         let mat =
                             delta_matrix(&matrix, delta, dir, grid_cell_size);
                         wire_model
-                            .draw_cross(resources, &mat, color, size, false);
+                            .draw_cross(resources, &mat, color, size, hilight);
                     }
                     _ => {}
                 }

@@ -364,6 +364,14 @@ impl EditGrid {
         }
     }
 
+    pub fn wire_index_group(&self, group_index: usize) -> &[usize] {
+        if group_index < self.wire_groups.len() {
+            &self.wire_groups[group_index]
+        } else {
+            &[]
+        }
+    }
+
     pub fn chip_at(&self, coords: Coords)
                    -> Option<(Coords, ChipType, Orientation)> {
         match self.chips.get(&coords) {
@@ -425,6 +433,9 @@ impl EditGrid {
 
     /// Returns true if any changes were made to the grid.
     pub fn undo(&mut self) -> bool {
+        if self.eval.is_some() {
+            return false;
+        }
         let mut changed = self.roll_back_provisional_changes();
         if let Some(changes) = self.undo_stack.pop() {
             for change in changes.iter() {
@@ -437,11 +448,14 @@ impl EditGrid {
             self.mark_modified();
             changed = true;
         }
-        changed
+        return changed;
     }
 
     /// Returns true if any changes were made to the grid.
     pub fn redo(&mut self) -> bool {
+        if self.eval.is_some() {
+            return false;
+        }
         if let Some(changes) = self.redo_stack.pop() {
             debug_assert!(self.provisional_changes.is_empty());
             for change in changes.iter() {
@@ -452,10 +466,9 @@ impl EditGrid {
             self.undo_stack.push(GridChange::invert_group(changes));
             self.typecheck_wires();
             self.mark_modified();
-            true
-        } else {
-            false
+            return true;
         }
+        return false;
     }
 
     #[must_use = "must not ignore try_mutate failure"]
@@ -495,7 +508,7 @@ impl EditGrid {
     }
 
     pub fn roll_back_provisional_changes(&mut self) -> bool {
-        if self.provisional_changes.is_empty() {
+        if self.eval.is_some() || self.provisional_changes.is_empty() {
             return false;
         }
         debug_assert!(self.redo_stack.is_empty());
@@ -512,6 +525,9 @@ impl EditGrid {
     #[must_use = "must not ignore try_mutate_internal result"]
     fn try_mutate_internal(&mut self, mut changes: Vec<GridChange>)
                            -> Option<Vec<GridChange>> {
+        if self.eval.is_some() {
+            return None;
+        }
         let num_changes: usize = changes.len();
         let mut num_succeeded: usize = 0;
         for change in changes.iter() {
@@ -534,11 +550,12 @@ impl EditGrid {
             Some(changes)
         };
         self.typecheck_wires();
-        changes
+        return changes;
     }
 
     #[must_use = "must not ignore mutate_one failure"]
     fn mutate_one(&mut self, change: &GridChange) -> bool {
+        debug_assert!(self.eval.is_none());
         match *change {
             GridChange::AddStubWire(coords, dir) => {
                 let coords2 = coords + dir;
@@ -932,6 +949,7 @@ impl EditGrid {
     }
 
     fn typecheck_wires(&mut self) {
+        debug_assert!(self.eval.is_none());
         self.wires_for_ports = HashMap::new();
         self.wire_groups = Vec::new();
         self.eval = None;

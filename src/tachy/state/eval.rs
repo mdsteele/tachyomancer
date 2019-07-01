@@ -86,6 +86,8 @@ impl CircuitEval {
 
     pub fn time_step(&self) -> u32 { self.time_step }
 
+    pub fn subcycle(&self) -> usize { self.subcycle }
+
     /// Returns the PuzzleEval object, which must have the specified type.
     /// Panics if the incorrect type is specified.
     pub fn puzzle_eval<T: PuzzleEval>(&self) -> &T {
@@ -104,6 +106,10 @@ impl CircuitEval {
 
     pub fn wire_value(&self, wire_index: usize) -> u32 {
         self.state.values[wire_index].0
+    }
+
+    pub fn wire_has_change(&self, wire_index: usize) -> bool {
+        self.state.values[wire_index].1
     }
 
     pub fn step_subcycle(&mut self) -> EvalResult {
@@ -130,6 +136,11 @@ impl CircuitEval {
                 }
                 self.errors.extend(self.puzzle.end_time_step(self.time_step,
                                                              &self.state));
+                for group in self.chips.iter_mut() {
+                    for chip in group.iter_mut() {
+                        chip.on_time_step();
+                    }
+                }
                 debug_log!("Time step {} complete after {} cycle(s)",
                            self.time_step,
                            self.cycle);

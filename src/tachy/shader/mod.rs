@@ -304,19 +304,19 @@ pub struct WireShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
     wire_color: ShaderUniform<Color3>,
-    hilight: ShaderUniform<f32>,
+    hilight_color: ShaderUniform<Color4>,
 }
 
 impl WireShader {
     fn new(program: ShaderProgram) -> Result<WireShader, String> {
         let mvp = program.get_uniform("MVP")?;
         let wire_color = program.get_uniform("WireColor")?;
-        let hilight = program.get_uniform("Hilight")?;
+        let hilight_color = program.get_uniform("HilightColor")?;
         Ok(WireShader {
                program,
                mvp,
                wire_color,
-               hilight,
+               hilight_color,
            })
     }
 
@@ -326,8 +326,8 @@ impl WireShader {
         self.wire_color.set(color);
     }
 
-    pub fn set_hilighted(&self, hilighted: bool) {
-        self.hilight.set(&(if hilighted { 1.0 } else { 0.0 }));
+    pub fn set_hilight_color(&self, color: &Color4) {
+        self.hilight_color.set(color);
     }
 
     pub fn set_mvp(&self, mvp: &Matrix4<f32>) { self.mvp.set(mvp); }

@@ -59,13 +59,17 @@ impl ClockChipEval {
 
 impl ChipEval for ClockChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        if state.has_event(self.input) {
-            self.received = true;
-        }
         if self.should_send {
             state.send_event(self.output, 0);
             self.should_send = false;
         }
+    }
+
+    fn needs_another_cycle(&mut self, state: &CircuitState) -> bool {
+        if state.has_event(self.input) {
+            self.received = true;
+        }
+        false
     }
 
     fn on_time_step(&mut self) {

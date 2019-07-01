@@ -56,6 +56,8 @@ impl Color3 {
     pub const PURPLE5: Color3 = Color3::new(0.855, 0.569, 0.996);
 
     pub const YELLOW3: Color3 = Color3::new(0.957, 0.976, 0.153);
+    pub const YELLOW4: Color3 = Color3::new(0.980, 0.973, 0.439);
+    pub const YELLOW5: Color3 = Color3::new(0.988, 0.980, 0.643);
 }
 
 //===========================================================================//
@@ -83,6 +85,7 @@ impl Color4 {
         }
     }
 
+    pub const TRANSPARENT: Color4 = Color4::new(0.0, 0.0, 0.0, 0.0);
     pub const BLACK: Color4 = Color3::BLACK.with_alpha(1.0);
     pub const WHITE: Color4 = Color3::WHITE.with_alpha(1.0);
 
@@ -108,6 +111,8 @@ impl Color4 {
     pub const PURPLE5: Color4 = Color3::PURPLE5.with_alpha(1.0);
 
     pub const YELLOW3: Color4 = Color3::YELLOW3.with_alpha(1.0);
+    pub const YELLOW4: Color4 = Color3::YELLOW4.with_alpha(1.0);
+    pub const YELLOW5: Color4 = Color3::YELLOW5.with_alpha(1.0);
 }
 
 //===========================================================================//

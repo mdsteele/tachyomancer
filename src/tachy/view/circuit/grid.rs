@@ -28,9 +28,10 @@ use super::tooltip::GridTooltipTag;
 use super::tutorial::TutorialBubble;
 use super::wiredrag::WireDrag;
 use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
+use std::collections::HashSet;
 use std::mem;
-use tachy::geom::{AsFloat, AsInt, Color3, Coords, CoordsRect, Direction,
-                  MatrixExt, Orientation, Rect, RectSize};
+use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsRect,
+                  Direction, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, NextCursor,
                  Resources, Sound, Ui};
 use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
@@ -191,12 +192,33 @@ impl EditGridView {
         self.draw_bounds(resources, grid);
         self.draw_tutorial_bubbles(resources, grid);
 
+        let subcycle_wires: HashSet<usize> = if let Some(eval) = grid.eval() {
+            if eval.subcycle() > 0 {
+                grid.wire_index_group(eval.subcycle() - 1)
+                    .iter()
+                    .cloned()
+                    .filter(|&wire_index| eval.wire_has_change(wire_index))
+                    .collect()
+            } else {
+                HashSet::new()
+            }
+        } else {
+            HashSet::new()
+        };
+
         // Draw wires:
         let matrix = self.vp_matrix();
         for (coords, dir, shape, size, color, has_error) in
             grid.wire_fragments()
         {
-            let selected = grid.wire_index_at(coords, dir) == self.hover_wire;
+            let wire_index = grid.wire_index_at(coords, dir).unwrap();
+            let hilight = if self.hover_wire == Some(wire_index) {
+                &Color4::CYAN5
+            } else if subcycle_wires.contains(&wire_index) {
+                &Color4::YELLOW5
+            } else {
+                &Color4::TRANSPARENT
+            };
             // TODO: When a wire with an error is selected, we should hilight
             //   the causes of the error (e.g. the two sender ports, or the
             //   wire loop, or whatever).
@@ -209,7 +231,7 @@ impl EditGridView {
                 (WireShape::Stub, _) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
                     self.wire_model
-                        .draw_stub(resources, &matrix, color, size, selected);
+                        .draw_stub(resources, &matrix, color, size, hilight);
                 }
                 (WireShape::Straight, Direction::East) |
                 (WireShape::Straight, Direction::North) => {
@@ -218,22 +240,22 @@ impl EditGridView {
                                                   &matrix,
                                                   color,
                                                   size,
-                                                  selected);
+                                                  hilight);
                 }
                 (WireShape::TurnLeft, _) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
                     self.wire_model
-                        .draw_turn(resources, &matrix, color, size, selected);
+                        .draw_turn(resources, &matrix, color, size, hilight);
                 }
                 (WireShape::SplitTee, _) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
                     self.wire_model
-                        .draw_tee(resources, &matrix, color, size, selected);
+                        .draw_tee(resources, &matrix, color, size, hilight);
                 }
                 (WireShape::Cross, Direction::East) => {
                     let matrix = coords_matrix(&matrix, coords, dir);
                     self.wire_model
-                        .draw_cross(resources, &matrix, color, size, selected);
+                        .draw_cross(resources, &matrix, color, size, hilight);
                 }
                 _ => {}
             }

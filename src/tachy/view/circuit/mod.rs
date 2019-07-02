@@ -125,7 +125,10 @@ impl CircuitView {
         self.verification_tray.draw(resources, &projection, grid.eval());
         self.specification_tray.draw(resources, &projection);
         self.parts_tray.draw(resources, &projection, grid.eval().is_none());
-        self.controls_tray.draw(resources, &projection, self.controls_status);
+        self.controls_tray.draw(resources,
+                                &projection,
+                                self.controls_status,
+                                grid.has_errors());
         self.edit_grid.draw_dragged(resources);
         self.edit_grid.draw_tooltip(resources, &projection);
         if let Some((ref dialog, _)) = self.edit_const_dialog {
@@ -193,8 +196,12 @@ impl CircuitView {
 
         self.edit_grid.request_interaction_cursor(event, ui.cursor());
 
-        if let Some(opt_action) =
-            self.controls_tray.on_event(event, ui, self.controls_status, prefs)
+        if let Some(opt_action) = self.controls_tray
+            .on_event(event,
+                      ui,
+                      self.controls_status,
+                      grid.has_errors(),
+                      prefs)
         {
             match opt_action {
                 None => {}

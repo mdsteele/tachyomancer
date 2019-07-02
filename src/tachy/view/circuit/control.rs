@@ -155,7 +155,7 @@ impl ControlsTray {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                status: ControlsStatus) {
+                status: ControlsStatus, has_errors: bool) {
         let ui = resources.shaders().ui();
         ui.draw_box2(matrix,
                      &self.rect.as_f32(),
@@ -163,7 +163,7 @@ impl ControlsTray {
                      &Color4::CYAN2,
                      &Color4::PURPLE0_TRANSLUCENT);
         for button in self.buttons.iter() {
-            button.draw(resources, matrix, status);
+            button.draw(resources, matrix, status, has_errors);
         }
         if let Some(ref bubble) = self.tutorial_bubble {
             let topleft = Point2::new(self.rect.x - 230, self.rect.y - 24);
@@ -173,11 +173,16 @@ impl ControlsTray {
     }
 
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    status: ControlsStatus, prefs: &Prefs)
+                    status: ControlsStatus, has_errors: bool, prefs: &Prefs)
                     -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
             let opt_action =
-                button.on_event(event, ui, status, prefs, &mut self.tooltip);
+                button.on_event(event,
+                                ui,
+                                status,
+                                has_errors,
+                                prefs,
+                                &mut self.tooltip);
             if opt_action.is_some() {
                 return Some(opt_action);
             }
@@ -238,9 +243,9 @@ impl ControlsButton {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                status: ControlsStatus) {
+                status: ControlsStatus, has_errors: bool) {
         let ui = resources.shaders().ui();
-        let enabled = self.is_enabled(status);
+        let enabled = !has_errors && self.is_enabled(status);
 
         let rect = self.rect.as_f32();
         let bg_color = if !enabled {
@@ -278,7 +283,7 @@ impl ControlsButton {
     }
 
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    status: ControlsStatus, prefs: &Prefs,
+                    status: ControlsStatus, has_errors: bool, prefs: &Prefs,
                     tooltip: &mut Tooltip<ControlsAction>)
                     -> Option<ControlsAction> {
         match event {
@@ -286,7 +291,7 @@ impl ControlsButton {
                 self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::KeyDown(key) => {
-                if self.is_enabled(status) &&
+                if !has_errors && self.is_enabled(status) &&
                     key.code == prefs.hotkey_code(self.hotkey)
                 {
                     self.hover_pulse.on_click(ui);
@@ -295,7 +300,7 @@ impl ControlsButton {
                 }
             }
             Event::MouseDown(mouse) if mouse.left => {
-                if self.is_enabled(status) &&
+                if !has_errors && self.is_enabled(status) &&
                     self.rect.contains_point(mouse.pt)
                 {
                     self.hover_pulse.on_click(ui);
@@ -311,7 +316,7 @@ impl ControlsButton {
                     tooltip.stop_hover(ui, &self.action);
                 }
                 if self.hover_pulse.set_hovering(hovering, ui) &&
-                    self.is_enabled(status)
+                    !has_errors && self.is_enabled(status)
                 {
                     ui.audio().play_sound(Sound::ButtonHover);
                 }

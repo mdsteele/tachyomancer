@@ -372,6 +372,8 @@ impl EditGrid {
         }
     }
 
+    pub fn has_errors(&self) -> bool { !self.errors.is_empty() }
+
     pub fn chip_at(&self, coords: Coords)
                    -> Option<(Coords, ChipType, Orientation)> {
         match self.chips.get(&coords) {

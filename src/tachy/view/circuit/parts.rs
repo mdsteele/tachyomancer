@@ -19,6 +19,7 @@
 
 use super::super::button::Scrollbar;
 use super::super::chip::ChipModel;
+use super::super::tooltip::Tooltip;
 use super::tray::TraySlide;
 use super::tutorial::TutorialBubble;
 use cgmath::{Deg, Matrix4, Point2, vec2};
@@ -26,7 +27,7 @@ use tachy::font::Align;
 use tachy::geom::{AsFloat, Color4, MatrixExt, Orientation, Rect};
 use tachy::gl::{FrameBuffer, Stencil};
 use tachy::gui::{Cursor, Event, Resources, Ui, Window};
-use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType};
+use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType, Prefs};
 use tachy::shader::UiShader;
 
 //===========================================================================//
@@ -66,7 +67,7 @@ pub struct PartsTray {
     scrollbar: Scrollbar,
     slide: TraySlide,
     tutorial_bubble: Option<TutorialBubble>,
-    // TODO: tooltip when hovering over part
+    tooltip: Tooltip<ChipType>,
 }
 
 impl PartsTray {
@@ -179,6 +180,7 @@ impl PartsTray {
             scrollbar,
             slide: TraySlide::new(rect.width),
             tutorial_bubble,
+            tooltip: Tooltip::new(window_size),
         }
     }
 
@@ -188,19 +190,23 @@ impl PartsTray {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 enabled: bool) {
-        let matrix = matrix *
-            Matrix4::trans2(-self.slide.distance() as f32, 0.0);
         {
-            let stencil = Stencil::new();
-            self.draw_box(resources, &matrix);
-            stencil.enable_clipping();
-            self.draw_parts(resources, &matrix, enabled);
+            let matrix = matrix *
+                Matrix4::trans2(-self.slide.distance() as f32, 0.0);
+            {
+                let stencil = Stencil::new();
+                self.draw_box(resources, &matrix);
+                stencil.enable_clipping();
+                self.draw_parts(resources, &matrix, enabled);
+            }
+            self.scrollbar.draw(resources, &matrix);
+            if let Some(ref bubble) = self.tutorial_bubble {
+                let topleft = Point2::new(self.rect.right() + 6,
+                                          self.rect.y - 20);
+                bubble.draw(resources, &matrix, topleft);
+            }
         }
-        self.scrollbar.draw(resources, &matrix);
-        if let Some(ref bubble) = self.tutorial_bubble {
-            let topleft = Point2::new(self.rect.right() + 6, self.rect.y - 20);
-            bubble.draw(resources, &matrix, topleft);
-        }
+        self.tooltip.draw(resources, matrix);
     }
 
     fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -241,7 +247,8 @@ impl PartsTray {
             .draw(matrix, &self.fbo, left_top, !enabled);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, enabled: bool)
+    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, enabled: bool,
+                    prefs: &Prefs)
                     -> (Option<PartsAction>, bool) {
         let rel_event =
             event.relative_to(Point2::new(-self.slide.distance(), 0));
@@ -250,8 +257,11 @@ impl PartsTray {
         match event {
             Event::ClockTick(tick) => {
                 self.slide.on_tick(tick, ui);
+                self.tooltip
+                    .tick(tick, ui, prefs, |ctype| ctype.tooltip_format());
             }
             Event::MouseDown(mouse) if mouse.left => {
+                self.tooltip.stop_hover_all(ui);
                 let rel_mouse_pt = mouse.pt + vec2(self.slide.distance(), 0);
                 let tab_rect = UiShader::tray_tab_rect(self.rect.as_f32(),
                                                        TRAY_TAB_HEIGHT,
@@ -276,6 +286,16 @@ impl PartsTray {
                     self.cursor_for_mouse_pt(mouse.pt, enabled)
                 {
                     ui.cursor().request(cursor);
+                }
+                if mouse.left {
+                    self.tooltip.stop_hover_all(ui);
+                } else {
+                    let rel = mouse.pt + vec2(self.slide.distance(), 0);
+                    if let Some(ctype) = self.part_under_rel_mouse_pt(rel) {
+                        self.tooltip.start_hover(mouse.pt, ui, ctype);
+                    } else {
+                        self.tooltip.stop_hover_all(ui);
+                    }
                 }
             }
             Event::MouseUp(mouse) => {

@@ -149,12 +149,18 @@ fn gl_type_name(gl_type: GLenum) -> String {
         "FLOAT".to_string()
     } else if gl_type == gl::FLOAT_MAT4 {
         "FLOAT_MAT4".to_string()
+    } else if gl_type == gl::FLOAT_VEC2 {
+        "FLOAT_VEC2".to_string()
     } else if gl_type == gl::FLOAT_VEC3 {
         "FLOAT_VEC3".to_string()
+    } else if gl_type == gl::FLOAT_VEC4 {
+        "FLOAT_VEC4".to_string()
     } else if gl_type == gl::INT {
         "INT".to_string()
     } else if gl_type == gl::UNSIGNED_INT {
         "UNSIGNED_INT".to_string()
+    } else if gl_type == gl::UNSIGNED_INT_VEC2 {
+        "UNSIGNED_INT_VEC2".to_string()
     } else {
         format!("({})", gl_type)
     }

@@ -27,6 +27,7 @@ use std::ptr;
 #[derive(Clone, Copy)]
 pub enum ShaderType {
     Fragment,
+    Geometry,
     Vertex,
 }
 
@@ -34,6 +35,7 @@ impl ShaderType {
     fn to_gl_enum(self) -> GLenum {
         match self {
             ShaderType::Fragment => gl::FRAGMENT_SHADER,
+            ShaderType::Geometry => gl::GEOMETRY_SHADER,
             ShaderType::Vertex => gl::VERTEX_SHADER,
         }
     }
@@ -69,6 +71,7 @@ impl Shader {
                                    name,
                                    shader.get_info_log()));
             }
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
             shader
         };
         if cfg!(debug_assertions) {
@@ -84,6 +87,7 @@ impl Shader {
         let mut length: GLint = 0;
         unsafe {
             gl::GetShaderiv(self.id, gl::INFO_LOG_LENGTH, &mut length);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         if length > 0 {
             let mut buffer = vec![0u8; length as usize + 1];
@@ -92,6 +96,7 @@ impl Shader {
                                      buffer.len() as GLsizei,
                                      ptr::null_mut(),
                                      buffer.as_mut_ptr() as *mut GLchar);
+                debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
             }
             String::from_utf8_lossy(&buffer).to_string()
         } else {
@@ -105,6 +110,7 @@ impl Drop for Shader {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteShader(self.id);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }

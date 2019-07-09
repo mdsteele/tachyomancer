@@ -132,6 +132,8 @@ impl<'a> Window<'a> {
         unsafe {
             gl::Enable(gl::BLEND);
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+            gl::Disable(gl::DEPTH_TEST);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         let resources = Resources::new()?;
         let mut possible_resolutions = gui_context.get_possible_resolutions()?;

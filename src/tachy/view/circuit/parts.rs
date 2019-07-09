@@ -137,8 +137,8 @@ impl PartsTray {
                                            fbo_width as f32,
                                            0.0,
                                            fbo_height as f32,
-                                           -1.0,
-                                           1.0);
+                                           -10.0,
+                                           10.0);
             for &(top, text) in category_labels.iter() {
                 resources.fonts().roman().draw(&projection,
                                                CATEGORY_LABEL_FONT_SIZE,

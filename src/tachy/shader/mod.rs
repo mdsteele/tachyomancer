@@ -17,16 +17,18 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod chip;
 mod frame;
 mod port;
 mod portrait;
 mod ui;
 
+use self::chip::ChipShader;
 pub use self::frame::FrameBufferShader;
 pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
 pub use self::ui::UiShader;
-use cgmath::{Matrix4, Vector2, Vector4};
+use cgmath::{Matrix4, Vector4};
 use tachy::geom::{Color3, Color4, MatrixExt, Rect};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 VertexArray, VertexBuffer};
@@ -35,9 +37,6 @@ use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
 
 const BOARD_VERT_CODE: &[u8] = include_bytes!("board.vert");
 const BOARD_FRAG_CODE: &[u8] = include_bytes!("board.frag");
-
-const CHIP_VERT_CODE: &[u8] = include_bytes!("chip.vert");
-const CHIP_FRAG_CODE: &[u8] = include_bytes!("chip.frag");
 
 const ICON_VERT_CODE: &[u8] = include_bytes!("icon.vert");
 const ICON_FRAG_CODE: &[u8] = include_bytes!("icon.frag");
@@ -71,12 +70,7 @@ impl Shaders {
         let board_prog = ShaderProgram::new(&[&board_vert, &board_frag])?;
         let board = BoardShader::new(board_prog)?;
 
-        let chip_vert =
-            Shader::new(ShaderType::Vertex, "chip.vert", CHIP_VERT_CODE)?;
-        let chip_frag =
-            Shader::new(ShaderType::Fragment, "chip.frag", CHIP_FRAG_CODE)?;
-        let chip_prog = ShaderProgram::new(&[&chip_vert, &chip_frag])?;
-        let chip = ChipShader::new(chip_prog)?;
+        let chip = ChipShader::new()?;
 
         let frame = FrameBufferShader::new()?;
 
@@ -166,47 +160,6 @@ impl BoardShader {
         self.program.bind();
         self.mvp.set(matrix);
         self.coords_rect.set(&coords_rect);
-        self.varray.bind();
-        self.varray.draw(Primitive::TriangleStrip, 0, 4);
-    }
-}
-
-//===========================================================================//
-
-pub struct ChipShader {
-    program: ShaderProgram,
-    mvp: ShaderUniform<Matrix4<f32>>,
-    icon_coords: ShaderUniform<Vector2<u32>>,
-    icon_color: ShaderUniform<Color3>,
-    varray: VertexArray,
-    _vbuffer: VertexBuffer<u8>,
-}
-
-impl ChipShader {
-    fn new(program: ShaderProgram) -> Result<ChipShader, String> {
-        let mvp = program.get_uniform("MVP")?;
-        let icon_coords = program.get_uniform("IconCoords")?;
-        let icon_color = program.get_uniform("IconColor")?;
-        let varray = VertexArray::new(1);
-        let vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
-        varray.bind();
-        vbuffer.attribi(0, 2, 0, 0);
-        Ok(ChipShader {
-               program,
-               mvp,
-               icon_coords,
-               icon_color,
-               varray,
-               _vbuffer: vbuffer,
-           })
-    }
-
-    pub fn draw(&self, matrix: &Matrix4<f32>, icon_coords: Vector2<u32>,
-                icon_color: Color3) {
-        self.program.bind();
-        self.mvp.set(matrix);
-        self.icon_coords.set(&icon_coords);
-        self.icon_color.set(&icon_color);
         self.varray.bind();
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
     }

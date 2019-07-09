@@ -324,16 +324,22 @@ impl EditGridView {
         self.tooltip.draw(resources, matrix);
     }
 
+    fn ortho_matrix(&self) -> Matrix4<f32> {
+        cgmath::ortho(-0.5 * self.size.width,
+                      0.5 * self.size.width,
+                      0.5 * self.size.height,
+                      -0.5 * self.size.height,
+                      -100.0,
+                      100.0)
+    }
+
     fn vp_matrix(&self) -> Matrix4<f32> {
-        cgmath::ortho(0.0, self.size.width, self.size.height, 0.0, -1.0, 1.0) *
-            Matrix4::trans2(0.5 * self.size.width, 0.5 * self.size.height) *
-            Matrix4::from_scale(self.zoom) *
+        self.ortho_matrix() * Matrix4::from_scale(self.zoom) *
             Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
     }
 
     fn unzoomed_matrix(&self) -> Matrix4<f32> {
-        cgmath::ortho(0.0, self.size.width, self.size.height, 0.0, -1.0, 1.0) *
-            Matrix4::trans2(0.5 * self.size.width, 0.5 * self.size.height) *
+        self.ortho_matrix() *
             Matrix4::trans2((-self.scroll.x as f32) * self.zoom,
                             (-self.scroll.y as f32) * self.zoom)
     }

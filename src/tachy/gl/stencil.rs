@@ -36,6 +36,7 @@ impl Stencil {
         unsafe {
             gl::Clear(gl::STENCIL_BUFFER_BIT);
             gl::Enable(gl::STENCIL_TEST);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         let stencil = Stencil { phantom: PhantomData };
         stencil.enable_updates();
@@ -48,6 +49,7 @@ impl Stencil {
         unsafe {
             gl::StencilFunc(gl::ALWAYS, 1, 0x1);
             gl::StencilOp(gl::KEEP, gl::KEEP, gl::REPLACE);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 
@@ -57,6 +59,7 @@ impl Stencil {
         unsafe {
             gl::StencilFunc(gl::EQUAL, 1, 0x1);
             gl::StencilOp(gl::KEEP, gl::KEEP, gl::KEEP);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
@@ -66,6 +69,7 @@ impl Drop for Stencil {
     fn drop(&mut self) {
         unsafe {
             gl::Disable(gl::STENCIL_TEST);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }

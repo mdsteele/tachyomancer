@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, vec2};
+use cgmath::Matrix4;
 use tachy::font::{Align, Font};
 use tachy::geom::{AsFloat, Color3, Color4, Coords, CoordsSize, Direction,
                   MatrixExt, Orientation, Rect};
@@ -224,8 +224,8 @@ fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
     match chip_icon {
         ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux |
         ChipIcon::Discard | ChipIcon::Filter | ChipIcon::Inc |
-        ChipIcon::Join | ChipIcon::Latest | ChipIcon::Sample => Color3::CYAN2,
-        _ => Color3::ORANGE2,
+        ChipIcon::Join | ChipIcon::Latest | ChipIcon::Sample => Color3::CYAN4,
+        _ => Color3::ORANGE4,
     }
 }
 
@@ -250,10 +250,9 @@ fn draw_chip_icon(resources: &Resources, matrix: &Matrix4<f32>,
         Matrix4::trans2(0.5, 0.5) * orient.matrix() *
         Matrix4::trans2(-0.5, -0.5);
     let icon_index = icon as u32;
-    let icon_coords = vec2(icon_index % 8, icon_index / 8);
     let icon_color = chip_icon_color(icon);
     resources.textures().chip_icons().bind();
-    resources.shaders().chip().draw(&matrix, icon_coords, icon_color);
+    resources.shaders().chip().draw_basic(&matrix, icon_index, icon_color);
 }
 
 fn draw_chip_string(resources: &Resources, matrix: &Matrix4<f32>,

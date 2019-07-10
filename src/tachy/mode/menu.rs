@@ -113,7 +113,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         }
                     }
                     Some(MenuAction::RenameCircuit(name)) => {
-                        match state.rename_current_circuit(name) {
+                        match state.rename_current_circuit(&name) {
                             Ok(()) => {
                                 view.update_circuit_list(&mut window.ui(),
                                                          state);

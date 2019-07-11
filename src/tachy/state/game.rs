@@ -20,10 +20,9 @@
 use super::cutscene::CutsceneScript;
 use super::edit::EditGrid;
 use std::time::Duration;
-use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Prefs,
-                  Profile, ProfileNamesIter, Puzzle, SaveDir};
+use tachy::save::{Conversation, MenuSection, Prefs, Profile,
+                  ProfileNamesIter, Puzzle, SaveDir};
 use unicase;
-use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
@@ -329,26 +328,9 @@ impl GameState {
 
     pub fn copy_current_circuit(&mut self) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
+            let prefix = format!("{}.", self.circuit_name);
+            let new_name = profile.choose_new_circuit_name(&prefix);
             let puzzle = profile.current_puzzle();
-            let mut new_name;
-            let mut num: u64 = 1;
-            loop {
-                new_name = format!("{}.{}", self.circuit_name, num);
-                if !profile.has_circuit_name(puzzle, &new_name) {
-                    break;
-                }
-                num += 1;
-            }
-            if new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
-                num = 1;
-                loop {
-                    new_name = format!("Version {}", num);
-                    if !profile.has_circuit_name(puzzle, &new_name) {
-                        break;
-                    }
-                    num += 1;
-                }
-            }
             profile.copy_circuit(puzzle, &self.circuit_name, &new_name)?;
             self.circuit_name = new_name;
             Ok(())
@@ -370,6 +352,8 @@ impl GameState {
         }
     }
 
+    /// Renames the current circuit to the given new name.  If there is no
+    /// current circuit, creates a new circuit with the given name.
     pub fn rename_current_circuit(&mut self, new_name: &str)
                                   -> Result<(), String> {
         let new_name = new_name.trim();
@@ -377,7 +361,13 @@ impl GameState {
             Err(format!("Invalid rename: {:?}", new_name))
         } else if let Some(ref mut profile) = self.profile {
             let puzzle = profile.current_puzzle();
-            profile.rename_circuit(puzzle, &self.circuit_name, new_name)?;
+            if self.circuit_name.is_empty() {
+                let edit_grid = EditGrid::new(puzzle, profile);
+                let circuit_data = edit_grid.to_circuit_data();
+                profile.save_circuit(puzzle, new_name, &circuit_data)?;
+            } else {
+                profile.rename_circuit(puzzle, &self.circuit_name, new_name)?;
+            }
             self.circuit_name = new_name.to_string();
             Ok(())
         } else {
@@ -398,18 +388,13 @@ impl GameState {
 
     pub fn clear_edit_grid(&mut self) { self.edit_grid = None; }
 
+    /// Creates a new circuit, with an automatically-chosen name, and creates
+    /// its edit grid.
     pub fn new_edit_grid(&mut self) -> Result<(), String> {
         if let Some(ref profile) = self.profile {
-            let puzzle = profile.current_puzzle();
-            let mut num: u64 = 1;
-            loop {
-                self.circuit_name = format!("Version {}", num);
-                if !profile.has_circuit_name(puzzle, &self.circuit_name) {
-                    break;
-                }
-                num += 1;
-            }
+            self.circuit_name = profile.choose_new_circuit_name("Version ");
             debug_log!("Creating new circuit {:?}", self.circuit_name);
+            let puzzle = profile.current_puzzle();
             self.edit_grid = Some(EditGrid::new(puzzle, profile));
             Ok(())
         } else {
@@ -418,7 +403,9 @@ impl GameState {
     }
 
     pub fn load_edit_grid(&mut self) -> Result<(), String> {
-        if let Some(ref profile) = self.profile {
+        if self.circuit_name.is_empty() {
+            self.new_edit_grid()
+        } else if let Some(ref profile) = self.profile {
             let puzzle = profile.current_puzzle();
             let data = profile.load_circuit(puzzle, &self.circuit_name)?;
             self.edit_grid =

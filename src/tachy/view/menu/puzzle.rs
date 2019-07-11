@@ -30,6 +30,7 @@ use tachy::state::{GameState, PuzzleExt};
 
 //===========================================================================//
 
+const BUTTON_WIDTH: i32 = 90;
 const CIRCUIT_LIST_WIDTH: i32 = 240;
 const ELEMENT_SPACING: i32 = 18;
 const PUZZLE_LIST_WIDTH: i32 = 250;
@@ -54,7 +55,6 @@ pub enum PuzzlesAction {
     Copy,
     Delete,
     Edit,
-    New,
     Rename,
 }
 
@@ -66,17 +66,34 @@ pub struct PuzzlesView {
     back_button: TextButton<()>,
     description: DescriptionView,
     graph: GraphView,
+    edit_button: TextButton<PuzzlesAction>,
+    rename_button: TextButton<PuzzlesAction>,
     copy_button: TextButton<PuzzlesAction>,
     delete_button: TextButton<PuzzlesAction>,
-    edit_button: TextButton<PuzzlesAction>,
-    new_button: TextButton<PuzzlesAction>,
-    rename_button: TextButton<PuzzlesAction>,
 }
 
 impl PuzzlesView {
     pub fn new(rect: Rect<i32>, ui: &mut Ui, state: &GameState)
                -> PuzzlesView {
         let semi_height = (rect.height - ELEMENT_SPACING) / 2;
+
+        let button_height = (semi_height - 3 * ELEMENT_SPACING) / 4;
+        let buttons_left = rect.right() - BUTTON_WIDTH;
+        let buttons_top = rect.y + semi_height + ELEMENT_SPACING;
+        let mut button_rect =
+            Rect::new(buttons_left, buttons_top, BUTTON_WIDTH, button_height);
+        let edit_button =
+            TextButton::new(button_rect, "Edit", PuzzlesAction::Edit);
+        button_rect.y += button_height + ELEMENT_SPACING;
+        let rename_button =
+            TextButton::new(button_rect, "Rename", PuzzlesAction::Rename);
+        button_rect.y += button_height + ELEMENT_SPACING;
+        let copy_button =
+            TextButton::new(button_rect, "Copy", PuzzlesAction::Copy);
+        button_rect.y += button_height + ELEMENT_SPACING;
+        let delete_button =
+            TextButton::new(button_rect, "Delete", PuzzlesAction::Delete);
+
         PuzzlesView {
             puzzle_list: ListView::new(Rect::new(rect.x,
                                                  rect.y,
@@ -106,48 +123,22 @@ impl PuzzlesView {
                                             rect.y,
                                             semi_height,
                                             semi_height)),
-            edit_button: TextButton::new(Rect::new(rect.right() - 80,
-                                                   rect.bottom() - 40,
-                                                   80,
-                                                   40),
-                                         "Edit",
-                                         PuzzlesAction::Edit),
-            new_button: TextButton::new(Rect::new(rect.right() - 80,
-                                                  rect.bottom() - 80 -
-                                                      ELEMENT_SPACING,
-                                                  80,
-                                                  40),
-                                        "New",
-                                        PuzzlesAction::New),
-            delete_button: TextButton::new(Rect::new(rect.right() - 80,
-                                                     rect.bottom() - 120 -
-                                                         2 * ELEMENT_SPACING,
-                                                     80,
-                                                     40),
-                                           "Delete",
-                                           PuzzlesAction::Delete),
-            rename_button: TextButton::new(Rect::new(rect.right() - 80,
-                                                     rect.bottom() - 160 -
-                                                         3 * ELEMENT_SPACING,
-                                                     80,
-                                                     40),
-                                           "Rename",
-                                           PuzzlesAction::Rename),
-            copy_button: TextButton::new(Rect::new(rect.right() - 80,
-                                                   rect.bottom() - 200 -
-                                                       4 * ELEMENT_SPACING,
-                                                   80,
-                                                   40),
-                                         "Copy",
-                                         PuzzlesAction::Copy),
+            edit_button,
+            rename_button,
+            copy_button,
+            delete_button,
             back_button: TextButton::new(Rect::new(rect.right() - 200,
                                                    rect.bottom() - 200 -
                                                        4 * ELEMENT_SPACING,
-                                                   80,
+                                                   BUTTON_WIDTH,
                                                    40),
                                          "Back",
                                          ()),
         }
+    }
+
+    fn copy_and_delete_enabled(&self, state: &GameState) -> bool {
+        !state.circuit_name().is_empty()
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
@@ -159,12 +150,11 @@ impl PuzzlesView {
         let scores = state.puzzle_scores(puzzle);
         self.graph.draw(resources, matrix, puzzle, scores);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
-        // TODO: edit/delete/rename/copy buttons are not always enabled
         self.edit_button.draw(resources, matrix, true);
-        self.new_button.draw(resources, matrix, true);
-        self.delete_button.draw(resources, matrix, true);
         self.rename_button.draw(resources, matrix, true);
-        self.copy_button.draw(resources, matrix, true);
+        let enabled = self.copy_and_delete_enabled(state);
+        self.copy_button.draw(resources, matrix, enabled);
+        self.delete_button.draw(resources, matrix, enabled);
     }
 
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
@@ -191,20 +181,17 @@ impl PuzzlesView {
                 }
             }
         }
-        // TODO: edit/delete/rename/copy buttons are not always enabled
         if let Some(action) = self.edit_button.on_event(event, ui, true) {
-            return Some(action);
-        }
-        if let Some(action) = self.new_button.on_event(event, ui, true) {
-            return Some(action);
-        }
-        if let Some(action) = self.delete_button.on_event(event, ui, true) {
             return Some(action);
         }
         if let Some(action) = self.rename_button.on_event(event, ui, true) {
             return Some(action);
         }
-        if let Some(action) = self.copy_button.on_event(event, ui, true) {
+        let enabled = self.copy_and_delete_enabled(state);
+        if let Some(action) = self.copy_button.on_event(event, ui, enabled) {
+            return Some(action);
+        }
+        if let Some(action) = self.delete_button.on_event(event, ui, enabled) {
             return Some(action);
         }
         return None;
@@ -223,14 +210,14 @@ impl PuzzlesView {
 
 fn circuit_list_items(state: &GameState)
                       -> Vec<(String, String, Option<ListIcon>)> {
+    let mut items =
+        vec![("".to_string(), "    [New Circuit]".to_string(), None)];
     if let Some(profile) = state.profile() {
-        profile
+        items.extend(profile
             .circuit_names(profile.current_puzzle())
-            .map(|name| (name.to_string(), name.to_string(), None))
-            .collect()
-    } else {
-        Vec::new()
+            .map(|name| (name.to_string(), name.to_string(), None)))
     }
+    items
 }
 
 fn puzzle_list_items(state: &GameState)

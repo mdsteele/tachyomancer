@@ -19,12 +19,14 @@
 
 use super::circuit::CircuitData;
 use super::converse::{Conversation, ConversationProgress, Prereq};
-use super::progress::{CircuitNamesIter, PuzzleProgress};
+use super::progress::{CIRCUIT_NAME_MAX_WIDTH, CircuitNamesIter,
+                      PuzzleProgress};
 use super::puzzle::Puzzle;
 use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
@@ -331,6 +333,30 @@ impl Profile {
         } else {
             false
         }
+    }
+
+    pub fn choose_new_circuit_name(&self, prefix: &str) -> String {
+        let puzzle = self.current_puzzle();
+        let mut new_name;
+        let mut num: u64 = 1;
+        loop {
+            new_name = format!("{}{}", prefix, num);
+            if !self.has_circuit_name(puzzle, &new_name) {
+                break;
+            }
+            num += 1;
+        }
+        if new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
+            num = 1;
+            loop {
+                new_name = format!("Version {}", num);
+                if !self.has_circuit_name(puzzle, &new_name) {
+                    break;
+                }
+                num += 1;
+            }
+        }
+        new_name
     }
 
     pub fn load_circuit(&self, puzzle: Puzzle, circuit_name: &str)

@@ -57,7 +57,6 @@ pub enum MenuAction {
     CopyCircuit,
     DeleteCircuit,
     EditCircuit,
-    NewCircuit,
     RenameCircuit(String),
     RebootWindow(WindowOptions),
     NewProfile,
@@ -359,9 +358,6 @@ impl MenuView {
                     }
                     Some(PuzzlesAction::Edit) => {
                         return Some(MenuAction::EditCircuit);
-                    }
-                    Some(PuzzlesAction::New) => {
-                        return Some(MenuAction::NewCircuit);
                     }
                     Some(PuzzlesAction::Rename) => {
                         self.unfocus(ui, state);

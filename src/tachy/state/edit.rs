@@ -47,12 +47,6 @@ enum ChipCell {
 // TODO: Get rid of most of the wire changes in favor of ReplaceWires.
 #[derive(Debug)]
 pub enum GridChange {
-    /// Adds a wire stub between two adjacent cells.
-    AddStubWire(Coords, Direction),
-    /// Removes a wire stub between two adjacent cells.
-    RemoveStubWire(Coords, Direction),
-    /// Toggles whether two edges of a cell are connected.
-    ToggleCenterWire(Coords, Direction, Direction),
     /// Toggles whether a wire is connected to the split in the middle of a
     /// cell.
     ToggleSplitWire(Coords, Direction),
@@ -69,14 +63,26 @@ pub enum GridChange {
 }
 
 impl GridChange {
+    pub fn add_stub_wire(coords: Coords, dir: Direction) -> GridChange {
+        let mut new_wires = HashMap::new();
+        new_wires.insert((coords, dir), WireShape::Stub);
+        new_wires.insert((coords + dir, -dir), WireShape::Stub);
+        GridChange::ReplaceWires(HashMap::new(), new_wires)
+    }
+
+    pub fn remove_stub_wire(coords: Coords, dir: Direction) -> GridChange {
+        let mut old_wires = HashMap::new();
+        old_wires.insert((coords, dir), WireShape::Stub);
+        old_wires.insert((coords + dir, -dir), WireShape::Stub);
+        GridChange::ReplaceWires(old_wires, HashMap::new())
+    }
+
     fn invert_group(changes: Vec<GridChange>) -> Vec<GridChange> {
         changes.into_iter().rev().map(GridChange::invert).collect()
     }
 
     fn invert(self) -> GridChange {
         match self {
-            GridChange::AddStubWire(c, d) => GridChange::RemoveStubWire(c, d),
-            GridChange::RemoveStubWire(c, d) => GridChange::AddStubWire(c, d),
             GridChange::ReplaceWires(old, new) => {
                 GridChange::ReplaceWires(new, old)
             }
@@ -559,84 +565,6 @@ impl EditGrid {
     fn mutate_one(&mut self, change: &GridChange) -> bool {
         debug_assert!(self.eval.is_none());
         match *change {
-            GridChange::AddStubWire(coords, dir) => {
-                let coords2 = coords + dir;
-                // Don't allow creating a stub outside of the bounds.
-                if !self.bounds.contains_point(coords) &&
-                    !self.bounds.contains_point(coords2)
-                {
-                    return false;
-                }
-                // Fail if there's already a wire there.
-                if self.wire_shape_at(coords, dir).is_some() {
-                    return false;
-                }
-                // Don't allow creating a stub completely under a large chip.
-                match (self.chip_at(coords), self.chip_at(coords2)) {
-                    (Some((c1, _, _)), Some((c2, _, _))) if c1 == c2 => {
-                        return false;
-                    }
-                    _ => {}
-                }
-                // Add the stub.
-                self.set_frag(coords, dir, WireShape::Stub);
-                self.set_frag(coords2, -dir, WireShape::Stub);
-            }
-            GridChange::RemoveStubWire(coords, dir) => {
-                let coords2 = coords + dir;
-                let dir2 = -dir;
-                if self.wire_shape_at(coords, dir) != Some(WireShape::Stub) ||
-                    self.wire_shape_at(coords2, dir2) !=
-                        Some(WireShape::Stub)
-                {
-                    return false;
-                }
-                self.fragments.remove(&(coords, dir));
-                self.fragments.remove(&(coords2, dir2));
-            }
-            GridChange::ToggleCenterWire(coords, dir1, dir2) => {
-                if !self.bounds.contains_point(coords) ||
-                    self.chips.contains_key(&coords)
-                {
-                    return false;
-                }
-                match (self.wire_shape_at(coords, dir1),
-                         self.wire_shape_at(coords, dir2)) {
-                    (Some(WireShape::Stub), Some(WireShape::Stub)) => {
-                        if dir1 == -dir2 {
-                            self.set_frag(coords, dir1, WireShape::Straight);
-                            self.set_frag(coords, dir2, WireShape::Straight);
-                        } else if dir1 == dir2.rotate_cw() {
-                            self.set_frag(coords, dir1, WireShape::TurnRight);
-                            self.set_frag(coords, dir2, WireShape::TurnLeft);
-                        } else if dir1 == dir2.rotate_ccw() {
-                            self.set_frag(coords, dir1, WireShape::TurnLeft);
-                            self.set_frag(coords, dir2, WireShape::TurnRight);
-                        }
-                    }
-                    (Some(WireShape::Straight), Some(WireShape::Straight)) => {
-                        if dir1 == -dir2 {
-                            self.set_frag(coords, dir1, WireShape::Stub);
-                            self.set_frag(coords, dir2, WireShape::Stub);
-                        }
-                    }
-                    (Some(WireShape::TurnRight),
-                     Some(WireShape::TurnLeft)) => {
-                        if dir1 == dir2.rotate_cw() {
-                            self.set_frag(coords, dir1, WireShape::Stub);
-                            self.set_frag(coords, dir2, WireShape::Stub);
-                        }
-                    }
-                    (Some(WireShape::TurnLeft),
-                     Some(WireShape::TurnRight)) => {
-                        if dir1 == dir2.rotate_ccw() {
-                            self.set_frag(coords, dir1, WireShape::Stub);
-                            self.set_frag(coords, dir2, WireShape::Stub);
-                        }
-                    }
-                    (_, _) => return false,
-                }
-            }
             GridChange::ToggleSplitWire(coords, dir) => {
                 if !self.bounds.contains_point(coords) ||
                     self.chips.contains_key(&coords)

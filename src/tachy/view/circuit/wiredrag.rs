@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{Point2, vec2};
+use std::collections::HashMap;
 use tachy::geom::{AsInt, Coords, Direction, Polygon};
 use tachy::gui::Ui;
 use tachy::save::WireShape;
@@ -464,7 +465,7 @@ impl WireDrag {
     fn try_start_stub(&mut self, coords: Coords, dir: Direction,
                       grid: &mut EditGrid)
                       -> bool {
-        let changes = vec![GridChange::AddStubWire(coords, dir)];
+        let changes = vec![GridChange::add_stub_wire(coords, dir)];
         if grid.try_mutate_provisionally(changes) {
             self.changed = true;
         }
@@ -473,48 +474,49 @@ impl WireDrag {
 
     fn try_remove_stub(&mut self, coords: Coords, dir: Direction,
                        grid: &mut EditGrid) {
-        let changes = vec![GridChange::RemoveStubWire(coords, dir)];
+        let changes = vec![GridChange::remove_stub_wire(coords, dir)];
         if grid.try_mutate_provisionally(changes) {
             self.changed = true;
         }
     }
 
     fn try_toggle_cross(&mut self, coords: Coords, grid: &mut EditGrid) {
-        match (grid.wire_shape_at(coords, Direction::East),
-                 grid.wire_shape_at(coords, Direction::South)) {
-            (Some(WireShape::Straight), Some(WireShape::Straight)) |
-            (Some(WireShape::Cross), _) => {
-                let changes = vec![GridChange::ToggleCrossWire(coords)];
-                if !grid.try_mutate_provisionally(changes) {
-                    debug_log!("WARNING: try_toggle_cross mutation failed");
-                }
-                self.changed = true;
-            }
-            (_, _) => {}
+        let changes = vec![GridChange::ToggleCrossWire(coords)];
+        if grid.try_mutate_provisionally(changes) {
+            self.changed = true;
         }
     }
 
     fn try_straight(&mut self, coords: Coords, dir: Direction,
                     grid: &mut EditGrid)
                     -> bool {
-        let mut changes = Vec::<GridChange>::new();
-        if grid.wire_shape_at(coords, dir).is_none() {
-            changes.push(GridChange::AddStubWire(coords, dir));
+        let mut old_wires = HashMap::<(Coords, Direction), WireShape>::new();
+        let mut new_wires = HashMap::<(Coords, Direction), WireShape>::new();
+        for &dir in &[dir, -dir] {
+            match grid.wire_shape_at(coords, dir) {
+                None => {
+                    new_wires.insert((coords, dir), WireShape::Straight);
+                    new_wires.insert((coords + dir, -dir), WireShape::Stub);
+                }
+                Some(WireShape::Stub) => {
+                    old_wires.insert((coords, dir), WireShape::Stub);
+                    new_wires.insert((coords, dir), WireShape::Straight);
+                }
+                Some(WireShape::Straight) => {
+                    old_wires.insert((coords, dir), WireShape::Straight);
+                    if grid.wire_shape_at(coords + dir, -dir) ==
+                        Some(WireShape::Stub)
+                    {
+                        old_wires
+                            .insert((coords + dir, -dir), WireShape::Stub);
+                    } else {
+                        new_wires.insert((coords, dir), WireShape::Stub);
+                    }
+                }
+                _ => return false,
+            }
         }
-        if grid.wire_shape_at(coords, -dir).is_none() {
-            changes.push(GridChange::AddStubWire(coords, -dir));
-        }
-        changes.push(GridChange::ToggleCenterWire(coords, dir, -dir));
-        if grid.wire_shape_at(coords, dir) == Some(WireShape::Straight) &&
-            grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub)
-        {
-            changes.push(GridChange::RemoveStubWire(coords, dir));
-        }
-        if grid.wire_shape_at(coords, -dir) == Some(WireShape::Straight) &&
-            grid.wire_shape_at(coords - dir, dir) == Some(WireShape::Stub)
-        {
-            changes.push(GridChange::RemoveStubWire(coords, -dir));
-        }
+        let changes = vec![GridChange::ReplaceWires(old_wires, new_wires)];
         let success = grid.try_mutate_provisionally(changes);
         if !success {
             debug_log!("try_straight failed: coords={:?}, dir={:?}",
@@ -528,25 +530,37 @@ impl WireDrag {
     fn try_turn_left(&mut self, coords: Coords, dir: Direction,
                      grid: &mut EditGrid)
                      -> bool {
-        let dir2 = dir.rotate_cw();
-        let mut changes = Vec::<GridChange>::new();
-        if grid.wire_shape_at(coords, dir).is_none() {
-            changes.push(GridChange::AddStubWire(coords, dir));
-        }
-        if grid.wire_shape_at(coords, dir2).is_none() {
-            changes.push(GridChange::AddStubWire(coords, dir2));
-        }
-        changes.push(GridChange::ToggleCenterWire(coords, dir, dir2));
-        if grid.wire_shape_at(coords, dir) == Some(WireShape::TurnLeft) &&
-            grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub)
+        let mut old_wires = HashMap::<(Coords, Direction), WireShape>::new();
+        let mut new_wires = HashMap::<(Coords, Direction), WireShape>::new();
+        for &(dir, turn) in &[
+            (dir, WireShape::TurnLeft),
+            (dir.rotate_cw(), WireShape::TurnRight),
+        ]
         {
-            changes.push(GridChange::RemoveStubWire(coords, dir));
+            match grid.wire_shape_at(coords, dir) {
+                None => {
+                    new_wires.insert((coords, dir), turn);
+                    new_wires.insert((coords + dir, -dir), WireShape::Stub);
+                }
+                Some(WireShape::Stub) => {
+                    old_wires.insert((coords, dir), WireShape::Stub);
+                    new_wires.insert((coords, dir), turn);
+                }
+                Some(shape) if shape == turn => {
+                    old_wires.insert((coords, dir), turn);
+                    if grid.wire_shape_at(coords + dir, -dir) ==
+                        Some(WireShape::Stub)
+                    {
+                        old_wires
+                            .insert((coords + dir, -dir), WireShape::Stub);
+                    } else {
+                        new_wires.insert((coords, dir), WireShape::Stub);
+                    }
+                }
+                _ => return false,
+            }
         }
-        if grid.wire_shape_at(coords, dir2) == Some(WireShape::TurnRight) &&
-            grid.wire_shape_at(coords + dir2, -dir2) == Some(WireShape::Stub)
-        {
-            changes.push(GridChange::RemoveStubWire(coords, dir2));
-        }
+        let changes = vec![GridChange::ReplaceWires(old_wires, new_wires)];
         let success = grid.try_mutate_provisionally(changes);
         if !success {
             debug_log!("try_turn_left failed: coords={:?}, dir={:?}",
@@ -563,13 +577,13 @@ impl WireDrag {
         let mut changes = Vec::<GridChange>::new();
         let shape = grid.wire_shape_at(coords, dir);
         if shape.is_none() {
-            changes.push(GridChange::AddStubWire(coords, dir));
+            changes.push(GridChange::add_stub_wire(coords, dir));
         }
         changes.push(GridChange::ToggleSplitWire(coords, dir));
         if shape.is_some() && shape != Some(WireShape::Stub) &&
             grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub)
         {
-            changes.push(GridChange::RemoveStubWire(coords, dir));
+            changes.push(GridChange::remove_stub_wire(coords, dir));
         }
         let success = grid.try_mutate_provisionally(changes);
         if !success {

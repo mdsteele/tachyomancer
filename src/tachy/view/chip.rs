@@ -274,7 +274,7 @@ fn draw_port(resources: &Resources, matrix: &Matrix4<f32>, port: &PortSpec) {
     let y = port.coords.y as f32 + 0.5;
     let mat = matrix * Matrix4::trans2(x, y) *
         Matrix4::from_angle_z(port.dir.angle_from_east()) *
-        Matrix4::scale2(0.5, 0.3); // TODO: make y scale depend on max size
+        Matrix4::scale2(0.5, 0.3);
 
     let shader = resources.shaders().port();
     shader.bind();

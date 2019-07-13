@@ -309,9 +309,9 @@ impl WireDrag {
              Some(Zone::Center(_)),
              Zone::East(coords2)) => {
                 if coords1 + Direction::East == coords2 {
-                    self.try_straight(coords2, Direction::East, grid)
+                    self.try_straight(coords2, Direction::West, grid)
                 } else if coords1 + Direction::West == coords2 {
-                    self.try_straight(coords1, Direction::West, grid)
+                    self.try_straight(coords1, Direction::East, grid)
                 } else {
                     debug_log!("Pattern (East, Center, East) does not match \
                                 {:?}, {:?}, {:?}",
@@ -325,9 +325,9 @@ impl WireDrag {
              Some(Zone::Center(_)),
              Zone::South(coords2)) => {
                 if coords1 + Direction::South == coords2 {
-                    self.try_straight(coords2, Direction::South, grid)
+                    self.try_straight(coords2, Direction::North, grid)
                 } else if coords1 + Direction::North == coords2 {
-                    self.try_straight(coords1, Direction::North, grid)
+                    self.try_straight(coords1, Direction::South, grid)
                 } else {
                     debug_log!("Pattern (South, Center, South) does not match \
                                 {:?}, {:?}, {:?}",
@@ -490,33 +490,48 @@ impl WireDrag {
     fn try_straight(&mut self, coords: Coords, dir: Direction,
                     grid: &mut EditGrid)
                     -> bool {
-        let mut old_wires = HashMap::<(Coords, Direction), WireShape>::new();
-        let mut new_wires = HashMap::<(Coords, Direction), WireShape>::new();
-        for &dir in &[dir, -dir] {
-            match grid.wire_shape_at(coords, dir) {
-                None => {
-                    new_wires.insert((coords, dir), WireShape::Straight);
-                    new_wires.insert((coords + dir, -dir), WireShape::Stub);
-                }
-                Some(WireShape::Stub) => {
-                    old_wires.insert((coords, dir), WireShape::Stub);
-                    new_wires.insert((coords, dir), WireShape::Straight);
-                }
-                Some(WireShape::Straight) => {
-                    old_wires.insert((coords, dir), WireShape::Straight);
-                    if grid.wire_shape_at(coords + dir, -dir) ==
-                        Some(WireShape::Stub)
-                    {
-                        old_wires
-                            .insert((coords + dir, -dir), WireShape::Stub);
-                    } else {
-                        new_wires.insert((coords, dir), WireShape::Stub);
-                    }
-                }
-                _ => return false,
+        let mut old = HashMap::<(Coords, Direction), WireShape>::new();
+        let mut new = HashMap::<(Coords, Direction), WireShape>::new();
+        match (grid.wire_shape_at(coords, dir),
+                 grid.wire_shape_at(coords, -dir)) {
+            (None, None) |
+            (Some(WireShape::Stub), None) |
+            (None, Some(WireShape::Stub)) |
+            (Some(WireShape::Stub), Some(WireShape::Stub)) => {
+                new.insert((coords, dir), WireShape::Straight);
+                new.insert((coords, -dir), WireShape::Straight);
+                stub(coords + dir, -dir, grid, &mut old, &mut new);
+                stub(coords - dir, dir, grid, &mut old, &mut new);
             }
+            (Some(WireShape::Straight), Some(WireShape::Straight)) => {
+                old.insert((coords, dir), WireShape::Straight);
+                old.insert((coords, -dir), WireShape::Straight);
+                stub(coords, dir, grid, &mut old, &mut new);
+                stub(coords, -dir, grid, &mut old, &mut new);
+            }
+            (Some(WireShape::TurnLeft), None) |
+            (Some(WireShape::TurnLeft), Some(WireShape::Stub)) => {
+                let side = dir.rotate_cw();
+                old.insert((coords, dir), WireShape::TurnLeft);
+                old.insert((coords, side), WireShape::TurnRight);
+                new.insert((coords, side), WireShape::TurnLeft);
+                new.insert((coords, -dir), WireShape::TurnRight);
+                stub(coords, dir, grid, &mut old, &mut new);
+                stub(coords - dir, dir, grid, &mut old, &mut new);
+            }
+            (Some(WireShape::TurnRight), None) |
+            (Some(WireShape::TurnRight), Some(WireShape::Stub)) => {
+                let side = dir.rotate_ccw();
+                old.insert((coords, dir), WireShape::TurnRight);
+                old.insert((coords, side), WireShape::TurnLeft);
+                new.insert((coords, side), WireShape::TurnRight);
+                new.insert((coords, -dir), WireShape::TurnLeft);
+                stub(coords, dir, grid, &mut old, &mut new);
+                stub(coords - dir, dir, grid, &mut old, &mut new);
+            }
+            (_, _) => return false,
         }
-        let changes = vec![GridChange::ReplaceWires(old_wires, new_wires)];
+        let changes = vec![GridChange::ReplaceWires(old, new)];
         let success = grid.try_mutate_provisionally(changes);
         if !success {
             debug_log!("try_straight failed: coords={:?}, dir={:?}",
@@ -530,37 +545,65 @@ impl WireDrag {
     fn try_turn_left(&mut self, coords: Coords, dir: Direction,
                      grid: &mut EditGrid)
                      -> bool {
-        let mut old_wires = HashMap::<(Coords, Direction), WireShape>::new();
-        let mut new_wires = HashMap::<(Coords, Direction), WireShape>::new();
-        for &(dir, turn) in &[
-            (dir, WireShape::TurnLeft),
-            (dir.rotate_cw(), WireShape::TurnRight),
-        ]
-        {
-            match grid.wire_shape_at(coords, dir) {
-                None => {
-                    new_wires.insert((coords, dir), turn);
-                    new_wires.insert((coords + dir, -dir), WireShape::Stub);
-                }
-                Some(WireShape::Stub) => {
-                    old_wires.insert((coords, dir), WireShape::Stub);
-                    new_wires.insert((coords, dir), turn);
-                }
-                Some(shape) if shape == turn => {
-                    old_wires.insert((coords, dir), turn);
-                    if grid.wire_shape_at(coords + dir, -dir) ==
-                        Some(WireShape::Stub)
-                    {
-                        old_wires
-                            .insert((coords + dir, -dir), WireShape::Stub);
-                    } else {
-                        new_wires.insert((coords, dir), WireShape::Stub);
-                    }
-                }
-                _ => return false,
+        let mut old = HashMap::<(Coords, Direction), WireShape>::new();
+        let mut new = HashMap::<(Coords, Direction), WireShape>::new();
+        let side = dir.rotate_cw();
+        match (grid.wire_shape_at(coords, dir),
+                 grid.wire_shape_at(coords, side)) {
+            (None, None) |
+            (Some(WireShape::Stub), None) |
+            (None, Some(WireShape::Stub)) |
+            (Some(WireShape::Stub), Some(WireShape::Stub)) => {
+                new.insert((coords, dir), WireShape::TurnLeft);
+                new.insert((coords, side), WireShape::TurnRight);
+                stub(coords + dir, -dir, grid, &mut old, &mut new);
+                stub(coords + side, -side, grid, &mut old, &mut new);
             }
+            (Some(WireShape::TurnLeft), Some(WireShape::TurnRight)) => {
+                old.insert((coords, dir), WireShape::TurnLeft);
+                old.insert((coords, side), WireShape::TurnRight);
+                stub(coords, dir, grid, &mut old, &mut new);
+                stub(coords, side, grid, &mut old, &mut new);
+            }
+            (Some(WireShape::Straight), None) |
+            (Some(WireShape::Straight), Some(WireShape::Stub)) => {
+                old.insert((coords, dir), WireShape::Straight);
+                old.insert((coords, -dir), WireShape::Straight);
+                new.insert((coords, -dir), WireShape::TurnRight);
+                new.insert((coords, side), WireShape::TurnLeft);
+                stub(coords, dir, grid, &mut old, &mut new);
+                stub(coords + side, -side, grid, &mut old, &mut new);
+            }
+            (None, Some(WireShape::Straight)) |
+            (Some(WireShape::Stub), Some(WireShape::Straight)) => {
+                old.insert((coords, side), WireShape::Straight);
+                old.insert((coords, -side), WireShape::Straight);
+                new.insert((coords, dir), WireShape::TurnRight);
+                new.insert((coords, -side), WireShape::TurnLeft);
+                stub(coords, side, grid, &mut old, &mut new);
+                stub(coords + dir, -dir, grid, &mut old, &mut new);
+            }
+            (Some(WireShape::TurnRight), None) |
+            (Some(WireShape::TurnRight), Some(WireShape::Stub)) => {
+                old.insert((coords, dir), WireShape::TurnRight);
+                old.insert((coords, -side), WireShape::TurnLeft);
+                new.insert((coords, side), WireShape::Straight);
+                new.insert((coords, -side), WireShape::Straight);
+                stub(coords, dir, grid, &mut old, &mut new);
+                stub(coords + side, -side, grid, &mut old, &mut new);
+            }
+            (None, Some(WireShape::TurnLeft)) |
+            (Some(WireShape::Stub), Some(WireShape::TurnLeft)) => {
+                old.insert((coords, -dir), WireShape::TurnRight);
+                old.insert((coords, side), WireShape::TurnLeft);
+                new.insert((coords, dir), WireShape::Straight);
+                new.insert((coords, -dir), WireShape::Straight);
+                stub(coords, side, grid, &mut old, &mut new);
+                stub(coords + dir, -dir, grid, &mut old, &mut new);
+            }
+            (_, _) => return false,
         }
-        let changes = vec![GridChange::ReplaceWires(old_wires, new_wires)];
+        let changes = vec![GridChange::ReplaceWires(old, new)];
         let success = grid.try_mutate_provisionally(changes);
         if !success {
             debug_log!("try_turn_left failed: coords={:?}, dir={:?}",
@@ -591,6 +634,16 @@ impl WireDrag {
         }
         self.changed |= success;
         success
+    }
+}
+
+fn stub(coords: Coords, dir: Direction, grid: &EditGrid,
+        old_wires: &mut HashMap<(Coords, Direction), WireShape>,
+        new_wires: &mut HashMap<(Coords, Direction), WireShape>) {
+    if grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub) {
+        old_wires.insert((coords + dir, -dir), WireShape::Stub);
+    } else {
+        new_wires.insert((coords, dir), WireShape::Stub);
     }
 }
 

@@ -153,7 +153,7 @@ impl HotkeyCodes {
         if old_code == new_code {
             return;
         }
-        if let Some(other_hotkey) = self.hotkeys.get(&new_code).cloned() {
+        if let Some(other_hotkey) = self.hotkeys.get(&new_code).copied() {
             self.hotkeys.insert(old_code, other_hotkey);
             self.keycodes.insert(other_hotkey, old_code);
         } else {

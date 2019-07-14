@@ -382,7 +382,7 @@ impl Synth {
                 }
                 // base waveform
                 debug_assert!(synth.period > 0);
-                let mut fp: f32 = (synth.phase as f32) / (synth.period as f32);
+                let fp: f32 = (synth.phase as f32) / (synth.period as f32);
                 let mut sample: f32 = match spec.wave_kind {
                     WaveKind::Noise => {
                         synth.noise_buffer[(synth.phase * 32 / synth.period) as
@@ -399,7 +399,7 @@ impl Synth {
                     }
                 };
                 // lp filter
-                let mut pp: f32 = synth.fltp;
+                let pp: f32 = synth.fltp;
                 synth.fltw *= synth.fltw_d;
                 if synth.fltw < 0.0 {
                     synth.fltw = 0.0;

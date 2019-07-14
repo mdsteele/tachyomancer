@@ -157,7 +157,7 @@ impl PuzzleEval for AutomateReactorEval {
             .iter()
             .map(|&rod_wire| state.recv_behavior(rod_wire).0)
             .collect();
-        let rod_total: u32 = rod_values.iter().cloned().sum();
+        let rod_total: u32 = rod_values.iter().copied().sum();
         let rod_average: f64 = (rod_total as f64) / (rod_values.len() as f64);
         let rod_imbalance: f64 = rod_values
             .iter()

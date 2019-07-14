@@ -311,13 +311,13 @@ pub fn detect_loops(wires: &mut Vec<WireInfo>,
     }
 
     match topological_sort_into_groups(&wire_indices, |index| {
-        wire_successors[&index].iter().cloned()
+        wire_successors[&index].iter().copied()
     }) {
         Ok(groups) => return Ok(groups),
         Err((_, remaining)) => {
             let mut errors = Vec::<WireError>::new();
             let comps = strongly_connected_components(&remaining, |index| {
-                wire_successors.get(index).unwrap().iter().cloned()
+                wire_successors.get(index).unwrap().iter().copied()
             });
             for comp in comps.into_iter() {
                 // By definition, a wire that isn't part of any cycle forms a

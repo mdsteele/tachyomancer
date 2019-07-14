@@ -196,7 +196,7 @@ impl EditGridView {
             if eval.subcycle() > 0 {
                 grid.wire_index_group(eval.subcycle() - 1)
                     .iter()
-                    .cloned()
+                    .copied()
                     .filter(|&wire_index| eval.wire_has_change(wire_index))
                     .collect()
             } else {

@@ -95,7 +95,7 @@ impl PartsTray {
         for &(name, ctypes) in CHIP_CATEGORIES.iter() {
             let allowed_ctypes: Vec<ChipType> = ctypes
                 .iter()
-                .cloned()
+                .copied()
                 .filter(|&ctype| allowed.contains(ctype))
                 .collect();
             if !allowed_ctypes.is_empty() {

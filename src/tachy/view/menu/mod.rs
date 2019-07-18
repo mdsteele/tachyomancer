@@ -19,10 +19,12 @@
 
 mod converse;
 mod list;
+mod nav;
 mod prefs;
 mod puzzle;
 
 use self::converse::{ConverseAction, ConverseView};
+use self::nav::NavigationView;
 use self::prefs::{PrefsAction, PrefsView};
 use self::puzzle::{PuzzlesAction, PuzzlesView};
 use super::button::RadioButton;
@@ -71,6 +73,7 @@ pub struct MenuView {
     size: RectSize<i32>,
 
     section_buttons: Vec<RadioButton<MenuSection>>,
+    navigation_view: NavigationView,
     converse_view: ConverseView,
     prefs_view: PrefsView,
     puzzles_view: PuzzlesView,
@@ -101,12 +104,15 @@ impl MenuView {
 
         let prefs_view = PrefsView::new(section_rect, window, state);
         let mut ui = window.ui();
+        let navigation_view =
+            NavigationView::new(size.as_f32(), section_rect, &mut ui, state);
         let converse_view = ConverseView::new(section_rect, &mut ui, state);
         let puzzles_view = PuzzlesView::new(section_rect, &mut ui, state);
 
         MenuView {
             size,
             section_buttons,
+            navigation_view,
             converse_view,
             prefs_view,
             puzzles_view,
@@ -127,9 +133,6 @@ impl MenuView {
             .shaders()
             .solid()
             .fill_rect(&projection, Color3::new(0.2, 0.1, 0.2), rect);
-        for button in self.section_buttons.iter() {
-            button.draw(resources, &projection, &state.menu_section());
-        }
         if self.left_section == self.right_section {
             self.draw_section(resources,
                               &projection,
@@ -142,6 +145,9 @@ impl MenuView {
             let matrix2 = projection *
                 Matrix4::trans2(size.width * (1.0 - self.section_anim), 0.0);
             self.draw_section(resources, &matrix2, self.right_section, state);
+        }
+        for button in self.section_buttons.iter() {
+            button.draw(resources, &projection, &state.menu_section());
         }
         if let Some(ref dialog) = self.rename_dialog {
             dialog.draw(resources, &projection, |name| {
@@ -157,7 +163,7 @@ impl MenuView {
                     section: MenuSection, state: &GameState) {
         match section {
             MenuSection::Navigation => {
-                // TODO: navigation section
+                self.navigation_view.draw(resources, matrix, state);
             }
             MenuSection::Messages => {
                 self.converse_view.draw(resources, matrix, state);
@@ -302,7 +308,7 @@ impl MenuView {
                         -> Option<MenuAction> {
         match state.menu_section() {
             MenuSection::Navigation => {
-                // TODO: navigation section
+                self.navigation_view.on_event(event, ui, state);
             }
             MenuSection::Messages => {
                 match self.converse_view.on_event(event, ui, state) {

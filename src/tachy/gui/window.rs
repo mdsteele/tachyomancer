@@ -133,6 +133,7 @@ impl<'a> Window<'a> {
             gl::Enable(gl::BLEND);
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
             gl::Disable(gl::DEPTH_TEST);
+            gl::DepthFunc(gl::LESS);
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         let resources = Resources::new()?;

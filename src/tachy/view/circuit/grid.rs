@@ -27,7 +27,7 @@ use super::super::wire::WireModel;
 use super::tooltip::GridTooltipTag;
 use super::tutorial::TutorialBubble;
 use super::wiredrag::WireDrag;
-use cgmath::{self, Matrix4, Point2, Vector2, vec2, vec4};
+use cgmath::{self, Matrix4, Point2, Vector2, vec2};
 use std::collections::HashSet;
 use std::mem;
 use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsRect,
@@ -91,11 +91,11 @@ impl EditGridView {
     fn draw_background_grid(&self, resources: &Resources) {
         let matrix = cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
         let size = self.size * self.zoom.recip();
-        let pixel_rect = vec4((self.scroll.x as f32) - 0.5 * size.width,
-                              (self.scroll.y as f32) - 0.5 * size.height,
-                              size.width,
-                              size.height);
-        let coords_rect = pixel_rect / (GRID_CELL_SIZE as f32);
+        let pixel_rect = Rect::new((self.scroll.x as f32) - 0.5 * size.width,
+                                   (self.scroll.y as f32) - 0.5 * size.height,
+                                   size.width,
+                                   size.height);
+        let coords_rect = pixel_rect * (GRID_CELL_SIZE as f32).recip();
         resources.shaders().board().draw(&matrix, coords_rect);
     }
 

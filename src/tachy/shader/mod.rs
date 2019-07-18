@@ -21,14 +21,16 @@ mod chip;
 mod frame;
 mod port;
 mod portrait;
+mod scene;
 mod ui;
 
 use self::chip::ChipShader;
 pub use self::frame::FrameBufferShader;
 pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
+pub use self::scene::SceneShader;
 pub use self::ui::UiShader;
-use cgmath::{Matrix4, Vector4};
+use cgmath::Matrix4;
 use tachy::geom::{Color3, Color4, MatrixExt, Rect};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
                 VertexArray, VertexBuffer};
@@ -56,6 +58,7 @@ pub struct Shaders {
     icon: IconShader,
     port: PortShader,
     portrait: PortraitShader,
+    scene: SceneShader,
     solid: SolidShader,
     ui: UiShader,
     wire: WireShader,
@@ -71,14 +74,11 @@ impl Shaders {
         let board = BoardShader::new(board_prog)?;
 
         let chip = ChipShader::new()?;
-
         let frame = FrameBufferShader::new()?;
-
         let icon = IconShader::new()?;
-
         let port = PortShader::new()?;
-
         let portrait = PortraitShader::new()?;
+        let scene = SceneShader::new()?;
 
         let solid_vert =
             Shader::new(ShaderType::Vertex, "solid.vert", SOLID_VERT_CODE)?;
@@ -103,6 +103,7 @@ impl Shaders {
             icon,
             port,
             portrait,
+            scene,
             solid,
             ui,
             wire,
@@ -122,6 +123,8 @@ impl Shaders {
 
     pub fn portrait(&self) -> &PortraitShader { &self.portrait }
 
+    pub fn scene(&self) -> &SceneShader { &self.scene }
+
     pub fn solid(&self) -> &SolidShader { &self.solid }
 
     pub fn ui(&self) -> &UiShader { &self.ui }
@@ -130,11 +133,12 @@ impl Shaders {
 }
 
 //===========================================================================//
+// TODO: Move these to separate modules.
 
 pub struct BoardShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
-    coords_rect: ShaderUniform<Vector4<f32>>,
+    coords_rect: ShaderUniform<Rect<f32>>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
 }
@@ -156,7 +160,7 @@ impl BoardShader {
            })
     }
 
-    pub fn draw(&self, matrix: &Matrix4<f32>, coords_rect: Vector4<f32>) {
+    pub fn draw(&self, matrix: &Matrix4<f32>, coords_rect: Rect<f32>) {
         self.program.bind();
         self.mvp.set(matrix);
         self.coords_rect.set(&coords_rect);

@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Matrix4, Vector2, Vector4};
+use cgmath::{Matrix4, Vector2, Vector3};
 use gl;
 use gl::types::{GLenum, GLint};
 use std::marker::PhantomData;
@@ -114,11 +114,11 @@ impl UniformValue for Vector2<u32> {
     }
 }
 
-impl UniformValue for Vector4<f32> {
-    fn gl_type() -> GLenum { gl::FLOAT_VEC4 }
+impl UniformValue for Vector3<f32> {
+    fn gl_type() -> GLenum { gl::FLOAT_VEC3 }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
-            gl::Uniform4f(loc, self.x, self.y, self.z, self.w);
+            gl::Uniform3f(loc, self.x, self.y, self.z);
         }
     }
 }

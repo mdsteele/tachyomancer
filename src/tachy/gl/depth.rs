@@ -17,26 +17,41 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod depth;
-mod frame;
-mod index;
-mod model;
-mod program;
-mod shader;
-mod stencil;
-mod texture;
-mod uniform;
-mod vertex;
+use gl;
+use std::marker::PhantomData;
 
-pub use self::depth::Depth;
-pub use self::frame::FrameBuffer;
-pub use self::index::IndexBuffer;
-pub use self::model::{Model, ModelBuilder};
-pub use self::program::ShaderProgram;
-pub use self::shader::{Shader, ShaderType};
-pub use self::stencil::Stencil;
-pub use self::texture::{Texture1D, Texture2D};
-pub use self::uniform::ShaderUniform;
-pub use self::vertex::{Primitive, VertexArray, VertexBuffer};
+//===========================================================================//
+
+pub struct Depth {
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut ()>,
+}
+
+impl Depth {
+    /// Clears the depth buffer, and enables the depth test and face culling
+    /// until the returned object is dropped.  At most one `Depth` object
+    /// should exist at once.
+    pub fn new() -> Depth {
+        unsafe {
+            gl::Clear(gl::DEPTH_BUFFER_BIT);
+            gl::Enable(gl::DEPTH_TEST);
+            gl::Enable(gl::CULL_FACE);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
+        }
+        Depth { phantom: PhantomData }
+    }
+}
+
+/// Disables the depth test and face culling when dropped.
+impl Drop for Depth {
+    fn drop(&mut self) {
+        unsafe {
+            gl::Disable(gl::CULL_FACE);
+            gl::Disable(gl::DEPTH_TEST);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
+        }
+    }
+}
 
 //===========================================================================//

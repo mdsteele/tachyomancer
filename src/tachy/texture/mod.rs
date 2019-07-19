@@ -35,6 +35,10 @@ const LIST_ICONS_PNG_DATA: &[u8] =
 const PORTRAITS_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/texture/portraits.png"));
 
+const RED_PLANET_JPEG_DATA: &[u8] = include_bytes!("scene/red_planet.jpeg");
+
+const STARFIELD_JPEG_DATA: &[u8] = include_bytes!("scene/starfield.jpeg");
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const WIRE_TEXTURE1D_DATA: &[u8; 1024] = &[
     // 0-bit (6 + 4 pixels):
@@ -303,6 +307,9 @@ pub struct Textures {
     chip_icons: Texture2D,
     list_icons: Texture2D,
     portraits: Texture2D,
+    red_planet: Texture2D,
+    starfield: Texture2D,
+    white: Texture2D,
     wire: Texture1D,
 }
 
@@ -316,14 +323,23 @@ impl Textures {
                                              LIST_ICONS_PNG_DATA)?;
         let portraits = Texture2D::from_png("texture/portraits",
                                             PORTRAITS_PNG_DATA)?;
+        let red_planet = Texture2D::from_jpeg("red_planet",
+                                              RED_PLANET_JPEG_DATA)?;
+        let starfield = Texture2D::from_jpeg("starfield",
+                                             STARFIELD_JPEG_DATA)?;
+        let white = Texture2D::new_rgba(1, 1, &[255, 255, 255, 255])?;
         let wire = Texture1D::new_rgba(WIRE_TEXTURE1D_DATA)?;
-        Ok(Textures {
-               brushed_metal,
-               chip_icons,
-               list_icons,
-               portraits,
-               wire,
-           })
+        let textures = Textures {
+            brushed_metal,
+            chip_icons,
+            list_icons,
+            portraits,
+            red_planet,
+            starfield,
+            white,
+            wire,
+        };
+        Ok(textures)
     }
 
     pub fn brushed_metal(&self) -> &Texture2D { &self.brushed_metal }
@@ -333,6 +349,12 @@ impl Textures {
     pub fn list_icons(&self) -> &Texture2D { &self.list_icons }
 
     pub fn portraits(&self) -> &Texture2D { &self.portraits }
+
+    pub fn red_planet(&self) -> &Texture2D { &self.red_planet }
+
+    pub fn starfield(&self) -> &Texture2D { &self.starfield }
+
+    pub fn white(&self) -> &Texture2D { &self.white }
 
     pub fn wire(&self) -> &Texture1D { &self.wire }
 }

@@ -37,11 +37,12 @@ impl NavigationView {
                -> NavigationView {
         let aspect = screen_size.width / screen_size.height;
         let p_matrix = cgmath::perspective(Deg(45.0), aspect, 0.1, 1000.0);
+
         let mut model = ModelBuilder::new();
         let p1 = Point3::new(-20.0, -20.0, 0.0);
         let p2 = Point3::new(20.0, -20.0, 0.0);
         let p3 = Point3::new(0.0, 20.0, 0.0);
-        let radius = 3.0;
+        let radius = 1.0;
         let faces = 12;
         let color = Color3::new(1.0, 0.6, 0.5);
         model.cylinder(p1, p2, radius, faces, color);
@@ -50,9 +51,15 @@ impl NavigationView {
         model.sphere(p1, radius, faces, color);
         model.sphere(p2, radius, faces, color);
         model.sphere(p3, radius, faces, color);
+        model.plane(Point3::new(0.0, 20.0, 0.0),
+                    RectSize::new(12.0, 9.0),
+                    Vector3::new(0.2, 0.0, 1.0),
+                    color);
+        let model = model.build();
+
         NavigationView {
             p_matrix,
-            model: model.build(),
+            model,
             m_matrix: Matrix4::identity(),
         }
     }
@@ -64,6 +71,7 @@ impl NavigationView {
                                         Point3::new(0.0, 0.0, 0.0),
                                         Vector3::unit_y());
         let light_dir_world_space = Vector3::new(-3.0, 3.0, 10.0);
+        resources.textures().white().bind();
         resources.shaders().scene().render(&self.p_matrix,
                                            &v_matrix,
                                            light_dir_world_space,

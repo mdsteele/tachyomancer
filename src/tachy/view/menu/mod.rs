@@ -17,12 +17,14 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod background;
 mod converse;
 mod list;
 mod nav;
 mod prefs;
 mod puzzle;
 
+use self::background::BackgroundView;
 use self::converse::{ConverseAction, ConverseView};
 use self::nav::NavigationView;
 use self::prefs::{PrefsAction, PrefsView};
@@ -30,7 +32,7 @@ use self::puzzle::{PuzzlesAction, PuzzlesView};
 use super::button::RadioButton;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath::{self, Matrix4};
-use tachy::geom::{AsFloat, Color3, MatrixExt, Rect, RectSize};
+use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Ui,
                  Window, WindowOptions};
 use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Puzzle};
@@ -71,6 +73,7 @@ pub enum MenuAction {
 
 pub struct MenuView {
     size: RectSize<i32>,
+    background: BackgroundView,
 
     section_buttons: Vec<RadioButton<MenuSection>>,
     navigation_view: NavigationView,
@@ -111,6 +114,7 @@ impl MenuView {
 
         MenuView {
             size,
+            background: BackgroundView::new(size.as_f32()),
             section_buttons,
             navigation_view,
             converse_view,
@@ -125,14 +129,10 @@ impl MenuView {
     }
 
     pub fn draw(&self, resources: &Resources, state: &GameState) {
+        self.background.draw(resources);
         let size = self.size.as_f32();
         let projection =
             cgmath::ortho(0.0, size.width, size.height, 0.0, -1.0, 1.0);
-        let rect = Rect::new(0.0, 0.0, size.width, size.height);
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(&projection, Color3::new(0.2, 0.1, 0.2), rect);
         if self.left_section == self.right_section {
             self.draw_section(resources,
                               &projection,
@@ -181,6 +181,7 @@ impl MenuView {
                     state: &mut GameState)
                     -> Option<MenuAction> {
         ui.cursor().request(Cursor::default());
+        self.background.on_event(event, ui);
         match event {
             Event::ClockTick(tick) => {
                 debug_assert!(self.left_section <= self.right_section);

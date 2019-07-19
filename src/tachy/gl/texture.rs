@@ -105,6 +105,26 @@ pub struct Texture2D {
 }
 
 impl Texture2D {
+    pub fn new_rgba(width: usize, height: usize, data: &[u8])
+                    -> Result<Texture2D, String> {
+        if !width.is_power_of_two() || !height.is_power_of_two() {
+            return Err(format!("2D texture has size of {}x{}, \
+                                which are not both powers of 2",
+                               width,
+                               height));
+        }
+        let expected_data_len = width * height * 4;
+        if data.len() != expected_data_len {
+            return Err(format!("RGBA texture data has length of {}, \
+                                but should be {} for a {}x{} image",
+                               data.len(),
+                               expected_data_len,
+                               width,
+                               height));
+        }
+        Ok(Texture2D::new(width, height, data.as_ptr(), (gl::RGBA, gl::RGBA8)))
+    }
+
     pub fn from_jpeg(jpeg_name: &str, jpeg_data: &[u8])
                      -> Result<Texture2D, String> {
         let mut decoder = jpeg_decoder::Decoder::new(jpeg_data);

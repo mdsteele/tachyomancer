@@ -1,0 +1,9 @@
+name = "Inhospitable World Pack, Martian"
+artist = "texturesforplanets.com"
+license = "Freeware"
+year = 2015
+url = "http://www.texturesforplanets.com/texture-packs.shtml"
+comments = """
+This file was modified from the original by resizing from 2000x1000 to
+2048x1024 and converting from PNG to JPEG.
+"""

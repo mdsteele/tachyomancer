@@ -426,7 +426,7 @@ impl Scrollbar {
                                &self.rect.as_f32(),
                                &Color4::ORANGE3,
                                &Color4::CYAN2,
-                               &Color4::PURPLE0);
+                               &Color4::PURPLE0_TRANSLUCENT);
             let (fg_color, bg_color) = if self.drag.is_some() {
                 (&Color4::ORANGE4, &Color4::PURPLE3)
             } else {
@@ -529,7 +529,7 @@ impl Slider {
                            &self.rect.as_f32(),
                            &Color4::ORANGE3,
                            &Color4::CYAN2,
-                           &Color4::PURPLE0);
+                           &Color4::PURPLE0_TRANSLUCENT);
         let (fg_color, bg_color) = if self.drag.is_some() {
             (&Color4::ORANGE5, Color4::PURPLE3)
         } else {

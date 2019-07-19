@@ -96,7 +96,7 @@ impl<T: Clone + Eq> ListView<T> {
         rect.width = self.item_width() as f32;
         rect = rect.expand(-2.0);
         let solid = resources.shaders().solid();
-        solid.fill_rect(matrix, Color3::PURPLE0, rect);
+        solid.tint_rect(matrix, Color4::PURPLE0_TRANSLUCENT, rect);
     }
 
     fn draw_items<Q>(&self, resources: &Resources, matrix: &Matrix4<f32>,
@@ -117,9 +117,9 @@ impl<T: Clone + Eq> ListView<T> {
                 continue;
             }
             let bg_color = if value.borrow() == current {
-                Color4::PURPLE3
+                Color3::PURPLE4.with_alpha(0.5)
             } else {
-                Color4::PURPLE0
+                Color4::TRANSPARENT
             };
             let rect = Rect::new(self.rect.x as f32,
                                  top as f32,

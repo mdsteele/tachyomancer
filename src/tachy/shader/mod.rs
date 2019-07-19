@@ -22,6 +22,7 @@ mod frame;
 mod port;
 mod portrait;
 mod scene;
+mod solid;
 mod ui;
 
 use self::chip::ChipShader;
@@ -29,6 +30,7 @@ pub use self::frame::FrameBufferShader;
 pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
 pub use self::scene::SceneShader;
+pub use self::solid::SolidShader;
 pub use self::ui::UiShader;
 use cgmath::Matrix4;
 use tachy::geom::{Color3, Color4, MatrixExt, Rect};
@@ -42,9 +44,6 @@ const BOARD_FRAG_CODE: &[u8] = include_bytes!("board.frag");
 
 const ICON_VERT_CODE: &[u8] = include_bytes!("icon.vert");
 const ICON_FRAG_CODE: &[u8] = include_bytes!("icon.frag");
-
-const SOLID_VERT_CODE: &[u8] = include_bytes!("solid.vert");
-const SOLID_FRAG_CODE: &[u8] = include_bytes!("solid.frag");
 
 const WIRE_VERT_CODE: &[u8] = include_bytes!("wire.vert");
 const WIRE_FRAG_CODE: &[u8] = include_bytes!("wire.frag");
@@ -79,14 +78,7 @@ impl Shaders {
         let port = PortShader::new()?;
         let portrait = PortraitShader::new()?;
         let scene = SceneShader::new()?;
-
-        let solid_vert =
-            Shader::new(ShaderType::Vertex, "solid.vert", SOLID_VERT_CODE)?;
-        let solid_frag =
-            Shader::new(ShaderType::Fragment, "solid.frag", SOLID_FRAG_CODE)?;
-        let solid_prog = ShaderProgram::new(&[&solid_vert, &solid_frag])?;
-        let solid = SolidShader::new(solid_prog)?;
-
+        let solid = SolidShader::new()?;
         let ui = UiShader::new()?;
 
         let wire_vert =
@@ -212,45 +204,6 @@ impl IconShader {
         self.mvp.set(&mvp);
         self.varray.bind();
         self.rect_vbuffer.attribi(0, 2, 0, 0);
-        self.varray.draw(Primitive::TriangleStrip, 0, 4);
-    }
-}
-
-//===========================================================================//
-
-pub struct SolidShader {
-    program: ShaderProgram,
-    color: ShaderUniform<Color3>,
-    mvp: ShaderUniform<Matrix4<f32>>,
-    varray: VertexArray,
-    rect_vbuffer: VertexBuffer<u8>,
-}
-
-impl SolidShader {
-    fn new(program: ShaderProgram) -> Result<SolidShader, String> {
-        let color = program.get_uniform("SolidColor")?;
-        let mvp = program.get_uniform("MVP")?;
-        let varray = VertexArray::new(1);
-        let rect_vbuffer =
-            VertexBuffer::new(&[0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0]);
-        Ok(SolidShader {
-               program,
-               color,
-               mvp,
-               varray,
-               rect_vbuffer,
-           })
-    }
-
-    pub fn fill_rect(&self, matrix: &Matrix4<f32>, color: Color3,
-                     rect: Rect<f32>) {
-        self.program.bind();
-        self.color.set(&color);
-        let mvp = matrix * Matrix4::trans2(rect.x, rect.y) *
-            Matrix4::scale2(rect.width, rect.height);
-        self.mvp.set(&mvp);
-        self.varray.bind();
-        self.rect_vbuffer.attribf(0, 3, 0, 0);
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
     }
 }

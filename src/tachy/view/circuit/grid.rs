@@ -48,8 +48,10 @@ const SCROLL_GRID_CELLS_PER_SECOND: f64 = 12.0;
 
 // The minimum zoom multiplier (i.e. how far zoomed out you can be):
 const ZOOM_MIN: f32 = 0.25;
+// The default zoom multiplier:
+const ZOOM_DEFAULT: f32 = 1.0;
 // The maximum zoom multiplier (i.e. how far zoomed in you can be):
-const ZOOM_MAX: f32 = 1.0;
+const ZOOM_MAX: f32 = 2.0;
 // How much to multiply/divide the zoom by when pressing a zoom hotkey:
 const ZOOM_PER_KEYDOWN: f32 = 1.415; // slightly more than sqrt(2)
 
@@ -79,7 +81,7 @@ impl EditGridView {
         EditGridView {
             size: window_size.as_f32(),
             scroll: Vector2::new(0, 0),
-            zoom: ZOOM_MAX,
+            zoom: ZOOM_DEFAULT,
             wire_model: WireModel::new(),
             interaction: Interaction::Nothing,
             tutorial_bubbles,
@@ -428,6 +430,11 @@ impl EditGridView {
             self.zoom_by(ZOOM_PER_KEYDOWN, ui);
         } else if hotkey == Hotkey::ZoomOut {
             self.zoom_by(1.0 / ZOOM_PER_KEYDOWN, ui);
+        } else if hotkey == Hotkey::ZoomDefault {
+            if self.zoom != ZOOM_DEFAULT {
+                self.zoom = ZOOM_DEFAULT;
+                ui.request_redraw();
+            }
         } else {
             match self.interaction {
                 Interaction::DraggingChip(ref mut drag) => {
@@ -848,8 +855,23 @@ impl EditGridView {
     }
 
     fn zoom_by(&mut self, factor: f32, ui: &mut Ui) {
-        self.zoom = ZOOM_MIN.max(self.zoom * factor).min(ZOOM_MAX);
-        ui.request_redraw();
+        if factor < 1.0 {
+            let minimum = if self.zoom > ZOOM_DEFAULT {
+                ZOOM_DEFAULT
+            } else {
+                ZOOM_MIN
+            };
+            self.zoom = (self.zoom * factor).max(minimum);
+            ui.request_redraw();
+        } else if factor > 1.0 {
+            let maximum = if self.zoom < ZOOM_DEFAULT {
+                ZOOM_DEFAULT
+            } else {
+                ZOOM_MAX
+            };
+            self.zoom = (self.zoom * factor).min(maximum);
+            ui.request_redraw();
+        }
     }
 
     fn scroll_by_screen_dist(&mut self, x: i32, y: i32, ui: &mut Ui) {

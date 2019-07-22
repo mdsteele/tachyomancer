@@ -41,6 +41,7 @@ pub enum Hotkey {
     ScrollLeft,
     ScrollRight,
     ScrollUp,
+    ZoomDefault,
     ZoomIn,
     ZoomOut,
 }
@@ -64,6 +65,7 @@ impl Hotkey {
             Hotkey::ScrollLeft => "Scroll left",
             Hotkey::ScrollRight => "Scroll right",
             Hotkey::ScrollUp => "Scroll up",
+            Hotkey::ZoomDefault => "Zoom to actual size",
             Hotkey::ZoomIn => "Zoom in",
             Hotkey::ZoomOut => "Zoom out",
         }
@@ -84,6 +86,7 @@ impl Hotkey {
             Hotkey::ScrollLeft => Keycode::Left,
             Hotkey::ScrollRight => Keycode::Right,
             Hotkey::ScrollUp => Keycode::Up,
+            Hotkey::ZoomDefault => Keycode::Num0,
             Hotkey::ZoomIn => Keycode::Equals,
             Hotkey::ZoomOut => Keycode::Minus,
         }
@@ -100,6 +103,7 @@ impl Hotkey {
             Keycode::S => Some(Hotkey::EvalStepSubcycle),
             Keycode::T => Some(Hotkey::EvalReset),
             Keycode::W => Some(Hotkey::FlipVert),
+            Keycode::Num0 => Some(Hotkey::ZoomDefault),
             Keycode::Down => Some(Hotkey::ScrollDown),
             Keycode::Equals => Some(Hotkey::ZoomIn),
             Keycode::Left => Some(Hotkey::ScrollLeft),

@@ -37,10 +37,8 @@ const HOTKEY_BOX_FONT_SIZE: f32 = 20.0;
 const HOTKEY_LABEL_FONT_SIZE: f32 = 20.0;
 
 const HOVER_PULSE_CLICK: f64 = 1.0;
+const HOVER_PULSE_HOVERING: f64 = 0.55;
 const HOVER_PULSE_DECAY_RATE: f64 = HOVER_PULSE_CLICK / 0.7;
-const HOVER_PULSE_MAX: f64 = 0.55;
-const HOVER_PULSE_MIN: f64 = 0.35;
-const HOVER_PULSE_PERIOD: f64 = 1.0;
 
 const TEXT_BOX_CURSOR_BLINK_PERIOD: f64 = 1.0;
 const TEXT_BOX_FONT: Font = Font::Roman;
@@ -244,7 +242,6 @@ impl HotkeyBox {
 
 pub struct HoverPulse {
     hovering: bool,
-    timer: f64,
     brightness: f64,
 }
 
@@ -252,7 +249,6 @@ impl HoverPulse {
     pub fn new() -> HoverPulse {
         HoverPulse {
             hovering: false,
-            timer: 0.0,
             brightness: 0.0,
         }
     }
@@ -266,20 +262,10 @@ impl HoverPulse {
 
     pub fn on_clock_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
         if self.hovering {
-            if self.brightness > HOVER_PULSE_MAX {
+            if self.brightness > HOVER_PULSE_HOVERING {
                 self.brightness = (self.brightness -
                                        tick.elapsed * HOVER_PULSE_DECAY_RATE)
-                    .max(HOVER_PULSE_MAX);
-                self.timer = 0.0;
-                ui.request_redraw();
-            } else {
-                self.timer = (self.timer + tick.elapsed) % HOVER_PULSE_PERIOD;
-                let mut param = 2.0 * self.timer / HOVER_PULSE_PERIOD;
-                if param > 1.0 {
-                    param = 2.0 - param;
-                }
-                self.brightness = HOVER_PULSE_MAX -
-                    param * (HOVER_PULSE_MAX - HOVER_PULSE_MIN);
+                    .max(HOVER_PULSE_HOVERING);
                 ui.request_redraw();
             }
         } else if self.brightness > 0.0 {
@@ -296,8 +282,7 @@ impl HoverPulse {
             false
         } else if hovering {
             self.hovering = true;
-            self.brightness = self.brightness.max(HOVER_PULSE_MAX);
-            self.timer = 0.0;
+            self.brightness = self.brightness.max(HOVER_PULSE_HOVERING);
             ui.request_redraw();
             true
         } else {
@@ -306,10 +291,7 @@ impl HoverPulse {
         }
     }
 
-    pub fn unfocus(&mut self) {
-        self.hovering = false;
-        self.timer = 0.0;
-    }
+    pub fn unfocus(&mut self) { self.hovering = false; }
 }
 
 //===========================================================================//

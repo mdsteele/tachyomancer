@@ -25,7 +25,7 @@ mod scene;
 mod solid;
 mod ui;
 
-use self::chip::ChipShader;
+pub use self::chip::ChipShader;
 pub use self::frame::FrameBufferShader;
 pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
@@ -65,40 +65,17 @@ pub struct Shaders {
 
 impl Shaders {
     pub fn new() -> Result<Shaders, String> {
-        let board_vert =
-            Shader::new(ShaderType::Vertex, "board.vert", BOARD_VERT_CODE)?;
-        let board_frag =
-            Shader::new(ShaderType::Fragment, "board.frag", BOARD_FRAG_CODE)?;
-        let board_prog = ShaderProgram::new(&[&board_vert, &board_frag])?;
-        let board = BoardShader::new(board_prog)?;
-
-        let chip = ChipShader::new()?;
-        let frame = FrameBufferShader::new()?;
-        let icon = IconShader::new()?;
-        let port = PortShader::new()?;
-        let portrait = PortraitShader::new()?;
-        let scene = SceneShader::new()?;
-        let solid = SolidShader::new()?;
-        let ui = UiShader::new()?;
-
-        let wire_vert =
-            Shader::new(ShaderType::Vertex, "wire.vert", WIRE_VERT_CODE)?;
-        let wire_frag =
-            Shader::new(ShaderType::Fragment, "wire.frag", WIRE_FRAG_CODE)?;
-        let wire_prog = ShaderProgram::new(&[&wire_vert, &wire_frag])?;
-        let wire = WireShader::new(wire_prog)?;
-
         let shaders = Shaders {
-            board,
-            chip,
-            frame,
-            icon,
-            port,
-            portrait,
-            scene,
-            solid,
-            ui,
-            wire,
+            board: BoardShader::new()?,
+            chip: ChipShader::new()?,
+            frame: FrameBufferShader::new()?,
+            icon: IconShader::new()?,
+            port: PortShader::new()?,
+            portrait: PortraitShader::new()?,
+            scene: SceneShader::new()?,
+            solid: SolidShader::new()?,
+            ui: UiShader::new()?,
+            wire: WireShader::new()?,
         };
         Ok(shaders)
     }
@@ -136,7 +113,13 @@ pub struct BoardShader {
 }
 
 impl BoardShader {
-    fn new(program: ShaderProgram) -> Result<BoardShader, String> {
+    fn new() -> Result<BoardShader, String> {
+        let vert =
+            Shader::new(ShaderType::Vertex, "board.vert", BOARD_VERT_CODE)?;
+        let frag =
+            Shader::new(ShaderType::Fragment, "board.frag", BOARD_FRAG_CODE)?;
+        let program = ShaderProgram::new(&[&vert, &frag])?;
+
         let mvp = program.get_uniform("MVP")?;
         let coords_rect = program.get_uniform("CoordsRect")?;
         let varray = VertexArray::new(1);
@@ -218,7 +201,13 @@ pub struct WireShader {
 }
 
 impl WireShader {
-    fn new(program: ShaderProgram) -> Result<WireShader, String> {
+    fn new() -> Result<WireShader, String> {
+        let vert =
+            Shader::new(ShaderType::Vertex, "wire.vert", WIRE_VERT_CODE)?;
+        let frag =
+            Shader::new(ShaderType::Fragment, "wire.frag", WIRE_FRAG_CODE)?;
+        let program = ShaderProgram::new(&[&vert, &frag])?;
+
         let mvp = program.get_uniform("MVP")?;
         let wire_color = program.get_uniform("WireColor")?;
         let hilight_color = program.get_uniform("HilightColor")?;

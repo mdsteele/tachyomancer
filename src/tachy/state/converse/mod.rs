@@ -17,7 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod chapter1;
+mod calliope;
+mod lorelei;
+mod odyssey;
+mod orpheus;
+mod planetfall;
 mod types;
 
 pub use self::types::{ConversationBubble, Portrait};
@@ -34,14 +38,27 @@ impl ConversationExt for Conversation {
     fn bubbles(&self, profile: &Profile) -> Vec<ConversationBubble> {
         let mut builder = ConversationBuilder::new(*self, profile);
         let _ = match *self {
-            Conversation::WakeUp => chapter1::wake_up(profile, &mut builder),
-            Conversation::Basics => chapter1::basics(profile, &mut builder),
+            Conversation::WakeUp => odyssey::wake_up(profile, &mut builder),
+            Conversation::Basics => odyssey::basics(profile, &mut builder),
             Conversation::RestorePower => {
-                chapter1::restore_power(profile, &mut builder)
+                odyssey::restore_power(profile, &mut builder)
             }
-            Conversation::StepTwo => chapter1::step_two(profile, &mut builder),
+            Conversation::StepTwo => odyssey::step_two(profile, &mut builder),
             Conversation::CaptainsCall => {
-                chapter1::captains_call(profile, &mut builder)
+                odyssey::captains_call(profile, &mut builder)
+            }
+            Conversation::AdvancedCircuits => {
+                planetfall::advanced_circuits(profile, &mut builder)
+            }
+            Conversation::UnexpectedCompany => {
+                planetfall::unexpected_company(profile, &mut builder)
+            }
+            Conversation::Memory => calliope::memory(profile, &mut builder),
+            Conversation::KeepingTime => {
+                orpheus::keeping_time(profile, &mut builder)
+            }
+            Conversation::CatchingUp => {
+                lorelei::catching_up(profile, &mut builder)
             }
         };
         builder.build()

@@ -20,7 +20,7 @@
 use super::cutscene::CutsceneScript;
 use super::edit::EditGrid;
 use std::time::Duration;
-use tachy::save::{Conversation, MenuSection, Prefs, Profile,
+use tachy::save::{Chapter, Conversation, MenuSection, Prefs, Profile,
                   ProfileNamesIter, Puzzle, SaveDir};
 use unicase;
 
@@ -239,6 +239,28 @@ impl GameState {
                        value);
             profile.set_conversation_choice(conv, key, value);
         }
+    }
+
+    pub fn chapter_order(&self) -> Vec<Chapter> {
+        let orpheus_first = if let Some(ref profile) = self.profile {
+            profile.get_conversation_choice(Conversation::UnexpectedCompany,
+                                            "chapter") ==
+                Some("orpheus")
+        } else {
+            false
+        };
+        let mut chapters = Vec::<Chapter>::with_capacity(5);
+        chapters.push(Chapter::Odyssey);
+        chapters.push(Chapter::Planetfall);
+        if orpheus_first {
+            chapters.push(Chapter::Orpheus);
+            chapters.push(Chapter::Calliope);
+        } else {
+            chapters.push(Chapter::Calliope);
+            chapters.push(Chapter::Orpheus);
+        }
+        chapters.push(Chapter::Lorelei);
+        chapters
     }
 
     pub fn current_puzzle(&self) -> Puzzle {

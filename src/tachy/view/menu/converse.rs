@@ -17,22 +17,25 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::list::{ListIcon, ListView};
+use super::list::{ListIcon, ListView, list_height_for_num_items};
 use super::super::button::Scrollbar;
 use super::super::paragraph::Paragraph;
 use cgmath::{Matrix4, Point2, vec2};
 use num_integer::div_mod_floor;
+use std::collections::HashSet;
 use tachy::font::Align;
 use tachy::geom::{AsFloat, Color3, MatrixExt, Rect};
 use tachy::gl::Stencil;
 use tachy::gui::{Event, Resources, Ui};
-use tachy::save::{Conversation, Prefs, Profile, Puzzle};
+use tachy::save::{Chapter, Conversation, Prefs, Profile, Puzzle};
 use tachy::state::{ConversationBubble, ConversationExt, Cutscene, GameState,
                    Portrait};
 
 //===========================================================================//
 
-const CONV_LIST_WIDTH: i32 = 280;
+const CHAPTER_LIST_WIDTH: i32 = 120;
+const CHAPTER_LIST_HEIGHT: i32 = list_height_for_num_items(5);
+const CONV_LIST_WIDTH: i32 = 220;
 const ELEMENT_SPACING: i32 = 22;
 
 const BUBBLE_FONT_SIZE: f32 = 20.0;
@@ -69,6 +72,7 @@ pub enum ConverseAction {
 //===========================================================================//
 
 pub struct ConverseView {
+    chapter_list: ListView<Chapter>,
     conv_list: ListView<Conversation>,
     bubbles_list: BubblesListView,
 }
@@ -76,21 +80,34 @@ pub struct ConverseView {
 impl ConverseView {
     pub fn new(rect: Rect<i32>, ui: &mut Ui, state: &GameState)
                -> ConverseView {
+        let chapter_list_left = rect.x;
+        let chapter_list_top = rect.y +
+            (rect.height - CHAPTER_LIST_HEIGHT) / 2;
+        let conv_list_left = chapter_list_left + CHAPTER_LIST_WIDTH +
+            ELEMENT_SPACING;
+        let bubbles_list_left = conv_list_left + CONV_LIST_WIDTH +
+            ELEMENT_SPACING;
+        let bubbles_list_width = rect.right() - bubbles_list_left;
+
+        let conversation = state.current_conversation();
         ConverseView {
-            conv_list: ListView::new(Rect::new(rect.x,
+            chapter_list: ListView::new(Rect::new(chapter_list_left,
+                                                  chapter_list_top,
+                                                  CHAPTER_LIST_WIDTH,
+                                                  CHAPTER_LIST_HEIGHT),
+                                        ui,
+                                        chapter_list_items(state),
+                                        &conversation.chapter()),
+            conv_list: ListView::new(Rect::new(conv_list_left,
                                                rect.y,
                                                CONV_LIST_WIDTH,
                                                rect.height),
                                      ui,
                                      conv_list_items(state),
-                                     &state.current_conversation()),
-            bubbles_list: BubblesListView::new(Rect::new(rect.x +
-                                                             CONV_LIST_WIDTH +
-                                                             ELEMENT_SPACING,
+                                     &conversation),
+            bubbles_list: BubblesListView::new(Rect::new(bubbles_list_left,
                                                          rect.y,
-                                                         rect.width -
-                                                             CONV_LIST_WIDTH -
-                                                             ELEMENT_SPACING,
+                                                         bubbles_list_width,
                                                          rect.height),
                                                ui,
                                                state),
@@ -100,6 +117,7 @@ impl ConverseView {
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 state: &GameState) {
         let conv = state.current_conversation();
+        self.chapter_list.draw(resources, matrix, &conv.chapter());
         self.conv_list.draw(resources, matrix, &conv);
         self.bubbles_list.draw(resources, matrix);
     }
@@ -121,6 +139,22 @@ impl ConverseView {
             ui.request_redraw();
             self.update_conversation_bubbles(ui, state);
             None
+        } else if let Some(chapter) =
+            self.chapter_list
+                .on_event(event, ui, &state.current_conversation().chapter())
+        {
+            let conv = Conversation::all()
+                .find(|&conv| {
+                          conv.chapter() == chapter &&
+                              state.is_conversation_unlocked(conv)
+                      })
+                .unwrap_or(Conversation::first());
+
+            state.set_current_conversation(conv);
+            ui.request_redraw();
+            self.update_conversation_list(ui, state);
+            self.update_conversation_bubbles(ui, state);
+            None
         } else {
             self.bubbles_list.on_event(event, ui)
         }
@@ -139,10 +173,28 @@ impl ConverseView {
     }
 }
 
+fn chapter_list_items(state: &GameState)
+                      -> Vec<(Chapter, String, Option<ListIcon>)> {
+    let chapters: HashSet<Chapter> = Conversation::all()
+        .filter(|&conv| state.is_conversation_unlocked(conv))
+        .map(|conv| conv.chapter())
+        .collect();
+    state
+        .chapter_order()
+        .into_iter()
+        .filter(|chapter| chapters.contains(chapter))
+        .map(|chapter| (chapter, chapter.title().to_string(), None))
+        .collect()
+}
+
 fn conv_list_items(state: &GameState)
                    -> Vec<(Conversation, String, Option<ListIcon>)> {
+    let chapter = state.current_conversation().chapter();
     Conversation::all()
-        .filter(|&conv| state.is_conversation_unlocked(conv))
+        .filter(|&conv| {
+                    conv.chapter() == chapter &&
+                        state.is_conversation_unlocked(conv)
+                })
         .map(|conv| {
                  let mut label = conv.title().to_string();
                  if !state.is_conversation_complete(conv) {

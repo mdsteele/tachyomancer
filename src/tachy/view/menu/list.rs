@@ -40,6 +40,10 @@ const ITEM_INNER_MARGIN: i32 = 10;
 const SCROLLBAR_WIDTH: i32 = 18;
 const SCROLLBAR_MARGIN: i32 = 3;
 
+pub const fn list_height_for_num_items(num_items: i32) -> i32 {
+    num_items * (ITEM_HEIGHT + ITEM_SPACING) - ITEM_SPACING
+}
+
 //===========================================================================//
 
 // Generated code:
@@ -211,8 +215,7 @@ impl<T: Clone + Eq> ListView<T> {
         T: Borrow<Q>,
     {
         let num_items = items.len() as i32;
-        let total_height = num_items * (ITEM_HEIGHT + ITEM_SPACING) -
-            ITEM_SPACING;
+        let total_height = list_height_for_num_items(num_items);
         self.scrollbar.set_total_height(total_height, ui);
         let current_index = items
             .iter()

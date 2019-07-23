@@ -40,6 +40,21 @@ pub enum Prereq {
 
 //===========================================================================//
 
+#[derive(Clone, Copy, Debug, Eq, Hash, IntoStaticStr, PartialEq)]
+pub enum Chapter {
+    Odyssey,
+    Planetfall,
+    Calliope,
+    Orpheus,
+    Lorelei,
+}
+
+impl Chapter {
+    pub fn title(&self) -> &'static str { self.into() }
+}
+
+//===========================================================================//
+
 #[derive(Clone, Copy, Debug, Deserialize, EnumIter, Eq, Hash, PartialEq,
          Serialize)]
 pub enum Conversation {
@@ -48,6 +63,11 @@ pub enum Conversation {
     RestorePower,
     StepTwo,
     CaptainsCall,
+    AdvancedCircuits,
+    UnexpectedCompany,
+    Memory,
+    KeepingTime,
+    CatchingUp,
 }
 
 impl Conversation {
@@ -64,6 +84,26 @@ impl Conversation {
             Conversation::RestorePower => "Restoring Power",
             Conversation::StepTwo => "Step Two",
             Conversation::CaptainsCall => "Captain's Call",
+            Conversation::AdvancedCircuits => "Advanced Circuits",
+            Conversation::UnexpectedCompany => "Unexpected Company",
+            Conversation::Memory => "Memory",
+            Conversation::KeepingTime => "Keeping Time",
+            Conversation::CatchingUp => "Catching Up",
+        }
+    }
+
+    pub fn chapter(self) -> Chapter {
+        match self {
+            Conversation::WakeUp |
+            Conversation::Basics |
+            Conversation::RestorePower |
+            Conversation::StepTwo |
+            Conversation::CaptainsCall => Chapter::Odyssey,
+            Conversation::AdvancedCircuits |
+            Conversation::UnexpectedCompany => Chapter::Planetfall,
+            Conversation::Memory => Chapter::Calliope,
+            Conversation::KeepingTime => Chapter::Orpheus,
+            Conversation::CatchingUp => Chapter::Lorelei,
         }
     }
 
@@ -88,6 +128,7 @@ impl Conversation {
                                 &Prereq::Any(&[]),
                                 &Prereq::Complete(Conversation::RestorePower))
             }
+            _ => &Prereq::All(&[]), // TODO
         }
     }
 }

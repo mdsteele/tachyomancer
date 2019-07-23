@@ -17,30 +17,39 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod chip;
-mod circuit;
-mod converse;
-mod dir;
-mod encode;
-mod hotkey;
-mod menu;
-mod prefs;
-mod profile;
-mod progress;
-mod puzzle;
-mod wire;
+use super::types::ConversationBuilder;
+use tachy::save::{Profile, Puzzle};
 
-pub use self::chip::{CHIP_CATEGORIES, ChipSet, ChipType};
-pub use self::circuit::CircuitData;
-pub use self::converse::{Chapter, Conversation, ConversationIter,
-                         ConversationProgress};
-pub use self::dir::{ProfileNamesIter, SaveDir};
-pub use self::hotkey::{Hotkey, HotkeyIter};
-pub use self::menu::MenuSection;
-pub use self::prefs::Prefs;
-pub use self::profile::Profile;
-pub use self::progress::{CIRCUIT_NAME_MAX_WIDTH, CircuitNamesIter};
-pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
-pub use self::wire::WireShape;
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn advanced_circuits(profile: &Profile,
+                                builder: &mut ConversationBuilder)
+                                -> Result<(), ()> {
+    builder.esra("Time to learn about event wires.");
+    builder.puzzle(profile, Puzzle::TutorialDemux)?;
+    builder.esra("Good job.");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn unexpected_company(profile: &Profile,
+                                 builder: &mut ConversationBuilder)
+                                 -> Result<(), ()> {
+    builder.henry("Which ship should we scan for first?");
+    let chapter = builder
+        .choice(profile, "chapter")
+        .option("calliope", "\"Scan for the Calliope.\"")
+        .option("orpheus", "\"Scan for the Orpheus.\"")
+        .done()?;
+    if chapter == "orpheus" {
+        builder.henry("Okay, scanning for the Orpheus.");
+    } else {
+        builder.henry("Okay, scanning for the Calliope.");
+    }
+    Ok(())
+}
 
 //===========================================================================//

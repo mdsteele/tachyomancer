@@ -19,12 +19,12 @@
 
 mod begin;
 mod circuit;
-mod common;
 mod cutscene;
 mod menu;
 mod run;
+mod shared;
 
-pub use self::common::ModeChange;
 pub use self::run::run_mode;
+pub use self::shared::ModeChange;
 
 //===========================================================================//

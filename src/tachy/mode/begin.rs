@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::common::ModeChange;
+use super::shared::ModeChange;
 use tachy::gui::{Event, Window};
 use tachy::save::MenuSection;
 use tachy::state::{Cutscene, GameState};

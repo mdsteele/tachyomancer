@@ -162,7 +162,7 @@ impl WireModel {
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
         shader.set_hilight_color(hilight);
-        resources.textures().wire().bind();
+        shader.set_wire_texture(resources.textures().wire());
         self.varray.bind();
         let start = wire_size_start(size) + 0;
         self.varray.draw(Primitive::TriangleFan, start, 9);
@@ -177,7 +177,7 @@ impl WireModel {
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
         shader.set_hilight_color(hilight);
-        resources.textures().wire().bind();
+        shader.set_wire_texture(resources.textures().wire());
         self.varray.bind();
         let start = wire_size_start(size) + 9;
         self.varray.draw(Primitive::TriangleStrip, start, 4);
@@ -191,7 +191,7 @@ impl WireModel {
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
         shader.set_hilight_color(hilight);
-        resources.textures().wire().bind();
+        shader.set_wire_texture(resources.textures().wire());
         self.varray.bind();
         let start = wire_size_start(size) + 13;
         self.varray.draw(Primitive::TriangleStrip, start, 8);
@@ -205,7 +205,7 @@ impl WireModel {
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
         shader.set_hilight_color(hilight);
-        resources.textures().wire().bind();
+        shader.set_wire_texture(resources.textures().wire());
         self.varray.bind();
         let start = wire_size_start(size) + 21;
         self.varray.draw(Primitive::TriangleFan, start, 13);
@@ -219,7 +219,7 @@ impl WireModel {
         shader.set_mvp(matrix);
         shader.set_wire_color(wire_color(color));
         shader.set_hilight_color(hilight);
-        resources.textures().wire().bind();
+        shader.set_wire_texture(resources.textures().wire());
         self.varray.bind();
         let start = wire_size_start(size) + 34;
         self.varray.draw(Primitive::TriangleFan, start, 18);

@@ -581,11 +581,10 @@ impl BubbleView for NpcSpeechBubbleView {
         // Draw portrait:
         let portrait_left_top = Point2::new(self.rect.x + BUBBLE_INNER_MARGIN,
                                             self.rect.y + BUBBLE_INNER_MARGIN);
-        resources.textures().portraits().bind();
-        resources
-            .shaders()
-            .portrait()
-            .draw(matrix, self.portrait as u32, portrait_left_top.as_f32());
+        resources.shaders().portrait().draw(matrix,
+                                            self.portrait as u32,
+                                            portrait_left_top.as_f32(),
+                                            resources.textures().portraits());
 
         // Draw paragraph:
         let left = (self.rect.x + PORTRAIT_WIDTH +

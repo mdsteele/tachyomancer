@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::texture::Texture2D;
+use super::texture::Texture2DMultisample;
 use gl;
 use gl::types::GLuint;
 use std::marker::PhantomData;
@@ -29,7 +29,7 @@ pub struct FrameBuffer {
     id: GLuint,
     size: RectSize<usize>,
     texture_size: RectSize<usize>,
-    texture: Texture2D,
+    texture: Texture2DMultisample,
     // This PhantomData ensures that this struct is not Send or Sync, which
     // helps ensure that we keep all our OpenGL stuff on the main thread.
     phantom: PhantomData<*mut ()>,
@@ -39,9 +39,9 @@ impl FrameBuffer {
     pub fn new(width: usize, height: usize) -> FrameBuffer {
         let texture_width = width.next_power_of_two();
         let texture_height = height.next_power_of_two();
-        let texture = Texture2D::new_multisample(texture_width,
-                                                 texture_height,
-                                                 gl::RGBA8);
+        let texture = Texture2DMultisample::new(texture_width,
+                                                texture_height,
+                                                gl::RGBA8);
         let mut id: GLuint = 0;
         unsafe {
             gl::GenFramebuffers(1, &mut id);
@@ -69,7 +69,7 @@ impl FrameBuffer {
 
     pub fn texture_size(&self) -> RectSize<usize> { self.texture_size }
 
-    pub fn texture(&self) -> &Texture2D { &self.texture }
+    pub fn texture(&self) -> &Texture2DMultisample { &self.texture }
 
     pub fn bind(&self) {
         unsafe {

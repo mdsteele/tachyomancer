@@ -19,8 +19,9 @@
 
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{AsFloat, MatrixExt, RectSize};
-use tachy::gl::{FrameBuffer, Primitive, Shader, ShaderProgram, ShaderType,
-                ShaderUniform, VertexArray, VertexBuffer};
+use tachy::gl::{FrameBuffer, Primitive, Shader, ShaderProgram, ShaderSampler,
+                ShaderType, ShaderUniform, Texture2DMultisample, VertexArray,
+                VertexBuffer};
 
 //===========================================================================//
 
@@ -35,6 +36,7 @@ pub struct FrameBufferShader {
     frame_size: ShaderUniform<RectSize<f32>>,
     tex_size: ShaderUniform<RectSize<f32>>,
     grayscale: ShaderUniform<u32>,
+    texture: ShaderSampler<Texture2DMultisample>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
 }
@@ -51,6 +53,8 @@ impl FrameBufferShader {
         let frame_size = program.get_uniform("FrameSize")?;
         let tex_size = program.get_uniform("TexSize")?;
         let grayscale = program.get_uniform("Grayscale")?;
+        let texture = program.get_sampler(0, "Texture")?;
+
         let varray = VertexArray::new(1);
         let vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
         varray.bind();
@@ -62,6 +66,7 @@ impl FrameBufferShader {
             frame_size,
             tex_size,
             grayscale,
+            texture,
             varray,
             _vbuffer: vbuffer,
         };
@@ -71,7 +76,7 @@ impl FrameBufferShader {
     pub fn draw(&self, matrix: &Matrix4<f32>, fbuffer: &FrameBuffer,
                 left_top: Point2<f32>, grayscale: bool) {
         self.program.bind();
-        fbuffer.texture().bind();
+        self.texture.set(fbuffer.texture());
         self.mvp.set(&(matrix * Matrix4::trans2(left_top.x, left_top.y)));
         let size = fbuffer.size().as_f32();
         self.frame_size.set(&size);

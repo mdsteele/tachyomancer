@@ -19,6 +19,7 @@
 
 mod chip;
 mod frame;
+mod heightmap;
 mod port;
 mod portrait;
 mod scene;
@@ -27,6 +28,7 @@ mod ui;
 
 pub use self::chip::ChipShader;
 pub use self::frame::FrameBufferShader;
+pub use self::heightmap::HeightmapShader;
 pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
 pub use self::scene::SceneShader;
@@ -34,8 +36,9 @@ pub use self::solid::SolidShader;
 pub use self::ui::UiShader;
 use cgmath::Matrix4;
 use tachy::geom::{Color3, Color4, MatrixExt, Rect};
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
-                VertexArray, VertexBuffer};
+use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+                ShaderUniform, Texture1D, Texture2D, VertexArray,
+                VertexBuffer};
 
 //===========================================================================//
 
@@ -54,6 +57,7 @@ pub struct Shaders {
     board: BoardShader,
     chip: ChipShader,
     frame: FrameBufferShader,
+    heightmap: HeightmapShader,
     icon: IconShader,
     port: PortShader,
     portrait: PortraitShader,
@@ -69,6 +73,7 @@ impl Shaders {
             board: BoardShader::new()?,
             chip: ChipShader::new()?,
             frame: FrameBufferShader::new()?,
+            heightmap: HeightmapShader::new()?,
             icon: IconShader::new()?,
             port: PortShader::new()?,
             portrait: PortraitShader::new()?,
@@ -85,6 +90,8 @@ impl Shaders {
     pub fn chip(&self) -> &ChipShader { &self.chip }
 
     pub fn frame(&self) -> &FrameBufferShader { &self.frame }
+
+    pub fn heightmap(&self) -> &HeightmapShader { &self.heightmap }
 
     pub fn icon(&self) -> &IconShader { &self.icon }
 
@@ -150,6 +157,7 @@ pub struct IconShader {
     program: ShaderProgram,
     color: ShaderUniform<Color4>,
     icon_index: ShaderUniform<u32>,
+    icon_texture: ShaderSampler<Texture2D>,
     mvp: ShaderUniform<Matrix4<f32>>,
     varray: VertexArray,
     rect_vbuffer: VertexBuffer<u8>,
@@ -164,24 +172,28 @@ impl IconShader {
         let program = ShaderProgram::new(&[&vert, &frag])?;
         let color = program.get_uniform("IconColor")?;
         let icon_index = program.get_uniform("IconIndex")?;
+        let icon_texture = program.get_sampler(0, "IconTexture")?;
         let mvp = program.get_uniform("MVP")?;
         let varray = VertexArray::new(1);
         let rect_vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
-        Ok(IconShader {
-               program,
-               color,
-               icon_index,
-               mvp,
-               varray,
-               rect_vbuffer,
-           })
+        let shader = IconShader {
+            program,
+            color,
+            icon_index,
+            icon_texture,
+            mvp,
+            varray,
+            rect_vbuffer,
+        };
+        Ok(shader)
     }
 
     pub fn draw(&self, matrix: &Matrix4<f32>, rect: Rect<f32>, index: u32,
-                color: &Color4) {
+                color: &Color4, texture: &Texture2D) {
         self.program.bind();
         self.color.set(color);
         self.icon_index.set(&index);
+        self.icon_texture.set(texture);
         let mvp = matrix * Matrix4::trans2(rect.x, rect.y) *
             Matrix4::scale2(rect.width, rect.height);
         self.mvp.set(&mvp);
@@ -198,6 +210,7 @@ pub struct WireShader {
     mvp: ShaderUniform<Matrix4<f32>>,
     wire_color: ShaderUniform<Color3>,
     hilight_color: ShaderUniform<Color4>,
+    wire_texture: ShaderSampler<Texture1D>,
 }
 
 impl WireShader {
@@ -211,12 +224,16 @@ impl WireShader {
         let mvp = program.get_uniform("MVP")?;
         let wire_color = program.get_uniform("WireColor")?;
         let hilight_color = program.get_uniform("HilightColor")?;
-        Ok(WireShader {
-               program,
-               mvp,
-               wire_color,
-               hilight_color,
-           })
+        let wire_texture = program.get_sampler(0, "WireTexture")?;
+
+        let shader = WireShader {
+            program,
+            mvp,
+            wire_color,
+            hilight_color,
+            wire_texture,
+        };
+        Ok(shader)
     }
 
     pub fn bind(&self) { self.program.bind(); }
@@ -230,6 +247,10 @@ impl WireShader {
     }
 
     pub fn set_mvp(&self, mvp: &Matrix4<f32>) { self.mvp.set(mvp); }
+
+    pub fn set_wire_texture(&self, texture: &Texture1D) {
+        self.wire_texture.set(texture);
+    }
 }
 
 //===========================================================================//

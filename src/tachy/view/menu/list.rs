@@ -141,11 +141,13 @@ impl<T: Clone + Eq> ListView<T> {
                                   0.5 * (ITEM_HEIGHT - ICON_HEIGHT) as f32,
                               ICON_WIDTH as f32,
                               ICON_HEIGHT as f32);
-                resources.textures().list_icons().bind();
-                resources
-                    .shaders()
-                    .icon()
-                    .draw(matrix, icon_rect, icon as u32, &Color4::ORANGE5);
+                resources.shaders().icon().draw(matrix,
+                                                icon_rect,
+                                                icon as u32,
+                                                &Color4::ORANGE5,
+                                                resources
+                                                    .textures()
+                                                    .list_icons());
             }
             let text_offset = if opt_icon.is_some() {
                 ICON_WIDTH + ITEM_INNER_MARGIN

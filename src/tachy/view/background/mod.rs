@@ -17,30 +17,25 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod depth;
-mod frame;
-mod heightmap;
-mod index;
-mod model;
-mod program;
-mod sampler;
-mod shader;
-mod stencil;
-mod texture;
-mod uniform;
-mod vertex;
+mod odyssey;
+mod planetfall;
+mod shared;
 
-pub use self::depth::Depth;
-pub use self::frame::FrameBuffer;
-pub use self::heightmap::HeightmapModel;
-pub use self::index::IndexBuffer;
-pub use self::model::{Model, ModelBuilder};
-pub use self::program::ShaderProgram;
-pub use self::sampler::ShaderSampler;
-pub use self::shader::{Shader, ShaderType};
-pub use self::stencil::Stencil;
-pub use self::texture::{Texture1D, Texture2D, Texture2DMultisample};
-pub use self::uniform::ShaderUniform;
-pub use self::vertex::{Primitive, VertexArray, VertexBuffer};
+pub use self::odyssey::OdysseyBackgroundView;
+pub use self::planetfall::PlanetfallBackgroundView;
+pub use self::shared::BackgroundView;
+use tachy::geom::RectSize;
+use tachy::save::Chapter;
+
+//===========================================================================//
+
+pub fn background_for_chapter(chapter: Chapter, screen_size: RectSize<f32>)
+                              -> Box<BackgroundView> {
+    match chapter {
+        Chapter::Odyssey => Box::new(OdysseyBackgroundView::new(screen_size)),
+        // TODO: other chapter backgrounds
+        _ => Box::new(PlanetfallBackgroundView::new(screen_size)),
+    }
+}
 
 //===========================================================================//

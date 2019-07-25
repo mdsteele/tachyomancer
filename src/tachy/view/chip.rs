@@ -251,8 +251,10 @@ fn draw_chip_icon(resources: &Resources, matrix: &Matrix4<f32>,
         Matrix4::trans2(-0.5, -0.5);
     let icon_index = icon as u32;
     let icon_color = chip_icon_color(icon);
-    resources.textures().chip_icons().bind();
-    resources.shaders().chip().draw_basic(&matrix, icon_index, icon_color);
+    resources.shaders().chip().draw_basic(&matrix,
+                                          icon_index,
+                                          icon_color,
+                                          resources.textures().chip_icons());
 }
 
 fn draw_chip_string(resources: &Resources, matrix: &Matrix4<f32>,
@@ -281,7 +283,7 @@ fn draw_port(resources: &Resources, matrix: &Matrix4<f32>, port: &PortSpec) {
     shader.set_mvp(&mat);
     shader.set_port_flow_and_color(port.flow == PortFlow::Send,
                                    port.color == PortColor::Event);
-    resources.textures().brushed_metal().bind();
+    shader.set_texture(resources.textures().brushed_metal());
     let width_scale = match port.max_size {
         WireSize::Zero => 0.25,
         WireSize::One => 0.4,

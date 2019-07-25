@@ -40,6 +40,10 @@ const RED_PLANET_JPEG_DATA: &[u8] = include_bytes!("scene/red_planet.jpeg");
 const STARFIELD_JPEG_DATA: &[u8] = include_bytes!("scene/starfield.jpeg");
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+const VALLEY_HEIGHTMAP_PNG_DATA: &[u8] =
+    include_bytes!("scene/valley_heightmap.png");
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 const WIRE_TEXTURE1D_DATA: &[u8; 1024] = &[
     // 0-bit (6 + 4 pixels):
     0, 0, 255, 32,
@@ -309,6 +313,7 @@ pub struct Textures {
     portraits: Texture2D,
     red_planet: Texture2D,
     starfield: Texture2D,
+    valley_heightmap: Texture2D,
     white: Texture2D,
     wire: Texture1D,
 }
@@ -327,6 +332,8 @@ impl Textures {
                                               RED_PLANET_JPEG_DATA)?;
         let starfield = Texture2D::from_jpeg("starfield",
                                              STARFIELD_JPEG_DATA)?;
+        let valley_heightmap = Texture2D::from_png("valley_heightmap",
+                                                   VALLEY_HEIGHTMAP_PNG_DATA)?;
         let white = Texture2D::new_rgba(1, 1, &[255, 255, 255, 255])?;
         let wire = Texture1D::new_rgba(WIRE_TEXTURE1D_DATA)?;
         let textures = Textures {
@@ -336,6 +343,7 @@ impl Textures {
             portraits,
             red_planet,
             starfield,
+            valley_heightmap,
             white,
             wire,
         };
@@ -353,6 +361,8 @@ impl Textures {
     pub fn red_planet(&self) -> &Texture2D { &self.red_planet }
 
     pub fn starfield(&self) -> &Texture2D { &self.starfield }
+
+    pub fn valley_heightmap(&self) -> &Texture2D { &self.valley_heightmap }
 
     pub fn white(&self) -> &Texture2D { &self.white }
 

@@ -19,8 +19,9 @@
 
 use cgmath::Matrix4;
 use tachy::geom::{Color3, Rect};
-use tachy::gl::{IndexBuffer, Primitive, Shader, ShaderProgram, ShaderType,
-                ShaderUniform, VertexArray, VertexBuffer};
+use tachy::gl::{IndexBuffer, Primitive, Shader, ShaderProgram, ShaderSampler,
+                ShaderType, ShaderUniform, Texture2D, VertexArray,
+                VertexBuffer};
 
 //===========================================================================//
 
@@ -72,6 +73,7 @@ pub struct ChipShader {
     mvp: ShaderUniform<Matrix4<f32>>,
     tex_rect: ShaderUniform<Rect<f32>>,
     icon_color: ShaderUniform<Color3>,
+    icon_texture: ShaderSampler<Texture2D>,
     basic_ibuffer: IndexBuffer<u8>,
     _basic_vbuffer: VertexBuffer<f32>,
     basic_varray: VertexArray,
@@ -90,6 +92,7 @@ impl ChipShader {
         let mvp = program.get_uniform("MVP")?;
         let tex_rect = program.get_uniform("TexRect")?;
         let icon_color = program.get_uniform("IconColor")?;
+        let icon_texture = program.get_sampler(0, "IconTexture")?;
 
         let basic_ibuffer = IndexBuffer::new(BASIC_INDEX_DATA);
         let basic_vbuffer = VertexBuffer::new(BASIC_VERTEX_DATA);
@@ -103,6 +106,7 @@ impl ChipShader {
             mvp,
             tex_rect,
             icon_color,
+            icon_texture,
             basic_ibuffer,
             _basic_vbuffer: basic_vbuffer,
             basic_varray,
@@ -111,7 +115,7 @@ impl ChipShader {
     }
 
     pub fn draw_basic(&self, matrix: &Matrix4<f32>, icon_index: u32,
-                      icon_color: Color3) {
+                      icon_color: Color3, icon_texture: &Texture2D) {
         let (tex_row, tex_col) = (icon_index / 8, icon_index % 8);
         let tex_rect = Rect::new(0.125 * (tex_col as f32),
                                  0.125 * (tex_row as f32),
@@ -121,6 +125,7 @@ impl ChipShader {
         self.mvp.set(matrix);
         self.tex_rect.set(&tex_rect);
         self.icon_color.set(&icon_color);
+        self.icon_texture.set(&icon_texture);
         self.basic_varray.bind();
         self.basic_varray
             .draw_elements(Primitive::Triangles, &self.basic_ibuffer);

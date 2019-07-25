@@ -75,13 +75,7 @@ impl Texture1D {
                   });
     }
 
-    /// Sets this as the current texture.
-    pub fn bind(&self) {
-        unsafe {
-            gl::BindTexture(gl::TEXTURE_1D, self.id);
-            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
-        }
-    }
+    pub(super) fn id(&self) -> GLuint { self.id }
 }
 
 /// Deletes the underlying GL texture when dropped.
@@ -98,7 +92,6 @@ impl Drop for Texture1D {
 
 pub struct Texture2D {
     id: GLuint,
-    target: GLenum,
     // This PhantomData ensures that this struct is not Send or Sync, which
     // helps ensure that we keep all our OpenGL stuff on the main thread.
     phantom: PhantomData<*mut ()>,
@@ -237,14 +230,35 @@ impl Texture2D {
         }
         Texture2D {
             id,
-            target: gl::TEXTURE_2D,
             phantom: PhantomData,
         }
     }
 
-    pub(super) fn new_multisample(width: usize, height: usize,
-                                  internal_format: GLenum)
-                                  -> Texture2D {
+    pub(super) fn id(&self) -> GLuint { self.id }
+}
+
+/// Deletes the underlying GL texture when dropped.
+impl Drop for Texture2D {
+    fn drop(&mut self) {
+        unsafe {
+            gl::DeleteTextures(1, &self.id);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
+        }
+    }
+}
+
+//===========================================================================//
+
+pub struct Texture2DMultisample {
+    id: GLuint,
+    // This PhantomData ensures that this struct is not Send or Sync, which
+    // helps ensure that we keep all our OpenGL stuff on the main thread.
+    phantom: PhantomData<*mut ()>,
+}
+
+impl Texture2DMultisample {
+    pub(super) fn new(width: usize, height: usize, internal_format: GLenum)
+                      -> Texture2DMultisample {
         debug_assert!(width.is_power_of_two());
         debug_assert!(height.is_power_of_two());
         let mut id: GLuint = 0;
@@ -259,26 +273,17 @@ impl Texture2D {
                                       gl::FALSE);
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
-        Texture2D {
+        Texture2DMultisample {
             id,
-            target: gl::TEXTURE_2D_MULTISAMPLE,
             phantom: PhantomData,
         }
     }
 
     pub(super) fn id(&self) -> GLuint { self.id }
-
-    /// Sets this as the current texture.
-    pub fn bind(&self) {
-        unsafe {
-            gl::BindTexture(self.target, self.id);
-            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
-        }
-    }
 }
 
 /// Deletes the underlying GL texture when dropped.
-impl Drop for Texture2D {
+impl Drop for Texture2DMultisample {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteTextures(1, &self.id);

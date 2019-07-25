@@ -71,11 +71,11 @@ impl NavigationView {
                                         Point3::new(0.0, 0.0, 0.0),
                                         Vector3::unit_y());
         let light_dir_world_space = Vector3::new(-3.0, 3.0, 10.0);
-        resources.textures().white().bind();
         resources.shaders().scene().render(&self.p_matrix,
                                            &v_matrix,
                                            light_dir_world_space,
                                            &self.m_matrix,
+                                           resources.textures().white(),
                                            &self.model);
     }
 

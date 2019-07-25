@@ -19,8 +19,8 @@
 
 use cgmath::{Matrix4, Point2};
 use tachy::geom::MatrixExt;
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
-                VertexArray, VertexBuffer};
+use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -33,6 +33,7 @@ pub struct PortraitShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
     portrait_index: ShaderUniform<u32>,
+    texture: ShaderSampler<Texture2D>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
 }
@@ -49,6 +50,8 @@ impl PortraitShader {
 
         let mvp = program.get_uniform("MVP")?;
         let portrait_index = program.get_uniform("PortraitIndex")?;
+        let texture = program.get_sampler(0, "Texture")?;
+
         let varray = VertexArray::new(1);
         let vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
         varray.bind();
@@ -58,6 +61,7 @@ impl PortraitShader {
             program,
             mvp,
             portrait_index,
+            texture,
             varray,
             _vbuffer: vbuffer,
         };
@@ -65,10 +69,11 @@ impl PortraitShader {
     }
 
     pub fn draw(&self, matrix: &Matrix4<f32>, portrait_index: u32,
-                left_top: Point2<f32>) {
+                left_top: Point2<f32>, texture: &Texture2D) {
         self.program.bind();
         self.mvp.set(&(matrix * Matrix4::trans2(left_top.x, left_top.y)));
         self.portrait_index.set(&portrait_index);
+        self.texture.set(texture);
         self.varray.bind();
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
     }

@@ -18,45 +18,50 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{InnerSpace, Matrix4, Vector3};
-use tachy::gl::{Model, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture2D};
+use tachy::gl::{HeightmapModel, Shader, ShaderProgram, ShaderSampler,
+                ShaderType, ShaderUniform, Texture2D};
 
 //===========================================================================//
 
-const SCENE_VERT_CODE: &[u8] = include_bytes!("scene.vert");
-const SCENE_FRAG_CODE: &[u8] = include_bytes!("scene.frag");
+const HEIGHTMAP_VERT_CODE: &[u8] = include_bytes!("heightmap.vert");
+const HEIGHTMAP_FRAG_CODE: &[u8] = include_bytes!("heightmap.frag");
 
 //===========================================================================//
 
-pub struct SceneShader {
+pub struct HeightmapShader {
     program: ShaderProgram,
     mv: ShaderUniform<Matrix4<f32>>,
     p: ShaderUniform<Matrix4<f32>>,
+    height_map: ShaderSampler<Texture2D>,
     ambient_light: ShaderUniform<f32>,
     diffuse_light: ShaderUniform<f32>,
     light_dir_cam_space: ShaderUniform<Vector3<f32>>,
     texture: ShaderSampler<Texture2D>,
 }
 
-impl SceneShader {
-    pub(super) fn new() -> Result<SceneShader, String> {
-        let vert =
-            Shader::new(ShaderType::Vertex, "scene.vert", SCENE_VERT_CODE)?;
-        let frag =
-            Shader::new(ShaderType::Fragment, "scene.frag", SCENE_FRAG_CODE)?;
+impl HeightmapShader {
+    pub(super) fn new() -> Result<HeightmapShader, String> {
+        let vert = Shader::new(ShaderType::Vertex,
+                               "heightmap.vert",
+                               HEIGHTMAP_VERT_CODE)?;
+        let frag = Shader::new(ShaderType::Fragment,
+                               "heightmap.frag",
+                               HEIGHTMAP_FRAG_CODE)?;
         let program = ShaderProgram::new(&[&vert, &frag])?;
 
         let mv = program.get_uniform("MV")?;
         let p = program.get_uniform("P")?;
+        let height_map = program.get_sampler(1, "Heightmap")?;
         let ambient_light = program.get_uniform("AmbientLight")?;
         let diffuse_light = program.get_uniform("DiffuseLight")?;
         let light_dir_cam_space = program.get_uniform("LightDirCamSpace")?;
         let texture = program.get_sampler(0, "Texture")?;
 
-        let shader = SceneShader {
+        let shader = HeightmapShader {
             program,
             mv,
             p,
+            height_map,
             ambient_light,
             diffuse_light,
             light_dir_cam_space,
@@ -67,11 +72,12 @@ impl SceneShader {
 
     pub fn render(&self, p_matrix: &Matrix4<f32>, v_matrix: &Matrix4<f32>,
                   light_dir_world_space: Vector3<f32>,
-                  m_matrix: &Matrix4<f32>, texture: &Texture2D,
-                  model: &Model) {
+                  m_matrix: &Matrix4<f32>, height_map: &Texture2D,
+                  texture: &Texture2D, model: &HeightmapModel) {
         self.program.bind();
         self.p.set(p_matrix);
         self.mv.set(&(v_matrix * m_matrix));
+        self.height_map.set(height_map);
         // TODO: Make light levels a method parameter
         self.ambient_light.set(&0.3);
         self.diffuse_light.set(&0.7);

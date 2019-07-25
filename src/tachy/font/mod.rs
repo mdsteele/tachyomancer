@@ -23,8 +23,8 @@ pub use self::enums::{Align, Font};
 use cgmath::{Matrix4, Vector2};
 use std::rc::Rc;
 use tachy::geom::{Color4, MatrixExt};
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
-                Texture2D, VertexArray, VertexBuffer};
+use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -109,9 +109,15 @@ impl FontData {
     pub fn draw_chars(&self, matrix: &Matrix4<f32>, height: f32,
                       align: Align, start: (f32, f32), color: &Color4,
                       slant: f32, chars: &[u8]) {
-        self.texture.bind();
         let size = (self.ratio * height, height);
-        self.shader.draw(matrix, size, align, start, color, slant, chars);
+        self.shader.draw(matrix,
+                         size,
+                         align,
+                         start,
+                         color,
+                         slant,
+                         &self.texture,
+                         chars);
     }
 }
 
@@ -123,6 +129,7 @@ struct TextShader {
     mvp: ShaderUniform<Matrix4<f32>>,
     text: ShaderUniform<[u32; MAX_CHARS]>,
     slant: ShaderUniform<f32>,
+    font: ShaderSampler<Texture2D>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
 }
@@ -139,6 +146,7 @@ impl TextShader {
         let mvp = program.get_uniform("MVP")?;
         let text = program.get_uniform("Text")?;
         let slant = program.get_uniform("Slant")?;
+        let font = program.get_sampler(0, "Font")?;
 
         // Set up vertex data:
         let varray = VertexArray::new(2);
@@ -163,6 +171,7 @@ impl TextShader {
             mvp,
             text,
             slant,
+            font,
             varray,
             _vbuffer: vbuffer,
         };
@@ -171,11 +180,12 @@ impl TextShader {
 
     fn draw(&self, matrix: &Matrix4<f32>, size: (f32, f32),
             alignment: Align, start: (f32, f32), color: &Color4, slant: f32,
-            chars: &[u8]) {
+            font: &Texture2D, chars: &[u8]) {
         self.program.bind();
         self.varray.bind();
         self.color.set(color);
         self.slant.set(&slant);
+        self.font.set(font);
 
         let num_chars = chars.len();
         let mut shift = match alignment {

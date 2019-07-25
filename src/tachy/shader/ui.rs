@@ -20,8 +20,9 @@
 use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use tachy::geom::{Color4, MatrixExt, Rect};
-use tachy::gl::{IndexBuffer, Primitive, Shader, ShaderProgram, ShaderType,
-                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
+use tachy::gl::{IndexBuffer, Primitive, Shader, ShaderProgram, ShaderSampler,
+                ShaderType, ShaderUniform, Texture2D, VertexArray,
+                VertexBuffer};
 
 //===========================================================================//
 
@@ -188,6 +189,7 @@ pub struct UiShader {
     color1: ShaderUniform<Color4>,
     color2: ShaderUniform<Color4>,
     color3: ShaderUniform<Color4>,
+    sampler: ShaderSampler<Texture2D>,
     ibuffer: IndexBuffer<u8>,
     _corners_vbuffer: VertexBuffer<u8>,
     _box_vbuffer: VertexBuffer<f32>,
@@ -220,6 +222,7 @@ impl UiShader {
         let color1 = program.get_uniform("Color1")?;
         let color2 = program.get_uniform("Color2")?;
         let color3 = program.get_uniform("Color3")?;
+        let sampler = program.get_sampler(0, "Texture")?;
         let ibuffer = IndexBuffer::new(INDEX_DATA);
         let corners_vbuffer = VertexBuffer::new(CORNERS_DATA);
 
@@ -249,6 +252,7 @@ impl UiShader {
             color1,
             color2,
             color3,
+            sampler,
             ibuffer,
             _corners_vbuffer: corners_vbuffer,
             _box_vbuffer: box_vbuffer,
@@ -275,13 +279,13 @@ impl UiShader {
             color1: &Color4, color2: &Color4, color3: &Color4,
             tex_rect: &Rect<f32>) {
         self.program.bind();
-        self.texture.bind();
         self.mvp.set(matrix);
         self.screen_rect.set(screen_rect);
         self.tex_rect.set(tex_rect);
         self.color1.set(color1);
         self.color2.set(color2);
         self.color3.set(color3);
+        self.sampler.set(&self.texture);
     }
 
     pub fn draw_box2(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,

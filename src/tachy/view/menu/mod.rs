@@ -17,25 +17,26 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod background;
 mod converse;
 mod list;
 mod nav;
 mod prefs;
 mod puzzle;
 
-use self::background::BackgroundView;
 use self::converse::{ConverseAction, ConverseView};
 use self::nav::NavigationView;
 use self::prefs::{PrefsAction, PrefsView};
 use self::puzzle::{PuzzlesAction, PuzzlesView};
+use super::background::{BackgroundView, background_for_chapter};
 use super::button::RadioButton;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
 use cgmath::{self, Matrix4};
+use std::collections::HashSet;
 use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Ui,
                  Window, WindowOptions};
-use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Conversation, MenuSection, Puzzle};
+use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Chapter, Conversation, MenuSection,
+                  Puzzle};
 use tachy::state::{Cutscene, GameState};
 
 //===========================================================================//
@@ -73,7 +74,7 @@ pub enum MenuAction {
 
 pub struct MenuView {
     size: RectSize<i32>,
-    background: BackgroundView,
+    background: Box<BackgroundView>,
 
     section_buttons: Vec<RadioButton<MenuSection>>,
     navigation_view: NavigationView,
@@ -112,9 +113,21 @@ impl MenuView {
         let converse_view = ConverseView::new(section_rect, &mut ui, state);
         let puzzles_view = PuzzlesView::new(section_rect, &mut ui, state);
 
+        let unlocked_chapters: HashSet<Chapter> = Conversation::all()
+            .filter(|&conv| state.is_conversation_unlocked(conv))
+            .map(|conv| conv.chapter())
+            .collect();
+        let all_chapters = state.chapter_order();
+        let first_chapter = all_chapters[0];
+        let latest_chapter = all_chapters
+            .into_iter()
+            .filter(|chapter| unlocked_chapters.contains(chapter))
+            .last()
+            .unwrap_or(first_chapter);
+
         MenuView {
             size,
-            background: BackgroundView::new(size.as_f32()),
+            background: background_for_chapter(latest_chapter, size.as_f32()),
             section_buttons,
             navigation_view,
             converse_view,

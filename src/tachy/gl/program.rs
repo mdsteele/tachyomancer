@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::sampler::{SamplerValue, ShaderSampler};
 use super::shader::Shader;
 use super::uniform::{ShaderUniform, UniformValue};
 use gl;
@@ -53,6 +54,7 @@ impl ShaderProgram {
             if result != (gl::TRUE as GLint) {
                 return Err(program.get_info_log());
             }
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
             Ok(program)
         }
     }
@@ -61,6 +63,7 @@ impl ShaderProgram {
         let mut length: GLint = 0;
         unsafe {
             gl::GetProgramiv(self.id, gl::INFO_LOG_LENGTH, &mut length);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         if length > 0 {
             let mut buffer = vec![0u8; length as usize + 1];
@@ -69,6 +72,7 @@ impl ShaderProgram {
                                       buffer.len() as GLsizei,
                                       ptr::null_mut(),
                                       buffer.as_mut_ptr() as *mut GLchar);
+                debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
             }
             String::from_utf8_lossy(&buffer).to_string()
         } else {
@@ -80,7 +84,18 @@ impl ShaderProgram {
     pub fn bind(&self) {
         unsafe {
             gl::UseProgram(self.id);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
+    }
+
+    pub fn get_sampler<T>(&self, slot: GLuint, name: &str)
+                          -> Result<ShaderSampler<T>, String>
+    where
+        T: SamplerValue,
+    {
+        let uniform = self.get_uniform(name)?;
+        self.bind();
+        Ok(ShaderSampler::new(uniform, slot))
     }
 
     pub fn get_uniform<T>(&self, name: &str)
@@ -115,6 +130,7 @@ impl ShaderProgram {
                                  &mut array_size,
                                  &mut gl_type,
                                  ptr::null_mut());
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         if gl_type != T::gl_type() {
             return Err(format!("Uniform {:?} actually has type {}, not {}",
@@ -138,6 +154,7 @@ impl Drop for ShaderProgram {
     fn drop(&mut self) {
         unsafe {
             gl::DeleteProgram(self.id);
+            debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }

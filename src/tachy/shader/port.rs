@@ -19,8 +19,8 @@
 
 use cgmath::Matrix4;
 use tachy::geom::Color4;
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
-                VertexArray, VertexBuffer};
+use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -61,6 +61,7 @@ pub struct PortShader {
     mvp: ShaderUniform<Matrix4<f32>>,
     flow_and_color: ShaderUniform<u32>,
     width_scale: ShaderUniform<f32>,
+    texture: ShaderSampler<Texture2D>,
     color_tint: ShaderUniform<Color4>,
     port_varray: VertexArray,
     _port_vbuffer: VertexBuffer<f32>,
@@ -78,6 +79,7 @@ impl PortShader {
         let mvp = program.get_uniform("MVP")?;
         let flow_and_color = program.get_uniform("FlowAndColor")?;
         let width_scale = program.get_uniform("WidthScale")?;
+        let texture = program.get_sampler(0, "Texture")?;
         let color_tint = program.get_uniform("ColorTint")?;
 
         let port_varray = VertexArray::new(2);
@@ -92,6 +94,7 @@ impl PortShader {
             mvp,
             flow_and_color,
             width_scale,
+            texture,
             color_tint,
             port_varray,
             _port_vbuffer: port_vbuffer,
@@ -119,6 +122,10 @@ impl PortShader {
             self.color_tint.set(&BEHAVIOR_WIRE_COLOR);
         }
         self.flow_and_color.set(&value);
+    }
+
+    pub fn set_texture(&self, texture: &Texture2D) {
+        self.texture.set(texture);
     }
 
     pub fn draw(&self, width_scale: f32) {

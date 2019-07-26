@@ -34,7 +34,7 @@ pub use self::depth::Depth;
 pub use self::frame::FrameBuffer;
 pub use self::heightmap::HeightmapModel;
 pub use self::index::IndexBuffer;
-pub use self::model::{Model, ModelBuilder};
+pub use self::model::{Model, ModelBuilder, ModelBuilderContext};
 pub use self::program::ShaderProgram;
 pub use self::sampler::ShaderSampler;
 pub use self::shader::{Shader, ShaderType};

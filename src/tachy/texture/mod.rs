@@ -35,6 +35,8 @@ const LIST_ICONS_PNG_DATA: &[u8] =
 const PORTRAITS_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/texture/portraits.png"));
 
+const RED_DESERT_JPEG_DATA: &[u8] = include_bytes!("scene/red_desert.jpeg");
+
 const RED_PLANET_JPEG_DATA: &[u8] = include_bytes!("scene/red_planet.jpeg");
 
 const STARFIELD_JPEG_DATA: &[u8] = include_bytes!("scene/starfield.jpeg");
@@ -311,6 +313,7 @@ pub struct Textures {
     chip_icons: Texture2D,
     list_icons: Texture2D,
     portraits: Texture2D,
+    red_desert: Texture2D,
     red_planet: Texture2D,
     starfield: Texture2D,
     valley_heightmap: Texture2D,
@@ -328,6 +331,8 @@ impl Textures {
                                              LIST_ICONS_PNG_DATA)?;
         let portraits = Texture2D::from_png("texture/portraits",
                                             PORTRAITS_PNG_DATA)?;
+        let red_desert = Texture2D::from_jpeg("red_desert",
+                                              RED_DESERT_JPEG_DATA)?;
         let red_planet = Texture2D::from_jpeg("red_planet",
                                               RED_PLANET_JPEG_DATA)?;
         let starfield = Texture2D::from_jpeg("starfield",
@@ -341,6 +346,7 @@ impl Textures {
             chip_icons,
             list_icons,
             portraits,
+            red_desert,
             red_planet,
             starfield,
             valley_heightmap,
@@ -357,6 +363,8 @@ impl Textures {
     pub fn list_icons(&self) -> &Texture2D { &self.list_icons }
 
     pub fn portraits(&self) -> &Texture2D { &self.portraits }
+
+    pub fn red_desert(&self) -> &Texture2D { &self.red_desert }
 
     pub fn red_planet(&self) -> &Texture2D { &self.red_planet }
 

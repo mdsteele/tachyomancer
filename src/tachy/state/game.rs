@@ -42,7 +42,7 @@ pub struct GameState {
 impl GameState {
     pub fn new(savedir: SaveDir) -> Result<GameState, String> {
         let opt_profile = savedir.load_current_profile_if_any()?;
-        let menu_section = MenuSection::Puzzles;
+        let menu_section = MenuSection::Navigation;
         let mut circuit_name = String::new();
         if let Some(ref profile) = opt_profile {
             let puzzle = profile.current_puzzle();

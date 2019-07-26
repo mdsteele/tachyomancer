@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::{InnerSpace, Matrix4, Vector3};
+use tachy::geom::Rect;
 use tachy::gl::{HeightmapModel, Shader, ShaderProgram, ShaderSampler,
                 ShaderType, ShaderUniform, Texture2D};
 
@@ -32,11 +33,13 @@ pub struct HeightmapShader {
     program: ShaderProgram,
     mv: ShaderUniform<Matrix4<f32>>,
     p: ShaderUniform<Matrix4<f32>>,
-    height_map: ShaderSampler<Texture2D>,
     ambient_light: ShaderUniform<f32>,
     diffuse_light: ShaderUniform<f32>,
     light_dir_cam_space: ShaderUniform<Vector3<f32>>,
+    heightmap: ShaderSampler<Texture2D>,
+    heightmap_rect: ShaderUniform<Rect<f32>>,
     texture: ShaderSampler<Texture2D>,
+    texture_rect: ShaderUniform<Rect<f32>>,
 }
 
 impl HeightmapShader {
@@ -51,7 +54,9 @@ impl HeightmapShader {
 
         let mv = program.get_uniform("MV")?;
         let p = program.get_uniform("P")?;
-        let height_map = program.get_sampler(1, "Heightmap")?;
+        let heightmap = program.get_sampler(1, "Heightmap")?;
+        let heightmap_rect = program.get_uniform("HeightmapRect")?;
+        let texture_rect = program.get_uniform("TextureRect")?;
         let ambient_light = program.get_uniform("AmbientLight")?;
         let diffuse_light = program.get_uniform("DiffuseLight")?;
         let light_dir_cam_space = program.get_uniform("LightDirCamSpace")?;
@@ -61,32 +66,38 @@ impl HeightmapShader {
             program,
             mv,
             p,
-            height_map,
             ambient_light,
             diffuse_light,
             light_dir_cam_space,
+            heightmap,
+            heightmap_rect,
             texture,
+            texture_rect,
         };
         Ok(shader)
     }
 
     pub fn render(&self, p_matrix: &Matrix4<f32>, v_matrix: &Matrix4<f32>,
                   light_dir_world_space: Vector3<f32>,
-                  m_matrix: &Matrix4<f32>, height_map: &Texture2D,
-                  texture: &Texture2D, model: &HeightmapModel) {
-        self.program.bind();
-        self.p.set(p_matrix);
-        self.mv.set(&(v_matrix * m_matrix));
-        self.height_map.set(height_map);
-        // TODO: Make light levels a method parameter
-        self.ambient_light.set(&0.3);
-        self.diffuse_light.set(&0.7);
+                  m_matrix: &Matrix4<f32>, heightmap: &Texture2D,
+                  heightmap_rect: Rect<f32>, texture: &Texture2D,
+                  texture_rect: Rect<f32>, model: &HeightmapModel) {
         let light_dir_cam_space = (v_matrix *
                                        light_dir_world_space.extend(0.0))
             .truncate()
             .normalize();
+
+        self.program.bind();
+        self.mv.set(&(v_matrix * m_matrix));
+        self.p.set(p_matrix);
+        self.ambient_light.set(&0.3);
+        self.diffuse_light.set(&0.7);
         self.light_dir_cam_space.set(&light_dir_cam_space);
+        self.heightmap.set(heightmap);
+        self.heightmap_rect.set(&heightmap_rect);
         self.texture.set(texture);
+        self.texture_rect.set(&texture_rect);
+        // TODO: Make light levels a method parameter
         model.draw();
     }
 }

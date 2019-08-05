@@ -449,7 +449,9 @@ impl WireDrag {
                 }
             }
             (false, None, Some(Zone::Center(coords))) => {
-                self.try_toggle_cross(coords, grid);
+                if WireDrag::try_toggle_cross(coords, grid) {
+                    self.changed = true;
+                }
             }
             (false, None, Some(Zone::East(coords))) => {
                 self.try_remove_stub(coords, Direction::East, grid);
@@ -460,6 +462,25 @@ impl WireDrag {
             (_, _, _) => {}
         }
         grid.commit_provisional_changes();
+    }
+
+    pub fn try_toggle_cross(coords: Coords, grid: &mut EditGrid) -> bool {
+        let (old_shape, new_shape) =
+            if grid.wire_shape_at(coords, Direction::East) ==
+                Some(WireShape::Cross)
+            {
+                (WireShape::Cross, WireShape::Straight)
+            } else {
+                (WireShape::Straight, WireShape::Cross)
+            };
+        let mut old = HashMap::<(Coords, Direction), WireShape>::new();
+        let mut new = HashMap::<(Coords, Direction), WireShape>::new();
+        for dir in Direction::all() {
+            old.insert((coords, dir), old_shape);
+            new.insert((coords, dir), new_shape);
+        }
+        let changes = vec![GridChange::ReplaceWires(old, new)];
+        grid.try_mutate_provisionally(changes)
     }
 
     fn try_start_stub(&mut self, coords: Coords, dir: Direction,
@@ -475,13 +496,6 @@ impl WireDrag {
     fn try_remove_stub(&mut self, coords: Coords, dir: Direction,
                        grid: &mut EditGrid) {
         let changes = vec![GridChange::remove_stub_wire(coords, dir)];
-        if grid.try_mutate_provisionally(changes) {
-            self.changed = true;
-        }
-    }
-
-    fn try_toggle_cross(&mut self, coords: Coords, grid: &mut EditGrid) {
-        let changes = vec![GridChange::ToggleCrossWire(coords)];
         if grid.try_mutate_provisionally(changes) {
             self.changed = true;
         }

@@ -50,8 +50,8 @@ pub enum GridChange {
     /// Toggles whether a wire is connected to the split in the middle of a
     /// cell.
     ToggleSplitWire(Coords, Direction),
-    /// Toggles a cell between a four-way split and an overpass/underpass.
-    ToggleCrossWire(Coords),
+    /// Removes the first set of wire fragments and adds the second set of wire
+    /// fragments.
     ReplaceWires(HashMap<(Coords, Direction), WireShape>,
                  HashMap<(Coords, Direction), WireShape>),
     /// Places a chip onto the board.
@@ -636,30 +636,6 @@ impl EditGrid {
                                       WireShape::Straight);
                     }
                     (_, _, _) => return false,
-                }
-            }
-            GridChange::ToggleCrossWire(coords) => {
-                if !self.bounds.contains_point(coords) ||
-                    self.chips.contains_key(&coords)
-                {
-                    return false;
-                }
-                match self.wire_shape_at(coords, Direction::East) {
-                    Some(WireShape::Cross) => {
-                        for dir in Direction::all() {
-                            self.set_frag(coords, dir, WireShape::Straight);
-                        }
-                    }
-                    Some(WireShape::Straight) => {
-                        if self.wire_shape_at(coords, Direction::South) ==
-                            Some(WireShape::Straight)
-                        {
-                            for dir in Direction::all() {
-                                self.set_frag(coords, dir, WireShape::Cross);
-                            }
-                        }
-                    }
-                    _ => return false,
                 }
             }
             GridChange::ReplaceWires(ref old_wires, ref new_wires) => {

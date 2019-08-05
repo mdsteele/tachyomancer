@@ -702,8 +702,7 @@ impl EditGridView {
                 {
                     return Some(EditGridAction::EditConst(coords, value));
                 }
-                let change = GridChange::ToggleCrossWire(coords);
-                if grid.try_mutate(vec![change]) {
+                if WireDrag::try_toggle_cross(coords, grid) {
                     // TODO: Play sound for toggling cross wire.
                     ui.request_redraw();
                 }

@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod change;
 mod check;
 mod chip;
 mod converse;
@@ -28,11 +29,12 @@ mod port;
 mod puzzle;
 mod size;
 
+pub use self::change::GridChange;
 pub use self::check::WireColor;
 pub use self::chip::ChipExt;
 pub use self::converse::{ConversationBubble, ConversationExt, Portrait};
 pub use self::cutscene::{Cutscene, CutsceneScript, Theater};
-pub use self::edit::{ChipsIter, EditGrid, GridChange, WireFragmentsIter};
+pub use self::edit::{ChipsIter, EditGrid, WireFragmentsIter};
 pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore,
                      FabricationEval};
 pub use self::game::GameState;

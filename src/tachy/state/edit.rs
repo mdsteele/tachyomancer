@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::change::GridChange;
 use super::check::{self, WireColor, WireError, WireInfo};
 use super::chip::{ChipExt, new_chip_evals};
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
@@ -40,58 +41,6 @@ enum ChipCell {
     /// For chips larger than 1x1, cells other than the top-left corner use
     /// Ref with the delta to the top-left corner.
     Ref(CoordsDelta),
-}
-
-//===========================================================================//
-
-// TODO: Get rid of most of the wire changes in favor of ReplaceWires.
-#[derive(Debug)]
-pub enum GridChange {
-    /// Toggles whether a wire is connected to the split in the middle of a
-    /// cell.
-    ToggleSplitWire(Coords, Direction),
-    /// Removes the first set of wire fragments and adds the second set of wire
-    /// fragments.
-    ReplaceWires(HashMap<(Coords, Direction), WireShape>,
-                 HashMap<(Coords, Direction), WireShape>),
-    /// Places a chip onto the board.
-    AddChip(Coords, ChipType, Orientation),
-    /// Removes a chip from the board.
-    RemoveChip(Coords, ChipType, Orientation),
-    /// Change the bounds rect from the first rect to the second.
-    SetBounds(CoordsRect, CoordsRect),
-}
-
-impl GridChange {
-    pub fn add_stub_wire(coords: Coords, dir: Direction) -> GridChange {
-        let mut new_wires = HashMap::new();
-        new_wires.insert((coords, dir), WireShape::Stub);
-        new_wires.insert((coords + dir, -dir), WireShape::Stub);
-        GridChange::ReplaceWires(HashMap::new(), new_wires)
-    }
-
-    pub fn remove_stub_wire(coords: Coords, dir: Direction) -> GridChange {
-        let mut old_wires = HashMap::new();
-        old_wires.insert((coords, dir), WireShape::Stub);
-        old_wires.insert((coords + dir, -dir), WireShape::Stub);
-        GridChange::ReplaceWires(old_wires, HashMap::new())
-    }
-
-    fn invert_group(changes: Vec<GridChange>) -> Vec<GridChange> {
-        changes.into_iter().rev().map(GridChange::invert).collect()
-    }
-
-    fn invert(self) -> GridChange {
-        match self {
-            GridChange::ReplaceWires(old, new) => {
-                GridChange::ReplaceWires(new, old)
-            }
-            GridChange::AddChip(c, t, o) => GridChange::RemoveChip(c, t, o),
-            GridChange::RemoveChip(c, t, o) => GridChange::AddChip(c, t, o),
-            GridChange::SetBounds(old, new) => GridChange::SetBounds(new, old),
-            other => other,
-        }
-    }
 }
 
 //===========================================================================//
@@ -483,7 +432,10 @@ impl EditGrid {
     pub fn try_mutate(&mut self, changes: Vec<GridChange>) -> bool {
         self.commit_provisional_changes();
         if let Some(changes) = self.try_mutate_internal(changes) {
-            self.undo_stack.push(GridChange::invert_group(changes));
+            let changes = GridChange::invert_and_collapse_group(changes);
+            if !changes.is_empty() {
+                self.undo_stack.push(changes);
+            }
             true
         } else {
             false
@@ -505,14 +457,16 @@ impl EditGrid {
         !self.provisional_changes.is_empty()
     }
 
-    pub fn commit_provisional_changes(&mut self) -> bool {
+    pub fn commit_provisional_changes(&mut self) {
         if self.provisional_changes.is_empty() {
-            return false;
+            return;
         }
         debug_assert!(self.redo_stack.is_empty());
         let changes = mem::replace(&mut self.provisional_changes, Vec::new());
-        self.undo_stack.push(GridChange::invert_group(changes));
-        return true;
+        let changes = GridChange::invert_and_collapse_group(changes);
+        if !changes.is_empty() {
+            self.undo_stack.push(changes);
+        }
     }
 
     pub fn roll_back_provisional_changes(&mut self) -> bool {

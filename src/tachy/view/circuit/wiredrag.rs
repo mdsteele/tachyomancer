@@ -631,17 +631,85 @@ impl WireDrag {
     fn try_split(&mut self, coords: Coords, dir: Direction,
                  grid: &mut EditGrid)
                  -> bool {
-        let mut changes = Vec::<GridChange>::new();
-        let shape = grid.wire_shape_at(coords, dir);
-        if shape.is_none() {
-            changes.push(GridChange::add_stub_wire(coords, dir));
+        let mut old = HashMap::<(Coords, Direction), WireShape>::new();
+        let mut new = HashMap::<(Coords, Direction), WireShape>::new();
+        let side = dir.rotate_cw();
+        match (grid.wire_shape_at(coords, dir),
+                 grid.wire_shape_at(coords, -dir),
+                 grid.wire_shape_at(coords, side)) {
+            (None, Some(WireShape::SplitTee), _) |
+            (Some(WireShape::Stub), Some(WireShape::SplitTee), _) => {
+                old.insert((coords, -dir), WireShape::SplitTee);
+                old.insert((coords, side), WireShape::SplitLeft);
+                old.insert((coords, -side), WireShape::SplitRight);
+                for dir2 in Direction::all() {
+                    new.insert((coords, dir2), WireShape::Cross);
+                }
+                stub(coords + dir, -dir, grid, &mut old, &mut new);
+            }
+            (Some(WireShape::Cross), _, _) => {
+                for dir2 in Direction::all() {
+                    old.insert((coords, dir2), WireShape::Cross);
+                }
+                new.insert((coords, -dir), WireShape::SplitTee);
+                new.insert((coords, side), WireShape::SplitLeft);
+                new.insert((coords, -side), WireShape::SplitRight);
+                stub(coords, dir, grid, &mut old, &mut new);
+            }
+            (None, Some(WireShape::TurnLeft), _) |
+            (Some(WireShape::Stub), Some(WireShape::TurnLeft), _) => {
+                old.insert((coords, -dir), WireShape::TurnLeft);
+                old.insert((coords, -side), WireShape::TurnRight);
+                new.insert((coords, dir), WireShape::SplitRight);
+                new.insert((coords, -dir), WireShape::SplitLeft);
+                new.insert((coords, -side), WireShape::SplitTee);
+                stub(coords + dir, -dir, grid, &mut old, &mut new);
+            }
+            (Some(WireShape::SplitRight), _, _) => {
+                old.insert((coords, dir), WireShape::SplitRight);
+                old.insert((coords, -dir), WireShape::SplitLeft);
+                old.insert((coords, -side), WireShape::SplitTee);
+                new.insert((coords, -dir), WireShape::TurnLeft);
+                new.insert((coords, -side), WireShape::TurnRight);
+                stub(coords, dir, grid, &mut old, &mut new);
+            }
+            (None, Some(WireShape::TurnRight), _) |
+            (Some(WireShape::Stub), Some(WireShape::TurnRight), _) => {
+                old.insert((coords, -dir), WireShape::TurnRight);
+                old.insert((coords, side), WireShape::TurnLeft);
+                new.insert((coords, dir), WireShape::SplitLeft);
+                new.insert((coords, -dir), WireShape::SplitRight);
+                new.insert((coords, side), WireShape::SplitTee);
+                stub(coords + dir, -dir, grid, &mut old, &mut new);
+            }
+            (Some(WireShape::SplitLeft), _, _) => {
+                old.insert((coords, dir), WireShape::SplitLeft);
+                old.insert((coords, -dir), WireShape::SplitRight);
+                old.insert((coords, side), WireShape::SplitTee);
+                new.insert((coords, -dir), WireShape::TurnRight);
+                new.insert((coords, side), WireShape::TurnLeft);
+                stub(coords, dir, grid, &mut old, &mut new);
+            }
+            (None, _, Some(WireShape::Straight)) |
+            (Some(WireShape::Stub), _, Some(WireShape::Straight)) => {
+                old.insert((coords, side), WireShape::Straight);
+                old.insert((coords, -side), WireShape::Straight);
+                new.insert((coords, dir), WireShape::SplitTee);
+                new.insert((coords, side), WireShape::SplitRight);
+                new.insert((coords, -side), WireShape::SplitLeft);
+                stub(coords + dir, -dir, grid, &mut old, &mut new);
+            }
+            (Some(WireShape::SplitTee), _, _) => {
+                old.insert((coords, dir), WireShape::SplitTee);
+                old.insert((coords, side), WireShape::SplitRight);
+                old.insert((coords, -side), WireShape::SplitLeft);
+                new.insert((coords, side), WireShape::Straight);
+                new.insert((coords, -side), WireShape::Straight);
+                stub(coords, dir, grid, &mut old, &mut new);
+            }
+            (_, _, _) => return false,
         }
-        changes.push(GridChange::ToggleSplitWire(coords, dir));
-        if shape.is_some() && shape != Some(WireShape::Stub) &&
-            grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub)
-        {
-            changes.push(GridChange::remove_stub_wire(coords, dir));
-        }
+        let changes = vec![GridChange::ReplaceWires(old, new)];
         let success = grid.try_mutate_provisionally(changes);
         if !success {
             debug_log!("try_split failed: coords={:?}, dir={:?}", coords, dir);

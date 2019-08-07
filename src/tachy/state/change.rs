@@ -23,12 +23,8 @@ use tachy::save::{ChipType, WireShape};
 
 //===========================================================================//
 
-// TODO: Get rid of ToggleSplitWire in favor of ReplaceWires.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GridChange {
-    /// Toggles whether a wire is connected to the split in the middle of a
-    /// cell.
-    ToggleSplitWire(Coords, Direction),
     /// Removes the first set of wire fragments and adds the second set of wire
     /// fragments.
     ReplaceWires(HashMap<(Coords, Direction), WireShape>,
@@ -134,7 +130,6 @@ impl GridChange {
             GridChange::AddChip(c, t, o) => GridChange::RemoveChip(c, t, o),
             GridChange::RemoveChip(c, t, o) => GridChange::AddChip(c, t, o),
             GridChange::SetBounds(old, new) => GridChange::SetBounds(new, old),
-            other => other,
         }
     }
 }

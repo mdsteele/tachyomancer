@@ -145,7 +145,7 @@ impl MenuView {
         self.background.draw(resources);
         let size = self.size.as_f32();
         let projection =
-            cgmath::ortho(0.0, size.width, size.height, 0.0, -1.0, 1.0);
+            cgmath::ortho(0.0, size.width, size.height, 0.0, -10.0, 10.0);
         if self.left_section == self.right_section {
             self.draw_section(resources,
                               &projection,

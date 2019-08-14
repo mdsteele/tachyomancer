@@ -139,61 +139,32 @@ impl SelectionDrag {
     }
 
     pub fn draw_selection(&self, resources: &Resources,
-                          matrix: &Matrix4<f32>, wire_model: &WireModel,
-                          grid_cell_size: f32) {
+                          matrix: &Matrix4<f32>, grid_cell_size: f32) {
         let offset = self.top_left_grid_pt() - Point2::new(0.0, 0.0);
 
-        // Draw wires:
         {
-            let matrix = matrix * Matrix4::trans2v(offset * grid_cell_size);
+            let grid_matrix = matrix * Matrix4::from_scale(grid_cell_size) *
+                Matrix4::trans2v(offset);
+
+            // Draw wires:
             let color = WireColor::Unknown;
             let size = WireSize::One;
             let hilight = &Color4::TRANSPARENT;
             for (&(delta, dir), &shape) in self.selection.wires.iter() {
-                match (shape, dir) {
-                    (WireShape::Stub, _) => {
-                        let mat =
-                            delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model
-                            .draw_stub(resources, &mat, color, size, hilight);
-                    }
-                    (WireShape::Straight, Direction::East) |
-                    (WireShape::Straight, Direction::North) => {
-                        let mat =
-                            delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model.draw_straight(resources,
-                                                 &mat,
-                                                 color,
-                                                 size,
-                                                 hilight);
-                    }
-                    (WireShape::TurnLeft, _) => {
-                        let mat =
-                            delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model
-                            .draw_turn(resources, &mat, color, size, hilight);
-                    }
-                    (WireShape::SplitTee, _) => {
-                        let mat =
-                            delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model
-                            .draw_tee(resources, &mat, color, size, hilight);
-                    }
-                    (WireShape::Cross, Direction::East) => {
-                        let mat =
-                            delta_matrix(&matrix, delta, dir, grid_cell_size);
-                        wire_model
-                            .draw_cross(resources, &mat, color, size, hilight);
-                    }
-                    _ => {}
-                }
+                let coords = Coords::new(0, 0) + delta;
+                WireModel::draw_fragment(resources,
+                                         &grid_matrix,
+                                         coords,
+                                         dir,
+                                         shape,
+                                         color,
+                                         size,
+                                         hilight);
             }
 
             // Draw chips:
             for (&delta, &(ctype, orient)) in self.selection.chips.iter() {
-                let mat = matrix *
-                    Matrix4::trans2v(delta.as_f32() * grid_cell_size) *
-                    Matrix4::from_scale(grid_cell_size);
+                let mat = grid_matrix * Matrix4::trans2v(delta.as_f32());
                 ChipModel::draw_chip(resources, &mat, ctype, orient, None);
             }
         }
@@ -236,16 +207,6 @@ impl SelectionDrag {
     }
 }
 
-fn delta_matrix(matrix: &Matrix4<f32>, delta: CoordsDelta, dir: Direction,
-                grid_cell_size: f32)
-                -> Matrix4<f32> {
-    let cx = ((delta.x as f32) + 0.5) * grid_cell_size;
-    let cy = ((delta.y as f32) + 0.5) * grid_cell_size;
-    matrix * Matrix4::trans2(cx, cy) *
-        Matrix4::from_angle_z(dir.angle_from_east()) *
-        Matrix4::from_scale(0.5 * grid_cell_size)
-}
-
 //===========================================================================//
 
 pub struct Selection {
@@ -280,8 +241,7 @@ impl Selection {
         if let Some(text) = clipboard.get() {
             match CircuitData::deserialize_from_string(&text) {
                 Ok(data) => {
-                    let (left, top, width, height) = data.bounds;
-                    let origin = Coords::new(left, top);
+                    let origin = data.bounds.top_left();
                     let chips = data.chips
                         .iter()
                         .filter(|&(_, ctype, _)| allowed.contains(ctype))
@@ -296,7 +256,7 @@ impl Selection {
                              })
                         .collect();
                     let selection = Selection {
-                        size: CoordsSize::new(width, height),
+                        size: data.bounds.size(),
                         chips,
                         wires,
                     };

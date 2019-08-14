@@ -25,6 +25,7 @@ mod portrait;
 mod scene;
 mod solid;
 mod ui;
+mod wire;
 
 pub use self::chip::ChipShader;
 pub use self::frame::FrameBufferShader;
@@ -34,11 +35,11 @@ pub use self::portrait::PortraitShader;
 pub use self::scene::SceneShader;
 pub use self::solid::SolidShader;
 pub use self::ui::UiShader;
+pub use self::wire::WireShader;
 use cgmath::Matrix4;
-use tachy::geom::{Color3, Color4, MatrixExt, Rect};
+use tachy::geom::{Color4, MatrixExt, Rect};
 use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture1D, Texture2D, VertexArray,
-                VertexBuffer};
+                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -47,9 +48,6 @@ const BOARD_FRAG_CODE: &[u8] = include_bytes!("board.frag");
 
 const ICON_VERT_CODE: &[u8] = include_bytes!("icon.vert");
 const ICON_FRAG_CODE: &[u8] = include_bytes!("icon.frag");
-
-const WIRE_VERT_CODE: &[u8] = include_bytes!("wire.vert");
-const WIRE_FRAG_CODE: &[u8] = include_bytes!("wire.frag");
 
 //===========================================================================//
 
@@ -200,56 +198,6 @@ impl IconShader {
         self.varray.bind();
         self.rect_vbuffer.attribi(0, 2, 0, 0);
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
-    }
-}
-
-//===========================================================================//
-
-pub struct WireShader {
-    program: ShaderProgram,
-    mvp: ShaderUniform<Matrix4<f32>>,
-    wire_color: ShaderUniform<Color3>,
-    hilight_color: ShaderUniform<Color4>,
-    wire_texture: ShaderSampler<Texture1D>,
-}
-
-impl WireShader {
-    fn new() -> Result<WireShader, String> {
-        let vert =
-            Shader::new(ShaderType::Vertex, "wire.vert", WIRE_VERT_CODE)?;
-        let frag =
-            Shader::new(ShaderType::Fragment, "wire.frag", WIRE_FRAG_CODE)?;
-        let program = ShaderProgram::new(&[&vert, &frag])?;
-
-        let mvp = program.get_uniform("MVP")?;
-        let wire_color = program.get_uniform("WireColor")?;
-        let hilight_color = program.get_uniform("HilightColor")?;
-        let wire_texture = program.get_sampler(0, "WireTexture")?;
-
-        let shader = WireShader {
-            program,
-            mvp,
-            wire_color,
-            hilight_color,
-            wire_texture,
-        };
-        Ok(shader)
-    }
-
-    pub fn bind(&self) { self.program.bind(); }
-
-    pub fn set_wire_color(&self, color: &Color3) {
-        self.wire_color.set(color);
-    }
-
-    pub fn set_hilight_color(&self, color: &Color4) {
-        self.hilight_color.set(color);
-    }
-
-    pub fn set_mvp(&self, mvp: &Matrix4<f32>) { self.mvp.set(mvp); }
-
-    pub fn set_wire_texture(&self, texture: &Texture1D) {
-        self.wire_texture.set(texture);
     }
 }
 

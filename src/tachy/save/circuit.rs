@@ -24,14 +24,14 @@ use std::collections::{BTreeMap, HashMap, hash_map};
 use std::fs;
 use std::i32;
 use std::path::Path;
-use tachy::geom::{Coords, Direction, Orientation};
+use tachy::geom::{Coords, CoordsRect, Direction, Orientation};
 use toml;
 
 //===========================================================================//
 
 #[derive(Deserialize, Serialize)]
 pub struct CircuitData {
-    pub bounds: (i32, i32, i32, i32),
+    pub bounds: CoordsRect,
     pub chips: CircuitChipData,
     pub wires: CircuitWireData,
 }
@@ -39,7 +39,7 @@ pub struct CircuitData {
 impl CircuitData {
     pub fn new(x: i32, y: i32, width: i32, height: i32) -> CircuitData {
         CircuitData {
-            bounds: (x, y, width, height),
+            bounds: CoordsRect::new(x, y, width, height),
             chips: CircuitChipData(HashMap::new()),
             wires: CircuitWireData(HashMap::new()),
         }
@@ -320,7 +320,7 @@ fn key_string_location(key: &str) -> Option<(Coords, Direction)> {
 #[cfg(test)]
 mod tests {
     use super::{ChipType, CircuitData, WireShape};
-    use tachy::geom::{Coords, Direction, Orientation};
+    use tachy::geom::{Coords, Direction, Orientation, Rect};
     use toml;
 
     #[test]
@@ -356,7 +356,7 @@ mod tests {
                     m1p2e = \"Stub\"\n\
                     p0p2w = \"Stub\"\n";
         let data: CircuitData = toml::from_slice(toml.as_bytes()).unwrap();
-        assert_eq!(data.bounds, (-2, -1, 8, 5));
+        assert_eq!(data.bounds, Rect::new(-2, -1, 8, 5));
         assert_eq!(
             data.chips.0,
             vec![

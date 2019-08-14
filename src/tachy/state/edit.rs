@@ -92,10 +92,7 @@ impl EditGrid {
         let mut grid = EditGrid {
             puzzle,
             allowed_chips: puzzle.allowed_chips(profile),
-            bounds: Rect::new(data.bounds.0,
-                              data.bounds.1,
-                              data.bounds.2,
-                              data.bounds.3),
+            bounds: data.bounds,
             interfaces: puzzle.interfaces(),
             fragments: HashMap::new(),
             chips: HashMap::new(),

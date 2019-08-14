@@ -224,6 +224,30 @@ impl<T: BaseNum> ops::Sub<Vector2<T>> for Rect<T> {
     }
 }
 
+impl<'d, T: serde::Deserialize<'d>> serde::Deserialize<'d> for Rect<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'d>,
+    {
+        let (x, y, width, height) = <(T, T, T, T)>::deserialize(deserializer)?;
+        Ok(Rect {
+               x,
+               y,
+               width,
+               height,
+           })
+    }
+}
+
+impl<T: serde::Serialize> serde::Serialize for Rect<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        (&self.x, &self.y, &self.width, &self.height).serialize(serializer)
+    }
+}
+
 //===========================================================================//
 
 pub struct RectPointsIter<T> {
@@ -287,6 +311,7 @@ mod tests {
     use super::{Rect, RectSize};
     use super::super::cast::AsFloat;
     use cgmath::Point2;
+    use std::collections::HashMap;
 
     #[test]
     fn rect_size_as_float() {
@@ -384,6 +409,23 @@ mod tests {
         let mut iter = rect.into_iter();
         assert_eq!(iter.len(), 0);
         assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn serialize_rect() {
+        let mut map = HashMap::<String, Rect<i32>>::new();
+        map.insert("foo".to_string(), Rect::new(-2, -1, 8, 5));
+        let bytes = toml::to_vec(&map).unwrap();
+        assert_eq!(String::from_utf8(bytes).unwrap().as_str(),
+                   "foo = [-2, -1, 8, 5]\n");
+    }
+
+    #[test]
+    fn deserialize_rect() {
+        let toml = "foo = [-2, -1, 8, 5]\n";
+        let map: HashMap<String, Rect<i32>> =
+            toml::from_slice(toml.as_bytes()).unwrap();
+        assert_eq!(map.get("foo"), Some(&Rect::new(-2, -1, 8, 5)));
     }
 }
 

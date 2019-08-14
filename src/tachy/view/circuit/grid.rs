@@ -34,7 +34,7 @@ use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsRect,
                   Direction, MatrixExt, Orientation, Rect, RectSize};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, NextCursor,
                  Resources, Sound, Ui};
-use tachy::save::{ChipType, Hotkey, Prefs, WireShape};
+use tachy::save::{ChipType, Hotkey, Prefs};
 use tachy::state::{EditGrid, GridChange, WireColor};
 
 //===========================================================================//
@@ -67,7 +67,6 @@ pub struct EditGridView {
     size: RectSize<f32>,
     scroll: Vector2<i32>,
     zoom: f32,
-    wire_model: WireModel,
     interaction: Interaction,
     tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
     hover_wire: Option<usize>,
@@ -82,7 +81,6 @@ impl EditGridView {
             size: window_size.as_f32(),
             scroll: Vector2::new(0, 0),
             zoom: ZOOM_DEFAULT,
-            wire_model: WireModel::new(),
             interaction: Interaction::Nothing,
             tutorial_bubbles,
             hover_wire: None,
@@ -210,6 +208,7 @@ impl EditGridView {
 
         // Draw wires:
         let matrix = self.vp_matrix();
+        let grid_matrix = matrix * Matrix4::from_scale(GRID_CELL_SIZE as f32);
         for (coords, dir, shape, size, color, has_error) in
             grid.wire_fragments()
         {
@@ -229,38 +228,14 @@ impl EditGridView {
             } else {
                 color
             };
-            match (shape, dir) {
-                (WireShape::Stub, _) => {
-                    let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model
-                        .draw_stub(resources, &matrix, color, size, hilight);
-                }
-                (WireShape::Straight, Direction::East) |
-                (WireShape::Straight, Direction::North) => {
-                    let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model.draw_straight(resources,
-                                                  &matrix,
-                                                  color,
-                                                  size,
-                                                  hilight);
-                }
-                (WireShape::TurnLeft, _) => {
-                    let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model
-                        .draw_turn(resources, &matrix, color, size, hilight);
-                }
-                (WireShape::SplitTee, _) => {
-                    let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model
-                        .draw_tee(resources, &matrix, color, size, hilight);
-                }
-                (WireShape::Cross, Direction::East) => {
-                    let matrix = coords_matrix(&matrix, coords, dir);
-                    self.wire_model
-                        .draw_cross(resources, &matrix, color, size, hilight);
-                }
-                _ => {}
-            }
+            WireModel::draw_fragment(resources,
+                                     &grid_matrix,
+                                     coords,
+                                     dir,
+                                     shape,
+                                     color,
+                                     size,
+                                     hilight);
         }
 
         self.draw_interfaces(resources, &matrix, grid);
@@ -301,7 +276,6 @@ impl EditGridView {
             Interaction::DraggingSelection(ref drag) => {
                 drag.draw_selection(resources,
                                     &self.unzoomed_matrix(),
-                                    &self.wire_model,
                                     (GRID_CELL_SIZE as f32) * self.zoom);
             }
             _ => {}
@@ -889,15 +863,6 @@ impl EditGridView {
     fn coords_for_screen_pt(&self, screen_pt: Point2<i32>) -> Coords {
         self.screen_pt_to_grid_pt(screen_pt).as_i32_floor()
     }
-}
-
-fn coords_matrix(matrix: &Matrix4<f32>, coords: Coords, dir: Direction)
-                 -> Matrix4<f32> {
-    let cx = (coords.x * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
-    let cy = (coords.y * GRID_CELL_SIZE + GRID_CELL_SIZE / 2) as f32;
-    matrix * Matrix4::trans2(cx, cy) *
-        Matrix4::from_angle_z(dir.angle_from_east()) *
-        Matrix4::from_scale((GRID_CELL_SIZE / 2) as f32)
 }
 
 fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {

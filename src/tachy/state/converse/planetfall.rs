@@ -26,7 +26,21 @@ use tachy::save::{Profile, Puzzle};
 pub(super) fn advanced_circuits(profile: &Profile,
                                 builder: &mut ConversationBuilder)
                                 -> Result<(), ()> {
-    builder.esra("Time to learn about event wires.");
+    builder.esra("Time to learn about event wires.\n\n\
+                  You can use them in a circuit like this:\n\
+                  $=$#bounds=[0,0,3,1]\n\
+                  [chips]\n\
+                  p1p0='t0-Filter'\n\
+                  [wires]\n\
+                  m1p0e='Stub'\n\
+                  p0p0w='Straight'\n\
+                  p0p0e='Straight'\n\
+                  p1p0w='Stub'\n\
+                  p1p0e='Stub'\n\
+                  p2p0w='Straight'\n\
+                  p2p0e='Straight'\n\
+                  p3p0w='Stub'\n\
+                  #");
     builder.puzzle(profile, Puzzle::TutorialDemux)?;
     builder.esra("Good job.");
     Ok(())

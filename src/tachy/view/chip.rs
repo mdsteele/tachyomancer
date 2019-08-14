@@ -91,6 +91,7 @@ impl ChipModel {
         }
     }
 
+    // TODO: Make this take coords and a grid_matrix, rather than a chip_matrix
     pub fn draw_chip(resources: &Resources, matrix: &Matrix4<f32>,
                      ctype: ChipType, orient: Orientation,
                      coords_and_grid: Option<(Coords, &EditGrid)>) {

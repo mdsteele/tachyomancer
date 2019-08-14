@@ -269,6 +269,33 @@ pub(super) fn restore_power(profile: &Profile,
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn more_components(profile: &Profile,
+                              builder: &mut ConversationBuilder)
+                              -> Result<(), ()> {
+    builder.esra("\
+        Our stocks of the most important circuit components have now been \
+        restored.  However, there are still many other useful chips we could \
+        fabricate that may help you with your future designs.");
+    builder.esra("\
+        I've taken the liberty of selecting a few possibilities that should \
+        be within your current capabilities, although they may be a bit more \
+        challenging than what you've already done.  You should consider these \
+        tasks optional, but again, any that you can complete will provide new \
+        parts that you can use for other tasks.");
+    builder.puzzles(profile,
+                    &[Puzzle::FabricateXor,
+                      Puzzle::FabricateHalve,
+                      Puzzle::FabricateMul])?;
+    builder.esra("\
+        Excellent work, Commander.  I will let you know in the future if \
+        there are any other good opportunities for fabricating useful \
+        components.");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn step_two(profile: &Profile, builder: &mut ConversationBuilder)
                        -> Result<(), ()> {
     builder.henry("\

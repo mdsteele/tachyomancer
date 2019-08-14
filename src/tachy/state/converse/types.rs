@@ -44,7 +44,7 @@ pub enum ConversationBubble {
     YouChoice(String, Vec<(String, String)>),
     NpcSpeech(Portrait, String),
     Cutscene(Cutscene),
-    Puzzle(Puzzle),
+    Puzzles(Vec<Puzzle>),
 }
 
 //===========================================================================//
@@ -124,8 +124,14 @@ impl ConversationBuilder {
 
     pub(super) fn puzzle(&mut self, profile: &Profile, puzzle: Puzzle)
                          -> Result<(), ()> {
-        self.bubbles.push(ConversationBubble::Puzzle(puzzle));
-        if profile.is_puzzle_solved(puzzle) {
+        self.puzzles(profile, &[puzzle])
+    }
+
+    pub(super) fn puzzles(&mut self, profile: &Profile, puzzles: &[Puzzle])
+                          -> Result<(), ()> {
+        debug_assert!(!puzzles.is_empty());
+        self.bubbles.push(ConversationBubble::Puzzles(puzzles.to_vec()));
+        if puzzles.iter().all(|&puzzle| profile.is_puzzle_solved(puzzle)) {
             Ok(())
         } else {
             Err(())

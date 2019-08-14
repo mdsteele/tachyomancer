@@ -43,6 +43,9 @@ impl ConversationExt for Conversation {
             Conversation::RestorePower => {
                 odyssey::restore_power(profile, &mut builder)
             }
+            Conversation::MoreComponents => {
+                odyssey::more_components(profile, &mut builder)
+            }
             Conversation::StepTwo => odyssey::step_two(profile, &mut builder),
             Conversation::CaptainsCall => {
                 odyssey::captains_call(profile, &mut builder)

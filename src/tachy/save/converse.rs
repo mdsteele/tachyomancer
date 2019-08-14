@@ -61,6 +61,7 @@ pub enum Conversation {
     WakeUp,
     Basics,
     RestorePower,
+    MoreComponents,
     StepTwo,
     CaptainsCall,
     AdvancedCircuits,
@@ -82,6 +83,7 @@ impl Conversation {
             Conversation::WakeUp => "Wakeup Call",
             Conversation::Basics => "Circuit Basics",
             Conversation::RestorePower => "Restoring Power",
+            Conversation::MoreComponents => "More Components",
             Conversation::StepTwo => "Step Two",
             Conversation::CaptainsCall => "Captain's Call",
             Conversation::AdvancedCircuits => "Advanced Circuits",
@@ -97,6 +99,7 @@ impl Conversation {
             Conversation::WakeUp |
             Conversation::Basics |
             Conversation::RestorePower |
+            Conversation::MoreComponents |
             Conversation::StepTwo |
             Conversation::CaptainsCall => Chapter::Odyssey,
             Conversation::AdvancedCircuits |
@@ -112,6 +115,9 @@ impl Conversation {
             Conversation::WakeUp => &Prereq::All(&[]),
             Conversation::Basics => &Prereq::Complete(Conversation::WakeUp),
             Conversation::RestorePower => {
+                &Prereq::Complete(Conversation::Basics)
+            }
+            Conversation::MoreComponents => {
                 &Prereq::Complete(Conversation::Basics)
             }
             Conversation::StepTwo => {

@@ -53,7 +53,8 @@ const MORE_BUTTON_HEIGHT: i32 = 30;
 const PORTRAIT_HEIGHT: i32 = 85;
 const PORTRAIT_WIDTH: i32 = 68;
 
-const PUZZLE_BUBBLE_HEIGHT: i32 = 50;
+const PUZZLE_HEIGHT: i32 = 50;
+const PUZZLE_SPACING: i32 = 2;
 
 const SCROLLBAR_WIDTH: i32 = 18;
 const SCROLLBAR_MARGIN: i32 = 5;
@@ -378,8 +379,8 @@ impl BubblesListView {
                                              prefs,
                                              &format)
                 }
-                ConversationBubble::Puzzle(puzzle) => {
-                    PuzzleBubbleView::new(bubble_width, bubble_top, puzzle)
+                ConversationBubble::Puzzles(puzzles) => {
+                    PuzzleBubbleView::new(bubble_width, bubble_top, puzzles)
                 }
                 ConversationBubble::YouChoice(key, choices) => {
                     YouChoiceBubbleView::new(bubble_width,
@@ -598,18 +599,37 @@ impl BubbleView for NpcSpeechBubbleView {
 
 struct PuzzleBubbleView {
     rect: Rect<i32>,
-    puzzle: Puzzle,
-    hovering: bool,
+    puzzles: Vec<Puzzle>,
+    hovering: Option<Puzzle>,
 }
 
 impl PuzzleBubbleView {
-    fn new(width: i32, top: i32, puzzle: Puzzle) -> Box<BubbleView> {
+    fn new(width: i32, top: i32, puzzles: Vec<Puzzle>) -> Box<BubbleView> {
+        debug_assert!(!puzzles.is_empty());
+        let height = (puzzles.len() as i32) *
+            (PUZZLE_HEIGHT + PUZZLE_SPACING) -
+            PUZZLE_SPACING;
         let view = PuzzleBubbleView {
-            rect: Rect::new(0, top, width, PUZZLE_BUBBLE_HEIGHT),
-            puzzle,
-            hovering: false,
+            rect: Rect::new(0, top, width, height),
+            puzzles,
+            hovering: None,
         };
         Box::new(view)
+    }
+
+    fn puzzle_for_pt(&self, pt: Point2<i32>) -> Option<Puzzle> {
+        if self.rect.contains_point(pt) {
+            let rel_y = pt.y - self.rect.y;
+            let (index, offset) =
+                div_mod_floor(rel_y, PUZZLE_HEIGHT + PUZZLE_SPACING);
+            if offset < PUZZLE_HEIGHT {
+                debug_assert!(index >= 0);
+                let index = index as usize;
+                debug_assert!(index < self.puzzles.len());
+                return Some(self.puzzles[index]);
+            }
+        }
+        return None;
     }
 }
 
@@ -619,40 +639,48 @@ impl BubbleView for PuzzleBubbleView {
     fn is_choice_or_puzzle(&self) -> bool { true }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let color = if self.hovering {
-            Color3::new(0.1, 1.0, 1.0)
-        } else {
-            Color3::new(0.1, 0.5, 0.5)
-        };
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
-        let label = format!("Go to task \"{}\"", self.puzzle.title());
-        resources.fonts().roman().draw(&matrix,
-                                       BUBBLE_FONT_SIZE,
-                                       Align::MidCenter,
-                                       (rect.x + 0.5 * rect.width,
-                                        rect.y + 0.5 * rect.height),
-                                       &label);
+        for (index, &puzzle) in self.puzzles.iter().enumerate() {
+            let color = if self.hovering == Some(puzzle) {
+                Color3::new(0.1, 1.0, 1.0)
+            } else {
+                Color3::new(0.1, 0.5, 0.5)
+            };
+            let rect = Rect::new(self.rect.x,
+                                 self.rect.y +
+                                     (index as i32) *
+                                         (PUZZLE_HEIGHT + PUZZLE_SPACING),
+                                 self.rect.width,
+                                 PUZZLE_HEIGHT)
+                .as_f32();
+            resources.shaders().solid().fill_rect(&matrix, color, rect);
+            let label = format!("Go to task \"{}\"", puzzle.title());
+            resources.fonts().roman().draw(&matrix,
+                                           BUBBLE_FONT_SIZE,
+                                           Align::MidCenter,
+                                           (rect.x + 0.5 * rect.width,
+                                            rect.y + 0.5 * rect.height),
+                                           &label);
+        }
     }
 
     fn on_event(&mut self, event: &Event, ui: &mut Ui)
                 -> Option<ConverseAction> {
         match event {
             Event::MouseDown(mouse) => {
-                if self.rect.contains_point(mouse.pt) {
-                    return Some(ConverseAction::GoToPuzzle(self.puzzle));
+                if let Some(puzzle) = self.puzzle_for_pt(mouse.pt) {
+                    return Some(ConverseAction::GoToPuzzle(puzzle));
                 }
             }
             Event::MouseMove(mouse) => {
-                let hovering = self.rect.contains_point(mouse.pt);
+                let hovering = self.puzzle_for_pt(mouse.pt);
                 if self.hovering != hovering {
                     self.hovering = hovering;
                     ui.request_redraw();
                 }
             }
             Event::Unfocus => {
-                if self.hovering {
-                    self.hovering = false;
+                if self.hovering.is_some() {
+                    self.hovering = None;
                     ui.request_redraw();
                 }
             }

@@ -480,6 +480,7 @@ impl MenuView {
     }
 
     fn unfocus(&mut self, ui: &mut Ui, state: &mut GameState) {
+        self.navigation_view.on_event(&Event::Unfocus, ui, state);
         self.converse_view.on_event(&Event::Unfocus, ui, state);
         self.prefs_view.on_event(&Event::Unfocus, ui, state);
         self.puzzles_view.on_event(&Event::Unfocus, ui, state);

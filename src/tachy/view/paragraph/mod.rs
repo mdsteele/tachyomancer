@@ -154,6 +154,8 @@ impl Paragraph {
         }
     }
 
+    pub fn escape(string: &str) -> String { string.replace('$', "$$") }
+
     pub fn width(&self) -> f32 { self.size.width }
 
     pub fn height(&self) -> f32 { self.size.height }

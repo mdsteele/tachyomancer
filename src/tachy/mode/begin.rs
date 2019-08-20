@@ -46,8 +46,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 return ModeChange::Next;
                             }
                             Err(err) => {
-                                // TODO: display error to user; don't panic
-                                panic!("CreateProfile failed: {:?}", err);
+                                view.show_error(&mut window.ui(),
+                                                state,
+                                                "create profile",
+                                                &err);
                             }
                         }
                     }

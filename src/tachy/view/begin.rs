@@ -18,9 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::button::TextButton;
+use super::dialog::ButtonDialogBox;
+use super::paragraph::Paragraph;
 use cgmath::{self, Matrix4};
 use tachy::font::Align;
-use tachy::geom::{Color3, Rect, RectSize};
+use tachy::geom::{AsInt, Color3, Rect, RectSize};
 use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
 use tachy::state::GameState;
 
@@ -57,6 +59,7 @@ pub struct BeginView {
     text_entry: TextEntry,
     back_button: TextButton<()>,
     confirm_button: TextButton<()>,
+    error_dialog: Option<ButtonDialogBox<()>>,
 }
 
 impl BeginView {
@@ -83,6 +86,7 @@ impl BeginView {
             text_entry: TextEntry::new(window_size.width / 2, 300),
             back_button,
             confirm_button,
+            error_dialog: None,
         }
     }
 
@@ -125,11 +129,24 @@ impl BeginView {
                       "That name is already taken.");
         }
         self.text_entry.draw(resources, &matrix);
+        if let Some(ref dialog) = self.error_dialog {
+            dialog.draw(resources, &matrix);
+        }
     }
 
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
                     state: &mut GameState)
                     -> Option<BeginAction> {
+        if let Some(ref mut dialog) = self.error_dialog {
+            match dialog.on_event(event, ui) {
+                Some(()) => self.error_dialog = None,
+                None => {}
+            }
+            if !event.is_clock_tick() {
+                return None;
+            }
+        }
+
         match event {
             Event::KeyDown(_) |
             Event::MouseDown(_) => {
@@ -170,6 +187,21 @@ impl BeginView {
             }
         }
         return None;
+    }
+
+    pub fn show_error(&mut self, ui: &mut Ui, state: &mut GameState,
+                      unable: &str, error: &str) {
+        debug_log!("ERROR: Unable to {}: {}", unable, error);
+        // TODO: Play sound for error dialog popup.
+        self.on_event(&Event::Unfocus, ui, state);
+        let size = RectSize::new(self.width, self.height).as_i32_round();
+        let format = format!("$R$*ERROR:$*$D Unable to {}.\n\n{}",
+                             unable,
+                             Paragraph::escape(error));
+        let buttons = &[("OK", (), Some(Keycode::Return))];
+        let dialog =
+            ButtonDialogBox::new(size, state.prefs(), &format, buttons);
+        self.error_dialog = Some(dialog);
     }
 }
 

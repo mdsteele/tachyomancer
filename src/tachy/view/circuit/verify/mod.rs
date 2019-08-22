@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod beacon;
 mod heliostat;
 mod robotarm;
 mod sensors;
@@ -57,6 +58,9 @@ impl VerificationTray {
         let right_bottom = Point2::new(window_size.width - TRAY_INNER_MARGIN,
                                        window_size.height - TRAY_INNER_MARGIN);
         let subview = match current_puzzle {
+            Puzzle::AutomateBeacon => {
+                self::beacon::BeaconVerifyView::new(right_bottom)
+            }
             Puzzle::AutomateHeliostat => {
                 self::heliostat::HeliostatVerifyView::new(right_bottom)
             }

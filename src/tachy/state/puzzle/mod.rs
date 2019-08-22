@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod beacon;
 mod fabricate;
 mod heliostat;
 mod iface;
@@ -29,6 +30,7 @@ mod shared;
 mod tutor_bvr;
 mod tutor_evt;
 
+pub use self::beacon::BeaconEval;
 pub use self::fabricate::{FabricateHalveEval, FabricateIncEval,
                           FabricateMulEval, FabricateXorEval};
 pub use self::heliostat::HeliostatEval;
@@ -84,6 +86,7 @@ impl PuzzleExt for Puzzle {
 
     fn interfaces(&self) -> &'static [Interface] {
         match self {
+            Puzzle::AutomateBeacon => self::beacon::INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
@@ -145,6 +148,9 @@ pub(super) fn new_puzzle_eval(puzzle: Puzzle,
                               slots: Vec<Vec<((Coords, Direction), usize)>>)
                               -> Box<PuzzleEval> {
     match puzzle {
+        Puzzle::AutomateBeacon => {
+            Box::new(self::beacon::BeaconEval::new(slots))
+        }
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::AutomateReactorEval::new(slots))

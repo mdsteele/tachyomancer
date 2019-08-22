@@ -48,6 +48,7 @@ pub enum Puzzle {
     TutorialDemux,
     TutorialSum,
     FabricateInc,
+    AutomateBeacon,
     AutomateRobotArm,
     SandboxBehavior,
     SandboxEvent,
@@ -76,22 +77,41 @@ impl Puzzle {
 
     fn data(self) -> &'static PuzzleData {
         match self {
+            Puzzle::AutomateBeacon => {
+                &PuzzleData {
+                    title: "Subspace Beacon",
+                    kind: PuzzleKind::Automate,
+                    allow_events: false,
+                    score_units: "Time",
+                    graph_bounds: (150, 150),
+                    description: "TODO",
+                    instructions: "\
+                        * $!Your goal is TODO.\n\
+                        * $!The optimal position is given by the sensor \
+                          interface on the left side of the board.  This \
+                          optimal position will change over time.\n\
+                        * $!The current position is given by the motor \
+                          interface on the right side of the board.\n\
+                        * $!The closer the current position is to optimal, \
+                          TODO.",
+                }
+            }
             Puzzle::AutomateHeliostat => {
                 &PuzzleData {
                     title: "Heliostat",
                     kind: PuzzleKind::Automate,
                     allow_events: false,
                     score_units: "Time",
-                    graph_bounds: (150, 150),
+                    graph_bounds: (50, 150),
                     description: "\
                         Automate the ship's heliostat to reflect sunlight \
                         onto the solar panels at the optimal angle.",
                     instructions: "\
-                        * $!Your goal is fill the energy meter by always \
+                        * $!Your goal is to fill the energy meter by always \
                           moving the heliostat towards the optimal position.\n\
                         * $!The optimal position is given by the sensor \
                           interface on the left side of the board.  This \
-                          optimal position will change from time to time.\n\
+                          optimal position will change over time.\n\
                         * $!The current position is given by the motor \
                           interface on the right side of the board.\n\
                         * $!The closer the current position is to optimal, \

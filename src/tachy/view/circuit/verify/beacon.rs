@@ -22,7 +22,7 @@ use cgmath::{Matrix4, Point2};
 use tachy::font::Align;
 use tachy::geom::{Rect, RectSize};
 use tachy::gui::Resources;
-use tachy::state::{CircuitEval, HeliostatEval};
+use tachy::state::{BeaconEval, CircuitEval};
 
 //===========================================================================//
 
@@ -33,38 +33,35 @@ const FONT_SIZE: f32 = 20.0;
 
 //===========================================================================//
 
-pub struct HeliostatVerifyView {
+pub struct BeaconVerifyView {
     rect: Rect<i32>,
 }
 
-impl HeliostatVerifyView {
+impl BeaconVerifyView {
     pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
         let rect = Rect::new(right_bottom.x - VIEW_WIDTH,
                              right_bottom.y - VIEW_HEIGHT,
                              VIEW_WIDTH,
                              VIEW_HEIGHT);
-        Box::new(HeliostatVerifyView { rect })
+        Box::new(BeaconVerifyView { rect })
     }
 }
 
-impl PuzzleVerifyView for HeliostatVerifyView {
+impl PuzzleVerifyView for BeaconVerifyView {
     fn size(&self) -> RectSize<i32> { RectSize::new(VIEW_WIDTH, VIEW_HEIGHT) }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
             opt_circuit_eval: Option<&CircuitEval>) {
-        let (energy, pos, goal, eff, orbit) =
-            if let Some(eval) = opt_circuit_eval {
-                let eval = eval.puzzle_eval::<HeliostatEval>();
-                (eval.current_energy(),
-                 eval.current_position(),
-                 eval.current_goal(),
-                 eval.current_efficiency(),
-                 eval.current_orbit_degrees())
-            } else {
-                (0, 0, 0, 0, 0)
-            };
-        // TODO: Draw a circle gauge of the heliostat position, a diagram of
-        //   the ship in orbit, and a visual energy meter.
+        let (energy, pos, opt) = if let Some(eval) = opt_circuit_eval {
+            let eval = eval.puzzle_eval::<BeaconEval>();
+            (eval.current_energy(),
+             eval.current_position(),
+             eval.current_optimum())
+        } else {
+            (0, Point2::new(0, 0), Point2::new(0, 0))
+        };
+        // TODO: Draw a grid view of the beacon coordinates, and a visual
+        //   signal meter.
         let left = self.rect.x as f32;
         let top = self.rect.y as f32;
         let font = resources.fonts().roman();
@@ -77,22 +74,12 @@ impl PuzzleVerifyView for HeliostatVerifyView {
                   FONT_SIZE,
                   Align::TopLeft,
                   (left, top + 30.0),
-                  &format!("Pos: {}", pos));
+                  &format!("Pos: ({}, {})", pos.x, pos.y));
         font.draw(matrix,
                   FONT_SIZE,
                   Align::TopLeft,
                   (left, top + 60.0),
-                  &format!("Goal: {}", goal));
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top + 90.0),
-                  &format!("Efficiency: {}", eff));
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top + 120.0),
-                  &format!("Orbit: {}", orbit));
+                  &format!("Opt: ({}, {})", opt.x, opt.y));
     }
 }
 

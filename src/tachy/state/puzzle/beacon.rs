@@ -18,18 +18,12 @@
 // +--------------------------------------------------------------------------+
 
 use super::iface::{Interface, InterfacePort, InterfacePosition};
+use super::rng::SimpleRng;
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
-use num_integer::mod_floor;
+use cgmath::Point2;
+use num_integer::Roots;
 use tachy::geom::{Coords, Direction};
 use tachy::state::{PortColor, PortFlow, WireSize};
-
-//===========================================================================//
-
-const ENERGY_INITIAL_VALUE: u32 = 1000;
-const ENERGY_NEEDED_FOR_VICTORY: u32 = 5000;
-const ENERGY_DRAIN_PER_TIME_STEP: u32 = 30;
-const ENERGY_MAX_GEN_PER_TIME_STEP: u32 = 100;
-const ORBIT_DEGREES_PER_TIME_STEP: i32 = 5;
 
 //===========================================================================//
 
@@ -38,27 +32,24 @@ pub const INTERFACES: &[Interface] = &[
         name: "Sensor Interface",
         description: "\
             Connects to a subspace sensor array that determines the ideal \
-            position for the heliostat mirror.  Use the motor interface to \
-            move the mirror to this position.",
-        side: Direction::West,
+            position for the beacon dish.  Use the motor interface to move \
+            the dish to this position.",
+        side: Direction::South,
         pos: InterfacePosition::Left(0),
         ports: &[
             InterfacePort {
-                name: "Goal",
-                description: "Outputs the ideal mirror position.",
+                name: "XGoal",
+                description: "Outputs ideal X position.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
-                name: "Power",
-                description: "\
-                    Outputs the current power generation efficiency, from 0 \
-                    to 100 percent.  (You can ignore this port if you don't \
-                    need it.)",
+                name: "YGoal",
+                description: "Outputs ideal Y position.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
-                size: WireSize::Eight,
+                size: WireSize::Four,
             },
         ],
     },
@@ -66,13 +57,20 @@ pub const INTERFACES: &[Interface] = &[
         name: "Motor Interface",
         description: "\
             Connects to a stepper motor that controls the position of the \
-            heliostat mirror.",
-        side: Direction::East,
+            beacon mirror.",
+        side: Direction::South,
         pos: InterfacePosition::Right(0),
         ports: &[
             InterfacePort {
-                name: "Pos",
-                description: "Outputs the current mirror position.",
+                name: "XPos",
+                description: "Outputs current X position.",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+            InterfacePort {
+                name: "YPos",
+                description: "Outputs current Y position.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
@@ -81,12 +79,14 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Motor",
                 description: "\
                     Receives motor commands.\n    \
-                    Send 1 to move clockwise.\n    \
-                    Send 2 to move counterclockwise.\n  \
+                    Send 8 to move up.\n    \
+                    Send 4 to move down.\n    \
+                    Send 2 to move left.\n    \
+                    Send 1 to move right.\n  \
                     Send any other value to not move.",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,
-                size: WireSize::Two,
+                size: WireSize::Four,
             },
         ],
     },
@@ -94,76 +94,56 @@ pub const INTERFACES: &[Interface] = &[
 
 //===========================================================================//
 
-pub struct HeliostatEval {
-    goal_wire: usize,
-    efficiency_wire: usize,
-    pos_wire: usize,
+pub struct BeaconEval {
+    opt_x_wire: usize,
+    opt_y_wire: usize,
+    pos_x_wire: usize,
+    pos_y_wire: usize,
     motor_wire: usize,
-    current_goal: u32,
-    current_pos: u32,
-    current_efficiency: u32,
-    current_orbit_degrees: i32,
+    current_opt: Point2<u32>,
+    current_pos: Point2<u32>,
     energy: u32,
+    rng: SimpleRng,
 }
 
-impl HeliostatEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> HeliostatEval {
+impl BeaconEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> BeaconEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
-        debug_assert_eq!(slots[1].len(), 2);
-        HeliostatEval {
-            goal_wire: slots[0][0].1,
-            efficiency_wire: slots[0][1].1,
-            pos_wire: slots[1][0].1,
-            motor_wire: slots[1][1].1,
-            current_goal: 0,
-            current_pos: 3,
-            current_efficiency: 0,
-            current_orbit_degrees: 0,
-            energy: ENERGY_INITIAL_VALUE,
+        debug_assert_eq!(slots[1].len(), 3);
+        BeaconEval {
+            opt_x_wire: slots[0][0].1,
+            opt_y_wire: slots[0][1].1,
+            pos_x_wire: slots[1][0].1,
+            pos_y_wire: slots[1][1].1,
+            motor_wire: slots[1][2].1,
+            current_opt: Point2::new(3, 7),
+            current_pos: Point2::new(15, 15),
+            energy: 1000,
+            rng: SimpleRng::new(0x4f3173b1f817227f),
         }
     }
 
     pub fn current_energy(&self) -> u32 { self.energy }
 
-    pub fn current_goal(&self) -> u32 { self.current_goal }
+    pub fn current_optimum(&self) -> Point2<u32> { self.current_opt }
 
-    pub fn current_position(&self) -> u32 { self.current_pos }
-
-    pub fn current_efficiency(&self) -> u32 { self.current_efficiency }
-
-    pub fn current_orbit_degrees(&self) -> i32 { self.current_orbit_degrees }
+    pub fn current_position(&self) -> Point2<u32> { self.current_pos }
 }
 
-impl PuzzleEval for HeliostatEval {
+impl PuzzleEval for BeaconEval {
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
-        let is_in_shadow = self.current_orbit_degrees >= 135 &&
-            self.current_orbit_degrees <= 225;
-        self.current_goal = if is_in_shadow {
-            self.current_pos
-        } else {
-            let turns = (-self.current_orbit_degrees as f64) / 360.0;
-            let signed_pos = (16.0 * turns).round() as i32;
-            mod_floor(signed_pos, 16) as u32
-        };
-        self.current_efficiency = if is_in_shadow {
-            0
-        } else {
-            let delta =
-                ((self.current_pos as i32) - (self.current_goal as i32)).abs();
-            let theta = (delta as f64) * std::f64::consts::FRAC_PI_8;
-            let efficiency = (4.0 + 96.0 * 0.5 * (theta.cos() + 1.0)).round();
-            debug_assert!(efficiency >= 0.0);
-            debug_assert!(efficiency <= 100.0);
-            efficiency as u32
-        };
-
-        state.send_behavior(self.goal_wire, self.current_goal);
-        state.send_behavior(self.efficiency_wire, self.current_efficiency);
-        state.send_behavior(self.pos_wire, self.current_pos);
-        if self.energy >= ENERGY_NEEDED_FOR_VICTORY {
+        if (time_step % 20) == 0 {
+            let x = self.rng.rand_u4();
+            let y = self.rng.rand_u4();
+            self.current_opt = Point2::new(x, y);
+        }
+        state.send_behavior(self.opt_x_wire, self.current_opt.x);
+        state.send_behavior(self.opt_y_wire, self.current_opt.y);
+        state.send_behavior(self.pos_x_wire, self.current_pos.x);
+        state.send_behavior(self.pos_y_wire, self.current_pos.y);
+        if self.energy >= 5000 {
             Some(EvalScore::Value(time_step as i32))
         } else {
             None
@@ -172,16 +152,19 @@ impl PuzzleEval for HeliostatEval {
 
     fn end_time_step(&mut self, _time_step: u32, state: &CircuitState)
                      -> Vec<EvalError> {
-        self.energy +=
-            (ENERGY_MAX_GEN_PER_TIME_STEP * self.current_efficiency) / 100;
-        self.energy = self.energy.saturating_sub(ENERGY_DRAIN_PER_TIME_STEP);
+        let delta = 10 *
+            Point2::new(self.current_pos.x as i32 - self.current_opt.x as i32,
+                        self.current_pos.y as i32 - self.current_opt.y as i32);
+        let dist = (delta.x * delta.x + delta.y * delta.y).sqrt() as u32;
+        self.energy += 85;
+        self.energy = self.energy.saturating_sub(dist);
         match state.recv_behavior(self.motor_wire).0 {
-            0x1 => self.current_pos = (self.current_pos + 1) % 16,
-            0x2 => self.current_pos = (self.current_pos + 15) % 16,
+            0x8 if self.current_pos.y < 0xf => self.current_pos.y += 1,
+            0x4 if self.current_pos.y > 0x0 => self.current_pos.y -= 1,
+            0x2 if self.current_pos.x > 0x0 => self.current_pos.x -= 1,
+            0x1 if self.current_pos.x < 0xf => self.current_pos.x += 1,
             _ => {}
         }
-        self.current_orbit_degrees =
-            (self.current_orbit_degrees + ORBIT_DEGREES_PER_TIME_STEP) % 360;
         Vec::new()
     }
 }

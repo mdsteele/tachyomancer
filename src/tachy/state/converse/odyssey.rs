@@ -303,12 +303,12 @@ pub(super) fn step_two(profile: &Profile, builder: &mut ConversationBuilder)
         times, and I'm almost positive that coming out of it isn't supposed \
         to hurt this much.\"");
     builder.you("\
-        \"Yeah, that's because under standard regulations, we're not supposed \
-        to stay under for $/nine months straight$/.\"");
+        \"That's because under standard regulations, we're not supposed to \
+        stay under for $/nine months straight$/.\"");
     builder.henry("\
-        Oh!  Hello, Commander!  I'm not quite sure what's been going on \
-        while I was asleep, but I do seem to have missed out on some kind of \
-        delightfully horrifying catastrophe.");
+        Oh!  Good morning, Commander!  I'm not quite sure what's been going \
+        on while I was asleep, but I do seem to have missed out on some kind \
+        of delightfully horrifying catastrophe.");
     builder.esra("\
         Hello to both of you.  I've just finished filling in Chief Walker on \
         the situation.  Thanks to the Commander's work, we have enough solar \
@@ -355,17 +355,16 @@ pub(super) fn captains_call(profile: &Profile,
                             builder: &mut ConversationBuilder)
                             -> Result<(), ()> {
     builder.lisa("\
-        \"Ugh, what a day.  That cryo thaw hurt like a bugger, and now I \
-        find out that my ship is in pieces, half of my crew is dead, and I \
-        $/seriously$/ need some coffee.  Somebody, $/please$/ tell me you \
+        \"Ugh, what a nightmare.  That cryo thaw hurt like a bugger, and now \
+        I find out that my ship is in pieces, half of my crew is dead, and we \
+        are $/all out of coffee$/.  Somebody, $/please$/ tell me you \
         have good news for me.\"");
     builder.you("\"Captain!  Glad to see you're awake.\"");
     builder.lisa("\
-        \"It's good to see you too, $'YOURNAME'.  Sorry this had to happen on \
-        your first mission with us, but that's where the chips fell.  The \
-        ESRA tells me that it's all thanks to you that we've got power hardly \
-        at all.  Good work.  Somehow, I had a feeling you'd come in handy on \
-        this mission.\"");
+        \"It's good to see you too, $'YOURNAME'.  Bad luck, all this \
+        happening on your first mission with us.  But the ESRA tells me that \
+        it's all thanks to you that we've got power hardly at all.  Good \
+        work.  Somehow, I had a feeling you'd come in handy.\"");
     builder.you("\"Glad I could help.  Wish it hadn't been necessary.\"");
     builder.lisa("\
         \"You and me both, Commander.  But we've got a lot of work ahead of \

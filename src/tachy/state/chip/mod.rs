@@ -113,7 +113,8 @@ impl ChipExt for ChipType {
             ChipType::Inc => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateInc)
             }
-            ChipType::Button => ChipAvailability::InteractiveOnly,
+            ChipType::Button |
+            ChipType::Toggle(_) => ChipAvailability::InteractiveOnly,
         }
     }
 
@@ -215,6 +216,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Ram => self::special::RAM_CHIP_DATA,
         ChipType::Sample => self::event::SAMPLE_CHIP_DATA,
         ChipType::Sub => self::arith::SUB_CHIP_DATA,
+        ChipType::Toggle(_) => self::special::TOGGLE_CHIP_DATA,
         ChipType::Unpack => self::value::UNPACK_CHIP_DATA,
         ChipType::Xor => self::logic::XOR_CHIP_DATA,
     }
@@ -264,6 +266,12 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
         ChipType::Ram => self::special::RamChipEval::new_evals(slots),
         ChipType::Sample => self::event::SampleChipEval::new_evals(slots),
         ChipType::Sub => self::arith::SubChipEval::new_evals(slots),
+        ChipType::Toggle(value) => {
+            self::special::ToggleChipEval::new_evals(value,
+                                                     slots,
+                                                     coords,
+                                                     interact.clone())
+        }
         ChipType::Unpack => self::value::UnpackChipEval::new_evals(slots),
         ChipType::Xor => self::logic::XorChipEval::new_evals(slots),
     }

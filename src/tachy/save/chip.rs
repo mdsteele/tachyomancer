@@ -53,6 +53,7 @@ pub enum ChipType {
     Ram,
     Sample,
     Sub,
+    Toggle(bool),
     Unpack,
     Xor,
 }
@@ -100,6 +101,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
     ]),
     ("Debug", &[
         ChipType::Display,
+        ChipType::Toggle(false),
         ChipType::Break,
         ChipType::Button,
     ]),
@@ -137,6 +139,8 @@ impl str::FromStr for ChipType {
             "Ram" => Ok(ChipType::Ram),
             "Sample" => Ok(ChipType::Sample),
             "Sub" => Ok(ChipType::Sub),
+            "Toggle(false)" => Ok(ChipType::Toggle(false)),
+            "Toggle(true)" => Ok(ChipType::Toggle(true)),
             "Unpack" => Ok(ChipType::Unpack),
             "Xor" => Ok(ChipType::Xor),
             _ => {
@@ -170,6 +174,7 @@ impl ChipType {
             ChipType::Mul4Bit => "4-Bit Mul".to_string(),
             ChipType::Not => "Bitwise NOT".to_string(),
             ChipType::Or => "Bitwise OR".to_string(),
+            ChipType::Toggle(_) => "Toggle Switch".to_string(),
             ChipType::Xor => "Bitwise XOR".to_string(),
             other => format!("{:?}", other),
         };
@@ -226,6 +231,9 @@ impl ChipSet {
     pub fn contains(&self, ctype: ChipType) -> bool {
         match ctype {
             ChipType::Const(_) => self.ctypes.contains(&ChipType::Const(0)),
+            ChipType::Toggle(_) => {
+                self.ctypes.contains(&ChipType::Toggle(false))
+            }
             _ => self.ctypes.contains(&ctype),
         }
     }
@@ -234,6 +242,9 @@ impl ChipSet {
         match ctype {
             ChipType::Const(_) => {
                 self.ctypes.insert(ChipType::Const(0));
+            }
+            ChipType::Toggle(_) => {
+                self.ctypes.insert(ChipType::Toggle(false));
             }
             _ => {
                 self.ctypes.insert(ctype);
@@ -255,6 +266,7 @@ mod tests {
             ChipType::Const(0),
             ChipType::Const(13),
             ChipType::Const(u16::MAX),
+            ChipType::Toggle(true),
         ];
         for &(_, ctypes) in CHIP_CATEGORIES.iter() {
             chip_types.extend_from_slice(ctypes);
@@ -275,6 +287,10 @@ mod tests {
         set.insert(ChipType::And);
         assert!(set.contains(ChipType::Const(3)));
         assert!(set.contains(ChipType::And));
+
+        assert!(!set.contains(ChipType::Toggle(true)));
+        set.insert(ChipType::Toggle(false));
+        assert!(set.contains(ChipType::Toggle(true)));
     }
 }
 

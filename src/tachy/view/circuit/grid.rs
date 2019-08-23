@@ -351,12 +351,13 @@ impl EditGridView {
         match self.interaction {
             Interaction::Nothing => {
                 if grid.eval().is_some() {
-                    if let Some((_, ChipType::Button, _)) =
-                        grid.chip_at(coords)
-                    {
-                        return Cursor::HandPointing;
+                    match grid.chip_at(coords) {
+                        Some((_, ChipType::Button, _)) |
+                        Some((_, ChipType::Toggle(_), _)) => {
+                            return Cursor::HandPointing;
+                        }
+                        _ => return Cursor::NoSign,
                     }
-                    return Cursor::NoSign;
                 }
                 if let Some((chip_coords, ctype, orient)) =
                     grid.chip_at(coords)
@@ -572,15 +573,16 @@ impl EditGridView {
                 let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
                 self.stop_hover(ui);
                 if grid.eval().is_some() {
-                    if let Some((coords, ctype, _)) =
-                        grid.chip_at(grid_pt.as_i32_floor())
-                    {
-                        if ctype == ChipType::Button {
+                    match grid.chip_at(grid_pt.as_i32_floor()) {
+                        Some((coords, ChipType::Button, _)) |
+                        Some((coords, ChipType::Toggle(_), _)) => {
+                            // TODO: play sound depending on chip type
                             grid.eval_mut()
                                 .unwrap()
                                 .interaction()
                                 .press_button(coords);
                         }
+                        _ => {}
                     }
                     return None;
                 }
@@ -671,12 +673,22 @@ impl EditGridView {
                     return None;
                 }
                 let coords = self.coords_for_screen_pt(mouse.pt);
-                if let Some((_, ChipType::Const(value), _)) =
-                    grid.chip_at(coords)
-                {
-                    return Some(EditGridAction::EditConst(coords, value));
+                match grid.chip_at(coords) {
+                    Some((_, ChipType::Const(value), _)) => {
+                        return Some(EditGridAction::EditConst(coords, value));
+                    }
+                    Some((coords, ChipType::Toggle(value), orient)) => {
+                        if try_toggle_switch(coords, value, orient, grid) {
+                            // TODO: Play sound for flipping toggle switch.
+                            ui.request_redraw();
+                            return None;
+                        }
+                    }
+                    _ => {}
                 }
                 if WireDrag::try_toggle_cross(coords, grid) {
+                    debug_assert!(grid.has_provisional_changes());
+                    grid.commit_provisional_changes();
                     // TODO: Play sound for toggling cross wire.
                     ui.request_redraw();
                 }
@@ -870,6 +882,17 @@ fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {
     let difference = (goal - current) as f64;
     let change = difference * (1.0 - tracking_base.powf(tick.elapsed));
     current + (change.round() as i32)
+}
+
+fn try_toggle_switch(coords: Coords, value: bool, orient: Orientation,
+                     grid: &mut EditGrid)
+                     -> bool {
+    let changes =
+        vec![
+            GridChange::RemoveChip(coords, ChipType::Toggle(value), orient),
+            GridChange::AddChip(coords, ChipType::Toggle(!value), orient),
+        ];
+    grid.try_mutate(changes)
 }
 
 //===========================================================================//

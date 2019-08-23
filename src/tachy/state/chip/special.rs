@@ -194,3 +194,55 @@ impl ChipEval for RamChipEval {
 }
 
 //===========================================================================//
+
+pub const TOGGLE_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+    ],
+    constraints: &[AbstractConstraint::Exact(0, WireSize::One)],
+    dependencies: &[],
+};
+
+pub struct ToggleChipEval {
+    output: usize,
+    value: bool,
+    coords: Coords,
+    interact: Rc<RefCell<CircuitInteraction>>,
+}
+
+impl ToggleChipEval {
+    pub fn new_evals(value: bool, slots: &[(usize, WireSize)],
+                     coords: Coords,
+                     interact: Rc<RefCell<CircuitInteraction>>)
+                     -> Vec<(usize, Box<ChipEval>)> {
+        debug_assert_eq!(slots.len(), TOGGLE_CHIP_DATA.ports.len());
+        let chip_eval = ToggleChipEval {
+            output: slots[0].0,
+            value,
+            coords,
+            interact,
+        };
+        vec![(0, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for ToggleChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(count) = self.interact
+            .borrow_mut()
+            .buttons
+            .remove(&self.coords)
+        {
+            debug_log!("Toggle at ({}, {}) was pressed {} time(s)",
+                       self.coords.x,
+                       self.coords.y,
+                       count);
+            if count % 2 != 0 {
+                self.value = !self.value;
+            }
+        }
+        state.send_behavior(self.output, self.value.into());
+    }
+}
+
+//===========================================================================//

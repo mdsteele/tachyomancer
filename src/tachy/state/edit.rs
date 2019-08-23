@@ -708,7 +708,11 @@ impl EditGrid {
                         for coords2 in rect {
                             self.chips.remove(&coords2);
                         }
+                    } else {
+                        return false;
                     }
+                } else {
+                    return false;
                 }
             }
             GridChange::SetBounds(old_bounds, new_bounds) => {

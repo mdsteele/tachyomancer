@@ -148,12 +148,25 @@ impl Puzzle {
                     title: "Main Sensors",
                     kind: PuzzleKind::Automate,
                     allow_events: false,
-                    score_units: "Wire Length",
+                    score_units: "Time",
                     graph_bounds: (150, 150),
                     description: "\
                         Design a replacement signal amplifier for the main \
                         sensor array.",
-                    instructions: "TODO",
+                    instructions: "\
+                        * $!The two inputs indicate the current upper and \
+                          lower bounds (inclusive) of the scan range.\n\
+                        * $!Your goal is to subdivide the scan range at each \
+                          step, until the final value is found.  The final \
+                          value will always be odd.\n\
+                        * $!When the bounds are 2 or more apart, output \
+                          any value strictly between the two.\n\
+                        * $!When the bounds are exactly 1 apart, output \
+                          whichever of those two values is odd.\n\
+                        * $!When the bounds are equal, output that final \
+                          value to terminate the scan.\n\
+                        * $!Note that ($/x$/ AND 1) is 0 when $/x$/ is even, \
+                          and 1 when $/x$/ is odd.",
                 }
             }
             Puzzle::FabricateHalve => {

@@ -26,21 +26,14 @@ use tachy::state::{PortColor, PortFlow, WireSize};
 
 pub const INTERFACES: &[Interface] = &[
     Interface {
-        name: "Sensor Interface",
+        name: "Upper",
         description: "\
-            Connects to the raw data from the fore and aft sensor arrays.",
+            Indicates the current upper bound of the scan range (inclusive).",
         side: Direction::West,
-        pos: InterfacePosition::Center,
+        pos: InterfacePosition::Left(0),
         ports: &[
             InterfacePort {
-                name: "Fore",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-            InterfacePort {
-                name: "Aft",
+                name: "Upper",
                 description: "",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -49,34 +42,30 @@ pub const INTERFACES: &[Interface] = &[
         ],
     },
     Interface {
-        name: "Data Interface",
-        description: "Connects processed sensor data to the main computer.",
+        name: "Lower",
+        description: "\
+            Indicates the current lower bound of the scan range (inclusive).",
+        side: Direction::West,
+        pos: InterfacePosition::Right(0),
+        ports: &[
+            InterfacePort {
+                name: "Lower",
+                description: "",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Four,
+            },
+        ],
+    },
+    Interface {
+        name: "Out",
+        description: "Controls where the scan range will be subdivided.",
         side: Direction::East,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
-                name: "Max",
-                description: "\
-                    This should be equal to the greater of the Fore and Aft \
-                    values.",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-            InterfacePort {
-                name: "Avg",
-                description: "\
-                    This should be equal to the average of the Fore and Aft \
-                    values, rounded down.",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-            InterfacePort {
-                name: "Min",
-                description: "\
-                    This should be equal to the lesser of the Fore and Aft \
-                    values.",
+                name: "Out",
+                description: "",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
@@ -87,123 +76,80 @@ pub const INTERFACES: &[Interface] = &[
 
 //===========================================================================//
 
+const GOALS: &[u32] = &[5, 9, 15, 7, 11, 1, 3, 13];
+
 pub struct SensorsEval {
-    table_values: Vec<u64>,
-    fore_wire: usize,
-    aft_wire: usize,
-    max_port: (Coords, Direction),
-    max_wire: usize,
-    avg_port: (Coords, Direction),
-    avg_wire: usize,
-    min_port: (Coords, Direction),
-    min_wire: usize,
+    upper_wire: usize,
+    lower_wire: usize,
+    out_wire: usize,
+    current_upper: u32,
+    current_lower: u32,
+    current_goal: u32,
+    num_goals_found: usize,
 }
 
 impl SensorsEval {
-    pub const TABLE_COLUMN_NAMES: &'static [&'static str] =
-        &["Fore", "Aft", "Min", "Avg", "Max"];
-
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    pub const EXPECTED_TABLE_VALUES: &'static [u64] = &[
-        4,  10, 4,  7,  10,
-        7,  2,  2,  4,  7,
-        0,  5,  0,  2,  5,
-        9,  9,  9,  9,  9,
-        15, 14, 14, 14, 15,
-        1,  3,  1,  2,  3,
-        // TODO add more table rows
-    ];
-
     pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> SensorsEval {
-        debug_assert_eq!(slots.len(), 2);
-        debug_assert_eq!(slots[0].len(), 2);
-        debug_assert_eq!(slots[1].len(), 3);
+        debug_assert_eq!(slots.len(), 3);
+        debug_assert_eq!(slots[0].len(), 1);
+        debug_assert_eq!(slots[1].len(), 1);
+        debug_assert_eq!(slots[2].len(), 1);
         SensorsEval {
-            table_values: SensorsEval::EXPECTED_TABLE_VALUES.to_vec(),
-            fore_wire: slots[0][0].1,
-            aft_wire: slots[0][1].1,
-            max_port: slots[1][0].0,
-            max_wire: slots[1][0].1,
-            avg_port: slots[1][1].0,
-            avg_wire: slots[1][1].1,
-            min_port: slots[1][2].0,
-            min_wire: slots[1][2].1,
+            upper_wire: slots[0][0].1,
+            lower_wire: slots[1][0].1,
+            out_wire: slots[2][0].1,
+            current_upper: 15,
+            current_lower: 0,
+            current_goal: GOALS[0],
+            num_goals_found: 0,
         }
     }
 
-    pub fn table_values(&self) -> &[u64] { &self.table_values }
+    pub fn lower_bound(&self) -> u32 { self.current_lower }
+
+    pub fn upper_bound(&self) -> u32 { self.current_upper }
+
+    pub fn num_goals_found(&self) -> usize { self.num_goals_found }
 }
 
 impl PuzzleEval for SensorsEval {
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
-        let expected = SensorsEval::EXPECTED_TABLE_VALUES;
-        let start = (time_step as usize) *
-            SensorsEval::TABLE_COLUMN_NAMES.len();
-        if start >= expected.len() {
-            Some(EvalScore::WireLength)
+        if self.num_goals_found >= GOALS.len() {
+            Some(EvalScore::Value(time_step as i32))
         } else {
-            let slice = &expected[start..];
-            state.send_behavior(self.fore_wire, slice[0] as u32);
-            state.send_behavior(self.aft_wire, slice[1] as u32);
+            state.send_behavior(self.upper_wire, self.current_upper);
+            state.send_behavior(self.lower_wire, self.current_lower);
             None
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
+    fn end_time_step(&mut self, _time_step: u32, state: &CircuitState)
                      -> Vec<EvalError> {
-        let fore = state.recv_behavior(self.fore_wire).0;
-        let aft = state.recv_behavior(self.aft_wire).0;
-        let expected_max = fore.max(aft);
-        let expected_avg = (fore + aft) / 2;
-        let expected_min = fore.min(aft);
-        let actual_max = state.recv_behavior(self.max_wire).0;
-        let actual_avg = state.recv_behavior(self.avg_wire).0;
-        let actual_min = state.recv_behavior(self.min_wire).0;
-        self.table_values[5 * (time_step as usize) + 2] = actual_min as u64;
-        self.table_values[5 * (time_step as usize) + 3] = actual_avg as u64;
-        self.table_values[5 * (time_step as usize) + 4] = actual_max as u64;
-        let mut errors = Vec::<EvalError>::new();
-        if actual_min != expected_min {
-            let error = EvalError {
-                time_step,
-                port: Some(self.min_port),
-                message: format!("Expected Min={} for inputs {} and {}, \
-                                  but got Min={}",
-                                 expected_min,
-                                 fore,
-                                 aft,
-                                 actual_min),
-            };
-            errors.push(error);
+        let out = state.recv_behavior(self.out_wire).0;
+        if self.current_lower == self.current_upper {
+            if out == self.current_lower {
+                self.num_goals_found += 1;
+                self.current_lower = 0;
+                self.current_upper = 15;
+                if self.num_goals_found < GOALS.len() {
+                    self.current_goal = GOALS[self.num_goals_found];
+                }
+            }
+        } else if out >= self.current_lower && out <= self.current_upper {
+            if out == self.current_goal {
+                if out - self.current_lower <= self.current_upper - out {
+                    self.current_upper = out;
+                } else {
+                    self.current_lower = out;
+                }
+            } else if out > self.current_goal {
+                self.current_upper = out;
+            } else {
+                self.current_lower = out;
+            }
         }
-        if actual_avg != expected_avg {
-            let error = EvalError {
-                time_step,
-                port: Some(self.avg_port),
-                message: format!("Expected Avg={} for inputs {} and {}, \
-                                  but got Avg={}",
-                                 expected_avg,
-                                 fore,
-                                 aft,
-                                 actual_avg),
-            };
-            errors.push(error);
-        }
-        if actual_max != expected_max {
-            let error = EvalError {
-                time_step,
-                port: Some(self.max_port),
-                message: format!("Expected Max={} for inputs {} and {}, \
-                                  but got Max={}",
-                                 expected_max,
-                                 fore,
-                                 aft,
-                                 actual_max),
-            };
-            errors.push(error);
-        }
-        errors
+        vec![]
     }
 }
 

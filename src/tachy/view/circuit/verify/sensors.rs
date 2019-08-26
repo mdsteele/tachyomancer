@@ -17,39 +17,67 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::shared::{FabricationTable, PuzzleVerifyView};
+use super::shared::PuzzleVerifyView;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::RectSize;
+use tachy::font::Align;
+use tachy::geom::{Rect, RectSize};
 use tachy::gui::Resources;
-use tachy::state::{CircuitEval, EvalError, SensorsEval};
+use tachy::state::{CircuitEval, SensorsEval};
+
+//===========================================================================//
+
+const VIEW_WIDTH: i32 = 160;
+const VIEW_HEIGHT: i32 = 160;
+
+const FONT_SIZE: f32 = 20.0;
 
 //===========================================================================//
 
 pub struct SensorsVerifyView {
-    table: FabricationTable,
+    rect: Rect<i32>,
 }
 
 impl SensorsVerifyView {
     pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
-        let table = FabricationTable::new(right_bottom,
-                                          SensorsEval::TABLE_COLUMN_NAMES,
-                                          SensorsEval::EXPECTED_TABLE_VALUES);
-        Box::new(SensorsVerifyView { table })
+        let rect = Rect::new(right_bottom.x - VIEW_WIDTH,
+                             right_bottom.y - VIEW_HEIGHT,
+                             VIEW_WIDTH,
+                             VIEW_HEIGHT);
+        Box::new(SensorsVerifyView { rect })
     }
 }
 
 impl PuzzleVerifyView for SensorsVerifyView {
-    fn size(&self) -> RectSize<i32> { self.table.size() }
+    fn size(&self) -> RectSize<i32> { RectSize::new(VIEW_WIDTH, VIEW_HEIGHT) }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-            circuit_eval: Option<&CircuitEval>) {
-        let (time_step, values, errors) = if let Some(eval) = circuit_eval {
-            let puzzle = eval.puzzle_eval::<SensorsEval>();
-            (Some(eval.time_step()), puzzle.table_values(), eval.errors())
+            opt_circuit_eval: Option<&CircuitEval>) {
+        let (lower, upper, num_found) = if let Some(eval) = opt_circuit_eval {
+            let eval = eval.puzzle_eval::<SensorsEval>();
+            (eval.lower_bound(), eval.upper_bound(), eval.num_goals_found())
         } else {
-            (None, SensorsEval::EXPECTED_TABLE_VALUES, &[] as &[EvalError])
+            (0, 15, 0)
         };
-        self.table.draw(resources, matrix, time_step, values, errors);
+        // TODO: Draw a visual scan range, and a (discrete) progress bar for
+        //   num_goals_found.
+        let left = self.rect.x as f32;
+        let top = self.rect.y as f32;
+        let font = resources.fonts().roman();
+        font.draw(matrix,
+                  FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top),
+                  &format!("Lower: {}", lower));
+        font.draw(matrix,
+                  FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top + 30.0),
+                  &format!("Upper: {}", upper));
+        font.draw(matrix,
+                  FONT_SIZE,
+                  Align::TopLeft,
+                  (left, top + 60.0),
+                  &format!("Num found: {}", num_found));
     }
 }
 

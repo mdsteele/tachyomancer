@@ -19,6 +19,7 @@
 
 mod beacon;
 mod heliostat;
+mod lander;
 mod robotarm;
 mod sensors;
 mod shared;
@@ -73,6 +74,9 @@ impl VerificationTray {
             }
             Puzzle::AutomateSensors => {
                 self::sensors::SensorsVerifyView::new(right_bottom)
+            }
+            Puzzle::CommandLander => {
+                self::lander::LanderVerifyView::new(right_bottom)
             }
             Puzzle::FabricateHalve => {
                 FabricationVerifyView::<FabricateHalveEval>::new(right_bottom)

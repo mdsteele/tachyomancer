@@ -34,6 +34,7 @@ pub enum EvalResult {
     Victory(EvalScore),
 }
 
+#[derive(Debug)]
 pub struct EvalError {
     pub time_step: u32,
     pub port: Option<(Coords, Direction)>,
@@ -158,6 +159,7 @@ impl CircuitEval {
                     return if self.errors.is_empty() {
                         EvalResult::Victory(score)
                     } else {
+                        debug_log!("Errors: {:?}", self.errors);
                         EvalResult::Failure
                     };
                 }

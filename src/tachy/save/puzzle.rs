@@ -22,7 +22,6 @@ use strum::IntoEnumIterator;
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[allow(dead_code)]
 pub enum PuzzleKind {
     Tutorial,
     Fabricate,
@@ -45,6 +44,7 @@ pub enum Puzzle {
     AutomateHeliostat,
     AutomateReactor,
     AutomateSensors,
+    CommandLander,
     TutorialDemux,
     TutorialSum,
     FabricateInc,
@@ -149,7 +149,7 @@ impl Puzzle {
                     kind: PuzzleKind::Automate,
                     allow_events: false,
                     score_units: "Time",
-                    graph_bounds: (150, 150),
+                    graph_bounds: (100, 150),
                     description: "\
                         Design a replacement signal amplifier for the main \
                         sensor array.",
@@ -167,6 +167,17 @@ impl Puzzle {
                           value to terminate the scan.\n\
                         * $!Note that ($/x$/ AND 1) is 0 when $/x$/ is even, \
                           and 1 when $/x$/ is odd.",
+                }
+            }
+            Puzzle::CommandLander => {
+                &PuzzleData {
+                    title: "Orbital Lander",
+                    kind: PuzzleKind::Command,
+                    allow_events: false,
+                    score_units: "Time",
+                    graph_bounds: (150, 150),
+                    description: "TODO",
+                    instructions: "TODO",
                 }
             }
             Puzzle::FabricateHalve => {
@@ -410,6 +421,15 @@ mod tests {
         for puzzle in Puzzle::all() {
             let string = format!("{:?}", puzzle);
             assert_eq!(Puzzle::from_str(&string), Ok(puzzle));
+        }
+    }
+
+    #[test]
+    fn puzzle_kinds() {
+        for puzzle in Puzzle::all() {
+            let name = format!("{:?}", puzzle);
+            let kind = format!("{:?}", puzzle.kind());
+            assert!(name.starts_with(kind.as_str()));
         }
     }
 }

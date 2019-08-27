@@ -21,6 +21,7 @@ mod beacon;
 mod fabricate;
 mod heliostat;
 mod iface;
+mod lander;
 mod reactor;
 mod rng;
 mod robotarm;
@@ -35,6 +36,7 @@ pub use self::fabricate::{FabricateHalveEval, FabricateIncEval,
                           FabricateMulEval, FabricateXorEval};
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
+pub use self::lander::LanderEval;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::shared::TutorialBubblePosition;
@@ -91,6 +93,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
+            Puzzle::CommandLander => self::lander::INTERFACES,
             Puzzle::FabricateHalve => self::fabricate::HALVE_INTERFACES,
             Puzzle::FabricateInc => self::fabricate::INC_INTERFACES,
             Puzzle::FabricateMul => self::fabricate::MUL_INTERFACES,
@@ -159,6 +162,7 @@ pub(super) fn new_puzzle_eval(puzzle: Puzzle,
         Puzzle::AutomateSensors => {
             Box::new(self::sensors::SensorsEval::new(slots))
         }
+        Puzzle::CommandLander => Box::new(LanderEval::new(slots)),
         Puzzle::FabricateHalve => Box::new(FabricateHalveEval::new(slots)),
         Puzzle::FabricateInc => Box::new(FabricateIncEval::new(slots)),
         Puzzle::FabricateMul => Box::new(FabricateMulEval::new(slots)),

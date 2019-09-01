@@ -47,10 +47,6 @@ use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
 
 //===========================================================================//
 
-const SECONDS_PER_TIME_STEP: f64 = 0.1;
-
-//===========================================================================//
-
 #[derive(Clone, Copy, Debug)]
 pub enum CircuitAction {
     BackToMenu,
@@ -173,12 +169,14 @@ impl CircuitView {
                 let mut result = EvalResult::Continue;
                 if let Some(eval) = grid.eval_mut() {
                     if self.controls_status == ControlsStatus::Running {
+                        let seconds_per_time_step =
+                            eval.seconds_per_time_step();
                         self.seconds_since_time_step += tick.elapsed;
                         while self.seconds_since_time_step >=
-                            SECONDS_PER_TIME_STEP
+                            seconds_per_time_step
                         {
                             self.seconds_since_time_step -=
-                                SECONDS_PER_TIME_STEP;
+                                seconds_per_time_step;
                             result = eval.step_time();
                             ui.request_redraw();
                         }

@@ -114,6 +114,8 @@ impl TutorialOrEval {
 }
 
 impl PuzzleEval for TutorialOrEval {
+    fn seconds_per_time_step(&self) -> f64 { 0.2 }
+
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
         if time_step >= 4 {

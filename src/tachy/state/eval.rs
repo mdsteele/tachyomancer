@@ -81,6 +81,10 @@ impl CircuitEval {
         }
     }
 
+    pub fn seconds_per_time_step(&self) -> f64 {
+        self.puzzle.seconds_per_time_step()
+    }
+
     #[cfg(test)]
     pub(super) fn circuit_state_mut(&mut self) -> &mut CircuitState {
         &mut self.state
@@ -292,6 +296,8 @@ impl CircuitInteraction {
 //===========================================================================//
 
 pub trait PuzzleEval: Downcast {
+    fn seconds_per_time_step(&self) -> f64 { 0.1 }
+
     /// Called at the beginning of each time step; sets up input values for the
     /// circuit.
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)

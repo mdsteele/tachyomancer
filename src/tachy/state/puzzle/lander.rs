@@ -142,6 +142,8 @@ impl LanderEval {
 }
 
 impl PuzzleEval for LanderEval {
+    fn seconds_per_time_step(&self) -> f64 { 0.05 }
+
     fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
                        -> Option<EvalScore> {
         let altitude = self.current_altitude();

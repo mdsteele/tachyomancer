@@ -429,8 +429,13 @@ impl Scrollbar {
                     if handle_rect.contains_point(mouse.pt) {
                         self.drag = Some(mouse.pt.y - handle_rect.y);
                         ui.request_redraw();
+                    } else if self.rect.contains_point(mouse.pt) {
+                        if mouse.pt.y < handle_rect.y {
+                            self.scroll_by(-self.rect.height, ui);
+                        } else {
+                            self.scroll_by(self.rect.height, ui);
+                        }
                     }
-                    // TODO: support jumping up/down page
                 }
             }
             Event::MouseMove(mouse) => {

@@ -85,6 +85,17 @@ pub fn button_hover_data() -> Result<Vec<f32>, String> {
     Ok(spec.generate())
 }
 
+pub fn change_bounds_data() -> Result<Vec<f32>, String> {
+    let mut spec = SoundSpec::new();
+    spec.wave_kind = WaveKind::Noise;
+    spec.env_sustain = 0.1;
+    spec.start_freq = 0.3;
+    spec.freq_slide = 0.6;
+    spec.lpf_cutoff = 0.735;
+    spec.volume_adjust = -0.;
+    Ok(spec.generate())
+}
+
 pub fn drop_chip_data() -> Result<Vec<f32>, String> {
     decode_flac("drop-chip.flac", include_bytes!("drop-chip.flac"))
 }

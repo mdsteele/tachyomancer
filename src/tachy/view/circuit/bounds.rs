@@ -21,7 +21,7 @@ use super::super::chip::CHIP_MARGIN;
 use cgmath::Point2;
 use tachy::geom::{AsFloat, AsInt, CoordsDelta, CoordsRect, CoordsSize,
                   Direction, Rect};
-use tachy::gui::{Cursor, NextCursor, Ui};
+use tachy::gui::{Cursor, NextCursor, Sound, Ui};
 use tachy::state::{EditGrid, GridChange};
 
 //===========================================================================//
@@ -178,7 +178,7 @@ impl BoundsDrag {
             self.bounds = new_bounds;
             self.acceptable = grid.can_have_bounds(self.bounds);
             ui.request_redraw();
-            // TODO: Play sound for bounds drag changing
+            ui.audio().play_sound(Sound::ChangeBounds);
         }
     }
 

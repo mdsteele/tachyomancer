@@ -96,6 +96,18 @@ pub fn change_bounds_data() -> Result<Vec<f32>, String> {
     Ok(spec.generate())
 }
 
+pub fn drag_wire_data() -> Result<Vec<f32>, String> {
+    let mut spec = SoundSpec::new();
+    spec.wave_kind = WaveKind::Noise;
+    spec.env_decay = 0.115;
+    spec.start_freq = 0.825;
+    spec.freq_slide = -0.3;
+    spec.phaser_offset = -0.7;
+    spec.phaser_sweep = -0.04;
+    spec.volume_adjust = -0.5;
+    Ok(spec.generate())
+}
+
 pub fn drop_chip_data() -> Result<Vec<f32>, String> {
     decode_flac("drop-chip.flac", include_bytes!("drop-chip.flac"))
 }

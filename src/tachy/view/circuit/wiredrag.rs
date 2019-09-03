@@ -20,7 +20,7 @@
 use cgmath::{Point2, vec2};
 use std::collections::HashMap;
 use tachy::geom::{AsInt, Coords, Direction, Polygon};
-use tachy::gui::Ui;
+use tachy::gui::{Sound, Ui};
 use tachy::save::WireShape;
 use tachy::state::{EditGrid, GridChange};
 
@@ -201,6 +201,16 @@ impl Zone {
 
 //===========================================================================//
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+#[must_use = "must not ignore DragResult"]
+enum DragResult {
+    Changed,
+    Unchanged,
+    Stop,
+}
+
+//===========================================================================//
+
 pub struct WireDrag {
     last_pt: Option<Point2<f32>>,
     curr: Option<Zone>,
@@ -223,248 +233,265 @@ impl WireDrag {
     pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui,
                    grid: &mut EditGrid)
                    -> bool {
-        ui.request_redraw(); // TODO: only if changes were made
         let last_pt = self.last_pt;
         self.last_pt = Some(grid_pt);
+        let mut drag_result = DragResult::Unchanged;
         if let Some(start) = last_pt {
             for zone in Zone::along_line(start, grid_pt) {
-                if !self.move_to_zone(zone, grid) {
-                    return false;
+                drag_result = self.move_to_zone(zone, grid);
+                if drag_result == DragResult::Stop {
+                    break;
                 }
             }
-            return true;
         } else {
-            return self.move_to_zone(Zone::from_grid_pt(grid_pt), grid);
+            drag_result = self.move_to_zone(Zone::from_grid_pt(grid_pt), grid);
         }
+        if drag_result == DragResult::Changed {
+            self.changed = true;
+            ui.audio().play_sound(Sound::DragWire);
+            ui.request_redraw();
+        }
+        drag_result != DragResult::Stop
     }
 
-    fn move_to_zone(&mut self, zone: Zone, grid: &mut EditGrid) -> bool {
+    fn move_to_zone(&mut self, zone: Zone, grid: &mut EditGrid) -> DragResult {
         if self.curr == Some(zone) {
-            return true;
+            return DragResult::Unchanged;
         }
-        let more = match (self.prev, self.curr, zone) {
-            (_, None, Zone::Center(_)) => true,
+        let drag_result = match (self.prev, self.curr, zone) {
+            (_, None, Zone::Center(_)) => DragResult::Unchanged,
             (_, None, Zone::East(coords)) => {
-                self.try_start_stub(coords, Direction::East, grid)
+                WireDrag::start_stub(coords, Direction::East, grid)
             }
             (_, None, Zone::South(coords)) => {
-                self.try_start_stub(coords, Direction::South, grid)
+                WireDrag::start_stub(coords, Direction::South, grid)
             }
             (_, Some(Zone::Center(_)), Zone::Center(_)) => {
                 debug_log!("WARNING: Pattern (_, Center, Center) shouldn't \
                             happen!");
-                false
+                DragResult::Stop
             }
             (_, Some(Zone::East(_)), Zone::East(_)) => {
                 debug_log!("WARNING: Pattern (_, East, East) shouldn't \
                             happen!");
-                false
+                DragResult::Stop
             }
             (_, Some(Zone::South(_)), Zone::South(_)) => {
                 debug_log!("WARNING: Pattern (_, East, East) shouldn't \
                             happen!");
-                false
+                DragResult::Stop
             }
-            (_, Some(Zone::East(_)), Zone::Center(_)) => true,
-            (_, Some(Zone::South(_)), Zone::Center(_)) => true,
+            (_, Some(Zone::East(_)), Zone::Center(_)) => DragResult::Unchanged,
+            (_, Some(Zone::South(_)), Zone::Center(_)) => {
+                DragResult::Unchanged
+            }
             (None, Some(Zone::Center(coords1)), Zone::East(coords2)) => {
                 if coords1 == coords2 {
-                    self.try_split(coords1, Direction::East, grid)
+                    WireDrag::split(coords1, Direction::East, grid)
                 } else if coords1 + Direction::West == coords2 {
-                    self.try_split(coords1, Direction::West, grid)
+                    WireDrag::split(coords1, Direction::West, grid)
                 } else {
                     debug_log!("Pattern (None, Center, East) does not match \
                                 {:?}, {:?}, {:?}",
                                self.prev,
                                self.curr,
                                zone);
-                    true
+                    DragResult::Unchanged
                 }
             }
             (None, Some(Zone::Center(coords1)), Zone::South(coords2)) => {
                 if coords1 == coords2 {
-                    self.try_split(coords1, Direction::South, grid)
+                    WireDrag::split(coords1, Direction::South, grid)
                 } else if coords1 + Direction::North == coords2 {
-                    self.try_split(coords1, Direction::North, grid)
+                    WireDrag::split(coords1, Direction::North, grid)
                 } else {
                     debug_log!("Pattern (None, Center, South) does not match \
                                 {:?}, {:?}, {:?}",
                                self.prev,
                                self.curr,
                                zone);
-                    true
+                    DragResult::Unchanged
                 }
             }
             (Some(Zone::Center(_)), Some(Zone::Center(_)), Zone::East(_)) => {
                 debug_log!("WARNING: Pattern (Center, Center, East) \
                             shouldn't happen!");
-                false
+                DragResult::Stop
             }
             (Some(Zone::Center(_)), Some(Zone::Center(_)), Zone::South(_)) => {
                 debug_log!("WARNING: Pattern (Center, Center, South) \
                             shouldn't happen!");
-                false
+                DragResult::Stop
             }
             (Some(Zone::East(coords1)),
              Some(Zone::Center(_)),
              Zone::East(coords2)) => {
                 if coords1 + Direction::East == coords2 {
-                    self.try_straight(coords2, Direction::West, grid)
+                    WireDrag::straight(coords2, Direction::West, grid)
                 } else if coords1 + Direction::West == coords2 {
-                    self.try_straight(coords1, Direction::East, grid)
+                    WireDrag::straight(coords1, Direction::East, grid)
                 } else {
                     debug_log!("Pattern (East, Center, East) does not match \
                                 {:?}, {:?}, {:?}",
                                self.prev,
                                self.curr,
                                zone);
-                    true
+                    DragResult::Unchanged
                 }
             }
             (Some(Zone::South(coords1)),
              Some(Zone::Center(_)),
              Zone::South(coords2)) => {
                 if coords1 + Direction::South == coords2 {
-                    self.try_straight(coords2, Direction::North, grid)
+                    WireDrag::straight(coords2, Direction::North, grid)
                 } else if coords1 + Direction::North == coords2 {
-                    self.try_straight(coords1, Direction::South, grid)
+                    WireDrag::straight(coords1, Direction::South, grid)
                 } else {
                     debug_log!("Pattern (South, Center, South) does not match \
                                 {:?}, {:?}, {:?}",
                                self.prev,
                                self.curr,
                                zone);
-                    true
+                    DragResult::Unchanged
                 }
             }
             (Some(Zone::East(c1)),
              Some(Zone::Center(c2)),
              Zone::South(c3)) => {
                 if c1 == c2 && c2 == c3 {
-                    self.try_turn_left(c2, Direction::East, grid)
+                    WireDrag::turn_left(c2, Direction::East, grid)
                 } else if c1 == c2 && c2 + Direction::North == c3 {
-                    self.try_turn_left(c2, Direction::North, grid)
+                    WireDrag::turn_left(c2, Direction::North, grid)
                 } else if c1 + Direction::East == c2 && c2 == c3 {
-                    self.try_turn_left(c2, Direction::South, grid)
+                    WireDrag::turn_left(c2, Direction::South, grid)
                 } else if c1 + Direction::East == c2 &&
                            c2 + Direction::North == c3
                 {
-                    self.try_turn_left(c2, Direction::West, grid)
+                    WireDrag::turn_left(c2, Direction::West, grid)
                 } else {
                     debug_log!("Pattern (East, Center, South) does not match \
                                 {:?}, {:?}, {:?}",
                                self.prev,
                                self.curr,
                                zone);
-                    true
+                    DragResult::Unchanged
                 }
             }
             (Some(Zone::South(c1)),
              Some(Zone::Center(c2)),
              Zone::East(c3)) => {
                 if c1 == c2 && c2 == c3 {
-                    self.try_turn_left(c2, Direction::East, grid)
+                    WireDrag::turn_left(c2, Direction::East, grid)
                 } else if c1 == c2 && c2 + Direction::West == c3 {
-                    self.try_turn_left(c2, Direction::South, grid)
+                    WireDrag::turn_left(c2, Direction::South, grid)
                 } else if c1 + Direction::South == c2 && c2 == c3 {
-                    self.try_turn_left(c2, Direction::North, grid)
+                    WireDrag::turn_left(c2, Direction::North, grid)
                 } else if c1 + Direction::South == c2 &&
                            c2 + Direction::West == c3
                 {
-                    self.try_turn_left(c2, Direction::West, grid)
+                    WireDrag::turn_left(c2, Direction::West, grid)
                 } else {
                     debug_log!("Pattern (South, Center, East) does not match \
                                 {:?}, {:?}, {:?}",
                                self.prev,
                                self.curr,
                                zone);
-                    true
+                    DragResult::Unchanged
                 }
             }
             (_, Some(Zone::East(coords1)), Zone::South(coords2)) => {
                 if coords1 == coords2 {
-                    self.try_turn_left(coords1, Direction::East, grid)
+                    WireDrag::turn_left(coords1, Direction::East, grid)
                 } else if coords1 + Direction::North == coords2 {
-                    self.try_turn_left(coords1, Direction::North, grid)
+                    WireDrag::turn_left(coords1, Direction::North, grid)
                 } else if coords1 + Direction::East == coords2 {
-                    self.try_turn_left(coords2, Direction::South, grid)
+                    WireDrag::turn_left(coords2, Direction::South, grid)
                 } else if coords1 + Direction::East ==
                            coords2 + Direction::South
                 {
-                    self.try_turn_left(coords1 + Direction::East,
-                                       Direction::West,
-                                       grid)
+                    WireDrag::turn_left(coords1 + Direction::East,
+                                        Direction::West,
+                                        grid)
                 } else {
                     debug_log!("Pattern (_, East, South) does not match \
                                 {:?}, {:?}, {:?}",
                                self.prev,
                                self.curr,
                                zone);
-                    true
+                    DragResult::Unchanged
                 }
             }
             (_, Some(Zone::South(coords1)), Zone::East(coords2)) => {
                 if coords1 == coords2 {
-                    self.try_turn_left(coords1, Direction::East, grid)
+                    WireDrag::turn_left(coords1, Direction::East, grid)
                 } else if coords1 + Direction::South == coords2 {
-                    self.try_turn_left(coords2, Direction::North, grid)
+                    WireDrag::turn_left(coords2, Direction::North, grid)
                 } else if coords1 + Direction::West == coords2 {
-                    self.try_turn_left(coords1, Direction::South, grid)
+                    WireDrag::turn_left(coords1, Direction::South, grid)
                 } else if coords1 + Direction::South ==
                            coords2 + Direction::East
                 {
-                    self.try_turn_left(coords1 + Direction::South,
-                                       Direction::West,
-                                       grid)
+                    WireDrag::turn_left(coords1 + Direction::South,
+                                        Direction::West,
+                                        grid)
                 } else {
                     debug_log!("Pattern (_, South, East) does not match \
                                 {:?}, {:?}, {:?}",
                                self.prev,
                                self.curr,
                                zone);
-                    true
+                    DragResult::Unchanged
                 }
             }
         };
         self.prev = self.curr;
         self.curr = Some(zone);
-        more
+        drag_result
     }
 
-    pub fn finish(mut self, ui: &mut Ui, grid: &mut EditGrid) {
-        ui.request_redraw(); // TODO: only if changes were made
-        match (self.changed, self.prev, self.curr) {
+    pub fn finish(self, ui: &mut Ui, grid: &mut EditGrid) {
+        let drag_result = match (self.changed, self.prev, self.curr) {
             (_, Some(Zone::East(coords1)), Some(Zone::Center(coords2))) => {
                 if coords1 == coords2 {
-                    self.try_split(coords1, Direction::East, grid);
+                    WireDrag::split(coords1, Direction::East, grid)
                 } else if coords1 + Direction::East == coords2 {
-                    self.try_split(coords2, Direction::West, grid);
+                    WireDrag::split(coords2, Direction::West, grid)
+                } else {
+                    DragResult::Unchanged
                 }
             }
             (_, Some(Zone::South(coords1)), Some(Zone::Center(coords2))) => {
                 if coords1 == coords2 {
-                    self.try_split(coords1, Direction::South, grid);
+                    WireDrag::split(coords1, Direction::South, grid)
                 } else if coords1 + Direction::South == coords2 {
-                    self.try_split(coords2, Direction::North, grid);
+                    WireDrag::split(coords2, Direction::North, grid)
+                } else {
+                    DragResult::Unchanged
                 }
             }
             (false, None, Some(Zone::Center(coords))) => {
-                if WireDrag::try_toggle_cross(coords, grid) {
-                    self.changed = true;
-                }
+                WireDrag::toggle_cross(coords, grid)
             }
             (false, None, Some(Zone::East(coords))) => {
-                self.try_remove_stub(coords, Direction::East, grid);
+                WireDrag::remove_stub(coords, Direction::East, grid)
             }
             (false, None, Some(Zone::South(coords))) => {
-                self.try_remove_stub(coords, Direction::South, grid);
+                WireDrag::remove_stub(coords, Direction::South, grid)
             }
-            (_, _, _) => {}
+            (_, _, _) => DragResult::Unchanged,
+        };
+        if drag_result == DragResult::Changed {
+            ui.audio().play_sound(Sound::DragWire);
+            ui.request_redraw();
         }
         grid.commit_provisional_changes();
     }
 
     pub fn try_toggle_cross(coords: Coords, grid: &mut EditGrid) -> bool {
+        WireDrag::toggle_cross(coords, grid) == DragResult::Changed
+    }
+
+    fn toggle_cross(coords: Coords, grid: &mut EditGrid) -> DragResult {
         let (old_shape, new_shape) =
             if grid.wire_shape_at(coords, Direction::East) ==
                 Some(WireShape::Cross)
@@ -480,30 +507,35 @@ impl WireDrag {
             new.insert((coords, dir), new_shape);
         }
         let changes = vec![GridChange::ReplaceWires(old, new)];
-        grid.try_mutate_provisionally(changes)
+        if grid.try_mutate_provisionally(changes) {
+            DragResult::Changed
+        } else {
+            DragResult::Unchanged
+        }
     }
 
-    fn try_start_stub(&mut self, coords: Coords, dir: Direction,
-                      grid: &mut EditGrid)
-                      -> bool {
+    fn start_stub(coords: Coords, dir: Direction, grid: &mut EditGrid)
+                  -> DragResult {
         let changes = vec![GridChange::add_stub_wire(coords, dir)];
         if grid.try_mutate_provisionally(changes) {
-            self.changed = true;
+            DragResult::Changed
+        } else {
+            DragResult::Unchanged
         }
-        true
     }
 
-    fn try_remove_stub(&mut self, coords: Coords, dir: Direction,
-                       grid: &mut EditGrid) {
+    fn remove_stub(coords: Coords, dir: Direction, grid: &mut EditGrid)
+                   -> DragResult {
         let changes = vec![GridChange::remove_stub_wire(coords, dir)];
         if grid.try_mutate_provisionally(changes) {
-            self.changed = true;
+            DragResult::Changed
+        } else {
+            DragResult::Unchanged
         }
     }
 
-    fn try_straight(&mut self, coords: Coords, dir: Direction,
-                    grid: &mut EditGrid)
-                    -> bool {
+    fn straight(coords: Coords, dir: Direction, grid: &mut EditGrid)
+                -> DragResult {
         let mut old = HashMap::<(Coords, Direction), WireShape>::new();
         let mut new = HashMap::<(Coords, Direction), WireShape>::new();
         match (grid.wire_shape_at(coords, dir),
@@ -543,22 +575,21 @@ impl WireDrag {
                 stub(coords, dir, grid, &mut old, &mut new);
                 stub(coords - dir, dir, grid, &mut old, &mut new);
             }
-            (_, _) => return false,
+            (_, _) => return DragResult::Stop,
         }
         let changes = vec![GridChange::ReplaceWires(old, new)];
-        let success = grid.try_mutate_provisionally(changes);
-        if !success {
+        if grid.try_mutate_provisionally(changes) {
+            return DragResult::Changed;
+        } else {
             debug_log!("try_straight failed: coords={:?}, dir={:?}",
                        coords,
                        dir);
+            return DragResult::Stop;
         }
-        self.changed |= success;
-        success
     }
 
-    fn try_turn_left(&mut self, coords: Coords, dir: Direction,
-                     grid: &mut EditGrid)
-                     -> bool {
+    fn turn_left(coords: Coords, dir: Direction, grid: &mut EditGrid)
+                 -> DragResult {
         let mut old = HashMap::<(Coords, Direction), WireShape>::new();
         let mut new = HashMap::<(Coords, Direction), WireShape>::new();
         let side = dir.rotate_cw();
@@ -615,22 +646,21 @@ impl WireDrag {
                 stub(coords, side, grid, &mut old, &mut new);
                 stub(coords + dir, -dir, grid, &mut old, &mut new);
             }
-            (_, _) => return false,
+            (_, _) => return DragResult::Stop,
         }
         let changes = vec![GridChange::ReplaceWires(old, new)];
-        let success = grid.try_mutate_provisionally(changes);
-        if !success {
+        if grid.try_mutate_provisionally(changes) {
+            return DragResult::Changed;
+        } else {
             debug_log!("try_turn_left failed: coords={:?}, dir={:?}",
                        coords,
                        dir);
+            return DragResult::Stop;
         }
-        self.changed |= success;
-        success
     }
 
-    fn try_split(&mut self, coords: Coords, dir: Direction,
-                 grid: &mut EditGrid)
-                 -> bool {
+    fn split(coords: Coords, dir: Direction, grid: &mut EditGrid)
+             -> DragResult {
         let mut old = HashMap::<(Coords, Direction), WireShape>::new();
         let mut new = HashMap::<(Coords, Direction), WireShape>::new();
         let side = dir.rotate_cw();
@@ -707,15 +737,15 @@ impl WireDrag {
                 new.insert((coords, -side), WireShape::Straight);
                 stub(coords, dir, grid, &mut old, &mut new);
             }
-            (_, _, _) => return false,
+            (_, _, _) => return DragResult::Stop,
         }
         let changes = vec![GridChange::ReplaceWires(old, new)];
-        let success = grid.try_mutate_provisionally(changes);
-        if !success {
+        if grid.try_mutate_provisionally(changes) {
+            return DragResult::Changed;
+        } else {
             debug_log!("try_split failed: coords={:?}, dir={:?}", coords, dir);
+            return DragResult::Stop;
         }
-        self.changed |= success;
-        success
     }
 }
 

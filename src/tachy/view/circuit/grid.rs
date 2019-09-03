@@ -497,12 +497,14 @@ impl EditGridView {
                             if let Some(wire) = self.hover_wire {
                                 select::delete_wire(grid, wire);
                                 self.hover_wire = None;
+                                // TODO: play sound for delete
                                 ui.request_redraw();
                             }
                         }
                         Interaction::RectSelected(rect) => {
                             select::delete(grid, rect);
                             self.interaction = Interaction::Nothing;
+                            // TODO: play sound for delete
                             ui.request_redraw();
                         }
                         _ => {}
@@ -689,7 +691,7 @@ impl EditGridView {
                 if WireDrag::try_toggle_cross(coords, grid) {
                     debug_assert!(grid.has_provisional_changes());
                     grid.commit_provisional_changes();
-                    // TODO: Play sound for toggling cross wire.
+                    ui.audio().play_sound(Sound::DragWire);
                     ui.request_redraw();
                 }
             }

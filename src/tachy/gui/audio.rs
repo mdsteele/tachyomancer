@@ -36,6 +36,7 @@ pub enum Sound {
     ButtonClick,
     ButtonHover,
     ChangeBounds,
+    DragWire,
     DropChip,
     GrabChip,
     TypeKey,
@@ -81,6 +82,7 @@ impl AudioData {
         sound_data.push(sound::button_click_data()?);
         sound_data.push(sound::button_hover_data()?);
         sound_data.push(sound::change_bounds_data()?);
+        sound_data.push(sound::drag_wire_data()?);
         sound_data.push(sound::drop_chip_data()?);
         sound_data.push(sound::grab_chip_data()?);
         sound_data.push(sound::type_key_data()?);

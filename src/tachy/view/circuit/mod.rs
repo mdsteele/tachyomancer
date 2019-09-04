@@ -400,7 +400,7 @@ fn change_const_chip_value(ui: &mut Ui, grid: &mut EditGrid, coords: Coords,
         if grid.try_mutate(changes) {
             ui.request_redraw();
         } else {
-            debug_log!("WARNING: change_const_chip_value mutation failed");
+            debug_warn!("change_const_chip_value mutation failed");
         }
     }
 }

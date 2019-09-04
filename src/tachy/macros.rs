@@ -26,4 +26,13 @@ macro_rules! debug_log {
     };
 }
 
+macro_rules! debug_warn {
+    ($($arg:tt)+) => {
+        (if cfg!(debug_assertions) {
+            eprint!("\x1b[31mWARNING:\x1b[m ");
+            debug_log!($($arg)+);
+        })
+    };
+}
+
 //===========================================================================//

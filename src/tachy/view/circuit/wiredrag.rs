@@ -75,13 +75,13 @@ impl Zone {
                 Some((edge, _)) => edge,
                 None => {
                     // TODO: Figure out why this happens, and fix it.
-                    debug_log!("WARNING: no intersection for zone={:?} \
-                                polygon={:?} start={:?} end={:?} so_far={:?}",
-                               current_zone,
-                               polygon,
-                               start_grid_pt,
-                               end_grid_pt,
-                               zones);
+                    debug_warn!("no intersection for zone={:?} \
+                                 polygon={:?} start={:?} end={:?} so_far={:?}",
+                                current_zone,
+                                polygon,
+                                start_grid_pt,
+                                end_grid_pt,
+                                zones);
                     return zones;
                 }
             };
@@ -218,8 +218,6 @@ pub struct WireDrag {
     changed: bool,
 }
 
-// TODO: enforce wires must be in bounds
-// TODO: enforce wires can't be created under chips
 impl WireDrag {
     pub fn new() -> WireDrag {
         WireDrag {
@@ -267,18 +265,15 @@ impl WireDrag {
                 WireDrag::start_stub(coords, Direction::South, grid)
             }
             (_, Some(Zone::Center(_)), Zone::Center(_)) => {
-                debug_log!("WARNING: Pattern (_, Center, Center) shouldn't \
-                            happen!");
+                debug_warn!("Pattern (_, Center, Center) shouldn't happen!");
                 DragResult::Stop
             }
             (_, Some(Zone::East(_)), Zone::East(_)) => {
-                debug_log!("WARNING: Pattern (_, East, East) shouldn't \
-                            happen!");
+                debug_warn!("Pattern (_, East, East) shouldn't happen!");
                 DragResult::Stop
             }
             (_, Some(Zone::South(_)), Zone::South(_)) => {
-                debug_log!("WARNING: Pattern (_, East, East) shouldn't \
-                            happen!");
+                debug_warn!("Pattern (_, South, South) shouldn't happen!");
                 DragResult::Stop
             }
             (_, Some(Zone::East(_)), Zone::Center(_)) => DragResult::Unchanged,
@@ -314,13 +309,13 @@ impl WireDrag {
                 }
             }
             (Some(Zone::Center(_)), Some(Zone::Center(_)), Zone::East(_)) => {
-                debug_log!("WARNING: Pattern (Center, Center, East) \
-                            shouldn't happen!");
+                debug_warn!("Pattern (Center, Center, East) shouldn't \
+                             happen!");
                 DragResult::Stop
             }
             (Some(Zone::Center(_)), Some(Zone::Center(_)), Zone::South(_)) => {
-                debug_log!("WARNING: Pattern (Center, Center, South) \
-                            shouldn't happen!");
+                debug_warn!("Pattern (Center, Center, South) shouldn't \
+                             happen!");
                 DragResult::Stop
             }
             (Some(Zone::East(coords1)),
@@ -492,6 +487,9 @@ impl WireDrag {
     }
 
     fn toggle_cross(coords: Coords, grid: &mut EditGrid) -> DragResult {
+        if !grid.bounds().contains_point(coords) || grid.has_chip_at(coords) {
+            return DragResult::Stop;
+        }
         let (old_shape, new_shape) =
             if grid.wire_shape_at(coords, Direction::East) ==
                 Some(WireShape::Cross)
@@ -508,9 +506,9 @@ impl WireDrag {
         }
         let changes = vec![GridChange::ReplaceWires(old, new)];
         if grid.try_mutate_provisionally(changes) {
-            DragResult::Changed
+            return DragResult::Changed;
         } else {
-            DragResult::Unchanged
+            return DragResult::Unchanged;
         }
     }
 
@@ -536,6 +534,9 @@ impl WireDrag {
 
     fn straight(coords: Coords, dir: Direction, grid: &mut EditGrid)
                 -> DragResult {
+        if !grid.bounds().contains_point(coords) || grid.has_chip_at(coords) {
+            return DragResult::Stop;
+        }
         let mut old = HashMap::<(Coords, Direction), WireShape>::new();
         let mut new = HashMap::<(Coords, Direction), WireShape>::new();
         match (grid.wire_shape_at(coords, dir),
@@ -581,15 +582,18 @@ impl WireDrag {
         if grid.try_mutate_provisionally(changes) {
             return DragResult::Changed;
         } else {
-            debug_log!("try_straight failed: coords={:?}, dir={:?}",
-                       coords,
-                       dir);
+            debug_warn!("WireDrag::straight failed: coords={:?}, dir={:?}",
+                        coords,
+                        dir);
             return DragResult::Stop;
         }
     }
 
     fn turn_left(coords: Coords, dir: Direction, grid: &mut EditGrid)
                  -> DragResult {
+        if !grid.bounds().contains_point(coords) || grid.has_chip_at(coords) {
+            return DragResult::Stop;
+        }
         let mut old = HashMap::<(Coords, Direction), WireShape>::new();
         let mut new = HashMap::<(Coords, Direction), WireShape>::new();
         let side = dir.rotate_cw();
@@ -652,15 +656,18 @@ impl WireDrag {
         if grid.try_mutate_provisionally(changes) {
             return DragResult::Changed;
         } else {
-            debug_log!("try_turn_left failed: coords={:?}, dir={:?}",
-                       coords,
-                       dir);
+            debug_warn!("WireDrag::turn_left failed: coords={:?}, dir={:?}",
+                        coords,
+                        dir);
             return DragResult::Stop;
         }
     }
 
     fn split(coords: Coords, dir: Direction, grid: &mut EditGrid)
              -> DragResult {
+        if !grid.bounds().contains_point(coords) || grid.has_chip_at(coords) {
+            return DragResult::Stop;
+        }
         let mut old = HashMap::<(Coords, Direction), WireShape>::new();
         let mut new = HashMap::<(Coords, Direction), WireShape>::new();
         let side = dir.rotate_cw();
@@ -743,7 +750,9 @@ impl WireDrag {
         if grid.try_mutate_provisionally(changes) {
             return DragResult::Changed;
         } else {
-            debug_log!("try_split failed: coords={:?}, dir={:?}", coords, dir);
+            debug_warn!("WireDrag::split failed: coords={:?}, dir={:?}",
+                        coords,
+                        dir);
             return DragResult::Stop;
         }
     }

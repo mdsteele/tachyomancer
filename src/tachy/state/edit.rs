@@ -326,6 +326,10 @@ impl EditGrid {
 
     pub fn has_errors(&self) -> bool { !self.errors.is_empty() }
 
+    pub fn has_chip_at(&self, coords: Coords) -> bool {
+        self.chips.contains_key(&coords)
+    }
+
     pub fn chip_at(&self, coords: Coords)
                    -> Option<(Coords, ChipType, Orientation)> {
         match self.chips.get(&coords) {
@@ -394,7 +398,7 @@ impl EditGrid {
         if let Some(changes) = self.undo_stack.pop() {
             for change in changes.iter() {
                 if !self.mutate_one(change) {
-                    debug_log!("WARNING: undo {:?} had no effect", change);
+                    debug_warn!("undo {:?} had no effect", change);
                 }
             }
             self.redo_stack.push(GridChange::invert_group(changes));
@@ -414,7 +418,7 @@ impl EditGrid {
             debug_assert!(self.provisional_changes.is_empty());
             for change in changes.iter() {
                 if !self.mutate_one(change) {
-                    debug_log!("WARNING: redo {:?} had no effect", change);
+                    debug_warn!("redo {:?} had no effect", change);
                 }
             }
             self.undo_stack.push(GridChange::invert_group(changes));
@@ -474,7 +478,7 @@ impl EditGrid {
         let changes = mem::replace(&mut self.provisional_changes, Vec::new());
         for change in GridChange::invert_group(changes) {
             if !self.mutate_one(&change) {
-                debug_log!("WARNING: failed to roll back {:?}", change);
+                debug_warn!("failed to roll back {:?}", change);
             }
         }
         self.typecheck_wires();
@@ -499,7 +503,7 @@ impl EditGrid {
             changes.truncate(num_succeeded);
             for change in GridChange::invert_group(changes) {
                 if !self.mutate_one(&change) {
-                    debug_log!("WARNING: failed to roll back {:?}", change);
+                    debug_warn!("failed to roll back {:?}", change);
                 }
             }
             None

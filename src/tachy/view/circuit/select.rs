@@ -371,7 +371,7 @@ pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect,
            clipboard: &mut Clipboard) {
     let (changes, selection) = changes_for_cut(grid, selected_rect);
     if !grid.try_mutate(changes) {
-        debug_log!("WARNING: cut mutation failed");
+        debug_warn!("cut mutation failed");
     }
     selection.copy_to_clipboard(clipboard);
 }
@@ -379,7 +379,7 @@ pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect,
 pub fn delete(grid: &mut EditGrid, selected_rect: CoordsRect) {
     let (changes, _) = changes_for_cut(grid, selected_rect);
     if !grid.try_mutate(changes) {
-        debug_log!("WARNING: delete mutation failed");
+        debug_warn!("delete mutation failed");
     }
 }
 
@@ -389,7 +389,7 @@ pub fn delete_wire(grid: &mut EditGrid, wire_index: usize) {
     let new_wires = HashMap::<(Coords, Direction), WireShape>::new();
     let changes = vec![GridChange::ReplaceWires(old_wires, new_wires)];
     if !grid.try_mutate(changes) {
-        debug_log!("WARNING: delete_wire mutation failed");
+        debug_warn!("delete_wire mutation failed");
     }
 }
 
@@ -397,7 +397,7 @@ pub fn cut_provisionally(grid: &mut EditGrid, selected_rect: CoordsRect)
                          -> Selection {
     let (changes, selection) = changes_for_cut(grid, selected_rect);
     if !grid.try_mutate_provisionally(changes) {
-        debug_log!("WARNING: cut_provisionally mutation failed");
+        debug_warn!("cut_provisionally mutation failed");
     }
     selection
 }

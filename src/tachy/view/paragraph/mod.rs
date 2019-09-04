@@ -130,12 +130,11 @@ impl Paragraph {
                         parser.push_circuit(&parse_arg(&mut chars, '#'))
                     }
                     Some(ch) => {
-                        debug_log!("WARNING: Invalid paragraph escape: ${}",
-                                   ch);
+                        debug_warn!("Invalid paragraph escape: ${}", ch);
                     }
                     None => {
-                        debug_log!("WARNING: Incomplete paragraph escape at \
-                                    end of format string");
+                        debug_warn!("Incomplete paragraph escape at end of \
+                                     format string");
                     }
                 }
             } else if chr == '\n' {

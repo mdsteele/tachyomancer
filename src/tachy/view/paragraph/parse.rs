@@ -89,9 +89,8 @@ impl Parser {
             }
             "YOURNAME" => prefs.current_profile().unwrap_or("YOURNAME"),
             _ => {
-                debug_log!("WARNING: Bad phrase name {:?} in paragraph format \
-                            string",
-                           phrase_name);
+                debug_warn!("Bad phrase name {:?} in paragraph format string",
+                            phrase_name);
                 phrase_name
             }
         };
@@ -103,9 +102,8 @@ impl Parser {
             let key_name = Hotkey::keycode_name(prefs.hotkey_code(hotkey));
             self.push_str(&format!("[{}]", key_name));
         } else {
-            debug_log!("WARNING: Bad hotkey name {:?} in paragraph format \
-                        string",
-                       hotkey_name);
+            debug_warn!("Bad hotkey name {:?} in paragraph format string",
+                        hotkey_name);
         }
     }
 
@@ -113,18 +111,16 @@ impl Parser {
         let orient = match Orientation::from_str(orient_str) {
             Ok(orient) => orient,
             Err(_) => {
-                debug_log!("WARNING: Bad orientation {:?} in paragraph \
-                            format string",
-                           orient_str);
+                debug_warn!("Bad orientation {:?} in paragraph format string",
+                            orient_str);
                 return;
             }
         };
         let ctype = match ChipType::from_str(ctype_str) {
             Ok(ctype) => ctype,
             Err(_) => {
-                debug_log!("WARNING: Bad chip type {:?} in paragraph \
-                            format string",
-                           ctype_str);
+                debug_warn!("Bad chip type {:?} in paragraph format string",
+                            ctype_str);
                 return;
             }
         };
@@ -138,8 +134,7 @@ impl Parser {
         match CircuitData::deserialize_from_string(circuit_str) {
             Ok(data) => self.push_circuit_data(data),
             Err(_) => {
-                debug_log!("WARNING: Bad circuit TOML in paragraph format \
-                            string");
+                debug_warn!("Bad circuit TOML in paragraph format string");
             }
         }
     }
@@ -180,9 +175,8 @@ impl Parser {
                 self.current_font = font;
             }
         } else {
-            debug_log!("WARNING: Bad font name {:?} in paragraph format \
-                        string",
-                       font_name);
+            debug_warn!("Bad font name {:?} in paragraph format string",
+                        font_name);
         }
     }
 
@@ -193,8 +187,8 @@ impl Parser {
                 self.current_millis_per_char = number;
             }
         } else {
-            debug_log!("WARNING: Bad number {:?} in paragraph format string",
-                       number_string);
+            debug_warn!("Bad number {:?} in paragraph format string",
+                        number_string);
         }
     }
 

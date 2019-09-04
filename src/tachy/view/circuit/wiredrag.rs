@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{Point2, vec2};
+use cgmath::{InnerSpace, Point2, vec2};
 use std::collections::HashMap;
 use tachy::geom::{AsInt, Coords, Direction, Polygon};
 use tachy::gui::{Sound, Ui};
@@ -63,24 +63,30 @@ impl Zone {
 
     fn along_line(start_grid_pt: Point2<f32>, end_grid_pt: Point2<f32>)
                   -> Vec<Zone> {
+        let delta = end_grid_pt - start_grid_pt;
         let start_zone = Zone::from_grid_pt(start_grid_pt);
         let end_zone = Zone::from_grid_pt(end_grid_pt);
         let mut zones = vec![start_zone];
         let mut current_zone = start_zone;
         while current_zone != end_zone {
             let polygon = current_zone.polygon();
+            let virtual_end_grid_pt = start_grid_pt +
+                delta.normalize() * (delta.magnitude() + 2.0);
             let intersection =
-                polygon.edge_intersection(end_grid_pt, start_grid_pt);
+                polygon.edge_intersection(virtual_end_grid_pt, start_grid_pt);
             let edge = match intersection {
                 Some((edge, _)) => edge,
                 None => {
-                    // TODO: Figure out why this happens, and fix it.
                     debug_warn!("no intersection for zone={:?} \
-                                 polygon={:?} start={:?} end={:?} so_far={:?}",
+                                 polygon={:?} start_grid_pt={:?} \
+                                 end_grid_pt={:?} start_zone={:?} \
+                                 end_zone={:?} so_far={:?}",
                                 current_zone,
                                 polygon,
                                 start_grid_pt,
                                 end_grid_pt,
+                                start_zone,
+                                end_zone,
                                 zones);
                     return zones;
                 }
@@ -777,7 +783,20 @@ mod tests {
     use tachy::geom::Coords;
 
     #[test]
-    fn zones_along_line() {
+    fn zone_from_grid_pt_polygon() {
+        let pt = Point2::new(3.03125, 0.90625);
+        let zone = Zone::from_grid_pt(pt);
+        assert_eq!(zone, Zone::East(Coords::new(2, 0)));
+        assert!(zone.polygon().contains_point(pt));
+
+        let pt = Point2::new(3.03125, 0.96875);
+        let zone = Zone::from_grid_pt(pt);
+        assert_eq!(zone, Zone::South(Coords::new(3, 0)));
+        assert!(zone.polygon().contains_point(pt));
+    }
+
+    #[test]
+    fn zones_along_line_basic() {
         assert_eq!(Zone::along_line(Point2::new(2.4, 6.5),
                                     Point2::new(2.6, 6.5)),
                    vec![Zone::Center(Coords::new(2, 6))]);
@@ -803,6 +822,30 @@ mod tests {
                 Zone::East(Coords::new(2, 5)),
                 Zone::South(Coords::new(2, 5)),
                 Zone::East(Coords::new(2, 6)),
+            ]
+        );
+    }
+
+    #[test]
+    fn zones_along_line_regression() {
+        assert_eq!(
+            Zone::along_line(
+                Point2::new(3.03125, 0.90625),
+                Point2::new(3.03125, 0.96875),
+            ),
+            vec![
+                Zone::East(Coords::new(2, 0)),
+                Zone::South(Coords::new(3, 0)),
+            ]
+        );
+        assert_eq!(
+            Zone::along_line(
+                Point2::new(1.859375, -0.140625),
+                Point2::new(1.875, -0.140625),
+            ),
+            vec![
+                Zone::South(Coords::new(1, -1)),
+                Zone::East(Coords::new(1, -1)),
             ]
         );
     }

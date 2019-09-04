@@ -59,6 +59,8 @@ impl<'a> PolygonRef<'a> {
         PolygonRef { vertices }
     }
 
+    /// Returns true if the given point is inside the polygon.  A point that is
+    /// exactly on the edge of the polygon is considered to be inside.
     pub fn contains_point(&self, pt: Point2<f32>) -> bool {
         // We're going to do a simple ray-casting test, where we imagine
         // casting a ray from the point in the +X direction; if we intersect an
@@ -89,16 +91,19 @@ impl<'a> PolygonRef<'a> {
             // Otherwise, we can't easily be sure.  Compute the intersection of
             // the edge with the X-axis passing through the point.  If the
             // X-coordinate of the intersection is to the right of the point,
-            // then this is an edge-crossing.
-            if pt.x <=
-                edge.p1.x +
-                    (pt.y - edge.p1.y) * (edge.p2.x - edge.p1.x) /
-                        (edge.p2.y - edge.p1.y)
-            {
+            // then this is an edge-crossing.  If the intersection is exactly
+            // on the point, then the point is on the edge and we're in the
+            // polygon.
+            let intersection_x = edge.p1.x +
+                (pt.y - edge.p1.y) * (edge.p2.x - edge.p1.x) /
+                    (edge.p2.y - edge.p1.y);
+            if pt.x < intersection_x {
                 inside = !inside;
+            } else if pt.x == intersection_x {
+                return true;
             }
         }
-        inside
+        return inside;
     }
 
     /// Given the endpoints of a linear path, returns the index of the first
@@ -226,6 +231,30 @@ mod tests {
     }
 
     #[test]
+    fn intersection_starting_on_line_segment() {
+        let line = LineSegment::new(Point2::new(1.0, 2.0),
+                                    Point2::new(2.0, 3.0));
+        assert_eq!(line.intersection(Point2::new(1.5, 2.5),
+                                     Point2::new(1.0, 3.0)),
+                   Some(Point2::new(1.5, 2.5)));
+        assert_eq!(line.intersection(Point2::new(1.5, 2.5),
+                                     Point2::new(2.0, 2.0)),
+                   Some(Point2::new(1.5, 2.5)));
+    }
+
+    #[test]
+    fn intersection_ending_on_line_segment() {
+        let line = LineSegment::new(Point2::new(1.0, 2.0),
+                                    Point2::new(2.0, 3.0));
+        assert_eq!(line.intersection(Point2::new(1.0, 3.0),
+                                     Point2::new(1.5, 2.5)),
+                   Some(Point2::new(1.5, 2.5)));
+        assert_eq!(line.intersection(Point2::new(2.0, 2.0),
+                                     Point2::new(1.5, 2.5)),
+                   Some(Point2::new(1.5, 2.5)));
+    }
+
+    #[test]
     fn polygon_edges() {
         let polygon = Polygon::new(vec![
             Point2::new(-1.0, -1.0),
@@ -273,6 +302,18 @@ mod tests {
         ]);
         assert!(polygon.contains_point(Point2::new(1.0, 1.0)));
         assert!(!polygon.contains_point(Point2::new(-1.0, 4.0)));
+    }
+
+    #[test]
+    fn polygon_contains_point_on_edge() {
+        let polygon = Polygon::new(vec![
+            Point2::new(0.0, 0.0),
+            Point2::new(2.0, 0.0),
+            Point2::new(1.0, 1.0),
+        ]);
+        assert!(polygon.contains_point(Point2::new(1.0, 0.0)));
+        assert!(polygon.contains_point(Point2::new(1.5, 0.5)));
+        assert!(polygon.contains_point(Point2::new(0.25, 0.25)));
     }
 }
 

@@ -20,13 +20,13 @@
 use super::super::chip::ChipModel;
 use super::super::wire::WireModel;
 use cgmath::{Matrix4, MetricSpace, Point2, Vector2, vec2};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsDelta,
                   CoordsRect, CoordsSize, Direction, MatrixExt, Orientation,
                   Rect};
 use tachy::gui::{Clipboard, Resources, Sound, Ui};
 use tachy::save::{ChipSet, ChipType, CircuitData, WireShape};
-use tachy::state::{EditGrid, GridChange, WireColor, WireSize};
+use tachy::state::{ChipExt, EditGrid, GridChange, WireColor, WireSize};
 
 //===========================================================================//
 
@@ -502,7 +502,14 @@ fn changes_for_paste(grid: &EditGrid, selection: &Selection,
                 if !old_wires.contains_key(&(coords, dir2)) {
                     debug_assert!(!new_wires.contains_key(&(coords, dir2)));
                     old_wires.insert((coords, dir2), shape2);
-                    new_wires.insert((coords, dir2), WireShape::Stub);
+                    if grid.wire_shape_at(coords + dir2, -dir2) ==
+                        Some(WireShape::Stub)
+                    {
+                        old_wires
+                            .insert((coords + dir2, -dir2), WireShape::Stub);
+                    } else {
+                        new_wires.insert((coords, dir2), WireShape::Stub);
+                    }
                 }
             }
         }
@@ -517,16 +524,28 @@ fn changes_for_paste(grid: &EditGrid, selection: &Selection,
     let mut new_chips = HashMap::<Coords, (ChipType, Orientation)>::new();
     for (&delta, &(ctype, orient)) in selection.chips.iter() {
         let new_coords = top_left + delta;
+        let ports: HashSet<(Coords, Direction)> = ctype
+            .ports(new_coords, orient)
+            .into_iter()
+            .map(|port| (port.coords, port.dir))
+            .collect();
         let new_rect = Rect::with_size(new_coords, orient * ctype.size());
         for coords in new_rect {
             for dir in Direction::all() {
                 if let Some(shape) = grid.wire_shape_at(coords, dir) {
-                    // TODO: Remove lone stubs that aren't connected to a port
                     if new_rect.contains_point(coords + dir) {
                         old_wires.insert((coords, dir), shape);
                     } else if shape != WireShape::Stub {
                         old_wires.insert((coords, dir), shape);
-                        new_wires.insert((coords, dir), WireShape::Stub);
+                        if !ports.contains(&(coords, dir)) &&
+                            grid.wire_shape_at(coords + dir, -dir) ==
+                                Some(WireShape::Stub)
+                        {
+                            old_wires
+                                .insert((coords + dir, -dir), WireShape::Stub);
+                        } else {
+                            new_wires.insert((coords, dir), WireShape::Stub);
+                        }
                     }
                 }
             }
@@ -551,8 +570,8 @@ mod tests {
     use super::{Selection, changes_for_cut, changes_for_paste};
     use cgmath::vec2;
     use std::collections::HashMap;
-    use tachy::geom::{Coords, CoordsRect, CoordsSize, Direction};
-    use tachy::save::{CircuitData, Profile, Puzzle, WireShape};
+    use tachy::geom::{Coords, CoordsRect, CoordsSize, Direction, Orientation};
+    use tachy::save::{ChipType, CircuitData, Profile, Puzzle, WireShape};
     use tachy::state::EditGrid;
 
     #[test]
@@ -611,7 +630,61 @@ mod tests {
                    Some(WireShape::Stub));
     }
 
-    // TODO: more tests
+    #[test]
+    fn pasting_a_chip_removes_stubs_not_on_port() {
+        let mut data = CircuitData::new(0, 0, 10, 10);
+        data.wires
+            .insert(Coords::new(1, 1), Direction::East, WireShape::TurnLeft);
+        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr,
+                                                   &Profile::for_testing(),
+                                                   &data);
+        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::East),
+                   Some(WireShape::TurnLeft));
+        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::South),
+                   Some(WireShape::TurnRight));
+        let selection = Selection {
+            size: CoordsSize::new(1, 1),
+            chips: vec![(vec2(0, 0), (ChipType::Not, Orientation::default()))]
+                .into_iter()
+                .collect(),
+            wires: HashMap::new(),
+        };
+        let changes = changes_for_paste(&grid, &selection, Coords::new(1, 1));
+        assert!(grid.try_mutate(changes));
+        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::East),
+                   Some(WireShape::Stub));
+        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::South),
+                   None);
+    }
+
+    #[test]
+    fn pasting_a_wire_removes_new_stubs() {
+        let mut data = CircuitData::new(0, 0, 10, 10);
+        data.wires
+            .insert(Coords::new(1, 1), Direction::East, WireShape::TurnLeft);
+        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr,
+                                                   &Profile::for_testing(),
+                                                   &data);
+        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::East),
+                   Some(WireShape::TurnLeft));
+        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::South),
+                   Some(WireShape::TurnRight));
+        let selection = Selection {
+            size: CoordsSize::new(1, 1),
+            chips: HashMap::new(),
+            wires: vec![
+                ((vec2(0, 0), Direction::West), WireShape::TurnRight),
+                ((vec2(0, 0), Direction::South), WireShape::TurnLeft),
+            ].into_iter()
+                .collect(),
+        };
+        let changes = changes_for_paste(&grid, &selection, Coords::new(1, 1));
+        assert!(grid.try_mutate(changes));
+        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::South),
+                   Some(WireShape::TurnLeft));
+        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::East),
+                   None);
+    }
 }
 
 //===========================================================================//

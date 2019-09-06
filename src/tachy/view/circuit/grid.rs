@@ -601,6 +601,11 @@ impl EditGridView {
                                                           Some(rect));
                             self.interaction =
                                 Interaction::DraggingSelection(drag);
+                        } else {
+                            let cursor =
+                                self.cursor_for_grid_pt(grid_pt, grid);
+                            ui.cursor().request(cursor);
+                            ui.request_redraw();
                         }
                         return None;
                     }

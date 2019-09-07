@@ -17,24 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod audio;
-mod clipboard;
-mod context;
-mod cursor;
-mod debug;
-mod event;
-mod resource;
-mod ui;
-mod window;
+//===========================================================================//
 
-pub use self::audio::{AudioQueue, Music, Sound};
-pub use self::clipboard::Clipboard;
-pub use self::context::GuiContext;
-pub use self::cursor::{Cursor, Cursors, NextCursor};
-pub use self::event::{ClockEventData, Event, KeyEventData, Keycode,
-                      MouseEventData, MultitouchEventData, ScrollEventData};
-pub use self::resource::Resources;
-pub use self::ui::{Keyboard, Ui};
-pub use self::window::{Window, WindowOptions};
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub const MORNING_CRUISE_OGG_DATA: &[u8] =
+    include_bytes!("morning_cruise.ogg");
 
 //===========================================================================//

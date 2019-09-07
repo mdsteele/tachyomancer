@@ -26,6 +26,7 @@ extern crate getopts;
 extern crate gl;
 extern crate indexmap;
 extern crate jpeg_decoder;
+extern crate lewton;
 extern crate num_integer;
 extern crate pathfinding;
 extern crate png;
@@ -141,7 +142,8 @@ fn run_game(flags: &StartupFlags) -> Result<(), String> {
     let savedir = SaveDir::create_or_load(&flags.save_dir)?;
     let mut state = GameState::new(savedir)?;
     let mut gui_context =
-        GuiContext::init(state.prefs().sound_volume_percent())?;
+        GuiContext::init(state.prefs().sound_volume_percent(),
+                         state.prefs().music_volume_percent())?;
     let mut window_options = Some(initial_window_options(flags,
                                                          state.prefs())?);
     while let Some(options) = window_options {

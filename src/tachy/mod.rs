@@ -25,6 +25,7 @@ pub mod geom;
 pub mod gl;
 pub mod gui;
 pub mod mode;
+pub mod music;
 pub mod save;
 pub mod shader;
 pub mod sound;

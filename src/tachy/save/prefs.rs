@@ -27,6 +27,7 @@ use toml;
 //===========================================================================//
 
 const DEFAULT_SOUND_VOLUME_PERCENT: i32 = 80;
+const DEFAULT_MUSIC_VOLUME_PERCENT: i32 = 80;
 
 //===========================================================================//
 
@@ -37,6 +38,7 @@ struct PrefsData {
     fullscreen: Option<bool>,
     resolution: Option<(i32, i32)>,
     sound_volume: Option<i32>,
+    music_volume: Option<i32>,
     hotkeys: Option<HotkeyCodes>,
 }
 
@@ -138,6 +140,19 @@ impl Prefs {
 
     pub fn set_sound_volume_percent(&mut self, percent: i32) {
         self.data.sound_volume = Some(percent.max(0).min(100));
+        self.needs_save = true;
+    }
+
+    pub fn music_volume_percent(&self) -> i32 {
+        self.data
+            .music_volume
+            .unwrap_or(DEFAULT_MUSIC_VOLUME_PERCENT)
+            .max(0)
+            .min(100)
+    }
+
+    pub fn set_music_volume_percent(&mut self, percent: i32) {
+        self.data.music_volume = Some(percent.max(0).min(100));
         self.needs_save = true;
     }
 

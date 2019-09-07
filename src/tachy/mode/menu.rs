@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::ModeChange;
-use tachy::gui::{Event, Window};
+use tachy::gui::{Event, Music, Window};
 use tachy::state::GameState;
 use tachy::view::{MenuAction, MenuView};
 
@@ -26,6 +26,7 @@ use tachy::view::{MenuAction, MenuView};
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
+    window.ui().audio().play_music(Music::MorningCruise);
     let mut view = MenuView::new(window, state);
     loop {
         match window.next_event() {

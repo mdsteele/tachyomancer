@@ -41,7 +41,9 @@ pub struct GuiContext {
 }
 
 impl GuiContext {
-    pub fn init(init_sound_volume_percent: i32) -> Result<GuiContext, String> {
+    pub fn init(init_sound_volume_percent: i32,
+                init_music_volume_percent: i32)
+                -> Result<GuiContext, String> {
         let sdl_context = sdl2::init()?;
         if cfg!(any(target_os = "ios", target_os = "macos")) {
             sdl2::hint::set("SDL_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK", "1");
@@ -54,6 +56,7 @@ impl GuiContext {
         let audio_subsystem = sdl_context.audio()?;
         let mut audio_queue = AudioQueue::new();
         audio_queue.set_sound_volume_percent(init_sound_volume_percent);
+        audio_queue.set_music_volume_percent(init_music_volume_percent);
         let audio_queue = Arc::new(Mutex::new(audio_queue));
         let audio_device = AudioMixer::audio_device(&audio_subsystem,
                                                     audio_queue.clone())?;

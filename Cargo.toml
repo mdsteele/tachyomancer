@@ -21,6 +21,7 @@ getopts = "0.2"
 gl = "0.10"
 indexmap = "1"
 jpeg-decoder = { version = "0.1", default-features = false }
+lewton = "0.9"
 num-integer = "0.1"
 pathfinding = "1.1"
 png = "0.13"

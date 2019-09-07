@@ -204,6 +204,7 @@ pub struct AudioVideoPane {
     fullscreen_checkbox: Checkbox,
     resolution_buttons: Vec<RadioCheckbox<Option<RectSize<i32>>>>,
     sound_volume_slider: Slider,
+    music_volume_slider: Slider,
     apply_button: TextButton<()>,
     revert_button: TextButton<()>,
     current_window_options: WindowOptions,
@@ -222,8 +223,12 @@ impl AudioVideoPane {
             Slider::new(Rect::new(rect.x, rect.y + 80, rect.width, 30),
                         state.prefs().sound_volume_percent(),
                         100);
+        let music_volume_slider =
+            Slider::new(Rect::new(rect.x, rect.y + 130, rect.width, 30),
+                        state.prefs().music_volume_percent(),
+                        100);
 
-        let res_pos = |index| Point2::new(rect.x, rect.y + 135 + 30 * index);
+        let res_pos = |index| Point2::new(rect.x, rect.y + 185 + 30 * index);
         let mut resolution_buttons =
             vec![RadioCheckbox::new(res_pos(0), "Native", None)];
         resolution_buttons.extend(
@@ -252,6 +257,7 @@ impl AudioVideoPane {
             fullscreen_checkbox,
             resolution_buttons,
             sound_volume_slider,
+            music_volume_slider,
             apply_button,
             revert_button,
             current_window_options: window.options().clone(),
@@ -271,6 +277,7 @@ impl AudioVideoPane {
                 .draw(resources, matrix, &self.new_window_options.resolution);
         }
         self.sound_volume_slider.draw(resources, matrix);
+        self.music_volume_slider.draw(resources, matrix);
 
         let enabled = self.new_window_options != self.current_window_options;
         self.apply_button.draw(resources, matrix, enabled);
@@ -313,6 +320,15 @@ impl AudioVideoPane {
             Some(SliderAction::Release) => {
                 ui.audio().play_sound(Sound::Beep);
             }
+            None => {}
+        }
+
+        match self.music_volume_slider.on_event(event, ui) {
+            Some(SliderAction::Update(volume)) => {
+                state.prefs_mut().set_music_volume_percent(volume);
+                ui.audio().set_music_volume_percent(volume);
+            }
+            Some(SliderAction::Release) => {}
             None => {}
         }
 

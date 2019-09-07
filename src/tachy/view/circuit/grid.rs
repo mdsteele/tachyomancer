@@ -766,6 +766,8 @@ impl EditGridView {
                             if !rect.is_empty() {
                                 self.interaction =
                                     Interaction::RectSelected(rect);
+                            } else {
+                                ui.request_redraw();
                             }
                         }
                         Interaction::RectSelected(rect) => {

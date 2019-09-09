@@ -461,7 +461,10 @@ impl WireDrag {
 
     fn start_stub(coords: Coords, dir: Direction, grid: &mut EditGrid)
                   -> DragResult {
-        let changes = vec![GridChange::add_stub_wire(coords, dir)];
+        let mut new = HashMap::new();
+        new.insert((coords, dir), WireShape::Stub);
+        new.insert((coords + dir, -dir), WireShape::Stub);
+        let changes = vec![GridChange::ReplaceWires(HashMap::new(), new)];
         if grid.try_mutate_provisionally(changes) {
             DragResult::Changed
         } else {
@@ -471,7 +474,10 @@ impl WireDrag {
 
     fn remove_stub(coords: Coords, dir: Direction, grid: &mut EditGrid)
                    -> DragResult {
-        let changes = vec![GridChange::remove_stub_wire(coords, dir)];
+        let mut old = HashMap::new();
+        old.insert((coords, dir), WireShape::Stub);
+        old.insert((coords + dir, -dir), WireShape::Stub);
+        let changes = vec![GridChange::ReplaceWires(old, HashMap::new())];
         if grid.try_mutate_provisionally(changes) {
             DragResult::Changed
         } else {

@@ -38,20 +38,6 @@ pub enum GridChange {
 }
 
 impl GridChange {
-    pub fn add_stub_wire(coords: Coords, dir: Direction) -> GridChange {
-        let mut new_wires = HashMap::new();
-        new_wires.insert((coords, dir), WireShape::Stub);
-        new_wires.insert((coords + dir, -dir), WireShape::Stub);
-        GridChange::ReplaceWires(HashMap::new(), new_wires)
-    }
-
-    pub fn remove_stub_wire(coords: Coords, dir: Direction) -> GridChange {
-        let mut old_wires = HashMap::new();
-        old_wires.insert((coords, dir), WireShape::Stub);
-        old_wires.insert((coords + dir, -dir), WireShape::Stub);
-        GridChange::ReplaceWires(old_wires, HashMap::new())
-    }
-
     pub(super) fn invert_and_collapse_group(mut changes: Vec<GridChange>)
                                             -> Vec<GridChange> {
         let mut new_changes = Vec::<GridChange>::new();

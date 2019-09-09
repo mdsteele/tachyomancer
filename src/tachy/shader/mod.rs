@@ -17,9 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+mod board;
 mod chip;
 mod frame;
 mod heightmap;
+mod icon;
 mod port;
 mod portrait;
 mod scene;
@@ -27,27 +29,17 @@ mod solid;
 mod ui;
 mod wire;
 
+pub use self::board::BoardShader;
 pub use self::chip::ChipShader;
 pub use self::frame::FrameBufferShader;
 pub use self::heightmap::HeightmapShader;
+pub use self::icon::IconShader;
 pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
 pub use self::scene::SceneShader;
 pub use self::solid::SolidShader;
 pub use self::ui::UiShader;
 pub use self::wire::WireShader;
-use cgmath::Matrix4;
-use tachy::geom::{Color4, MatrixExt, Rect};
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
-
-//===========================================================================//
-
-const BOARD_VERT_CODE: &[u8] = include_bytes!("board.vert");
-const BOARD_FRAG_CODE: &[u8] = include_bytes!("board.frag");
-
-const ICON_VERT_CODE: &[u8] = include_bytes!("icon.vert");
-const ICON_FRAG_CODE: &[u8] = include_bytes!("icon.frag");
 
 //===========================================================================//
 
@@ -104,101 +96,6 @@ impl Shaders {
     pub fn ui(&self) -> &UiShader { &self.ui }
 
     pub fn wire(&self) -> &WireShader { &self.wire }
-}
-
-//===========================================================================//
-// TODO: Move these to separate modules.
-
-pub struct BoardShader {
-    program: ShaderProgram,
-    mvp: ShaderUniform<Matrix4<f32>>,
-    coords_rect: ShaderUniform<Rect<f32>>,
-    varray: VertexArray,
-    _vbuffer: VertexBuffer<u8>,
-}
-
-impl BoardShader {
-    fn new() -> Result<BoardShader, String> {
-        let vert =
-            Shader::new(ShaderType::Vertex, "board.vert", BOARD_VERT_CODE)?;
-        let frag =
-            Shader::new(ShaderType::Fragment, "board.frag", BOARD_FRAG_CODE)?;
-        let program = ShaderProgram::new(&[&vert, &frag])?;
-
-        let mvp = program.get_uniform("MVP")?;
-        let coords_rect = program.get_uniform("CoordsRect")?;
-        let varray = VertexArray::new(1);
-        let vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
-        varray.bind();
-        vbuffer.attribf(0, 2, 0, 0);
-        Ok(BoardShader {
-               program,
-               mvp,
-               coords_rect,
-               varray,
-               _vbuffer: vbuffer,
-           })
-    }
-
-    pub fn draw(&self, matrix: &Matrix4<f32>, coords_rect: Rect<f32>) {
-        self.program.bind();
-        self.mvp.set(matrix);
-        self.coords_rect.set(&coords_rect);
-        self.varray.bind();
-        self.varray.draw(Primitive::TriangleStrip, 0, 4);
-    }
-}
-
-//===========================================================================//
-
-pub struct IconShader {
-    program: ShaderProgram,
-    color: ShaderUniform<Color4>,
-    icon_index: ShaderUniform<u32>,
-    icon_texture: ShaderSampler<Texture2D>,
-    mvp: ShaderUniform<Matrix4<f32>>,
-    varray: VertexArray,
-    rect_vbuffer: VertexBuffer<u8>,
-}
-
-impl IconShader {
-    fn new() -> Result<IconShader, String> {
-        let vert =
-            Shader::new(ShaderType::Vertex, "icon.vert", ICON_VERT_CODE)?;
-        let frag =
-            Shader::new(ShaderType::Fragment, "icon.frag", ICON_FRAG_CODE)?;
-        let program = ShaderProgram::new(&[&vert, &frag])?;
-        let color = program.get_uniform("IconColor")?;
-        let icon_index = program.get_uniform("IconIndex")?;
-        let icon_texture = program.get_sampler(0, "IconTexture")?;
-        let mvp = program.get_uniform("MVP")?;
-        let varray = VertexArray::new(1);
-        let rect_vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
-        let shader = IconShader {
-            program,
-            color,
-            icon_index,
-            icon_texture,
-            mvp,
-            varray,
-            rect_vbuffer,
-        };
-        Ok(shader)
-    }
-
-    pub fn draw(&self, matrix: &Matrix4<f32>, rect: Rect<f32>, index: u32,
-                color: &Color4, texture: &Texture2D) {
-        self.program.bind();
-        self.color.set(color);
-        self.icon_index.set(&index);
-        self.icon_texture.set(texture);
-        let mvp = matrix * Matrix4::trans2(rect.x, rect.y) *
-            Matrix4::scale2(rect.width, rect.height);
-        self.mvp.set(&mvp);
-        self.varray.bind();
-        self.rect_vbuffer.attribi(0, 2, 0, 0);
-        self.varray.draw(Primitive::TriangleStrip, 0, 4);
-    }
 }
 
 //===========================================================================//

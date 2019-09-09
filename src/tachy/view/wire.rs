@@ -80,6 +80,21 @@ impl WireModel {
             _ => {}
         }
     }
+
+    /// The matrix should go from grid space to GL clip space.
+    pub fn draw_half_straight(resources: &Resources,
+                              grid_matrix: &Matrix4<f32>, coords: Coords,
+                              dir: Direction, color: WireColor,
+                              size: WireSize, hilight: &Color4) {
+        let shader = resources.shaders().wire();
+        let matrix = grid_matrix * obj_to_grid(coords, dir);
+        let texture = resources.textures().wire();
+        shader.draw_half_straight(&matrix,
+                                  wire_size_index(size),
+                                  wire_color(color),
+                                  hilight,
+                                  texture);
+    }
 }
 
 fn obj_to_grid(coords: Coords, dir: Direction) -> Matrix4<f32> {

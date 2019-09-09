@@ -209,6 +209,12 @@ impl EditGridView {
         // Draw wires:
         let matrix = self.vp_matrix();
         let grid_matrix = matrix * Matrix4::from_scale(GRID_CELL_SIZE as f32);
+        let half_wire =
+            if let Interaction::DraggingWires(ref drag) = self.interaction {
+                drag.half_wire()
+            } else {
+                None
+            };
         for (coords, dir, shape, size, color, has_error) in
             grid.wire_fragments()
         {
@@ -228,14 +234,24 @@ impl EditGridView {
             } else {
                 color
             };
-            WireModel::draw_fragment(resources,
-                                     &grid_matrix,
-                                     coords,
-                                     dir,
-                                     shape,
-                                     color,
-                                     size,
-                                     hilight);
+            if half_wire == Some((coords, dir)) {
+                WireModel::draw_half_straight(resources,
+                                              &grid_matrix,
+                                              coords,
+                                              dir,
+                                              color,
+                                              size,
+                                              hilight);
+            } else {
+                WireModel::draw_fragment(resources,
+                                         &grid_matrix,
+                                         coords,
+                                         dir,
+                                         shape,
+                                         color,
+                                         size,
+                                         hilight);
+            }
         }
 
         self.draw_interfaces(resources, &matrix, grid);

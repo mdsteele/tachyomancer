@@ -94,10 +94,40 @@ impl ops::Add<Direction> for Coords {
     fn add(self, other: Direction) -> Coords { self + other.delta() }
 }
 
+impl ops::Add<DirDelta> for Direction {
+    type Output = Direction;
+
+    fn add(self, other: DirDelta) -> Direction {
+        match other {
+            DirDelta::Same => self,
+            DirDelta::RotateCw => self.rotate_cw(),
+            DirDelta::Opposite => -self,
+            DirDelta::RotateCcw => self.rotate_ccw(),
+        }
+    }
+}
+
 impl ops::Sub<Direction> for Coords {
     type Output = Coords;
 
     fn sub(self, other: Direction) -> Coords { self - other.delta() }
+}
+
+impl ops::Sub<Direction> for Direction {
+    type Output = DirDelta;
+
+    fn sub(self, other: Direction) -> DirDelta {
+        if self == other {
+            DirDelta::Same
+        } else if self == other.rotate_cw() {
+            DirDelta::RotateCw
+        } else if self == -other {
+            DirDelta::Opposite
+        } else {
+            debug_assert_eq!(self, other.rotate_ccw());
+            DirDelta::RotateCcw
+        }
+    }
 }
 
 impl ops::Neg for Direction {
@@ -111,6 +141,16 @@ impl ops::Neg for Direction {
             Direction::North => Direction::South,
         }
     }
+}
+
+//===========================================================================//
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DirDelta {
+    Same,
+    RotateCw,
+    Opposite,
+    RotateCcw,
 }
 
 //===========================================================================//

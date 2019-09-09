@@ -27,7 +27,7 @@ use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
 const WIRE_VERT_CODE: &[u8] = include_bytes!("wire.vert");
 const WIRE_FRAG_CODE: &[u8] = include_bytes!("wire.frag");
 
-const VERTICES_PER_WIRE_SIZE: usize = 52;
+const VERTICES_PER_WIRE_SIZE: usize = 61;
 
 // The cosine of 67.5 degrees:
 const COS_67_5: f32 = 0.38268343236508984;
@@ -115,6 +115,18 @@ fn generate_wire_vertex_buffer() -> VertexBuffer<f32> {
             st,   1.0,  outer,
             st,   st,   outer,
             1.0,  st,   outer,
+        ]);
+        // Half-straight (east):
+        data.extend_from_slice(&[
+            0.0, 0.0,       inner,
+            1.0, 0.0,       inner,
+            1.0, st,        outer,
+            0.0, st,        outer,
+            -st, 0.5 * st,  outer,
+            -st, -0.5 * st, outer,
+            0.0, -st,       outer,
+            1.0, -st,       outer,
+            1.0, 0.0,       inner,
         ]);
     }
     debug_assert_eq!(data.len(), data_len);
@@ -217,6 +229,15 @@ impl WireShader {
         self.bind(matrix, wire_color, hilight_color, texture);
         let start = 34 + size_index * VERTICES_PER_WIRE_SIZE;
         self.varray.draw(Primitive::TriangleFan, start, 18);
+    }
+
+    /// Draws an east half-straight wire in the box from (-1, -1) to (1, 1).
+    pub fn draw_half_straight(&self, matrix: &Matrix4<f32>,
+                              size_index: usize, wire_color: &Color3,
+                              hilight_color: &Color4, texture: &Texture1D) {
+        self.bind(matrix, wire_color, hilight_color, texture);
+        let start = 52 + size_index * VERTICES_PER_WIRE_SIZE;
+        self.varray.draw(Primitive::TriangleFan, start, 9);
     }
 }
 

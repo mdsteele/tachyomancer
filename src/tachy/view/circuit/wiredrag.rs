@@ -26,7 +26,7 @@ use tachy::state::{EditGrid, GridChange};
 
 //===========================================================================//
 
-const ZONE_CENTER_SEMI_SIZE: f32 = 0.3;
+const ZONE_CENTER_SEMI_SIZE: f32 = 0.3046875;
 
 //===========================================================================//
 
@@ -818,6 +818,26 @@ mod tests {
             vec![
                 Zone::South(Coords::new(1, -1)),
                 Zone::East(Coords::new(1, -1)),
+            ]
+        );
+        assert_eq!(
+            Zone::along_line(
+                Point2::new(3.09375, 2.90625),
+                Point2::new(3.03125, 2.90625),
+            ),
+            vec![
+                Zone::South(Coords::new(3, 2)),
+                Zone::East(Coords::new(2, 2)),
+            ]
+        );
+        assert_eq!(
+            Zone::along_line(
+                Point2::new(3.140625, 2.859375),
+                Point2::new(3.078125, 2.859375),
+            ),
+            vec![
+                Zone::South(Coords::new(3, 2)),
+                Zone::East(Coords::new(2, 2)),
             ]
         );
     }

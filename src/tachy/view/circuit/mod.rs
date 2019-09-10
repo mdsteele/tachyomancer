@@ -41,7 +41,7 @@ use cgmath;
 use std::u16;
 use tachy::geom::{Coords, Direction, RectSize};
 use tachy::gui::{Event, Keycode, Resources, Sound, Ui, Window};
-use tachy::save::{ChipSet, ChipType, Prefs, Puzzle};
+use tachy::save::{ChipType, Prefs};
 use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
                    TutorialBubblePosition};
 
@@ -70,10 +70,10 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window: &Window, puzzle: Puzzle, allowed: &ChipSet,
-               prefs: &Prefs)
+    pub fn new(window: &Window, grid: &EditGrid, prefs: &Prefs)
                -> CircuitView {
         let window_size = window.size();
+        let puzzle = grid.puzzle();
         // TODO: Don't show any tutorial bubbles if puzzle is solved.
         let bubbles = puzzle.tutorial_bubbles();
         let bounds_bubbles: Vec<(Direction, TutorialBubble)> = bubbles
@@ -98,11 +98,15 @@ impl CircuitView {
         CircuitView {
             width: window_size.width as f32,
             height: window_size.height as f32,
-            edit_grid: EditGridView::new(window_size, bounds_bubbles),
+            edit_grid: EditGridView::new(window_size,
+                                         grid.bounds(),
+                                         bounds_bubbles),
             controls_tray: ControlsTray::new(window_size,
                                              puzzle,
                                              controls_bubble),
-            parts_tray: PartsTray::new(window, allowed, parts_bubble),
+            parts_tray: PartsTray::new(window,
+                                       grid.allowed_chips(),
+                                       parts_bubble),
             specification_tray: SpecificationTray::new(window_size,
                                                        puzzle,
                                                        prefs),

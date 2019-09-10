@@ -29,9 +29,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.edit_grid().is_some());
     let mut view = {
         let grid = state.edit_grid().unwrap();
-        let puzzle = grid.puzzle();
-        let allowed = grid.allowed_chips();
-        CircuitView::new(window, puzzle, allowed, state.prefs())
+        CircuitView::new(window, grid, state.prefs())
     };
     loop {
         match window.next_event() {

@@ -74,12 +74,14 @@ pub struct EditGridView {
 }
 
 impl EditGridView {
-    pub fn new(window_size: RectSize<i32>,
+    pub fn new(window_size: RectSize<i32>, init_circuit_bounds: CoordsRect,
                tutorial_bubbles: Vec<(Direction, TutorialBubble)>)
                -> EditGridView {
+        let pixel_bounds = init_circuit_bounds * GRID_CELL_SIZE;
         EditGridView {
             size: window_size.as_f32(),
-            scroll: Vector2::new(0, 0),
+            scroll: Vector2::new(pixel_bounds.x + pixel_bounds.width / 2,
+                                 pixel_bounds.y + pixel_bounds.height / 2),
             zoom: ZOOM_DEFAULT,
             interaction: Interaction::Nothing,
             tutorial_bubbles,

@@ -53,6 +53,7 @@ impl FrameBuffer {
                                      0);
             assert_eq!(gl::CheckFramebufferStatus(gl::FRAMEBUFFER),
                        gl::FRAMEBUFFER_COMPLETE);
+            gl::Clear(gl::COLOR_BUFFER_BIT);
             gl::BindFramebuffer(gl::FRAMEBUFFER, 0); // unbind
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }

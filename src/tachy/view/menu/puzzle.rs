@@ -19,14 +19,17 @@
 
 use super::list::{ListIcon, ListView};
 use super::super::button::TextButton;
+use super::super::chip::ChipModel;
 use super::super::paragraph::Paragraph;
-use cgmath::{Deg, Matrix4};
+use super::super::wire::WireModel;
+use cgmath::{Deg, Matrix4, vec2};
 use std::cell::RefCell;
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect};
+use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect, RectSize};
+use tachy::gl::FrameBuffer;
 use tachy::gui::{Event, Resources, Ui};
 use tachy::save::{Conversation, Prefs, Puzzle, PuzzleKind};
-use tachy::state::{GameState, PuzzleExt};
+use tachy::state::{EditGrid, GameState, PuzzleExt, WireColor};
 
 //===========================================================================//
 
@@ -36,8 +39,8 @@ const ELEMENT_SPACING: i32 = 18;
 const PUZZLE_LIST_WIDTH: i32 = 250;
 
 const DESCRIPTION_FONT_SIZE: f32 = 20.0;
-const DESCRIPTION_INNER_MARGIN_HORZ: i32 = 14;
-const DESCRIPTION_INNER_MARGIN_VERT: i32 = 10;
+const DESCRIPTION_INNER_MARGIN_HORZ: f32 = 14.0;
+const DESCRIPTION_INNER_MARGIN_VERT: f32 = 10.0;
 const DESCRIPTION_LINE_HEIGHT: f32 = 22.0;
 
 const GRAPH_LABEL_FONT_SIZE: f32 = 14.0;
@@ -46,6 +49,9 @@ const GRAPH_LABEL_MARGIN: i32 = 18;
 const GRAPH_TICK_STEP: i32 = 10;
 const GRAPH_TICK_LENGTH: f32 = 4.0;
 const GRAPH_TICK_THICKNESS: f32 = 2.0;
+
+const PREVIEW_INNER_MARGIN: f32 = 14.0;
+const PREVIEW_MAX_GRID_CELL_SIZE: f32 = 48.0;
 
 //===========================================================================//
 
@@ -66,6 +72,7 @@ pub struct PuzzlesView {
     back_button: TextButton<()>,
     description: DescriptionView,
     graph: GraphView,
+    preview: CircuitPreviewView,
     edit_button: TextButton<PuzzlesAction>,
     rename_button: TextButton<PuzzlesAction>,
     copy_button: TextButton<PuzzlesAction>,
@@ -73,13 +80,42 @@ pub struct PuzzlesView {
 }
 
 impl PuzzlesView {
-    pub fn new(rect: Rect<i32>, ui: &mut Ui, state: &GameState)
+    pub fn new(window_size: RectSize<i32>, rect: Rect<i32>, ui: &mut Ui,
+               state: &GameState)
                -> PuzzlesView {
         let semi_height = (rect.height - ELEMENT_SPACING) / 2;
-
         let button_height = (semi_height - 3 * ELEMENT_SPACING) / 4;
         let buttons_left = rect.right() - BUTTON_WIDTH;
         let buttons_top = rect.y + semi_height + ELEMENT_SPACING;
+
+        let puzzle_list_rect =
+            Rect::new(rect.x, rect.y, PUZZLE_LIST_WIDTH, rect.height);
+        let graph_rect = Rect::new(rect.right() - semi_height,
+                                   rect.y,
+                                   semi_height,
+                                   semi_height);
+        let description_rect =
+            Rect::new(puzzle_list_rect.right() + ELEMENT_SPACING,
+                      rect.y,
+                      graph_rect.x - puzzle_list_rect.right() -
+                          2 * ELEMENT_SPACING,
+                      semi_height);
+        let back_button_rect = Rect::new(description_rect.x,
+                                         description_rect.bottom() - 40,
+                                         BUTTON_WIDTH,
+                                         40);
+        let circuit_list_rect = Rect::new(rect.x + PUZZLE_LIST_WIDTH +
+                                              ELEMENT_SPACING,
+                                          rect.bottom() - semi_height,
+                                          CIRCUIT_LIST_WIDTH,
+                                          semi_height);
+        let preview_rect = Rect::new(circuit_list_rect.right() +
+                                         ELEMENT_SPACING,
+                                     circuit_list_rect.y,
+                                     buttons_left - circuit_list_rect.right() -
+                                         2 * ELEMENT_SPACING,
+                                     semi_height);
+
         let mut button_rect =
             Rect::new(buttons_left, buttons_top, BUTTON_WIDTH, button_height);
         let edit_button =
@@ -95,45 +131,22 @@ impl PuzzlesView {
             TextButton::new(button_rect, "Delete", PuzzlesAction::Delete);
 
         PuzzlesView {
-            puzzle_list: ListView::new(Rect::new(rect.x,
-                                                 rect.y,
-                                                 PUZZLE_LIST_WIDTH,
-                                                 rect.height),
+            puzzle_list: ListView::new(puzzle_list_rect,
                                        ui,
                                        puzzle_list_items(state),
                                        &state.current_puzzle()),
-            circuit_list: ListView::new(Rect::new(rect.x + PUZZLE_LIST_WIDTH +
-                                                      ELEMENT_SPACING,
-                                                  rect.bottom() -
-                                                      semi_height,
-                                                  CIRCUIT_LIST_WIDTH,
-                                                  semi_height),
+            circuit_list: ListView::new(circuit_list_rect,
                                         ui,
                                         circuit_list_items(state),
                                         state.circuit_name()),
-            description:
-                DescriptionView::new(Rect::new(rect.x + PUZZLE_LIST_WIDTH +
-                                                   ELEMENT_SPACING,
-                                               rect.y,
-                                               rect.width - PUZZLE_LIST_WIDTH -
-                                                   semi_height -
-                                                   2 * ELEMENT_SPACING,
-                                               semi_height)),
-            graph: GraphView::new(Rect::new(rect.right() - semi_height,
-                                            rect.y,
-                                            semi_height,
-                                            semi_height)),
+            description: DescriptionView::new(description_rect),
+            graph: GraphView::new(graph_rect),
+            preview: CircuitPreviewView::new(window_size, preview_rect),
             edit_button,
             rename_button,
             copy_button,
             delete_button,
-            back_button: TextButton::new(Rect::new(rect.right() - 200,
-                                                   rect.bottom() - 200 -
-                                                       4 * ELEMENT_SPACING,
-                                                   BUTTON_WIDTH,
-                                                   40),
-                                         "Back",
-                                         ()),
+            back_button: TextButton::new(back_button_rect, "Back", ()),
         }
     }
 
@@ -145,11 +158,12 @@ impl PuzzlesView {
                 state: &GameState) {
         let puzzle = state.current_puzzle();
         self.puzzle_list.draw(resources, matrix, &puzzle);
-        self.back_button.draw(resources, matrix, true);
         self.description.draw(resources, matrix, puzzle, state.prefs());
+        self.back_button.draw(resources, matrix, true);
         let scores = state.puzzle_scores(puzzle);
         self.graph.draw(resources, matrix, puzzle, scores);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
+        self.preview.draw(resources, matrix, state);
         self.edit_button.draw(resources, matrix, true);
         self.rename_button.draw(resources, matrix, true);
         let enabled = self.copy_and_delete_enabled(state);
@@ -244,14 +258,14 @@ fn puzzle_list_items(state: &GameState)
 //===========================================================================//
 
 struct DescriptionView {
-    rect: Rect<i32>,
+    rect: Rect<f32>,
     cache: RefCell<Option<(Puzzle, Paragraph)>>,
 }
 
 impl DescriptionView {
     pub fn new(rect: Rect<i32>) -> DescriptionView {
         DescriptionView {
-            rect,
+            rect: rect.as_f32(),
             cache: RefCell::new(None),
         }
     }
@@ -259,7 +273,7 @@ impl DescriptionView {
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
                 puzzle: Puzzle, prefs: &Prefs) {
         resources.shaders().ui().draw_box2(matrix,
-                                           &self.rect.as_f32(),
+                                           &self.rect,
                                            &Color4::ORANGE2,
                                            &Color4::CYAN2,
                                            &Color4::PURPLE0_TRANSLUCENT);
@@ -274,8 +288,7 @@ impl DescriptionView {
         }
 
         debug_log!("Recompiling description paragraph");
-        let width = (self.rect.width - 2 * DESCRIPTION_INNER_MARGIN_HORZ) as
-            f32;
+        let width = self.rect.width - 2.0 * DESCRIPTION_INNER_MARGIN_HORZ;
         let paragraph = Paragraph::compile(DESCRIPTION_FONT_SIZE,
                                            DESCRIPTION_LINE_HEIGHT,
                                            width,
@@ -287,8 +300,8 @@ impl DescriptionView {
 
     fn draw_text(&self, resources: &Resources, matrix: &Matrix4<f32>,
                  paragraph: &Paragraph) {
-        let left = (self.rect.x + DESCRIPTION_INNER_MARGIN_HORZ) as f32;
-        let top = (self.rect.y + DESCRIPTION_INNER_MARGIN_VERT) as f32;
+        let left = self.rect.x + DESCRIPTION_INNER_MARGIN_HORZ;
+        let top = self.rect.y + DESCRIPTION_INNER_MARGIN_VERT;
         paragraph.draw(resources, matrix, (left, top));
     }
 }
@@ -393,6 +406,156 @@ impl GraphView {
                   Align::BottomCenter,
                   (0.5 * graph_rect.height, GRAPH_LABEL_MARGIN as f32),
                   puzzle.score_units());
+    }
+}
+
+//===========================================================================//
+
+struct CircuitPreviewView {
+    window_size: RectSize<i32>,
+    rect: Rect<f32>,
+    cache: RefCell<Option<(Puzzle, String, FrameBuffer)>>,
+}
+
+impl CircuitPreviewView {
+    pub fn new(window_size: RectSize<i32>, rect: Rect<i32>)
+               -> CircuitPreviewView {
+        CircuitPreviewView {
+            window_size,
+            rect: rect.as_f32(),
+            cache: RefCell::new(None),
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                state: &GameState) {
+        resources.shaders().ui().draw_box2(matrix,
+                                           &self.rect,
+                                           &Color4::ORANGE2,
+                                           &Color4::CYAN2,
+                                           &Color4::PURPLE0_TRANSLUCENT);
+        let puzzle = state.current_puzzle();
+        let circuit_name = state.circuit_name();
+
+        let mut cached = self.cache.borrow_mut();
+        match cached.as_ref() {
+            Some(&(puzz, ref name, ref fbo))
+                if puzz == puzzle && name == circuit_name => {
+                self.draw_fbo(resources, matrix, fbo);
+                return;
+            }
+            _ => {}
+        }
+
+        let fbo = self.generate_fbo(resources, state, puzzle, circuit_name);
+        self.draw_fbo(resources, matrix, &fbo);
+        *cached = Some((puzzle, circuit_name.to_string(), fbo));
+    }
+
+    fn draw_fbo(&self, resources: &Resources, matrix: &Matrix4<f32>,
+                fbo: &FrameBuffer) {
+        let left_top = self.rect.top_left() +
+            vec2(PREVIEW_INNER_MARGIN, PREVIEW_INNER_MARGIN);
+        let grayscale = false;
+        resources.shaders().frame().draw(matrix, fbo, left_top, grayscale);
+    }
+
+    fn generate_fbo(&self, resources: &Resources, state: &GameState,
+                    puzzle: Puzzle, circuit_name: &str)
+                    -> FrameBuffer {
+        debug_log!("Regenerating preview image");
+        let fbo_size = self.rect.size().expand(-PREVIEW_INNER_MARGIN);
+        let fbo = FrameBuffer::new(fbo_size.width as usize,
+                                   fbo_size.height as usize);
+        fbo.bind();
+        match state.load_edit_grid(puzzle, circuit_name) {
+            Ok(grid) => self.draw_edit_grid(resources, fbo_size, &grid),
+            Err(error) => {
+                self.draw_error_paragraph(resources,
+                                          fbo_size,
+                                          &error,
+                                          state.prefs());
+            }
+        }
+        fbo.unbind(self.window_size);
+        fbo
+    }
+
+    fn draw_error_paragraph(&self, resources: &Resources,
+                            fbo_size: RectSize<f32>, error: &str,
+                            prefs: &Prefs) {
+        let matrix = cgmath::ortho(0.0,
+                                   fbo_size.width,
+                                   0.0,
+                                   fbo_size.height,
+                                   -10.0,
+                                   10.0);
+        let paragraph = Paragraph::compile(DESCRIPTION_FONT_SIZE,
+                                           DESCRIPTION_LINE_HEIGHT,
+                                           fbo_size.width,
+                                           prefs,
+                                           &format!("$R$*ERROR:$*$D {}",
+                                                    Paragraph::escape(error)));
+        let top = (0.5 * (fbo_size.height - paragraph.height())).round();
+        paragraph.draw(resources, &matrix, (0.0, top));
+    }
+
+    fn draw_edit_grid(&self, resources: &Resources, fbo_size: RectSize<f32>,
+                      grid: &EditGrid) {
+        let grid_matrix = self.grid_matrix(fbo_size, grid);
+        let board_rect = grid.bounds().as_f32().expand(0.25);
+        resources
+            .shaders()
+            .solid()
+            .fill_rect(&grid_matrix, Color3::PURPLE1, board_rect);
+        for (coords, dir, shape, size, color, error) in grid.wire_fragments() {
+            let color = if error { WireColor::Ambiguous } else { color };
+            WireModel::draw_fragment(resources,
+                                     &grid_matrix,
+                                     coords,
+                                     dir,
+                                     shape,
+                                     color,
+                                     size,
+                                     &Color4::TRANSPARENT);
+        }
+        for interface in grid.interfaces() {
+            let coords = interface.top_left(grid.bounds());
+            let mat = grid_matrix *
+                Matrix4::trans2(coords.x as f32, coords.y as f32);
+            ChipModel::draw_interface(resources, &mat, interface);
+        }
+        for (coords, ctype, orient) in grid.chips() {
+            let mat = grid_matrix *
+                Matrix4::trans2(coords.x as f32, coords.y as f32);
+            ChipModel::draw_chip(resources, &mat, ctype, orient, None);
+        }
+    }
+
+    fn grid_matrix(&self, fbo_size: RectSize<f32>, grid: &EditGrid)
+                   -> Matrix4<f32> {
+        let board_bounds = grid.bounds().as_f32().expand(1.0);
+        let board_aspect_ratio = board_bounds.width / board_bounds.height;
+        let fbo_aspect_ratio = fbo_size.width / fbo_size.height;
+        let (grid_width, grid_height) =
+            if board_aspect_ratio > fbo_aspect_ratio {
+                let min_width = fbo_size.width / PREVIEW_MAX_GRID_CELL_SIZE;
+                let grid_width = board_bounds.width.max(min_width);
+                (grid_width, grid_width / fbo_aspect_ratio)
+            } else {
+                let min_height = fbo_size.height / PREVIEW_MAX_GRID_CELL_SIZE;
+                let grid_height = board_bounds.height.max(min_height);
+                (grid_height * fbo_aspect_ratio, grid_height)
+            };
+        let grid_x = board_bounds.x - 0.5 * (grid_width - board_bounds.width);
+        let grid_y = board_bounds.y -
+            0.5 * (grid_height - board_bounds.height);
+        cgmath::ortho(grid_x,
+                      grid_x + grid_width,
+                      grid_y,
+                      grid_y + grid_height,
+                      -10.0,
+                      10.0)
     }
 }
 

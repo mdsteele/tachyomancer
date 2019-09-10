@@ -410,29 +410,34 @@ impl GameState {
 
     pub fn clear_edit_grid(&mut self) { self.edit_grid = None; }
 
-    /// Creates a new circuit, with an automatically-chosen name, and creates
-    /// its edit grid.
-    pub fn new_edit_grid(&mut self) -> Result<(), String> {
+    pub fn load_and_set_edit_grid(&mut self) -> Result<(), String> {
         if let Some(ref profile) = self.profile {
-            self.circuit_name = profile.choose_new_circuit_name("Version ");
-            debug_log!("Creating new circuit {:?}", self.circuit_name);
             let puzzle = profile.current_puzzle();
-            self.edit_grid = Some(EditGrid::new(puzzle, profile));
+            if self.circuit_name.is_empty() {
+                self.circuit_name = profile
+                    .choose_new_circuit_name("Version ");
+                debug_log!("Creating new circuit {:?}", self.circuit_name);
+                self.edit_grid = Some(EditGrid::new(puzzle, profile));
+            } else {
+                let data = profile.load_circuit(puzzle, &self.circuit_name)?;
+                self.edit_grid =
+                    Some(EditGrid::from_circuit_data(puzzle, profile, &data));
+            }
             Ok(())
         } else {
             Err("No profile loaded".to_string())
         }
     }
 
-    pub fn load_edit_grid(&mut self) -> Result<(), String> {
-        if self.circuit_name.is_empty() {
-            self.new_edit_grid()
-        } else if let Some(ref profile) = self.profile {
-            let puzzle = profile.current_puzzle();
-            let data = profile.load_circuit(puzzle, &self.circuit_name)?;
-            self.edit_grid =
-                Some(EditGrid::from_circuit_data(puzzle, profile, &data));
-            Ok(())
+    pub fn load_edit_grid(&self, puzzle: Puzzle, circuit_name: &str)
+                          -> Result<EditGrid, String> {
+        if let Some(ref profile) = self.profile {
+            if circuit_name.is_empty() {
+                Ok(EditGrid::new(puzzle, profile))
+            } else {
+                let data = profile.load_circuit(puzzle, circuit_name)?;
+                Ok(EditGrid::from_circuit_data(puzzle, profile, &data))
+            }
         } else {
             Err("No profile loaded".to_string())
         }

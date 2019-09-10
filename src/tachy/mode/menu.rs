@@ -92,7 +92,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         }
                     }
                     Some(MenuAction::EditCircuit) => {
-                        match state.load_edit_grid() {
+                        match state.load_and_set_edit_grid() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
                                 view.show_error(&mut window.ui(),

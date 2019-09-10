@@ -111,7 +111,8 @@ impl MenuView {
         let navigation_view =
             NavigationView::new(size.as_f32(), section_rect, &mut ui, state);
         let converse_view = ConverseView::new(section_rect, &mut ui, state);
-        let puzzles_view = PuzzlesView::new(section_rect, &mut ui, state);
+        let puzzles_view =
+            PuzzlesView::new(size, section_rect, &mut ui, state);
 
         let unlocked_chapters: HashSet<Chapter> = Conversation::all()
             .filter(|&conv| state.is_conversation_unlocked(conv))

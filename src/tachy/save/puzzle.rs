@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use strum::IntoEnumIterator;
+use tachy::geom::CoordsSize;
 
 //===========================================================================//
 
@@ -75,6 +76,11 @@ impl Puzzle {
 
     pub fn allows_events(self) -> bool { self.data().allow_events }
 
+    pub fn initial_board_size(self) -> CoordsSize {
+        let (width, height) = self.data().init_size;
+        CoordsSize::new(width, height)
+    }
+
     fn data(self) -> &'static PuzzleData {
         match self {
             Puzzle::AutomateBeacon => {
@@ -82,6 +88,7 @@ impl Puzzle {
                     title: "Subspace Beacon",
                     kind: PuzzleKind::Automate,
                     allow_events: false,
+                    init_size: (8, 6),
                     score_units: "Time",
                     graph_bounds: (150, 150),
                     description: "TODO",
@@ -101,6 +108,7 @@ impl Puzzle {
                     title: "Heliostat",
                     kind: PuzzleKind::Automate,
                     allow_events: false,
+                    init_size: (6, 5),
                     score_units: "Time",
                     graph_bounds: (50, 150),
                     description: "\
@@ -123,6 +131,7 @@ impl Puzzle {
                     title: "Backup Reactor",
                     kind: PuzzleKind::Automate,
                     allow_events: false,
+                    init_size: (6, 8),
                     score_units: "Time",
                     graph_bounds: (150, 150),
                     description: "\
@@ -136,6 +145,7 @@ impl Puzzle {
                     title: "Manipulator Arm",
                     kind: PuzzleKind::Automate,
                     allow_events: true,
+                    init_size: (8, 6),
                     score_units: "Time",
                     graph_bounds: (150, 150),
                     description: "\
@@ -148,6 +158,7 @@ impl Puzzle {
                     title: "Main Sensors",
                     kind: PuzzleKind::Automate,
                     allow_events: false,
+                    init_size: (6, 7),
                     score_units: "Time",
                     graph_bounds: (100, 150),
                     description: "\
@@ -174,6 +185,7 @@ impl Puzzle {
                     title: "Orbital Lander",
                     kind: PuzzleKind::Command,
                     allow_events: false,
+                    init_size: (6, 8),
                     score_units: "Time",
                     graph_bounds: (150, 150),
                     description: "TODO",
@@ -185,6 +197,7 @@ impl Puzzle {
                     title: "4-Bit Halver",
                     kind: PuzzleKind::Fabricate,
                     allow_events: false,
+                    init_size: (7, 5),
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
@@ -205,6 +218,7 @@ impl Puzzle {
                     title: "4-Bit Incrementor",
                     kind: PuzzleKind::Fabricate,
                     allow_events: true,
+                    init_size: (5, 5),
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
@@ -224,6 +238,7 @@ impl Puzzle {
                     title: "8-Bit Multiplier",
                     kind: PuzzleKind::Fabricate,
                     allow_events: false,
+                    init_size: (7, 7),
                     score_units: "Wire Length",
                     graph_bounds: (50, 100),
                     description: "\
@@ -242,6 +257,7 @@ impl Puzzle {
                     title: "1-Bit XOR Gate",
                     kind: PuzzleKind::Fabricate,
                     allow_events: false,
+                    init_size: (5, 5),
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
@@ -262,6 +278,7 @@ impl Puzzle {
                     title: "Behavior Sandbox",
                     kind: PuzzleKind::Sandbox,
                     allow_events: false,
+                    init_size: (8, 6),
                     score_units: "",
                     graph_bounds: (100, 100),
                     description: "\
@@ -276,6 +293,7 @@ impl Puzzle {
                     title: "Event Sandbox",
                     kind: PuzzleKind::Sandbox,
                     allow_events: true,
+                    init_size: (8, 6),
                     score_units: "",
                     graph_bounds: (100, 100),
                     description: "\
@@ -291,6 +309,7 @@ impl Puzzle {
                     title: "4-Bit Adder",
                     kind: PuzzleKind::Tutorial,
                     allow_events: false,
+                    init_size: (5, 5),
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
@@ -313,6 +332,7 @@ impl Puzzle {
                     title: "1-Bit DEMUX",
                     kind: PuzzleKind::Tutorial,
                     allow_events: true,
+                    init_size: (5, 5),
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
@@ -332,6 +352,7 @@ impl Puzzle {
                     title: "1-Bit MUX",
                     kind: PuzzleKind::Tutorial,
                     allow_events: false,
+                    init_size: (5, 5),
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
@@ -353,6 +374,7 @@ impl Puzzle {
                     title: "1-Bit OR Gate",
                     kind: PuzzleKind::Tutorial,
                     allow_events: false,
+                    init_size: (5, 5),
                     score_units: "Wire Length",
                     graph_bounds: (50, 50),
                     description: "\
@@ -374,6 +396,7 @@ impl Puzzle {
                     title: "Resettable Sum",
                     kind: PuzzleKind::Tutorial,
                     allow_events: true,
+                    init_size: (7, 7),
                     score_units: "Wire Length",
                     graph_bounds: (50, 100),
                     description: "\
@@ -403,6 +426,7 @@ struct PuzzleData {
     title: &'static str,
     kind: PuzzleKind,
     allow_events: bool,
+    init_size: (i32, i32),
     score_units: &'static str,
     graph_bounds: (i32, i32),
     description: &'static str,

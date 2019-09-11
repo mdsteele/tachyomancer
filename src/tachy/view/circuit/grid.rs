@@ -173,19 +173,18 @@ impl EditGridView {
         }
     }
 
-    fn draw_interfaces(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                       grid: &EditGrid) {
+    fn draw_interfaces(&self, resources: &Resources,
+                       grid_matrix: &Matrix4<f32>, grid: &EditGrid) {
         let bounds = match self.interaction {
             Interaction::DraggingBounds(ref drag) => drag.bounds(),
             _ => grid.bounds(),
         };
         for interface in grid.interfaces() {
             let coords = interface.top_left(bounds);
-            let x = (coords.x * GRID_CELL_SIZE) as f32;
-            let y = (coords.y * GRID_CELL_SIZE) as f32;
-            let mat = matrix * Matrix4::trans2(x, y) *
-                Matrix4::from_scale(GRID_CELL_SIZE as f32);
-            ChipModel::draw_interface(resources, &mat, interface);
+            ChipModel::draw_interface(resources,
+                                      &grid_matrix,
+                                      coords,
+                                      interface);
         }
     }
 
@@ -256,7 +255,7 @@ impl EditGridView {
             }
         }
 
-        self.draw_interfaces(resources, &matrix, grid);
+        self.draw_interfaces(resources, &grid_matrix, grid);
 
         // Draw chips (except the one being dragged, if any):
         let dragged_chip_coords = match self.interaction {
@@ -267,15 +266,12 @@ impl EditGridView {
             if Some(coords) == dragged_chip_coords {
                 continue;
             }
-            let x = (coords.x * GRID_CELL_SIZE) as f32;
-            let y = (coords.y * GRID_CELL_SIZE) as f32;
-            let mat = matrix * Matrix4::trans2(x, y) *
-                Matrix4::from_scale(GRID_CELL_SIZE as f32);
             ChipModel::draw_chip(resources,
-                                 &mat,
+                                 &grid_matrix,
+                                 coords,
                                  ctype,
                                  orient,
-                                 Some((coords, grid)));
+                                 Some(grid));
         }
 
         // Draw selection box (if any):
@@ -303,11 +299,12 @@ impl EditGridView {
     pub fn draw_dragged(&self, resources: &Resources) {
         if let Interaction::DraggingChip(ref drag) = self.interaction {
             let pt = drag.chip_topleft();
-            let matrix = self.vp_matrix() *
+            let grid_matrix = self.vp_matrix() *
                 Matrix4::from_scale(GRID_CELL_SIZE as f32) *
                 Matrix4::trans2(pt.x, pt.y);
             ChipModel::draw_chip(resources,
-                                 &matrix,
+                                 &grid_matrix,
+                                 Coords::new(0, 0),
                                  drag.chip_type(),
                                  drag.new_orient(),
                                  None);

@@ -23,8 +23,8 @@ use super::types::{CompiledPiece, ParserPiece, ParserPieceSplit};
 use cgmath::{Matrix4, Vector2};
 use std::collections::HashMap;
 use std::usize;
-use tachy::geom::{AsFloat, Color4, Coords, CoordsDelta, CoordsSize,
-                  Direction, MatrixExt, Orientation};
+use tachy::geom::{Color4, Coords, CoordsSize, Direction, MatrixExt,
+                  Orientation};
 use tachy::gui::Resources;
 use tachy::save::{ChipType, CircuitData, WireShape};
 use tachy::state::{self, ChipExt, PortColor, PortConstraint, PortFlow,
@@ -164,9 +164,12 @@ impl CompiledPiece for CompiledCircuitPiece {
         }
         // Draw chips:
         for (&coords, &(ctype, orient)) in self.chips.iter() {
-            let delta: CoordsDelta = coords - Coords::new(0, 0);
-            let chip_matrix = grid_matrix * Matrix4::trans2v(delta.as_f32());
-            ChipModel::draw_chip(resources, &chip_matrix, ctype, orient, None);
+            ChipModel::draw_chip(resources,
+                                 &grid_matrix,
+                                 coords,
+                                 ctype,
+                                 orient,
+                                 None);
         }
         return true;
     }

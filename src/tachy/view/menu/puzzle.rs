@@ -521,14 +521,18 @@ impl CircuitPreviewView {
         }
         for interface in grid.interfaces() {
             let coords = interface.top_left(grid.bounds());
-            let mat = grid_matrix *
-                Matrix4::trans2(coords.x as f32, coords.y as f32);
-            ChipModel::draw_interface(resources, &mat, interface);
+            ChipModel::draw_interface(resources,
+                                      &grid_matrix,
+                                      coords,
+                                      interface);
         }
         for (coords, ctype, orient) in grid.chips() {
-            let mat = grid_matrix *
-                Matrix4::trans2(coords.x as f32, coords.y as f32);
-            ChipModel::draw_chip(resources, &mat, ctype, orient, None);
+            ChipModel::draw_chip(resources,
+                                 &grid_matrix,
+                                 coords,
+                                 ctype,
+                                 orient,
+                                 None);
         }
     }
 

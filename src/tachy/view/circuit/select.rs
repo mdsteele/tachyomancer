@@ -164,8 +164,13 @@ impl SelectionDrag {
 
             // Draw chips:
             for (&delta, &(ctype, orient)) in self.selection.chips.iter() {
-                let mat = grid_matrix * Matrix4::trans2v(delta.as_f32());
-                ChipModel::draw_chip(resources, &mat, ctype, orient, None);
+                let coords = Coords::new(0, 0) + delta;
+                ChipModel::draw_chip(resources,
+                                     &grid_matrix,
+                                     coords,
+                                     ctype,
+                                     orient,
+                                     None);
             }
         }
 

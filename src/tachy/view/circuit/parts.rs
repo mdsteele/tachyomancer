@@ -24,7 +24,7 @@ use super::tray::TraySlide;
 use super::tutorial::TutorialBubble;
 use cgmath::{Deg, Matrix4, Point2, vec2};
 use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, MatrixExt, Orientation, Rect};
+use tachy::geom::{AsFloat, Color4, Coords, MatrixExt, Orientation, Rect};
 use tachy::gl::{FrameBuffer, Stencil};
 use tachy::gui::{Cursor, Event, Resources, Ui, Window};
 use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType, Prefs};
@@ -154,6 +154,7 @@ impl PartsTray {
                     Matrix4::from_scale(rect.width / chip_dim);
                 ChipModel::draw_chip(resources,
                                      &matrix,
+                                     Coords::new(0, 0),
                                      ctype,
                                      Orientation::default(),
                                      None);

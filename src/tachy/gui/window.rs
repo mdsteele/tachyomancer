@@ -33,8 +33,8 @@ use tachy::geom::{AsFloat, Color4, RectSize};
 
 //===========================================================================//
 
-const WINDOW_MIN_WIDTH: i32 = 800;
-const WINDOW_MIN_HEIGHT: i32 = 600;
+const WINDOW_MIN_WIDTH: i32 = 1024;
+const WINDOW_MIN_HEIGHT: i32 = 640;
 const WINDOW_TITLE: &str = "Tachyomancer";
 
 //===========================================================================//

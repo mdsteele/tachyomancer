@@ -54,13 +54,13 @@ include!(concat!(env!("OUT_DIR"), "/texture/list_icons.rs"));
 
 pub struct ListView<T> {
     rect: Rect<i32>,
-    items: Vec<(T, String, Option<ListIcon>)>,
+    items: Vec<(T, String, bool, Option<ListIcon>)>,
     scrollbar: Scrollbar,
 }
 
 impl<T: Clone + Eq> ListView<T> {
     pub fn new<Q>(rect: Rect<i32>, ui: &mut Ui,
-                  items: Vec<(T, String, Option<ListIcon>)>, current: &Q)
+                  items: Vec<(T, String, bool, Option<ListIcon>)>, current: &Q)
                   -> ListView<T>
     where
         Q: PartialEq + ?Sized,
@@ -111,9 +111,10 @@ impl<T: Clone + Eq> ListView<T> {
     {
         let item_width = self.item_width() as f32;
         let ui = resources.shaders().ui();
-        for (index, &(ref value, ref label, opt_icon)) in
+        for (index, &(ref value, ref label, bold, opt_icon)) in
             self.items.iter().enumerate()
         {
+            // Item frame:
             let top = self.rect.y +
                 (index as i32) * (ITEM_HEIGHT + ITEM_SPACING) -
                 self.scrollbar.scroll_top();
@@ -134,6 +135,8 @@ impl<T: Clone + Eq> ListView<T> {
                               &Color4::CYAN2,
                               &Color4::ORANGE2,
                               &bg_color);
+
+            // Icon:
             if let Some(icon) = opt_icon {
                 let icon_rect =
                     Rect::new(rect.x + (ITEM_INNER_MARGIN as f32),
@@ -141,27 +144,37 @@ impl<T: Clone + Eq> ListView<T> {
                                   0.5 * (ITEM_HEIGHT - ICON_HEIGHT) as f32,
                               ICON_WIDTH as f32,
                               ICON_HEIGHT as f32);
-                resources.shaders().icon().draw(matrix,
-                                                icon_rect,
-                                                icon as u32,
-                                                &Color4::ORANGE5,
-                                                resources
-                                                    .textures()
-                                                    .list_icons());
+                let color = if bold {
+                    &Color4::ORANGE3
+                } else {
+                    &Color4::ORANGE5
+                };
+                let texture = resources.textures().list_icons();
+                let shader = resources.shaders().icon();
+                shader.draw(matrix, icon_rect, icon as u32, color, texture);
             }
+
+            // Label:
             let text_offset = if opt_icon.is_some() {
                 ICON_WIDTH + ITEM_INNER_MARGIN
             } else {
                 0
             };
-            let font = resources.fonts().roman();
-            font.draw(matrix,
-                      FONT_SIZE,
-                      Align::MidLeft,
-                      ((self.rect.x + ITEM_INNER_MARGIN + text_offset) as
-                           f32,
-                       (top + ITEM_HEIGHT / 2) as f32),
-                      label.as_str());
+            let text_left = (self.rect.x + ITEM_INNER_MARGIN +
+                text_offset) as f32;
+            let text_top = (top + ITEM_HEIGHT / 2) as f32;
+            let (font, text_color) = if bold {
+                (resources.fonts().bold(), &Color4::ORANGE4)
+            } else {
+                (resources.fonts().roman(), &Color4::WHITE)
+            };
+            font.draw_style(matrix,
+                            FONT_SIZE,
+                            Align::MidLeft,
+                            (text_left, text_top),
+                            text_color,
+                            0.0,
+                            label.as_str());
         }
     }
 
@@ -211,7 +224,8 @@ impl<T: Clone + Eq> ListView<T> {
     }
 
     pub fn set_items<Q>(&mut self, ui: &mut Ui,
-                        items: Vec<(T, String, Option<ListIcon>)>, current: &Q)
+                        items: Vec<(T, String, bool, Option<ListIcon>)>,
+                        current: &Q)
     where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
@@ -221,7 +235,7 @@ impl<T: Clone + Eq> ListView<T> {
         self.scrollbar.set_total_height(total_height, ui);
         let current_index = items
             .iter()
-            .position(|(value, _, _)| value.borrow() == current)
+            .position(|(value, _, _, _)| value.borrow() == current)
             .unwrap_or(0);
         let mid_current = (current_index as i32) *
             (ITEM_HEIGHT + ITEM_SPACING) +

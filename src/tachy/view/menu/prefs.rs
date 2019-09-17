@@ -487,10 +487,10 @@ impl ProfilesPane {
 }
 
 fn profile_list_items(state: &GameState)
-                      -> Vec<(String, String, Option<ListIcon>)> {
+                      -> Vec<(String, String, bool, Option<ListIcon>)> {
     state
         .profile_names()
-        .map(|name| (name.to_string(), name.to_string(), None))
+        .map(|name| (name.to_string(), name.to_string(), false, None))
         .collect()
 }
 

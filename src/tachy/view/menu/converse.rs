@@ -175,7 +175,7 @@ impl ConverseView {
 }
 
 fn chapter_list_items(state: &GameState)
-                      -> Vec<(Chapter, String, Option<ListIcon>)> {
+                      -> Vec<(Chapter, String, bool, Option<ListIcon>)> {
     let chapters: HashSet<Chapter> = Conversation::all()
         .filter(|&conv| state.is_conversation_unlocked(conv))
         .map(|conv| conv.chapter())
@@ -184,12 +184,12 @@ fn chapter_list_items(state: &GameState)
         .chapter_order()
         .into_iter()
         .filter(|chapter| chapters.contains(chapter))
-        .map(|chapter| (chapter, chapter.title().to_string(), None))
+        .map(|chapter| (chapter, chapter.title().to_string(), false, None))
         .collect()
 }
 
 fn conv_list_items(state: &GameState)
-                   -> Vec<(Conversation, String, Option<ListIcon>)> {
+                   -> Vec<(Conversation, String, bool, Option<ListIcon>)> {
     let chapter = state.current_conversation().chapter();
     Conversation::all()
         .filter(|&conv| {
@@ -197,11 +197,8 @@ fn conv_list_items(state: &GameState)
                         state.is_conversation_unlocked(conv)
                 })
         .map(|conv| {
-                 let mut label = conv.title().to_string();
-                 if !state.is_conversation_complete(conv) {
-                     label = format!("* {}", label);
-                 }
-                 (conv, label, None)
+                 let label = conv.title().to_string();
+                 (conv, label, !state.is_conversation_complete(conv), None)
              })
         .collect()
 }

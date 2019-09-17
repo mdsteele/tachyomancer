@@ -223,26 +223,30 @@ impl PuzzlesView {
 }
 
 fn circuit_list_items(state: &GameState)
-                      -> Vec<(String, String, Option<ListIcon>)> {
+                      -> Vec<(String, String, bool, Option<ListIcon>)> {
     let mut items =
-        vec![("".to_string(), "    [New Circuit]".to_string(), None)];
+        vec![
+            ("".to_string(), "    [New Circuit]".to_string(), false, None),
+        ];
     if let Some(profile) = state.profile() {
         items.extend(profile
-            .circuit_names(profile.current_puzzle())
-            .map(|name| (name.to_string(), name.to_string(), None)))
+                         .circuit_names(profile.current_puzzle())
+                         .map(|name| {
+                                  (name.to_string(),
+                                   name.to_string(),
+                                   false,
+                                   None)
+                              }))
     }
     items
 }
 
 fn puzzle_list_items(state: &GameState)
-                     -> Vec<(Puzzle, String, Option<ListIcon>)> {
+                     -> Vec<(Puzzle, String, bool, Option<ListIcon>)> {
     Puzzle::all()
         .filter(|&puzzle| state.is_puzzle_unlocked(puzzle))
         .map(|puzzle| {
-            let mut label = puzzle.title().to_string();
-            if !state.is_puzzle_solved(puzzle) {
-                label = format!("* {}", label);
-            }
+            let label = puzzle.title().to_string();
             let icon = match puzzle.kind() {
                 PuzzleKind::Automate => ListIcon::Automate,
                 PuzzleKind::Command => ListIcon::Command,
@@ -250,7 +254,7 @@ fn puzzle_list_items(state: &GameState)
                 PuzzleKind::Sandbox => ListIcon::Sandbox,
                 PuzzleKind::Tutorial => ListIcon::Tutorial,
             };
-            (puzzle, label, Some(icon))
+            (puzzle, label, !state.is_puzzle_solved(puzzle), Some(icon))
         })
         .collect()
 }

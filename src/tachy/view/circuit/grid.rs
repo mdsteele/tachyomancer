@@ -771,7 +771,7 @@ impl EditGridView {
                     match self.interaction.take() {
                         Interaction::Nothing => {}
                         Interaction::DraggingBounds(drag) => {
-                            drag.finish(grid);
+                            drag.finish(ui, grid);
                         }
                         Interaction::DraggingChip(drag) => {
                             drag.drop_onto_board(ui, grid);

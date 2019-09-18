@@ -49,6 +49,7 @@ pub enum Puzzle {
     TutorialDemux,
     TutorialSum,
     FabricateInc,
+    AutomateMiningRobot,
     AutomateBeacon,
     AutomateRobotArm,
     SandboxBehavior,
@@ -124,6 +125,27 @@ impl Puzzle {
                           interface on the right side of the board.\n\
                         * $!The closer the current position is to optimal, \
                           the more energy will be produced.",
+                }
+            }
+            Puzzle::AutomateMiningRobot => {
+                &PuzzleData {
+                    title: "Mining Robot",
+                    kind: PuzzleKind::Automate,
+                    allow_events: true,
+                    init_size: (8, 6),
+                    score_units: "Time",
+                    graph_bounds: (100, 250),
+                    description: "TODO",
+                    instructions: "\
+                        * $!Your goal is carry all the ore back to the base.\n\
+                        * $!The robot will depart from the base in a straight \
+                          line, and can dig up ore deposits while passing \
+                          over them.  It will return to the base on command, \
+                          or automatically if it goes out too far.\n\
+                        * $!The robot can hold up to 15kg of ore at once.  It \
+                          is an error to try to carry more than that.\n\
+                        * $!When the robot returns to the base, it will \
+                          automatically dump its ore and depart again.",
                 }
             }
             Puzzle::AutomateReactor => {

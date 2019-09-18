@@ -22,6 +22,7 @@ mod fabricate;
 mod heliostat;
 mod iface;
 mod lander;
+mod mining;
 mod reactor;
 mod rng;
 mod robotarm;
@@ -37,6 +38,7 @@ pub use self::fabricate::{FabricateHalveEval, FabricateIncEval,
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::lander::LanderEval;
+pub use self::mining::MiningRobotEval;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::shared::TutorialBubblePosition;
@@ -90,6 +92,7 @@ impl PuzzleExt for Puzzle {
         match self {
             Puzzle::AutomateBeacon => self::beacon::INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
+            Puzzle::AutomateMiningRobot => self::mining::INTERFACES,
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
@@ -155,6 +158,7 @@ pub(super) fn new_puzzle_eval(puzzle: Puzzle,
             Box::new(self::beacon::BeaconEval::new(slots))
         }
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
+        Puzzle::AutomateMiningRobot => Box::new(MiningRobotEval::new(slots)),
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::AutomateReactorEval::new(slots))
         }

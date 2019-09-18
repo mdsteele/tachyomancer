@@ -20,6 +20,7 @@
 mod beacon;
 mod heliostat;
 mod lander;
+mod mining;
 mod robotarm;
 mod sensors;
 mod shared;
@@ -64,6 +65,9 @@ impl VerificationTray {
             }
             Puzzle::AutomateHeliostat => {
                 self::heliostat::HeliostatVerifyView::new(right_bottom)
+            }
+            Puzzle::AutomateMiningRobot => {
+                self::mining::MiningRobotVerifyView::new(right_bottom)
             }
             Puzzle::AutomateReactor => {
                 // TODO: Make a verification view for AutomateReactor

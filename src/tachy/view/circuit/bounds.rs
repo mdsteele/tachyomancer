@@ -182,7 +182,7 @@ impl BoundsDrag {
         }
     }
 
-    pub fn finish(self, grid: &mut EditGrid) {
+    pub fn finish(self, ui: &mut Ui, grid: &mut EditGrid) {
         debug_assert_eq!(self.acceptable, grid.can_have_bounds(self.bounds));
         if self.acceptable {
             let old_bounds = grid.bounds();
@@ -190,7 +190,10 @@ impl BoundsDrag {
             if !grid.try_mutate(changes) {
                 debug_warn!("BoundsDrag mutation failed");
             }
+        } else {
+            ui.audio().play_sound(Sound::ChangeBounds);
         }
+        ui.request_redraw();
     }
 }
 

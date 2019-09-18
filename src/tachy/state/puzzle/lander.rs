@@ -250,7 +250,6 @@ fn wind_at_altitude(altitude: f64) -> i32 {
 
 //===========================================================================//
 
-
 #[cfg(test)]
 mod tests {
     use super::{limit_thrust, wind_at_altitude};

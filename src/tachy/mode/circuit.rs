@@ -18,9 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::ModeChange;
-use tachy::gui::{Event, Window};
-use tachy::state::GameState;
-use tachy::view::{CircuitAction, CircuitView};
+use crate::tachy::gui::{Event, Window};
+use crate::tachy::state::GameState;
+use crate::tachy::view::{CircuitAction, CircuitView};
 
 //===========================================================================//
 
@@ -40,9 +40,11 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 window.pump_video();
             }
             event => {
-                match view.on_event(&event,
-                                    &mut window.ui(),
-                                    state.edit_grid_mut_and_prefs().unwrap()) {
+                match view.on_event(
+                    &event,
+                    &mut window.ui(),
+                    state.edit_grid_mut_and_prefs().unwrap(),
+                ) {
                     Some(CircuitAction::BackToMenu) => {
                         match state.save() {
                             Ok(()) => {

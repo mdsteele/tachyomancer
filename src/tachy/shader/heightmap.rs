@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::Rect;
+use crate::tachy::gl::{
+    HeightmapModel, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture2D,
+};
 use cgmath::{InnerSpace, Matrix4, Vector3};
-use tachy::geom::Rect;
-use tachy::gl::{HeightmapModel, Shader, ShaderProgram, ShaderSampler,
-                ShaderType, ShaderUniform, Texture2D};
 
 //===========================================================================//
 
@@ -44,12 +46,16 @@ pub struct HeightmapShader {
 
 impl HeightmapShader {
     pub(super) fn new() -> Result<HeightmapShader, String> {
-        let vert = Shader::new(ShaderType::Vertex,
-                               "heightmap.vert",
-                               HEIGHTMAP_VERT_CODE)?;
-        let frag = Shader::new(ShaderType::Fragment,
-                               "heightmap.frag",
-                               HEIGHTMAP_FRAG_CODE)?;
+        let vert = Shader::new(
+            ShaderType::Vertex,
+            "heightmap.vert",
+            HEIGHTMAP_VERT_CODE,
+        )?;
+        let frag = Shader::new(
+            ShaderType::Fragment,
+            "heightmap.frag",
+            HEIGHTMAP_FRAG_CODE,
+        )?;
         let program = ShaderProgram::new(&[&vert, &frag])?;
 
         let mv = program.get_uniform("MV")?;
@@ -77,15 +83,22 @@ impl HeightmapShader {
         Ok(shader)
     }
 
-    pub fn render(&self, p_matrix: &Matrix4<f32>, v_matrix: &Matrix4<f32>,
-                  light_dir_world_space: Vector3<f32>,
-                  m_matrix: &Matrix4<f32>, heightmap: &Texture2D,
-                  heightmap_rect: Rect<f32>, texture: &Texture2D,
-                  texture_rect: Rect<f32>, model: &HeightmapModel) {
-        let light_dir_cam_space = (v_matrix *
-                                       light_dir_world_space.extend(0.0))
-            .truncate()
-            .normalize();
+    pub fn render(
+        &self,
+        p_matrix: &Matrix4<f32>,
+        v_matrix: &Matrix4<f32>,
+        light_dir_world_space: Vector3<f32>,
+        m_matrix: &Matrix4<f32>,
+        heightmap: &Texture2D,
+        heightmap_rect: Rect<f32>,
+        texture: &Texture2D,
+        texture_rect: Rect<f32>,
+        model: &HeightmapModel,
+    ) {
+        let light_dir_cam_space = (v_matrix
+            * light_dir_world_space.extend(0.0))
+        .truncate()
+        .normalize();
 
         self.program.bind();
         self.mv.set(&(v_matrix * m_matrix));

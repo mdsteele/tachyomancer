@@ -18,10 +18,10 @@
 // +--------------------------------------------------------------------------+
 
 use super::paragraph::Paragraph;
+use crate::tachy::geom::{Color3, Color4, Rect, RectSize};
+use crate::tachy::gui::{ClockEventData, Resources, Ui};
+use crate::tachy::save::Prefs;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{Color3, Color4, Rect, RectSize};
-use tachy::gui::{ClockEventData, Resources, Ui};
-use tachy::save::Prefs;
 
 //===========================================================================//
 
@@ -42,11 +42,7 @@ pub struct Tooltip<T> {
 
 impl<T: PartialEq> Tooltip<T> {
     pub fn new(window_size: RectSize<i32>) -> Tooltip<T> {
-        Tooltip {
-            window_size,
-            hover: None,
-            paragraph: None,
-        }
+        Tooltip { window_size, hover: None, paragraph: None }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -54,8 +50,8 @@ impl<T: PartialEq> Tooltip<T> {
             if let Some(ref paragraph) = self.paragraph {
                 let width = paragraph.width() + 2.0 * TOOLTIP_INNER_MARGIN;
                 let height = paragraph.height() + 2.0 * TOOLTIP_INNER_MARGIN;
-                let left = (pt.x as f32) -
-                    width * (pt.x as f32) / (self.window_size.width as f32);
+                let left = (pt.x as f32)
+                    - width * (pt.x as f32) / (self.window_size.width as f32);
                 let top = if pt.y > self.window_size.height / 2 {
                     (pt.y as f32) - (height + TOOLTIP_OUTER_MARGIN)
                 } else {
@@ -63,15 +59,21 @@ impl<T: PartialEq> Tooltip<T> {
                 };
                 let rect = Rect::new(left, top, width, height);
                 let ui = resources.shaders().ui();
-                ui.draw_box2(matrix,
-                             &rect,
-                             &Color4::ORANGE2,
-                             &Color4::CYAN2,
-                             &Color3::PURPLE0.with_alpha(0.9));
-                paragraph.draw(resources,
-                               matrix,
-                               (rect.x + TOOLTIP_INNER_MARGIN,
-                                rect.y + TOOLTIP_INNER_MARGIN));
+                ui.draw_box2(
+                    matrix,
+                    &rect,
+                    &Color4::ORANGE2,
+                    &Color4::CYAN2,
+                    &Color3::PURPLE0.with_alpha(0.9),
+                );
+                paragraph.draw(
+                    resources,
+                    matrix,
+                    (
+                        rect.x + TOOLTIP_INNER_MARGIN,
+                        rect.y + TOOLTIP_INNER_MARGIN,
+                    ),
+                );
             }
         }
     }
@@ -112,9 +114,13 @@ impl<T: PartialEq> Tooltip<T> {
         }
     }
 
-    pub fn tick<F>(&mut self, tick: &ClockEventData, ui: &mut Ui,
-                   prefs: &Prefs, func: F)
-    where
+    pub fn tick<F>(
+        &mut self,
+        tick: &ClockEventData,
+        ui: &mut Ui,
+        prefs: &Prefs,
+        func: F,
+    ) where
         F: FnOnce(&T) -> String,
     {
         if self.paragraph.is_some() {
@@ -123,11 +129,13 @@ impl<T: PartialEq> Tooltip<T> {
         if let Some((ref tag, _, ref mut time)) = self.hover {
             *time = (*time + tick.elapsed).min(TOOLTIP_HOVER_TIME);
             if *time >= TOOLTIP_HOVER_TIME {
-                self.paragraph = Some(Paragraph::compile(TOOLTIP_FONT_SIZE,
-                                                         TOOLTIP_LINE_HEIGHT,
-                                                         TOOLTIP_MAX_WIDTH,
-                                                         prefs,
-                                                         &func(tag)));
+                self.paragraph = Some(Paragraph::compile(
+                    TOOLTIP_FONT_SIZE,
+                    TOOLTIP_LINE_HEIGHT,
+                    TOOLTIP_MAX_WIDTH,
+                    prefs,
+                    &func(tag),
+                ));
                 ui.request_redraw();
             }
         }

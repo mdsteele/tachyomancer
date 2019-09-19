@@ -51,8 +51,8 @@ pub enum Event {
 
 impl Event {
     pub fn new_clock_tick(elapsed: Duration) -> Event {
-        let seconds = (elapsed.as_secs() as f64) +
-            1e-9 * (elapsed.subsec_nanos() as f64);
+        let seconds = (elapsed.as_secs() as f64)
+            + 1e-9 * (elapsed.subsec_nanos() as f64);
         let data =
             ClockEventData { elapsed: seconds.min(MAX_CLOCK_TICK_SECONDS) };
         Event::ClockTick(data)
@@ -65,9 +65,10 @@ impl Event {
         Event::Debug(key, value)
     }
 
-    pub(super) fn from_sdl_event(sdl_event: sdl2::event::Event,
-                                 pump: &sdl2::EventPump)
-                                 -> Option<Event> {
+    pub(super) fn from_sdl_event(
+        sdl_event: sdl2::event::Event,
+        pump: &sdl2::EventPump,
+    ) -> Option<Event> {
         // TODO: On iOS/Android, treat long-press as right-click.
         match sdl_event {
             sdl2::event::Event::KeyDown { keycode, keymod, .. } => {
@@ -86,15 +87,13 @@ impl Event {
             }
             sdl2::event::Event::MouseButtonDown {
                 x, y, mouse_btn, ..
-            } => {
-                match mouse_btn {
-                    MouseButton::Left | MouseButton::Right => {
-                        let data = MouseEventData::new(x, y, mouse_btn);
-                        Some(Event::MouseDown(data))
-                    }
-                    _ => None,
+            } => match mouse_btn {
+                MouseButton::Left | MouseButton::Right => {
+                    let data = MouseEventData::new(x, y, mouse_btn);
+                    Some(Event::MouseDown(data))
                 }
-            }
+                _ => None,
+            },
             sdl2::event::Event::MouseButtonUp { x, y, mouse_btn, .. } => {
                 match mouse_btn {
                     MouseButton::Left | MouseButton::Right => {
@@ -133,23 +132,19 @@ impl Event {
             sdl2::event::Event::TextInput { text, .. } => {
                 Some(Event::TextInput(text))
             }
-            sdl2::event::Event::Window { win_event, .. } => {
-                match win_event {
-                    sdl2::event::WindowEvent::FocusGained => {
-                        let mouse = pump.mouse_state();
-                        let data = MouseEventData {
-                            pt: Point2::new(mouse.x(), mouse.y()),
-                            left: mouse.left(),
-                            right: mouse.right(),
-                        };
-                        Some(Event::MouseMove(data))
-                    }
-                    sdl2::event::WindowEvent::FocusLost => {
-                        Some(Event::Unfocus)
-                    }
-                    _ => None,
+            sdl2::event::Event::Window { win_event, .. } => match win_event {
+                sdl2::event::WindowEvent::FocusGained => {
+                    let mouse = pump.mouse_state();
+                    let data = MouseEventData {
+                        pt: Point2::new(mouse.x(), mouse.y()),
+                        left: mouse.left(),
+                        right: mouse.right(),
+                    };
+                    Some(Event::MouseMove(data))
                 }
-            }
+                sdl2::event::WindowEvent::FocusLost => Some(Event::Unfocus),
+                _ => None,
+            },
             _ => None,
         }
     }
@@ -163,9 +158,9 @@ impl Event {
 
     pub fn is_mouse(&self) -> bool {
         match self {
-            Event::MouseDown(_) |
-            Event::MouseMove(_) |
-            Event::MouseUp(_) => true,
+            Event::MouseDown(_) | Event::MouseMove(_) | Event::MouseUp(_) => {
+                true
+            }
             _ => false,
         }
     }
@@ -207,11 +202,13 @@ pub struct KeyEventData {
 }
 
 impl KeyEventData {
-    fn new(keycode: Keycode, keymod: sdl2::keyboard::Mod,
-           mouse_pt: Point2<i32>)
-           -> KeyEventData {
-        let shift = sdl2::keyboard::Mod::LSHIFTMOD |
-            sdl2::keyboard::Mod::RSHIFTMOD;
+    fn new(
+        keycode: Keycode,
+        keymod: sdl2::keyboard::Mod,
+        mouse_pt: Point2<i32>,
+    ) -> KeyEventData {
+        let shift =
+            sdl2::keyboard::Mod::LSHIFTMOD | sdl2::keyboard::Mod::RSHIFTMOD;
         let command = if cfg!(any(target_os = "ios", target_os = "macos")) {
             sdl2::keyboard::Mod::LGUIMOD | sdl2::keyboard::Mod::RGUIMOD
         } else {
@@ -246,10 +243,7 @@ impl MouseEventData {
 
     fn relative_to(&self, origin: Point2<i32>) -> MouseEventData {
         MouseEventData {
-            pt: Point2 {
-                x: self.pt.x - origin.x,
-                y: self.pt.y - origin.y,
-            },
+            pt: Point2 { x: self.pt.x - origin.x, y: self.pt.y - origin.y },
             left: self.left,
             right: self.right,
         }
@@ -268,10 +262,7 @@ pub struct MultitouchEventData {
 impl MultitouchEventData {
     fn relative_to(&self, origin: Point2<i32>) -> MultitouchEventData {
         MultitouchEventData {
-            pt: Point2 {
-                x: self.pt.x - origin.x,
-                y: self.pt.y - origin.y,
-            },
+            pt: Point2 { x: self.pt.x - origin.x, y: self.pt.y - origin.y },
             scale: self.scale,
             rotate: self.rotate,
         }
@@ -289,10 +280,7 @@ pub struct ScrollEventData {
 impl ScrollEventData {
     fn relative_to(&self, origin: Point2<i32>) -> ScrollEventData {
         ScrollEventData {
-            pt: Point2 {
-                x: self.pt.x - origin.x,
-                y: self.pt.y - origin.y,
-            },
+            pt: Point2 { x: self.pt.x - origin.x, y: self.pt.y - origin.y },
             delta: self.delta,
         }
     }

@@ -18,10 +18,10 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::paragraph::Paragraph;
+use crate::tachy::geom::{AsFloat, Color4, Rect};
+use crate::tachy::gui::Resources;
+use crate::tachy::save::Prefs;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{AsFloat, Color4, Rect};
-use tachy::gui::Resources;
-use tachy::save::Prefs;
 
 //===========================================================================//
 
@@ -38,11 +38,13 @@ pub struct TutorialBubble {
 
 impl TutorialBubble {
     pub fn new(prefs: &Prefs, format: &str) -> TutorialBubble {
-        let paragraph = Paragraph::compile(PARAGRAPH_FONT_SIZE,
-                                           PARAGRAPH_LINE_HEIGHT,
-                                           PARAGRAPH_MAX_WIDTH,
-                                           prefs,
-                                           format);
+        let paragraph = Paragraph::compile(
+            PARAGRAPH_FONT_SIZE,
+            PARAGRAPH_LINE_HEIGHT,
+            PARAGRAPH_MAX_WIDTH,
+            prefs,
+            format,
+        );
         TutorialBubble { paragraph }
     }
 
@@ -54,20 +56,28 @@ impl TutorialBubble {
         (self.paragraph.height().ceil() as i32) + 2 * MARGIN
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                topleft: Point2<i32>) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        topleft: Point2<i32>,
+    ) {
         let ui = resources.shaders().ui();
         let rect =
             Rect::new(topleft.x, topleft.y, self.width(), self.height())
                 .as_f32();
-        ui.draw_bubble(matrix,
-                       &rect,
-                       &Color4::ORANGE1,
-                       &Color4::CYAN1,
-                       &Color4::PURPLE0_TRANSLUCENT);
-        self.paragraph.draw(resources,
-                            matrix,
-                            (rect.x + MARGIN as f32, rect.y + MARGIN as f32));
+        ui.draw_bubble(
+            matrix,
+            &rect,
+            &Color4::ORANGE1,
+            &Color4::CYAN1,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
+        self.paragraph.draw(
+            resources,
+            matrix,
+            (rect.x + MARGIN as f32, rect.y + MARGIN as f32),
+        );
     }
 }
 

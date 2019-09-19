@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::iface::{Interface, InterfacePort, InterfacePosition};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -36,10 +36,11 @@ const TARGET_HOLD_TIME: i32 = 5;
 pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Thermostat Interface",
-        description: "\
-            Connects to sensors in the ship's power grid that determine the \
-            current and desired power outputs of the backup reactor (from 0 \
-            to 9).",
+        description:
+            "\
+             Connects to sensors in the ship's power grid that determine the \
+             current and desired power outputs of the backup reactor (from 0 \
+             to 9).",
         side: Direction::West,
         pos: InterfacePosition::Left(1),
         ports: &[
@@ -61,11 +62,12 @@ pub const INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Control Rod Interface",
-        description: "\
-            Connects to an array of actuators that move the reactor's three \
-            control rods.  Send higher values to retract a rod (increasing \
-            the total power output), or lower values to extend a rod \
-            (decreasing the total power).",
+        description:
+            "\
+             Connects to an array of actuators that move the reactor's three \
+             control rods.  Send higher values to retract a rod (increasing \
+             the total power output), or lower values to extend a rod \
+             (decreasing the total power).",
         side: Direction::East,
         pos: InterfacePosition::Left(0),
         ports: &[
@@ -107,8 +109,9 @@ pub struct AutomateReactorEval {
 }
 
 impl AutomateReactorEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> AutomateReactorEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> AutomateReactorEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), NUM_RODS);
@@ -125,8 +128,11 @@ impl AutomateReactorEval {
 }
 
 impl PuzzleEval for AutomateReactorEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         let current_power = self.current_power.round() as u32;
         if current_power == self.current_target {
             self.held_target_for += 1;
@@ -151,9 +157,13 @@ impl PuzzleEval for AutomateReactorEval {
         }
     }
 
-    fn end_time_step(&mut self, _time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
-        let rod_values: Vec<u32> = self.rod_wires
+    fn end_time_step(
+        &mut self,
+        _time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
+        let rod_values: Vec<u32> = self
+            .rod_wires
             .iter()
             .map(|&rod_wire| state.recv_behavior(rod_wire).0)
             .collect();
@@ -167,8 +177,8 @@ impl PuzzleEval for AutomateReactorEval {
         let imbalance_factor: f64 = IMBALANCE_BASE.powf(-rod_imbalance);
         debug_assert!(imbalance_factor > 0.0 && imbalance_factor <= 1.0);
         let power_delta: f64 = (rod_total as f64) - self.current_power;
-        self.current_power = self.current_power +
-            DRIFT_FACTOR * imbalance_factor * power_delta;
+        self.current_power =
+            self.current_power + DRIFT_FACTOR * imbalance_factor * power_delta;
         Vec::new()
     }
 }

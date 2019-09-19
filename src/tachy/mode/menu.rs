@@ -18,9 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::ModeChange;
-use tachy::gui::{Event, Music, Window};
-use tachy::state::GameState;
-use tachy::view::{MenuAction, MenuView};
+use crate::tachy::gui::{Event, Music, Window};
+use crate::tachy::state::GameState;
+use crate::tachy::view::{MenuAction, MenuView};
 
 //===========================================================================//
 
@@ -47,10 +47,12 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 view.go_to_current_puzzle(&mut ui, state);
                             }
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "unlock puzzle",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "unlock puzzle",
+                                    &err,
+                                );
                             }
                         }
                     }
@@ -60,34 +62,44 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     }
                     Some(MenuAction::GoToConversation(conv)) => {
                         state.set_current_conversation(conv);
-                        view.go_to_current_conversation(&mut window.ui(),
-                                                        state);
+                        view.go_to_current_conversation(
+                            &mut window.ui(),
+                            state,
+                        );
                     }
                     Some(MenuAction::CopyCircuit) => {
                         match state.copy_current_circuit() {
                             Ok(()) => {
-                                view.update_circuit_list(&mut window.ui(),
-                                                         state);
+                                view.update_circuit_list(
+                                    &mut window.ui(),
+                                    state,
+                                );
                             }
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "copy circuit",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "copy circuit",
+                                    &err,
+                                );
                             }
                         }
                     }
                     Some(MenuAction::DeleteCircuit) => {
                         match state.delete_current_circuit() {
                             Ok(()) => {
-                                view.update_circuit_list(&mut window.ui(),
-                                                         state);
+                                view.update_circuit_list(
+                                    &mut window.ui(),
+                                    state,
+                                );
                             }
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "delete circuit",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "delete circuit",
+                                    &err,
+                                );
                             }
                         }
                     }
@@ -95,24 +107,30 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.load_and_set_edit_grid() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "load circuit",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "load circuit",
+                                    &err,
+                                );
                             }
                         }
                     }
                     Some(MenuAction::RenameCircuit(name)) => {
                         match state.rename_current_circuit(&name) {
                             Ok(()) => {
-                                view.update_circuit_list(&mut window.ui(),
-                                                         state);
+                                view.update_circuit_list(
+                                    &mut window.ui(),
+                                    state,
+                                );
                             }
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "rename circuit",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "rename circuit",
+                                    &err,
+                                );
                             }
                         }
                     }
@@ -124,10 +142,12 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.clear_profile() {
                             Ok(()) => return ModeChange::Next,
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "switch profile",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "switch profile",
+                                    &err,
+                                );
                             }
                         }
                     }
@@ -141,10 +161,12 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 view.update_circuit_list(&mut ui, state);
                             }
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "switch profile",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "switch profile",
+                                    &err,
+                                );
                             }
                         }
                     }
@@ -162,10 +184,12 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 }
                             }
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "delete profile",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "delete profile",
+                                    &err,
+                                );
                             }
                         }
                     }

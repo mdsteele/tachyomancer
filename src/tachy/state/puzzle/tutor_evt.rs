@@ -17,14 +17,15 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::eval::{
+    CircuitState, EvalError, EvalScore, FabricationEval, PuzzleEval,
+};
 use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::shared::{self, TutorialBubblePosition};
-use super::super::eval::{CircuitState, EvalError, EvalScore, FabricationEval,
-                         PuzzleEval};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 use std::u32;
 use std::u64;
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -34,73 +35,68 @@ pub const DEMUX_INTERFACES: &[Interface] = &[
         description: "Input events arrive here.",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Event,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "Ctrl",
         description: "Indicates which output the event should be sent to.",
         side: Direction::North,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Ctrl",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Ctrl",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "Out0",
         description: "Input events should be sent here when $*Ctrl$* is 0.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out0",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Event,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out0",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Event,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "Out1",
         description: "Input events should be sent here when $*Ctrl$* is 1.",
         side: Direction::South,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out1",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Event,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out1",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Event,
+            size: WireSize::One,
+        }],
     },
 ];
 
-pub const DEMUX_BUBBLES: &[(TutorialBubblePosition, &str)] =
-    &[
-        (TutorialBubblePosition::Bounds(Direction::North),
-         "A wire can carry either $Obehaviors$D or $Cevents$D, depending on \
-          which color of ports it is connected to."),
-        (TutorialBubblePosition::Bounds(Direction::East),
-         "Splitting an event wire allows sending the same event to multiple \
-          receiver ports.  Then each copy of the event can be filtered \
-          separately."),
-    ];
+pub const DEMUX_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
+    (
+        TutorialBubblePosition::Bounds(Direction::North),
+        "A wire can carry either $Obehaviors$D or $Cevents$D, depending on \
+         which color of ports it is connected to.",
+    ),
+    (
+        TutorialBubblePosition::Bounds(Direction::East),
+        "Splitting an event wire allows sending the same event to multiple \
+         receiver ports.  Then each copy of the event can be filtered \
+         separately.",
+    ),
+];
 
 pub struct TutorialDemuxEval {
     table_values: Vec<u64>,
@@ -115,8 +111,9 @@ pub struct TutorialDemuxEval {
 }
 
 impl TutorialDemuxEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> TutorialDemuxEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> TutorialDemuxEval {
         debug_assert_eq!(slots.len(), 4);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -137,8 +134,11 @@ impl TutorialDemuxEval {
 }
 
 impl PuzzleEval for TutorialDemuxEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         self.has_received_output0_event = false;
         self.has_received_output1_event = false;
         let expected = TutorialDemuxEval::expected_table_values();
@@ -155,8 +155,11 @@ impl PuzzleEval for TutorialDemuxEval {
         }
     }
 
-    fn end_cycle(&mut self, time_step: u32, state: &CircuitState)
-                 -> Vec<EvalError> {
+    fn end_cycle(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let expected_table = TutorialDemuxEval::expected_table_values();
         let start = (time_step as usize) * 4;
         if start >= expected_table.len() {
@@ -172,18 +175,29 @@ impl PuzzleEval for TutorialDemuxEval {
 
         let mut errors = Vec::new();
         shared::end_cycle_check_event_output(
-            opt_output0, expected_output0,
-            &mut self.has_received_output0_event, self.output0_port, time_step,
-            &mut errors);
+            opt_output0,
+            expected_output0,
+            &mut self.has_received_output0_event,
+            self.output0_port,
+            time_step,
+            &mut errors,
+        );
         shared::end_cycle_check_event_output(
-            opt_output1, expected_output1,
-            &mut self.has_received_output1_event, self.output1_port, time_step,
-            &mut errors);
+            opt_output1,
+            expected_output1,
+            &mut self.has_received_output1_event,
+            self.output1_port,
+            time_step,
+            &mut errors,
+        );
         return errors;
     }
 
-    fn end_time_step(&mut self, time_step: u32, _state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        _state: &CircuitState,
+    ) -> Vec<EvalError> {
         let expected_table = TutorialDemuxEval::expected_table_values();
         let start = (time_step as usize) * 4;
         if start >= expected_table.len() {
@@ -194,11 +208,19 @@ impl PuzzleEval for TutorialDemuxEval {
 
         let mut errors = Vec::new();
         shared::end_time_step_check_event_output(
-            expected_output0, self.has_received_output0_event,
-            self.output0_port, time_step, &mut errors);
+            expected_output0,
+            self.has_received_output0_event,
+            self.output0_port,
+            time_step,
+            &mut errors,
+        );
         shared::end_time_step_check_event_output(
-            expected_output1, self.has_received_output1_event,
-            self.output1_port, time_step, &mut errors);
+            expected_output1,
+            self.has_received_output1_event,
+            self.output1_port,
+            time_step,
+            &mut errors,
+        );
         return errors;
     }
 }
@@ -220,7 +242,9 @@ impl FabricationEval for TutorialDemuxEval {
         ]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//
@@ -231,15 +255,13 @@ pub const SUM_INTERFACES: &[Interface] = &[
         description: "Input events arrive here.",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Event,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Four,
+        }],
     },
     Interface {
         name: "Reset",
@@ -247,31 +269,28 @@ pub const SUM_INTERFACES: &[Interface] = &[
                       reset to zero.",
         side: Direction::North,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Reset",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Event,
-                size: WireSize::Zero,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Reset",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Zero,
+        }],
     },
     Interface {
         name: "Out",
-        description: "Should equal the sum of all input events since the last \
-                      reset.",
+        description:
+            "Should equal the sum of all input events since the last \
+             reset.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
 ];
 
@@ -286,8 +305,9 @@ pub struct TutorialSumEval {
 }
 
 impl TutorialSumEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> TutorialSumEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> TutorialSumEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -303,11 +323,14 @@ impl TutorialSumEval {
 }
 
 impl PuzzleEval for TutorialSumEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         let expected = TutorialSumEval::expected_table_values();
-        let start = (time_step as usize) *
-            TutorialSumEval::table_column_names().len();
+        let start =
+            (time_step as usize) * TutorialSumEval::table_column_names().len();
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -322,11 +345,14 @@ impl PuzzleEval for TutorialSumEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let expected_table = TutorialSumEval::expected_table_values();
-        let start = (time_step as usize) *
-            TutorialSumEval::table_column_names().len();
+        let start =
+            (time_step as usize) * TutorialSumEval::table_column_names().len();
         let expected = expected_table[start + 2] as u32;
         let actual = state.recv_behavior(self.output_wire).0;
         self.table_values[start + 2] = actual as u64;
@@ -334,9 +360,10 @@ impl PuzzleEval for TutorialSumEval {
             let error = EvalError {
                 time_step,
                 port: Some(self.output_port),
-                message: format!("Expected output of {}, but output was {}",
-                                 expected,
-                                 actual),
+                message: format!(
+                    "Expected output of {}, but output was {}",
+                    expected, actual
+                ),
             };
             vec![error]
         } else {
@@ -368,7 +395,9 @@ impl FabricationEval for TutorialSumEval {
         ]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//

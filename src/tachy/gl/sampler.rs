@@ -33,13 +33,12 @@ pub struct ShaderSampler<T> {
 }
 
 impl<T: SamplerValue> ShaderSampler<T> {
-    pub(super) fn new(uniform: ShaderUniform<T::UniformType>, slot: GLuint)
-                      -> ShaderSampler<T> {
+    pub(super) fn new(
+        uniform: ShaderUniform<T::UniformType>,
+        slot: GLuint,
+    ) -> ShaderSampler<T> {
         uniform.set(&T::uniform_value(slot));
-        ShaderSampler {
-            slot,
-            phantom: PhantomData,
-        }
+        ShaderSampler { slot, phantom: PhantomData }
     }
 
     pub fn set(&self, value: &T) {
@@ -64,7 +63,9 @@ pub trait SamplerValue {
 pub struct Texture1DSlot(GLint);
 
 impl UniformValue for Texture1DSlot {
-    fn gl_type() -> GLenum { gl::SAMPLER_1D }
+    fn gl_type() -> GLenum {
+        gl::SAMPLER_1D
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform1i(loc, self.0);
@@ -93,7 +94,9 @@ impl SamplerValue for Texture1D {
 pub struct Texture2DSlot(GLint);
 
 impl UniformValue for Texture2DSlot {
-    fn gl_type() -> GLenum { gl::SAMPLER_2D }
+    fn gl_type() -> GLenum {
+        gl::SAMPLER_2D
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform1i(loc, self.0);
@@ -122,7 +125,9 @@ impl SamplerValue for Texture2D {
 pub struct Texture2DMultisampleSlot(GLint);
 
 impl UniformValue for Texture2DMultisampleSlot {
-    fn gl_type() -> GLenum { gl::SAMPLER_2D_MULTISAMPLE }
+    fn gl_type() -> GLenum {
+        gl::SAMPLER_2D_MULTISAMPLE
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform1i(loc, self.0);

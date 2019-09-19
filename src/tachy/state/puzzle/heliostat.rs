@@ -17,11 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::iface::{Interface, InterfacePort, InterfacePosition};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 use num_integer::mod_floor;
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -36,10 +36,11 @@ const ORBIT_DEGREES_PER_TIME_STEP: i32 = 5;
 pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Sensor Interface",
-        description: "\
-            Connects to a subspace sensor array that determines the ideal \
-            position for the heliostat mirror.  Use the motor interface to \
-            move the mirror to this position.",
+        description:
+            "\
+             Connects to a subspace sensor array that determines the ideal \
+             position for the heliostat mirror.  Use the motor interface to \
+             move the mirror to this position.",
         side: Direction::West,
         pos: InterfacePosition::Left(0),
         ports: &[
@@ -52,10 +53,11 @@ pub const INTERFACES: &[Interface] = &[
             },
             InterfacePort {
                 name: "Power",
-                description: "\
-                    Outputs the current power generation efficiency, from 0 \
-                    to 100 percent.  (You can ignore this port if you don't \
-                    need it.)",
+                description:
+                    "\
+                     Outputs the current power generation efficiency, from 0 \
+                     to 100 percent.  (You can ignore this port if you don't \
+                     need it.)",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
@@ -64,9 +66,10 @@ pub const INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Motor Interface",
-        description: "\
-            Connects to a stepper motor that controls the position of the \
-            heliostat mirror.",
+        description:
+            "\
+             Connects to a stepper motor that controls the position of the \
+             heliostat mirror.",
         side: Direction::East,
         pos: InterfacePosition::Right(0),
         ports: &[
@@ -80,10 +83,10 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Motor",
                 description: "\
-                    Receives motor commands.\n    \
-                    Send 1 to move clockwise.\n    \
-                    Send 2 to move counterclockwise.\n  \
-                    Send any other value to not move.",
+                              Receives motor commands.\n    \
+                              Send 1 to move clockwise.\n    \
+                              Send 2 to move counterclockwise.\n  \
+                              Send any other value to not move.",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,
                 size: WireSize::Two,
@@ -107,8 +110,9 @@ pub struct HeliostatEval {
 }
 
 impl HeliostatEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> HeliostatEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> HeliostatEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 2);
@@ -125,22 +129,35 @@ impl HeliostatEval {
         }
     }
 
-    pub fn current_energy(&self) -> u32 { self.energy }
+    pub fn current_energy(&self) -> u32 {
+        self.energy
+    }
 
-    pub fn current_goal(&self) -> u32 { self.current_goal }
+    pub fn current_goal(&self) -> u32 {
+        self.current_goal
+    }
 
-    pub fn current_position(&self) -> u32 { self.current_pos }
+    pub fn current_position(&self) -> u32 {
+        self.current_pos
+    }
 
-    pub fn current_efficiency(&self) -> u32 { self.current_efficiency }
+    pub fn current_efficiency(&self) -> u32 {
+        self.current_efficiency
+    }
 
-    pub fn current_orbit_degrees(&self) -> i32 { self.current_orbit_degrees }
+    pub fn current_orbit_degrees(&self) -> i32 {
+        self.current_orbit_degrees
+    }
 }
 
 impl PuzzleEval for HeliostatEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
-        let is_in_shadow = self.current_orbit_degrees >= 135 &&
-            self.current_orbit_degrees <= 225;
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
+        let is_in_shadow = self.current_orbit_degrees >= 135
+            && self.current_orbit_degrees <= 225;
         self.current_goal = if is_in_shadow {
             self.current_pos
         } else {
@@ -170,8 +187,11 @@ impl PuzzleEval for HeliostatEval {
         }
     }
 
-    fn end_time_step(&mut self, _time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        _time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         self.energy +=
             (ENERGY_MAX_GEN_PER_TIME_STEP * self.current_efficiency) / 100;
         self.energy = self.energy.saturating_sub(ENERGY_DRAIN_PER_TIME_STEP);

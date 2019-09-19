@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::data::{AbstractConstraint, ChipData};
 use super::super::eval::{ChipEval, CircuitState};
-use tachy::geom::Direction;
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::data::{AbstractConstraint, ChipData};
+use crate::tachy::geom::Direction;
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -46,8 +46,9 @@ pub struct AddChipEval {
 }
 
 impl AddChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), ADD_CHIP_DATA.ports.len());
         let chip_eval = AddChipEval {
             size: slots[2].1,
@@ -97,8 +98,9 @@ pub struct Add2BitChipEval {
 }
 
 impl Add2BitChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), ADD_2BIT_CHIP_DATA.ports.len());
         let chip_eval = Add2BitChipEval {
             input1: slots[0].0,
@@ -141,13 +143,12 @@ pub struct HalveChipEval {
 }
 
 impl HalveChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), HALVE_CHIP_DATA.ports.len());
-        let chip_eval = HalveChipEval {
-            input: slots[0].0,
-            output: slots[1].0,
-        };
+        let chip_eval =
+            HalveChipEval { input: slots[0].0, output: slots[1].0 };
         vec![(1, Box::new(chip_eval))]
     }
 }
@@ -173,8 +174,9 @@ pub struct MulChipEval {
 }
 
 impl MulChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), MUL_CHIP_DATA.ports.len());
         let chip_eval = MulChipEval {
             size: slots[2].1,
@@ -224,8 +226,9 @@ pub struct Mul4BitChipEval {
 }
 
 impl Mul4BitChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), MUL_4BIT_CHIP_DATA.ports.len());
         let chip_eval = Mul4BitChipEval {
             input1: slots[0].0,
@@ -262,8 +265,9 @@ pub struct SubChipEval {
 }
 
 impl SubChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), SUB_CHIP_DATA.ports.len());
         let chip_eval = SubChipEval {
             input1: slots[0].0,

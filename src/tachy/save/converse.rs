@@ -31,11 +31,13 @@ pub enum Prereq {
     Complete(Conversation),
     All(&'static [Prereq]),
     Any(&'static [Prereq]),
-    Choice(Conversation,
-           &'static str,
-           &'static str,
-           &'static Prereq,
-           &'static Prereq),
+    Choice(
+        Conversation,
+        &'static str,
+        &'static str,
+        &'static Prereq,
+        &'static Prereq,
+    ),
 }
 
 //===========================================================================//
@@ -50,13 +52,16 @@ pub enum Chapter {
 }
 
 impl Chapter {
-    pub fn title(&self) -> &'static str { self.into() }
+    pub fn title(&self) -> &'static str {
+        self.into()
+    }
 }
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Deserialize, EnumIter, Eq, Hash, PartialEq,
-         Serialize)]
+#[derive(
+    Clone, Copy, Debug, Deserialize, EnumIter, Eq, Hash, PartialEq, Serialize,
+)]
 pub enum Conversation {
     WakeUp,
     Basics,
@@ -73,10 +78,14 @@ pub enum Conversation {
 
 impl Conversation {
     /// Returns the first conversation in the game, which is always unlocked.
-    pub fn first() -> Conversation { Conversation::WakeUp }
+    pub fn first() -> Conversation {
+        Conversation::WakeUp
+    }
 
     /// Returns an iterator over all conversations.
-    pub fn all() -> ConversationIter { Conversation::iter() }
+    pub fn all() -> ConversationIter {
+        Conversation::iter()
+    }
 
     pub fn title(self) -> &'static str {
         match self {
@@ -96,14 +105,14 @@ impl Conversation {
 
     pub fn chapter(self) -> Chapter {
         match self {
-            Conversation::WakeUp |
-            Conversation::Basics |
-            Conversation::RestorePower |
-            Conversation::MoreComponents |
-            Conversation::StepTwo |
-            Conversation::CaptainsCall => Chapter::Odyssey,
-            Conversation::AdvancedCircuits |
-            Conversation::UnexpectedCompany => Chapter::Planetfall,
+            Conversation::WakeUp
+            | Conversation::Basics
+            | Conversation::RestorePower
+            | Conversation::MoreComponents
+            | Conversation::StepTwo
+            | Conversation::CaptainsCall => Chapter::Odyssey,
+            Conversation::AdvancedCircuits
+            | Conversation::UnexpectedCompany => Chapter::Planetfall,
             Conversation::Memory => Chapter::Calliope,
             Conversation::KeepingTime => Chapter::Orpheus,
             Conversation::CatchingUp => Chapter::Lorelei,
@@ -120,20 +129,20 @@ impl Conversation {
             Conversation::MoreComponents => {
                 &Prereq::Complete(Conversation::Basics)
             }
-            Conversation::StepTwo => {
-                &Prereq::Choice(Conversation::RestorePower,
-                                "who",
-                                "henry",
-                                &Prereq::Complete(Conversation::RestorePower),
-                                &Prereq::Any(&[]))
-            }
-            Conversation::CaptainsCall => {
-                &Prereq::Choice(Conversation::RestorePower,
-                                "who",
-                                "henry",
-                                &Prereq::Any(&[]),
-                                &Prereq::Complete(Conversation::RestorePower))
-            }
+            Conversation::StepTwo => &Prereq::Choice(
+                Conversation::RestorePower,
+                "who",
+                "henry",
+                &Prereq::Complete(Conversation::RestorePower),
+                &Prereq::Any(&[]),
+            ),
+            Conversation::CaptainsCall => &Prereq::Choice(
+                Conversation::RestorePower,
+                "who",
+                "henry",
+                &Prereq::Any(&[]),
+                &Prereq::Complete(Conversation::RestorePower),
+            ),
             _ => &Prereq::All(&[]), // TODO
         }
     }
@@ -179,17 +188,20 @@ impl ConversationProgress {
         }
     }
 
-    pub fn create_or_load(path: &Path)
-                          -> Result<ConversationProgress, String> {
+    pub fn create_or_load(
+        path: &Path,
+    ) -> Result<ConversationProgress, String> {
         let mut needs_save = false;
         let data = if path.exists() {
             match ConversationProgressData::try_load(&path) {
                 Ok(data) => data,
                 Err(err) => {
-                    debug_log!("Could not read conversation progress \
-                                file from {:?}: {}",
-                               path,
-                               err);
+                    debug_log!(
+                        "Could not read conversation progress \
+                         file from {:?}: {}",
+                        path,
+                        err
+                    );
                     ConversationProgressData::default()
                 }
             }
@@ -210,13 +222,13 @@ impl ConversationProgress {
         if self.needs_save {
             debug_log!("Saving conversation progress to {:?}", &self.path);
             let data_toml = self.data.serialize_toml()?;
-            fs::write(&self.path, data_toml)
-                .map_err(|err| {
-                             format!("Could not write conversation progress \
-                                      file to {:?}: {}",
-                                     self.path,
-                                     err)
-                         })?;
+            fs::write(&self.path, data_toml).map_err(|err| {
+                format!(
+                    "Could not write conversation progress \
+                     file to {:?}: {}",
+                    self.path, err
+                )
+            })?;
             self.needs_save = false;
         }
         Ok(())
@@ -250,7 +262,9 @@ impl ConversationProgress {
         }
     }
 
-    pub fn is_complete(&self) -> bool { self.data.complete.unwrap_or(false) }
+    pub fn is_complete(&self) -> bool {
+        self.data.complete.unwrap_or(false)
+    }
 
     pub fn mark_complete(&mut self) {
         if !self.is_complete() {

@@ -19,9 +19,11 @@
 
 use super::index::IndexBuffer;
 use super::vertex::{Primitive, VertexArray, VertexBuffer};
-use cgmath::{Angle, InnerSpace, Matrix4, Point2, Point3, Quaternion, Rad,
-             Rotation, Rotation3, SquareMatrix, Vector3};
-use tachy::geom::{Color3, RectSize};
+use crate::tachy::geom::{Color3, RectSize};
+use cgmath::{
+    Angle, InnerSpace, Matrix4, Point2, Point3, Quaternion, Rad, Rotation,
+    Rotation3, SquareMatrix, Vector3,
+};
 
 //===========================================================================//
 
@@ -51,18 +53,17 @@ pub struct ModelBuilder {
 
 impl ModelBuilder {
     pub fn new() -> ModelBuilder {
-        ModelBuilder {
-            indices: Vec::new(),
-            vertices: Vec::new(),
-        }
+        ModelBuilder { indices: Vec::new(), vertices: Vec::new() }
     }
 
     pub fn context(&mut self) -> ModelBuilderContext {
         self.with_transform(Matrix4::identity())
     }
 
-    pub fn with_transform(&mut self, matrix: Matrix4<f32>)
-                          -> ModelBuilderContext {
+    pub fn with_transform(
+        &mut self,
+        matrix: Matrix4<f32>,
+    ) -> ModelBuilderContext {
         ModelBuilderContext {
             indices: &mut self.indices,
             vertices: &mut self.vertices,
@@ -71,18 +72,34 @@ impl ModelBuilder {
     }
 
     #[allow(dead_code)]
-    pub fn cylinder(&mut self, c1: Point3<f32>, c2: Point3<f32>,
-                    radius: f32, num_faces: u16, color: Color3) {
+    pub fn cylinder(
+        &mut self,
+        c1: Point3<f32>,
+        c2: Point3<f32>,
+        radius: f32,
+        num_faces: u16,
+        color: Color3,
+    ) {
         self.context().cylinder(c1, c2, radius, num_faces, color);
     }
 
-    pub fn plane(&mut self, center: Point3<f32>, size: RectSize<f32>,
-                 normal: Vector3<f32>, color: Color3) {
+    pub fn plane(
+        &mut self,
+        center: Point3<f32>,
+        size: RectSize<f32>,
+        normal: Vector3<f32>,
+        color: Color3,
+    ) {
         self.context().plane(center, size, normal, color);
     }
 
-    pub fn sphere(&mut self, center: Point3<f32>, radius: f32,
-                  num_steps: u16, color: Color3) {
+    pub fn sphere(
+        &mut self,
+        center: Point3<f32>,
+        radius: f32,
+        num_steps: u16,
+        color: Color3,
+    ) {
         self.context().sphere(center, radius, num_steps, color);
     }
 
@@ -95,11 +112,7 @@ impl ModelBuilder {
         vbuffer.attribf(1, 3, FLOATS_PER_VERTEX, 3);
         vbuffer.attribf(2, 3, FLOATS_PER_VERTEX, 6);
         vbuffer.attribf(3, 2, FLOATS_PER_VERTEX, 9);
-        Model {
-            varray,
-            _vbuffer: vbuffer,
-            ibuffer,
-        }
+        Model { varray, _vbuffer: vbuffer, ibuffer }
     }
 }
 
@@ -118,10 +131,15 @@ impl<'a> ModelBuilderContext<'a> {
         (self.vertices.len() / FLOATS_PER_VERTEX) as u16
     }
 
-    fn push_vertex(&mut self, vertex: Point3<f32>, normal: Vector3<f32>,
-                   color: Color3, texture_uv: Point2<f32>) {
-        let vertex = Point3::from_homogeneous(self.matrix *
-                                                  vertex.to_homogeneous());
+    fn push_vertex(
+        &mut self,
+        vertex: Point3<f32>,
+        normal: Vector3<f32>,
+        color: Color3,
+        texture_uv: Point2<f32>,
+    ) {
+        let vertex =
+            Point3::from_homogeneous(self.matrix * vertex.to_homogeneous());
         // TODO: Apply current inversion to normal
         let normal = (self.matrix * normal.extend(0.0)).truncate();
         let floats = &[
@@ -156,8 +174,10 @@ impl<'a> ModelBuilderContext<'a> {
         }
     }
 
-    pub fn with_transform(&mut self, matrix: Matrix4<f32>)
-                          -> ModelBuilderContext {
+    pub fn with_transform(
+        &mut self,
+        matrix: Matrix4<f32>,
+    ) -> ModelBuilderContext {
         ModelBuilderContext {
             indices: self.indices,
             vertices: self.vertices,
@@ -165,8 +185,14 @@ impl<'a> ModelBuilderContext<'a> {
         }
     }
 
-    pub fn cylinder(&mut self, c1: Point3<f32>, c2: Point3<f32>,
-                    radius: f32, num_faces: u16, color: Color3) {
+    pub fn cylinder(
+        &mut self,
+        c1: Point3<f32>,
+        c2: Point3<f32>,
+        radius: f32,
+        num_faces: u16,
+        color: Color3,
+    ) {
         debug_assert!(num_faces >= 3);
         let start = self.start_index();
         let axis_unit = (c2 - c1).normalize();
@@ -193,16 +219,23 @@ impl<'a> ModelBuilderContext<'a> {
         }
     }
 
-    pub fn plane(&mut self, center: Point3<f32>, size: RectSize<f32>,
-                 normal: Vector3<f32>, color: Color3) {
+    pub fn plane(
+        &mut self,
+        center: Point3<f32>,
+        size: RectSize<f32>,
+        normal: Vector3<f32>,
+        color: Color3,
+    ) {
         let start = self.start_index();
         let normal = normal.normalize();
         let rotation = Quaternion::from_arc(Vector3::unit_z(), normal, None);
         let corners = &[(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)];
         for &(x, y) in corners {
-            let vertex = Vector3::new((x - 0.5) * size.width,
-                                      (y - 0.5) * size.height,
-                                      0.0);
+            let vertex = Vector3::new(
+                (x - 0.5) * size.width,
+                (y - 0.5) * size.height,
+                0.0,
+            );
             let vertex = center + rotation.rotate_vector(vertex);
             self.push_vertex(vertex, normal, color, Point2::new(x, y));
         }
@@ -210,22 +243,31 @@ impl<'a> ModelBuilderContext<'a> {
         self.push_triangle(start + 2, start + 1, start + 3);
     }
 
-    pub fn sphere(&mut self, center: Point3<f32>, radius: f32,
-                  num_steps: u16, color: Color3) {
+    pub fn sphere(
+        &mut self,
+        center: Point3<f32>,
+        radius: f32,
+        num_steps: u16,
+        color: Color3,
+    ) {
         debug_assert!(num_steps >= 3);
         let start = self.start_index();
 
         let north_pole = start;
-        self.push_vertex(center + Vector3::unit_y() * radius,
-                         Vector3::unit_y(),
-                         color,
-                         Point2::new(0.5, 1.0));
+        self.push_vertex(
+            center + Vector3::unit_y() * radius,
+            Vector3::unit_y(),
+            color,
+            Point2::new(0.5, 1.0),
+        );
 
         let south_pole = start + 1;
-        self.push_vertex(center - Vector3::unit_y() * radius,
-                         -Vector3::unit_y(),
-                         color,
-                         Point2::new(0.5, 0.0));
+        self.push_vertex(
+            center - Vector3::unit_y() * radius,
+            -Vector3::unit_y(),
+            color,
+            Point2::new(0.5, 0.0),
+        );
 
         // Vertices:
         let longitude_step = Rad::full_turn() / (num_steps as f32);
@@ -235,12 +277,13 @@ impl<'a> ModelBuilderContext<'a> {
             let texture_u = (longitude_index as f32) / (num_steps as f32);
 
             for latitude_index in 1..num_steps {
-                let latitude = latitude_step * (latitude_index as f32) -
-                    Rad::turn_div_4();
-                let normal =
-                    Quaternion::from_angle_y(longitude)
-                        .rotate_vector(Quaternion::from_angle_z(latitude)
-                                           .rotate_vector(Vector3::unit_x()));
+                let latitude = latitude_step * (latitude_index as f32)
+                    - Rad::turn_div_4();
+                let normal = Quaternion::from_angle_y(longitude)
+                    .rotate_vector(
+                        Quaternion::from_angle_z(latitude)
+                            .rotate_vector(Vector3::unit_x()),
+                    );
                 let vertex = center + normal * radius;
                 let texture_v = (latitude_index as f32) / (num_steps as f32);
                 let texture_uv = Point2::new(texture_u, texture_v);
@@ -250,21 +293,27 @@ impl<'a> ModelBuilderContext<'a> {
 
         // Indices:
         for longitude_index in 0..num_steps {
-            let curr_long_start = start + 2 +
-                (num_steps - 1) * longitude_index;
+            let curr_long_start =
+                start + 2 + (num_steps - 1) * longitude_index;
             let next_long_start = curr_long_start + num_steps - 1;
             self.push_triangle(south_pole, next_long_start, curr_long_start);
             for index in 0..(num_steps - 2) {
-                self.push_triangle(next_long_start + index,
-                                   next_long_start + index + 1,
-                                   curr_long_start + index);
-                self.push_triangle(next_long_start + index + 1,
-                                   curr_long_start + index + 1,
-                                   curr_long_start + index);
+                self.push_triangle(
+                    next_long_start + index,
+                    next_long_start + index + 1,
+                    curr_long_start + index,
+                );
+                self.push_triangle(
+                    next_long_start + index + 1,
+                    curr_long_start + index + 1,
+                    curr_long_start + index,
+                );
             }
-            self.push_triangle(north_pole,
-                               curr_long_start + num_steps - 2,
-                               next_long_start + num_steps - 2);
+            self.push_triangle(
+                north_pole,
+                curr_long_start + num_steps - 2,
+                next_long_start + num_steps - 2,
+            );
         }
     }
 }

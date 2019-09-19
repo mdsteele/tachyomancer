@@ -20,11 +20,11 @@
 use super::button::TextButton;
 use super::dialog::ButtonDialogBox;
 use super::paragraph::Paragraph;
+use crate::tachy::font::Align;
+use crate::tachy::geom::{AsInt, Color3, Rect, RectSize};
+use crate::tachy::gui::{Event, Keycode, Resources, Sound, Ui};
+use crate::tachy::state::GameState;
 use cgmath::{self, Matrix4};
-use tachy::font::Align;
-use tachy::geom::{AsInt, Color3, Rect, RectSize};
-use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
-use tachy::state::GameState;
 
 //===========================================================================//
 
@@ -64,18 +64,20 @@ pub struct BeginView {
 
 impl BeginView {
     pub fn new(window_size: RectSize<i32>, _state: &GameState) -> BeginView {
-        let back_button_rect =
-            Rect::new((window_size.width - BUTTON_SPACING) / 2 - BUTTON_WIDTH,
-                      600,
-                      BUTTON_WIDTH,
-                      BUTTON_HEIGHT);
+        let back_button_rect = Rect::new(
+            (window_size.width - BUTTON_SPACING) / 2 - BUTTON_WIDTH,
+            600,
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT,
+        );
         let back_button = TextButton::new(back_button_rect, "Go back", ());
 
-        let confirm_button_rect =
-            Rect::new((window_size.width + BUTTON_SPACING) / 2,
-                      600,
-                      BUTTON_WIDTH,
-                      BUTTON_HEIGHT);
+        let confirm_button_rect = Rect::new(
+            (window_size.width + BUTTON_SPACING) / 2,
+            600,
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT,
+        );
         let confirm_button =
             TextButton::new(confirm_button_rect, "That's right", ());
 
@@ -94,39 +96,47 @@ impl BeginView {
         let matrix =
             cgmath::ortho(0.0, self.width, self.height, 0.0, -1.0, 1.0);
         let rect = Rect::new(0.0, 0.0, self.width, self.height);
-        resources
-            .shaders()
-            .solid()
-            .fill_rect(&matrix, Color3::new(0.1, 0.1, 0.1), rect);
+        resources.shaders().solid().fill_rect(
+            &matrix,
+            Color3::new(0.1, 0.1, 0.1),
+            rect,
+        );
         let font = resources.fonts().roman();
         if let BeginPhase::Confirm = self.phase {
-            font.draw(&matrix,
-                      FONT_SIZE,
-                      Align::TopCenter,
-                      (0.5 * self.width, 500.0),
-                      &format!("\"Commander {}, is it?\"",
-                               self.text_entry.text));
+            font.draw(
+                &matrix,
+                FONT_SIZE,
+                Align::TopCenter,
+                (0.5 * self.width, 500.0),
+                &format!("\"Commander {}, is it?\"", self.text_entry.text),
+            );
             self.back_button.draw(resources, &matrix, true);
             self.confirm_button.draw(resources, &matrix, true);
         } else {
-            font.draw(&matrix,
-                      FONT_SIZE,
-                      Align::TopCenter,
-                      (0.5 * self.width, 100.0),
-                      "Type your name, then press ENTER:");
+            font.draw(
+                &matrix,
+                FONT_SIZE,
+                Align::TopCenter,
+                (0.5 * self.width, 100.0),
+                "Type your name, then press ENTER:",
+            );
         }
         if self.phase == BeginPhase::ErrorEmpty {
-            font.draw(&matrix,
-                      FONT_SIZE,
-                      Align::TopCenter,
-                      (0.5 * self.width, 500.0),
-                      "Your name must not be empty.");
+            font.draw(
+                &matrix,
+                FONT_SIZE,
+                Align::TopCenter,
+                (0.5 * self.width, 500.0),
+                "Your name must not be empty.",
+            );
         } else if self.phase == BeginPhase::ErrorTaken {
-            font.draw(&matrix,
-                      FONT_SIZE,
-                      Align::TopCenter,
-                      (0.5 * self.width, 500.0),
-                      "That name is already taken.");
+            font.draw(
+                &matrix,
+                FONT_SIZE,
+                Align::TopCenter,
+                (0.5 * self.width, 500.0),
+                "That name is already taken.",
+            );
         }
         self.text_entry.draw(resources, &matrix);
         if let Some(ref dialog) = self.error_dialog {
@@ -134,9 +144,12 @@ impl BeginView {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    state: &mut GameState)
-                    -> Option<BeginAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        state: &mut GameState,
+    ) -> Option<BeginAction> {
         if let Some(ref mut dialog) = self.error_dialog {
             match dialog.on_event(event, ui) {
                 Some(()) => self.error_dialog = None,
@@ -148,16 +161,13 @@ impl BeginView {
         }
 
         match event {
-            Event::KeyDown(_) |
-            Event::MouseDown(_) => {
-                match self.phase {
-                    BeginPhase::Entry | BeginPhase::Confirm => {}
-                    BeginPhase::ErrorEmpty | BeginPhase::ErrorTaken => {
-                        self.phase = BeginPhase::Entry;
-                        ui.request_redraw();
-                    }
+            Event::KeyDown(_) | Event::MouseDown(_) => match self.phase {
+                BeginPhase::Entry | BeginPhase::Confirm => {}
+                BeginPhase::ErrorEmpty | BeginPhase::ErrorTaken => {
+                    self.phase = BeginPhase::Entry;
+                    ui.request_redraw();
                 }
-            }
+            },
             _ => {}
         }
         if let BeginPhase::Confirm = self.phase {
@@ -189,15 +199,22 @@ impl BeginView {
         return None;
     }
 
-    pub fn show_error(&mut self, ui: &mut Ui, state: &mut GameState,
-                      unable: &str, error: &str) {
+    pub fn show_error(
+        &mut self,
+        ui: &mut Ui,
+        state: &mut GameState,
+        unable: &str,
+        error: &str,
+    ) {
         debug_log!("ERROR: Unable to {}: {}", unable, error);
         // TODO: Play sound for error dialog popup.
         self.on_event(&Event::Unfocus, ui, state);
         let size = RectSize::new(self.width, self.height).as_i32_round();
-        let format = format!("$R$*ERROR:$*$D Unable to {}.\n\n{}",
-                             unable,
-                             Paragraph::escape(error));
+        let format = format!(
+            "$R$*ERROR:$*$D Unable to {}.\n\n{}",
+            unable,
+            Paragraph::escape(error)
+        );
         let buttons = &[("OK", (), Some(Keycode::Return))];
         let dialog =
             ButtonDialogBox::new(size, state.prefs(), &format, buttons);
@@ -221,30 +238,31 @@ impl TextEntry {
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        resources
-            .fonts()
-            .roman()
-            .draw(matrix, 60.0, Align::TopCenter, self.origin, &self.text);
+        resources.fonts().roman().draw(
+            matrix,
+            60.0,
+            Align::TopCenter,
+            self.origin,
+            &self.text,
+        );
     }
 
     fn on_event(&mut self, event: &Event, ui: &mut Ui) -> bool {
         match event {
-            Event::KeyDown(key) => {
-                match key.code {
-                    Keycode::Return => return true,
-                    Keycode::Backspace => {
-                        if self.text.pop().is_some() {
-                            ui.request_redraw();
-                            ui.audio().play_sound(Sound::TypeKey);
-                        }
+            Event::KeyDown(key) => match key.code {
+                Keycode::Return => return true,
+                Keycode::Backspace => {
+                    if self.text.pop().is_some() {
+                        ui.request_redraw();
+                        ui.audio().play_sound(Sound::TypeKey);
                     }
-                    _ => {}
                 }
-            }
+                _ => {}
+            },
             Event::TextInput(text) => {
                 for chr in text.chars() {
-                    if (chr >= ' ' && chr <= '~') ||
-                        (chr >= '\u{a1}' && chr <= '\u{ff}')
+                    if (chr >= ' ' && chr <= '~')
+                        || (chr >= '\u{a1}' && chr <= '\u{ff}')
                     {
                         self.text.push(chr);
                         ui.request_redraw();

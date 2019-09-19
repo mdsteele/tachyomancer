@@ -98,51 +98,79 @@ mod tests {
         assert_eq!(decode_name(&OsString::from("")), "".to_string());
 
         assert_eq!(encode_name("Jane Doe-99"), OsString::from("Jane_Doe-99"));
-        assert_eq!(decode_name(&OsString::from("Jane_Doe-99")),
-                   "Jane Doe-99".to_string());
+        assert_eq!(
+            decode_name(&OsString::from("Jane_Doe-99")),
+            "Jane Doe-99".to_string()
+        );
 
-        assert_eq!(encode_name("Jane_Doe-99"),
-                   OsString::from("Jane,5f,Doe-99"));
-        assert_eq!(decode_name(&OsString::from("Jane,5f,Doe-99")),
-                   "Jane_Doe-99".to_string());
+        assert_eq!(
+            encode_name("Jane_Doe-99"),
+            OsString::from("Jane,5f,Doe-99")
+        );
+        assert_eq!(
+            decode_name(&OsString::from("Jane,5f,Doe-99")),
+            "Jane_Doe-99".to_string()
+        );
 
         assert_eq!(encode_name(".."), OsString::from(",2e,,2e,"));
         assert_eq!(decode_name(&OsString::from(",2e,,2e,")), "..".to_string());
 
         assert_eq!(encode_name("prefs.toml"), OsString::from("prefs,2e,toml"));
-        assert_eq!(decode_name(&OsString::from("prefs,2e,toml")),
-                   "prefs.toml".to_string());
+        assert_eq!(
+            decode_name(&OsString::from("prefs,2e,toml")),
+            "prefs.toml".to_string()
+        );
 
-        assert_eq!(encode_name("/Users/janedoe/*"),
-                   OsString::from(",2f,Users,2f,janedoe,2f,,2a,"));
-        assert_eq!(decode_name(&OsString::from(",2f,Users,2f,janedoe\
-                                                ,2f,,2a,")),
-                   "/Users/janedoe/*".to_string());
+        assert_eq!(
+            encode_name("/Users/janedoe/*"),
+            OsString::from(",2f,Users,2f,janedoe,2f,,2a,")
+        );
+        assert_eq!(
+            decode_name(&OsString::from(
+                ",2f,Users,2f,janedoe\
+                 ,2f,,2a,"
+            )),
+            "/Users/janedoe/*".to_string()
+        );
 
-        assert_eq!(encode_name("Snowman \u{2603}"),
-                   OsString::from("Snowman_,2603,"));
-        assert_eq!(decode_name(&OsString::from("Snowman_,2603,")),
-                   "Snowman \u{2603}".to_string());
+        assert_eq!(
+            encode_name("Snowman \u{2603}"),
+            OsString::from("Snowman_,2603,")
+        );
+        assert_eq!(
+            decode_name(&OsString::from("Snowman_,2603,")),
+            "Snowman \u{2603}".to_string()
+        );
     }
 
     #[test]
     fn name_decode_errors() {
         // No hex digits:
-        assert_eq!(decode_name(&OsString::from("Foo,,Bar")),
-                   "Foo\u{fffd}Bar".to_string());
+        assert_eq!(
+            decode_name(&OsString::from("Foo,,Bar")),
+            "Foo\u{fffd}Bar".to_string()
+        );
         // No closing comma:
-        assert_eq!(decode_name(&OsString::from("Foo,2f")),
-                   "Foo\u{fffd}".to_string());
+        assert_eq!(
+            decode_name(&OsString::from("Foo,2f")),
+            "Foo\u{fffd}".to_string()
+        );
         // Invalid hex digits:
-        assert_eq!(decode_name(&OsString::from("Foo,efgh,Bar")),
-                   "Foo\u{fffd}Bar".to_string());
+        assert_eq!(
+            decode_name(&OsString::from("Foo,efgh,Bar")),
+            "Foo\u{fffd}Bar".to_string()
+        );
         // Too large a value:
-        assert_eq!(decode_name(&OsString::from("Foo,1234567890,Bar")),
-                   "Foo\u{fffd}Bar".to_string());
+        assert_eq!(
+            decode_name(&OsString::from("Foo,1234567890,Bar")),
+            "Foo\u{fffd}Bar".to_string()
+        );
         // Invalid Unicode character:
         assert!(char::from_u32(0xd800).is_none());
-        assert_eq!(decode_name(&OsString::from("Foo,d800,Bar")),
-                   "Foo\u{fffd}Bar".to_string());
+        assert_eq!(
+            decode_name(&OsString::from("Foo,d800,Bar")),
+            "Foo\u{fffd}Bar".to_string()
+        );
     }
 }
 

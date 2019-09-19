@@ -17,11 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Color3, Color4, Coords, Direction, MatrixExt};
+use crate::tachy::gui::Resources;
+use crate::tachy::save::WireShape;
+use crate::tachy::state::{WireColor, WireSize};
 use cgmath::Matrix4;
-use tachy::geom::{Color3, Color4, Coords, Direction, MatrixExt};
-use tachy::gui::Resources;
-use tachy::save::WireShape;
-use tachy::state::{WireColor, WireSize};
 
 //===========================================================================//
 
@@ -34,73 +34,97 @@ pub struct WireModel {}
 
 impl WireModel {
     /// The matrix should go from grid space to GL clip space.
-    pub fn draw_fragment(resources: &Resources, grid_matrix: &Matrix4<f32>,
-                         coords: Coords, dir: Direction, shape: WireShape,
-                         color: WireColor, size: WireSize, hilight: &Color4) {
+    pub fn draw_fragment(
+        resources: &Resources,
+        grid_matrix: &Matrix4<f32>,
+        coords: Coords,
+        dir: Direction,
+        shape: WireShape,
+        color: WireColor,
+        size: WireSize,
+        hilight: &Color4,
+    ) {
         let shader = resources.shaders().wire();
         let matrix = grid_matrix * obj_to_grid(coords, dir);
         let texture = resources.textures().wire();
         match (shape, dir) {
             (WireShape::Stub, _) => {
-                shader.draw_stub(&matrix,
-                                 wire_size_index(size),
-                                 wire_color(color),
-                                 hilight,
-                                 texture);
+                shader.draw_stub(
+                    &matrix,
+                    wire_size_index(size),
+                    wire_color(color),
+                    hilight,
+                    texture,
+                );
             }
-            (WireShape::Straight, Direction::East) |
-            (WireShape::Straight, Direction::North) => {
-                shader.draw_straight(&matrix,
-                                     wire_size_index(size),
-                                     wire_color(color),
-                                     hilight,
-                                     texture);
+            (WireShape::Straight, Direction::East)
+            | (WireShape::Straight, Direction::North) => {
+                shader.draw_straight(
+                    &matrix,
+                    wire_size_index(size),
+                    wire_color(color),
+                    hilight,
+                    texture,
+                );
             }
             (WireShape::TurnLeft, _) => {
-                shader.draw_turn(&matrix,
-                                 wire_size_index(size),
-                                 wire_color(color),
-                                 hilight,
-                                 texture);
+                shader.draw_turn(
+                    &matrix,
+                    wire_size_index(size),
+                    wire_color(color),
+                    hilight,
+                    texture,
+                );
             }
             (WireShape::SplitTee, _) => {
-                shader.draw_tee(&matrix,
-                                wire_size_index(size),
-                                wire_color(color),
-                                hilight,
-                                texture);
+                shader.draw_tee(
+                    &matrix,
+                    wire_size_index(size),
+                    wire_color(color),
+                    hilight,
+                    texture,
+                );
             }
             (WireShape::Cross, Direction::East) => {
-                shader.draw_cross(&matrix,
-                                  wire_size_index(size),
-                                  wire_color(color),
-                                  hilight,
-                                  texture);
+                shader.draw_cross(
+                    &matrix,
+                    wire_size_index(size),
+                    wire_color(color),
+                    hilight,
+                    texture,
+                );
             }
             _ => {}
         }
     }
 
     /// The matrix should go from grid space to GL clip space.
-    pub fn draw_half_straight(resources: &Resources,
-                              grid_matrix: &Matrix4<f32>, coords: Coords,
-                              dir: Direction, color: WireColor,
-                              size: WireSize, hilight: &Color4) {
+    pub fn draw_half_straight(
+        resources: &Resources,
+        grid_matrix: &Matrix4<f32>,
+        coords: Coords,
+        dir: Direction,
+        color: WireColor,
+        size: WireSize,
+        hilight: &Color4,
+    ) {
         let shader = resources.shaders().wire();
         let matrix = grid_matrix * obj_to_grid(coords, dir);
         let texture = resources.textures().wire();
-        shader.draw_half_straight(&matrix,
-                                  wire_size_index(size),
-                                  wire_color(color),
-                                  hilight,
-                                  texture);
+        shader.draw_half_straight(
+            &matrix,
+            wire_size_index(size),
+            wire_color(color),
+            hilight,
+            texture,
+        );
     }
 }
 
 fn obj_to_grid(coords: Coords, dir: Direction) -> Matrix4<f32> {
-    Matrix4::trans2((coords.x as f32) + 0.5, (coords.y as f32) + 0.5) *
-        Matrix4::from_angle_z(dir.angle_from_east()) *
-        Matrix4::from_scale(0.5)
+    Matrix4::trans2((coords.x as f32) + 0.5, (coords.y as f32) + 0.5)
+        * Matrix4::from_angle_z(dir.angle_from_east())
+        * Matrix4::from_scale(0.5)
 }
 
 fn wire_color(color: WireColor) -> &'static Color3 {

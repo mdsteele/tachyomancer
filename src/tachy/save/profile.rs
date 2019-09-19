@@ -19,7 +19,9 @@
 
 use super::circuit::CircuitData;
 use super::converse::{Conversation, ConversationProgress, Prereq};
-use super::progress::{CircuitNamesIter, PuzzleProgress, is_valid_circuit_name};
+use super::progress::{
+    is_valid_circuit_name, CircuitNamesIter, PuzzleProgress,
+};
 use super::puzzle::Puzzle;
 use std::collections::HashMap;
 use std::fs;
@@ -70,19 +72,20 @@ impl Profile {
         }
     }
 
-    pub fn create_or_load(name: String, base_path: &Path)
-                          -> Result<Profile, String> {
+    pub fn create_or_load(
+        name: String,
+        base_path: &Path,
+    ) -> Result<Profile, String> {
         // Create directory if needed:
         if !base_path.exists() {
             debug_log!("Creating profile {:?} at {:?}", name, base_path);
-            fs::create_dir_all(&base_path)
-                .map_err(|err| {
-                    format!("Could not create profile {:?} \
-                             directory at {:?}: {}",
-                            name,
-                            base_path,
-                            err)
-                })?;
+            fs::create_dir_all(&base_path).map_err(|err| {
+                format!(
+                    "Could not create profile {:?} \
+                     directory at {:?}: {}",
+                    name, base_path, err
+                )
+            })?;
         } else {
             debug_log!("Loading profile {:?} from {:?}", name, base_path);
         }
@@ -94,11 +97,13 @@ impl Profile {
             match ProfileData::try_load(&data_path) {
                 Ok(data) => data,
                 Err(err) => {
-                    debug_log!("Could not read profile {:?} \
-                                data file from {:?}: {}",
-                               name,
-                               data_path,
-                               err);
+                    debug_log!(
+                        "Could not read profile {:?} \
+                         data file from {:?}: {}",
+                        name,
+                        data_path,
+                        err
+                    );
                     ProfileData::default()
                 }
             }
@@ -146,23 +151,24 @@ impl Profile {
     pub fn save(&mut self) -> Result<(), String> {
         if self.needs_save {
             let data_path = self.base_path.join(DATA_FILE_NAME);
-            debug_log!("Saving profile {:?} data to {:?}",
-                       self.name,
-                       data_path);
-            let data = toml::to_vec(&self.data)
-                .map_err(|err| {
-                    format!("Could not serialize profile {:?} data: {}",
-                            self.name,
-                            err)
-                })?;
-            fs::write(&data_path, data)
-                .map_err(|err| {
-                             format!("Could not write profile {:?} \
-                                      data file to {:?}: {}",
-                                     self.name,
-                                     data_path,
-                                     err)
-                         })?;
+            debug_log!(
+                "Saving profile {:?} data to {:?}",
+                self.name,
+                data_path
+            );
+            let data = toml::to_vec(&self.data).map_err(|err| {
+                format!(
+                    "Could not serialize profile {:?} data: {}",
+                    self.name, err
+                )
+            })?;
+            fs::write(&data_path, data).map_err(|err| {
+                format!(
+                    "Could not write profile {:?} \
+                     data file to {:?}: {}",
+                    self.name, data_path, err
+                )
+            })?;
             self.needs_save = false;
         }
         for (_, progress) in self.puzzles.iter_mut() {
@@ -175,18 +181,22 @@ impl Profile {
     }
 
     pub fn delete(&mut self) -> Result<(), String> {
-        debug_log!("Deleting profile {:?} from {:?}",
-                   self.name,
-                   self.base_path);
+        debug_log!(
+            "Deleting profile {:?} from {:?}",
+            self.name,
+            self.base_path
+        );
         fs::remove_dir_all(&self.base_path).map_err(|err| {
-            format!("Could not delete profile {:?} data from {:?}: {}",
-                    self.name,
-                    self.base_path,
-                    err)
+            format!(
+                "Could not delete profile {:?} data from {:?}: {}",
+                self.name, self.base_path, err
+            )
         })
     }
 
-    pub fn name(&self) -> &str { &self.name }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 
     pub fn current_conversation(&self) -> Conversation {
         self.data.conversation.unwrap_or(Conversation::first())
@@ -212,8 +222,8 @@ impl Profile {
     }
 
     pub fn is_conversation_unlocked(&self, conv: Conversation) -> bool {
-        self.conversations.contains_key(&conv) ||
-            self.eval_prereq(conv.prereq())
+        self.conversations.contains_key(&conv)
+            || self.eval_prereq(conv.prereq())
     }
 
     fn eval_prereq(&self, prereq: &Prereq) -> bool {
@@ -241,8 +251,11 @@ impl Profile {
         self.conversation_progress_mut(conv).mark_complete();
     }
 
-    pub fn get_conversation_choice(&self, conv: Conversation, key: &str)
-                                   -> Option<&str> {
+    pub fn get_conversation_choice(
+        &self,
+        conv: Conversation,
+        key: &str,
+    ) -> Option<&str> {
         if let Some(progress) = self.conversations.get(&conv) {
             progress.get_choice(key)
         } else {
@@ -250,13 +263,19 @@ impl Profile {
         }
     }
 
-    pub fn set_conversation_choice(&mut self, conv: Conversation,
-                                   key: String, value: String) {
+    pub fn set_conversation_choice(
+        &mut self,
+        conv: Conversation,
+        key: String,
+        value: String,
+    ) {
         self.conversation_progress_mut(conv).set_choice(key, value);
     }
 
-    fn conversation_progress_mut(&mut self, conv: Conversation)
-                                 -> &mut ConversationProgress {
+    fn conversation_progress_mut(
+        &mut self,
+        conv: Conversation,
+    ) -> &mut ConversationProgress {
         if !self.conversations.contains_key(&conv) {
             let path = self.base_path.join(format!("{:?}.toml", conv));
             self.conversations.insert(conv, ConversationProgress::new(path));
@@ -300,9 +319,12 @@ impl Profile {
         }
     }
 
-    pub fn record_puzzle_score(&mut self, puzzle: Puzzle, area: i32,
-                               score: i32)
-                               -> Result<(), String> {
+    pub fn record_puzzle_score(
+        &mut self,
+        puzzle: Puzzle,
+        area: i32,
+        score: i32,
+    ) -> Result<(), String> {
         if !self.puzzles.contains_key(&puzzle) {
             let puzzle_path = self.base_path.join(format!("{:?}", puzzle));
             let progress = PuzzleProgress::create_or_load(&puzzle_path)?;
@@ -357,8 +379,11 @@ impl Profile {
         new_name
     }
 
-    pub fn load_circuit(&self, puzzle: Puzzle, circuit_name: &str)
-                        -> Result<CircuitData, String> {
+    pub fn load_circuit(
+        &self,
+        puzzle: Puzzle,
+        circuit_name: &str,
+    ) -> Result<CircuitData, String> {
         if let Some(progress) = self.puzzles.get(&puzzle) {
             progress.load_circuit(circuit_name)
         } else {
@@ -366,9 +391,12 @@ impl Profile {
         }
     }
 
-    pub fn save_circuit(&mut self, puzzle: Puzzle, circuit_name: &str,
-                        circuit_data: &CircuitData)
-                        -> Result<(), String> {
+    pub fn save_circuit(
+        &mut self,
+        puzzle: Puzzle,
+        circuit_name: &str,
+        circuit_data: &CircuitData,
+    ) -> Result<(), String> {
         if !self.puzzles.contains_key(&puzzle) {
             let puzzle_path = self.base_path.join(format!("{:?}", puzzle));
             let progress = PuzzleProgress::create_or_load(&puzzle_path)?;
@@ -378,9 +406,12 @@ impl Profile {
         progress.save_circuit(circuit_name, circuit_data)
     }
 
-    pub fn copy_circuit(&mut self, puzzle: Puzzle, old_name: &str,
-                        new_name: &str)
-                        -> Result<(), String> {
+    pub fn copy_circuit(
+        &mut self,
+        puzzle: Puzzle,
+        old_name: &str,
+        new_name: &str,
+    ) -> Result<(), String> {
         if let Some(progress) = self.puzzles.get_mut(&puzzle) {
             progress.copy_circuit(old_name, new_name)
         } else {
@@ -388,8 +419,11 @@ impl Profile {
         }
     }
 
-    pub fn delete_circuit(&mut self, puzzle: Puzzle, circuit_name: &str)
-                          -> Result<(), String> {
+    pub fn delete_circuit(
+        &mut self,
+        puzzle: Puzzle,
+        circuit_name: &str,
+    ) -> Result<(), String> {
         if let Some(progress) = self.puzzles.get_mut(&puzzle) {
             progress.delete_circuit(circuit_name)
         } else {
@@ -397,9 +431,12 @@ impl Profile {
         }
     }
 
-    pub fn rename_circuit(&mut self, puzzle: Puzzle, old_name: &str,
-                          new_name: &str)
-                          -> Result<(), String> {
+    pub fn rename_circuit(
+        &mut self,
+        puzzle: Puzzle,
+        old_name: &str,
+        new_name: &str,
+    ) -> Result<(), String> {
         if let Some(progress) = self.puzzles.get_mut(&puzzle) {
             progress.rename_circuit(old_name, new_name)
         } else {

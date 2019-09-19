@@ -21,10 +21,10 @@ use super::audio::{AudioMixer, AudioQueue};
 use super::clipboard::Clipboard;
 use super::cursor::Cursors;
 use super::debug::StdinReader;
+use crate::tachy::geom::RectSize;
 use sdl2;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
-use tachy::geom::RectSize;
 
 //===========================================================================//
 
@@ -41,9 +41,10 @@ pub struct GuiContext {
 }
 
 impl GuiContext {
-    pub fn init(init_sound_volume_percent: i32,
-                init_music_volume_percent: i32)
-                -> Result<GuiContext, String> {
+    pub fn init(
+        init_sound_volume_percent: i32,
+        init_music_volume_percent: i32,
+    ) -> Result<GuiContext, String> {
         let sdl_context = sdl2::init()?;
         if cfg!(any(target_os = "ios", target_os = "macos")) {
             sdl2::hint::set("SDL_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK", "1");
@@ -58,21 +59,21 @@ impl GuiContext {
         audio_queue.set_sound_volume_percent(init_sound_volume_percent);
         audio_queue.set_music_volume_percent(init_music_volume_percent);
         let audio_queue = Arc::new(Mutex::new(audio_queue));
-        let audio_device = AudioMixer::audio_device(&audio_subsystem,
-                                                    audio_queue.clone())?;
+        let audio_device =
+            AudioMixer::audio_device(&audio_subsystem, audio_queue.clone())?;
         audio_device.resume();
 
         Ok(GuiContext {
-               sdl_context,
-               video_subsystem,
-               clipboard,
-               event_pump,
-               _audio_subsystem: audio_subsystem,
-               _audio_device: audio_device,
-               audio_queue,
-               cursors,
-               stdin_reader: StdinReader::start(),
-           })
+            sdl_context,
+            video_subsystem,
+            clipboard,
+            event_pump,
+            _audio_subsystem: audio_subsystem,
+            _audio_device: audio_device,
+            audio_queue,
+            cursors,
+            stdin_reader: StdinReader::start(),
+        })
     }
 
     pub fn get_native_resolution(&self) -> Result<RectSize<i32>, String> {
@@ -80,8 +81,9 @@ impl GuiContext {
         Ok(RectSize::new(display_mode.w, display_mode.h))
     }
 
-    pub fn get_possible_resolutions(&self)
-                                    -> Result<Vec<RectSize<i32>>, String> {
+    pub fn get_possible_resolutions(
+        &self,
+    ) -> Result<Vec<RectSize<i32>>, String> {
         let num_modes = self.video_subsystem.num_display_modes(0)?;
         let mut resolutions = HashSet::<RectSize<i32>>::new();
         for index in 0..num_modes {
@@ -91,10 +93,8 @@ impl GuiContext {
         let mut resolutions: Vec<RectSize<i32>> =
             resolutions.into_iter().collect();
         resolutions.sort_by(|r1, r2| {
-                                r2.width
-                                    .cmp(&r1.width)
-                                    .then(r2.height.cmp(&r1.height))
-                            });
+            r2.width.cmp(&r1.width).then(r2.height.cmp(&r1.height))
+        });
         Ok(resolutions)
     }
 }

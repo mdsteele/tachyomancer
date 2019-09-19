@@ -64,10 +64,7 @@ impl VertexArray {
             }
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
-        VertexArray {
-            name,
-            phantom: PhantomData,
-        }
+        VertexArray { name, phantom: PhantomData }
     }
 
     pub fn bind(&self) {
@@ -79,21 +76,28 @@ impl VertexArray {
 
     pub fn draw(&self, primitive: Primitive, first: usize, count: usize) {
         unsafe {
-            gl::DrawArrays(primitive.to_gl_enum(),
-                           first as GLint,
-                           count as GLsizei);
+            gl::DrawArrays(
+                primitive.to_gl_enum(),
+                first as GLint,
+                count as GLsizei,
+            );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 
-    pub fn draw_elements<A: IndexAtom>(&self, primitive: Primitive,
-                                       indices: &IndexBuffer<A>) {
+    pub fn draw_elements<A: IndexAtom>(
+        &self,
+        primitive: Primitive,
+        indices: &IndexBuffer<A>,
+    ) {
         indices.bind();
         unsafe {
-            gl::DrawElements(primitive.to_gl_enum(),
-                             indices.len() as GLsizei,
-                             A::gl_type(),
-                             0 as *const GLvoid);
+            gl::DrawElements(
+                primitive.to_gl_enum(),
+                indices.len() as GLsizei,
+                A::gl_type(),
+                0 as *const GLvoid,
+            );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
@@ -124,62 +128,78 @@ impl<A: VertexAtom> VertexBuffer<A> {
         unsafe {
             gl::GenBuffers(1, &mut name);
             gl::BindBuffer(gl::ARRAY_BUFFER, name);
-            gl::BufferData(gl::ARRAY_BUFFER,
-                           (mem::size_of::<A>() * data.len()) as GLsizeiptr,
-                           data.as_ptr() as *const c_void,
-                           gl::STATIC_DRAW);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (mem::size_of::<A>() * data.len()) as GLsizeiptr,
+                data.as_ptr() as *const c_void,
+                gl::STATIC_DRAW,
+            );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
-        VertexBuffer {
-            name,
-            phantom: PhantomData,
-        }
+        VertexBuffer { name, phantom: PhantomData }
     }
 
-    pub fn attribf(&self, attrib_index: GLuint, atoms_per_vertex: GLint,
-                   stride: usize, offset: usize) {
+    pub fn attribf(
+        &self,
+        attrib_index: GLuint,
+        atoms_per_vertex: GLint,
+        stride: usize,
+        offset: usize,
+    ) {
         unsafe {
             gl::BindBuffer(gl::ARRAY_BUFFER, self.name);
-            gl::VertexAttribPointer(attrib_index,
-                                    atoms_per_vertex,
-                                    A::gl_type(),
-                                    gl::FALSE,
-                                    (mem::size_of::<A>() * stride) as GLsizei,
-                                    (mem::size_of::<A>() * offset) as
-                                        *const GLvoid);
+            gl::VertexAttribPointer(
+                attrib_index,
+                atoms_per_vertex,
+                A::gl_type(),
+                gl::FALSE,
+                (mem::size_of::<A>() * stride) as GLsizei,
+                (mem::size_of::<A>() * offset) as *const GLvoid,
+            );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 }
 
 impl<A: VertexAtom + Integer> VertexBuffer<A> {
-    pub fn attribi(&self, attrib_index: GLuint, atoms_per_vertex: GLint,
-                   stride: usize, offset: usize) {
+    pub fn attribi(
+        &self,
+        attrib_index: GLuint,
+        atoms_per_vertex: GLint,
+        stride: usize,
+        offset: usize,
+    ) {
         unsafe {
             gl::BindBuffer(gl::ARRAY_BUFFER, self.name);
-            gl::VertexAttribIPointer(attrib_index,
-                                     atoms_per_vertex,
-                                     A::gl_type(),
-                                     (mem::size_of::<A>() * stride) as
-                                         GLsizei,
-                                     (mem::size_of::<A>() * offset) as
-                                         *const GLvoid);
+            gl::VertexAttribIPointer(
+                attrib_index,
+                atoms_per_vertex,
+                A::gl_type(),
+                (mem::size_of::<A>() * stride) as GLsizei,
+                (mem::size_of::<A>() * offset) as *const GLvoid,
+            );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
 
     #[allow(dead_code)]
-    pub fn attribn(&self, attrib_index: GLuint, atoms_per_vertex: GLint,
-                   stride: usize, offset: usize) {
+    pub fn attribn(
+        &self,
+        attrib_index: GLuint,
+        atoms_per_vertex: GLint,
+        stride: usize,
+        offset: usize,
+    ) {
         unsafe {
             gl::BindBuffer(gl::ARRAY_BUFFER, self.name);
-            gl::VertexAttribPointer(attrib_index,
-                                    atoms_per_vertex,
-                                    A::gl_type(),
-                                    gl::TRUE,
-                                    (mem::size_of::<A>() * stride) as GLsizei,
-                                    (mem::size_of::<A>() * offset) as
-                                        *const GLvoid);
+            gl::VertexAttribPointer(
+                attrib_index,
+                atoms_per_vertex,
+                A::gl_type(),
+                gl::TRUE,
+                (mem::size_of::<A>() * stride) as GLsizei,
+                (mem::size_of::<A>() * offset) as *const GLvoid,
+            );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
@@ -202,15 +222,21 @@ pub trait VertexAtom {
 }
 
 impl VertexAtom for f32 {
-    fn gl_type() -> GLenum { gl::FLOAT }
+    fn gl_type() -> GLenum {
+        gl::FLOAT
+    }
 }
 
 impl VertexAtom for i8 {
-    fn gl_type() -> GLenum { gl::BYTE }
+    fn gl_type() -> GLenum {
+        gl::BYTE
+    }
 }
 
 impl VertexAtom for u8 {
-    fn gl_type() -> GLenum { gl::UNSIGNED_BYTE }
+    fn gl_type() -> GLenum {
+        gl::UNSIGNED_BYTE
+    }
 }
 
 //===========================================================================//

@@ -37,13 +37,15 @@ use self::specify::SpecificationTray;
 use self::tutorial::TutorialBubble;
 use self::verify::VerificationTray;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
+use crate::tachy::geom::{Coords, Direction, RectSize};
+use crate::tachy::gui::{Event, Keycode, Resources, Sound, Ui, Window};
+use crate::tachy::save::{ChipType, Prefs};
+use crate::tachy::state::{
+    EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
+    TutorialBubblePosition,
+};
 use cgmath;
 use std::u16;
-use tachy::geom::{Coords, Direction, RectSize};
-use tachy::gui::{Event, Keycode, Resources, Sound, Ui, Window};
-use tachy::save::{ChipType, Prefs};
-use tachy::state::{EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
-                   TutorialBubblePosition};
 
 //===========================================================================//
 
@@ -70,8 +72,11 @@ pub struct CircuitView {
 }
 
 impl CircuitView {
-    pub fn new(window: &Window, grid: &EditGrid, prefs: &Prefs)
-               -> CircuitView {
+    pub fn new(
+        window: &Window,
+        grid: &EditGrid,
+        prefs: &Prefs,
+    ) -> CircuitView {
         let window_size = window.size();
         let puzzle = grid.puzzle();
         // TODO: Don't show any tutorial bubbles if puzzle is solved.
@@ -79,37 +84,43 @@ impl CircuitView {
         let bounds_bubbles: Vec<(Direction, TutorialBubble)> = bubbles
             .iter()
             .filter_map(|&(pos, format)| match pos {
-                            TutorialBubblePosition::Bounds(dir) => {
-                                Some((dir, TutorialBubble::new(prefs, format)))
-                            }
-                            _ => None,
-                        })
+                TutorialBubblePosition::Bounds(dir) => {
+                    Some((dir, TutorialBubble::new(prefs, format)))
+                }
+                _ => None,
+            })
             .collect();
-        let controls_bubble =
-            bubbles
-                .iter()
-                .find(|&&(pos, _)| pos == TutorialBubblePosition::ControlsTray)
-                .map(|&(_, format)| TutorialBubble::new(prefs, format));
-        let parts_bubble =
-            bubbles
-                .iter()
-                .find(|&&(pos, _)| pos == TutorialBubblePosition::PartsTray)
-                .map(|&(_, format)| TutorialBubble::new(prefs, format));
+        let controls_bubble = bubbles
+            .iter()
+            .find(|&&(pos, _)| pos == TutorialBubblePosition::ControlsTray)
+            .map(|&(_, format)| TutorialBubble::new(prefs, format));
+        let parts_bubble = bubbles
+            .iter()
+            .find(|&&(pos, _)| pos == TutorialBubblePosition::PartsTray)
+            .map(|&(_, format)| TutorialBubble::new(prefs, format));
         CircuitView {
             width: window_size.width as f32,
             height: window_size.height as f32,
-            edit_grid: EditGridView::new(window_size,
-                                         grid.bounds(),
-                                         bounds_bubbles),
-            controls_tray: ControlsTray::new(window_size,
-                                             puzzle,
-                                             controls_bubble),
-            parts_tray: PartsTray::new(window,
-                                       grid.allowed_chips(),
-                                       parts_bubble),
-            specification_tray: SpecificationTray::new(window_size,
-                                                       puzzle,
-                                                       prefs),
+            edit_grid: EditGridView::new(
+                window_size,
+                grid.bounds(),
+                bounds_bubbles,
+            ),
+            controls_tray: ControlsTray::new(
+                window_size,
+                puzzle,
+                controls_bubble,
+            ),
+            parts_tray: PartsTray::new(
+                window,
+                grid.allowed_chips(),
+                parts_bubble,
+            ),
+            specification_tray: SpecificationTray::new(
+                window_size,
+                puzzle,
+                prefs,
+            ),
             verification_tray: VerificationTray::new(window_size, puzzle),
             seconds_since_time_step: 0.0,
             controls_status: ControlsStatus::Stopped,
@@ -125,10 +136,12 @@ impl CircuitView {
         self.verification_tray.draw(resources, &projection, grid.eval());
         self.specification_tray.draw(resources, &projection);
         self.parts_tray.draw(resources, &projection, grid.eval().is_none());
-        self.controls_tray.draw(resources,
-                                &projection,
-                                self.controls_status,
-                                grid.has_errors());
+        self.controls_tray.draw(
+            resources,
+            &projection,
+            self.controls_status,
+            grid.has_errors(),
+        );
         self.edit_grid.draw_dragged(resources);
         self.edit_grid.draw_tooltip(resources, &projection);
         if let Some((ref dialog, _)) = self.edit_const_dialog {
@@ -139,11 +152,16 @@ impl CircuitView {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    (grid, prefs): (&mut EditGrid, &Prefs))
-                    -> Option<CircuitAction> {
-        debug_assert_eq!(self.controls_status == ControlsStatus::Stopped,
-                         grid.eval().is_none());
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        (grid, prefs): (&mut EditGrid, &Prefs),
+    ) -> Option<CircuitAction> {
+        debug_assert_eq!(
+            self.controls_status == ControlsStatus::Stopped,
+            grid.eval().is_none()
+        );
 
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
             match dialog.on_event(event, ui, is_valid_const) {
@@ -176,8 +194,8 @@ impl CircuitView {
                         let seconds_per_time_step =
                             eval.seconds_per_time_step();
                         self.seconds_since_time_step += tick.elapsed;
-                        while self.seconds_since_time_step >=
-                            seconds_per_time_step
+                        while self.seconds_since_time_step
+                            >= seconds_per_time_step
                         {
                             self.seconds_since_time_step -=
                                 seconds_per_time_step;
@@ -198,13 +216,13 @@ impl CircuitView {
 
         self.edit_grid.request_interaction_cursor(event, ui.cursor());
 
-        if let Some(opt_action) = self.controls_tray
-            .on_event(event,
-                      ui,
-                      self.controls_status,
-                      grid.has_errors(),
-                      prefs)
-        {
+        if let Some(opt_action) = self.controls_tray.on_event(
+            event,
+            ui,
+            self.controls_status,
+            grid.has_errors(),
+            prefs,
+        ) {
             match opt_action {
                 None => {}
                 Some(ControlsAction::Reset) => {
@@ -319,13 +337,15 @@ impl CircuitView {
 
         match self.edit_grid.on_event(event, ui, grid, prefs) {
             Some(EditGridAction::EditConst(coords, value)) => {
-                let size = RectSize::new(self.width as i32,
-                                         self.height as i32);
-                let dialog = TextDialogBox::new(size,
-                                                prefs,
-                                                "Choose new const value:",
-                                                &value.to_string(),
-                                                u16::MAX.to_string().len());
+                let size =
+                    RectSize::new(self.width as i32, self.height as i32);
+                let dialog = TextDialogBox::new(
+                    size,
+                    prefs,
+                    "Choose new const value:",
+                    &value.to_string(),
+                    u16::MAX.to_string().len(),
+                );
                 self.edit_const_dialog = Some((dialog, coords));
                 ui.request_redraw();
             }
@@ -334,9 +354,13 @@ impl CircuitView {
         return action;
     }
 
-    fn on_eval_result(&mut self, result: EvalResult, ui: &mut Ui,
-                      grid: &mut EditGrid, prefs: &Prefs)
-                      -> Option<CircuitAction> {
+    fn on_eval_result(
+        &mut self,
+        result: EvalResult,
+        ui: &mut Ui,
+        grid: &mut EditGrid,
+        prefs: &Prefs,
+    ) -> Option<CircuitAction> {
         match result {
             EvalResult::Continue => None,
             EvalResult::Breakpoint(coords_vec) => {
@@ -356,19 +380,20 @@ impl CircuitView {
                 };
                 debug_log!("Victory!  area={}, score={}", area, score);
                 grid.stop_eval();
-                let size = RectSize::new(self.width as i32,
-                                         self.height as i32);
+                let size =
+                    RectSize::new(self.width as i32, self.height as i32);
                 // TODO: The dialog box should show the optimization graph
                 //   (with this point plotted on it).
                 let format =
                     format!("Victory!\nArea: {}\nScore: {}", area, score);
-                let buttons =
-                    &[
-                        ("Continue editing", None, Some(Keycode::Escape)),
-                        ("Back to menu",
-                         Some(CircuitAction::BackToMenu),
-                         Some(Keycode::Return)),
-                    ];
+                let buttons = &[
+                    ("Continue editing", None, Some(Keycode::Escape)),
+                    (
+                        "Back to menu",
+                        Some(CircuitAction::BackToMenu),
+                        Some(Keycode::Return),
+                    ),
+                ];
                 self.victory_dialog =
                     Some(ButtonDialogBox::new(size, prefs, &format, buttons));
                 // TODO: Unfocus other views
@@ -386,20 +411,22 @@ impl CircuitView {
     }
 }
 
-fn is_valid_const(text: &str) -> bool { text.parse::<u16>().is_ok() }
+fn is_valid_const(text: &str) -> bool {
+    text.parse::<u16>().is_ok()
+}
 
-fn change_const_chip_value(ui: &mut Ui, grid: &mut EditGrid, coords: Coords,
-                           new_value: u16) {
+fn change_const_chip_value(
+    ui: &mut Ui,
+    grid: &mut EditGrid,
+    coords: Coords,
+    new_value: u16,
+) {
     if let Some((coords, ChipType::Const(old_value), orient)) =
         grid.chip_at(coords)
     {
         let changes = vec![
-            GridChange::RemoveChip(coords,
-                                   ChipType::Const(old_value),
-                                   orient),
-            GridChange::AddChip(coords,
-                                ChipType::Const(new_value),
-                                orient),
+            GridChange::RemoveChip(coords, ChipType::Const(old_value), orient),
+            GridChange::AddChip(coords, ChipType::Const(new_value), orient),
         ];
         if grid.try_mutate(changes) {
             ui.request_redraw();

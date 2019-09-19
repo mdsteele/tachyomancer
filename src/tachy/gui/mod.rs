@@ -31,8 +31,10 @@ pub use self::audio::{AudioQueue, Music, Sound};
 pub use self::clipboard::Clipboard;
 pub use self::context::GuiContext;
 pub use self::cursor::{Cursor, Cursors, NextCursor};
-pub use self::event::{ClockEventData, Event, KeyEventData, Keycode,
-                      MouseEventData, MultitouchEventData, ScrollEventData};
+pub use self::event::{
+    ClockEventData, Event, KeyEventData, Keycode, MouseEventData,
+    MultitouchEventData, ScrollEventData,
+};
 pub use self::resource::Resources;
 pub use self::ui::{Keyboard, Ui};
 pub use self::window::{Window, WindowOptions};

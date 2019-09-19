@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Color3, Color4, MatrixExt, Rect};
+use crate::tachy::gl::{
+    Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform, VertexArray,
+    VertexBuffer,
+};
 use cgmath::Matrix4;
-use tachy::geom::{Color3, Color4, MatrixExt, Rect};
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
-                VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -63,17 +65,26 @@ impl SolidShader {
         Ok(shader)
     }
 
-    pub fn fill_rect(&self, matrix: &Matrix4<f32>, color: Color3,
-                     rect: Rect<f32>) {
+    pub fn fill_rect(
+        &self,
+        matrix: &Matrix4<f32>,
+        color: Color3,
+        rect: Rect<f32>,
+    ) {
         self.tint_rect(matrix, color.with_alpha(1.0), rect);
     }
 
-    pub fn tint_rect(&self, matrix: &Matrix4<f32>, color: Color4,
-                     rect: Rect<f32>) {
+    pub fn tint_rect(
+        &self,
+        matrix: &Matrix4<f32>,
+        color: Color4,
+        rect: Rect<f32>,
+    ) {
         self.program.bind();
         self.color.set(&color);
-        let mvp = matrix * Matrix4::trans2(rect.x, rect.y) *
-            Matrix4::scale2(rect.width, rect.height);
+        let mvp = matrix
+            * Matrix4::trans2(rect.x, rect.y)
+            * Matrix4::scale2(rect.width, rect.height);
         self.mvp.set(&mvp);
         self.rect_varray.bind();
         self.rect_varray.draw(Primitive::TriangleStrip, 0, 4);

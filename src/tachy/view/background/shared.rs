@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use tachy::gui::{Event, Resources, Ui};
+use crate::tachy::gui::{Event, Resources, Ui};
 
 //===========================================================================//
 

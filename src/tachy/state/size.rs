@@ -94,8 +94,12 @@ impl WireSize {
 }
 
 impl Bounded for WireSize {
-    fn min_value() -> WireSize { WireSize::Zero }
-    fn max_value() -> WireSize { WireSize::Sixteen }
+    fn min_value() -> WireSize {
+        WireSize::Zero
+    }
+    fn max_value() -> WireSize {
+        WireSize::Sixteen
+    }
 }
 
 //===========================================================================//
@@ -127,12 +131,20 @@ impl WireSizeInterval {
         WireSizeInterval::new(size, WireSize::max_value())
     }
 
-    pub fn is_empty(&self) -> bool { self.lo > self.hi }
+    pub fn is_empty(&self) -> bool {
+        self.lo > self.hi
+    }
 
-    pub fn is_ambiguous(&self) -> bool { self.lo < self.hi }
+    pub fn is_ambiguous(&self) -> bool {
+        self.lo < self.hi
+    }
 
     pub fn lower_bound(&self) -> Option<WireSize> {
-        if self.is_empty() { None } else { Some(self.lo) }
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.lo)
+        }
     }
 
     pub fn make_at_least(&mut self, size: WireSize) -> bool {
@@ -232,29 +244,42 @@ mod tests {
 
     #[test]
     fn interval_half() {
-        assert_eq!(WireSizeInterval::empty().half(),
-                   WireSizeInterval::empty());
-        assert_eq!(WireSizeInterval::exactly(WireSize::One).half(),
-                   WireSizeInterval::empty());
-        assert_eq!(WireSizeInterval::full().half(),
-                   WireSizeInterval::new(WireSize::One, WireSize::Eight));
-        assert_eq!(WireSizeInterval::new(WireSize::Four, WireSize::Sixteen)
-                       .half(),
-                   WireSizeInterval::new(WireSize::Two, WireSize::Eight));
+        assert_eq!(
+            WireSizeInterval::empty().half(),
+            WireSizeInterval::empty()
+        );
+        assert_eq!(
+            WireSizeInterval::exactly(WireSize::One).half(),
+            WireSizeInterval::empty()
+        );
+        assert_eq!(
+            WireSizeInterval::full().half(),
+            WireSizeInterval::new(WireSize::One, WireSize::Eight)
+        );
+        assert_eq!(
+            WireSizeInterval::new(WireSize::Four, WireSize::Sixteen).half(),
+            WireSizeInterval::new(WireSize::Two, WireSize::Eight)
+        );
     }
 
     #[test]
     fn interval_double() {
-        assert_eq!(WireSizeInterval::empty().double(),
-                   WireSizeInterval::empty());
-        assert_eq!(WireSizeInterval::exactly(WireSize::Sixteen).double(),
-                   WireSizeInterval::empty());
-        assert_eq!(WireSizeInterval::new(WireSize::Two, WireSize::Eight)
-                       .double(),
-                   WireSizeInterval::new(WireSize::Four, WireSize::Sixteen));
-        assert_eq!(WireSizeInterval::new(WireSize::One, WireSize::Sixteen)
-                       .double(),
-                   WireSizeInterval::new(WireSize::Two, WireSize::Sixteen));
+        assert_eq!(
+            WireSizeInterval::empty().double(),
+            WireSizeInterval::empty()
+        );
+        assert_eq!(
+            WireSizeInterval::exactly(WireSize::Sixteen).double(),
+            WireSizeInterval::empty()
+        );
+        assert_eq!(
+            WireSizeInterval::new(WireSize::Two, WireSize::Eight).double(),
+            WireSizeInterval::new(WireSize::Four, WireSize::Sixteen)
+        );
+        assert_eq!(
+            WireSizeInterval::new(WireSize::One, WireSize::Sixteen).double(),
+            WireSizeInterval::new(WireSize::Two, WireSize::Sixteen)
+        );
     }
 }
 

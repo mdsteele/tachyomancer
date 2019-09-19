@@ -21,11 +21,11 @@ use super::circuit::ParserCircuitPiece;
 use super::compile::Compiler;
 use super::text::ParserTextPiece;
 use super::types::{CompiledLine, ParserAlign, ParserPiece, ParserPieceSplit};
+use crate::tachy::font::Font;
+use crate::tachy::geom::{Color4, Coords, Orientation, RectSize};
+use crate::tachy::save::{ChipType, CircuitData, Hotkey, Prefs};
 use std::mem;
 use std::str::FromStr;
-use tachy::font::Font;
-use tachy::geom::{Color4, Coords, Orientation, RectSize};
-use tachy::save::{ChipType, CircuitData, Hotkey, Prefs};
 
 //===========================================================================//
 
@@ -89,8 +89,10 @@ impl Parser {
             }
             "YOURNAME" => prefs.current_profile().unwrap_or("YOURNAME"),
             _ => {
-                debug_warn!("Bad phrase name {:?} in paragraph format string",
-                            phrase_name);
+                debug_warn!(
+                    "Bad phrase name {:?} in paragraph format string",
+                    phrase_name
+                );
                 phrase_name
             }
         };
@@ -102,8 +104,10 @@ impl Parser {
             let key_name = Hotkey::keycode_name(prefs.hotkey_code(hotkey));
             self.push_str(&format!("[{}]", key_name));
         } else {
-            debug_warn!("Bad hotkey name {:?} in paragraph format string",
-                        hotkey_name);
+            debug_warn!(
+                "Bad hotkey name {:?} in paragraph format string",
+                hotkey_name
+            );
         }
     }
 
@@ -111,16 +115,20 @@ impl Parser {
         let orient = match Orientation::from_str(orient_str) {
             Ok(orient) => orient,
             Err(_) => {
-                debug_warn!("Bad orientation {:?} in paragraph format string",
-                            orient_str);
+                debug_warn!(
+                    "Bad orientation {:?} in paragraph format string",
+                    orient_str
+                );
                 return;
             }
         };
         let ctype = match ChipType::from_str(ctype_str) {
             Ok(ctype) => ctype,
             Err(_) => {
-                debug_warn!("Bad chip type {:?} in paragraph format string",
-                            ctype_str);
+                debug_warn!(
+                    "Bad chip type {:?} in paragraph format string",
+                    ctype_str
+                );
                 return;
             }
         };
@@ -141,8 +149,8 @@ impl Parser {
 
     fn push_circuit_data(&mut self, data: CircuitData) {
         self.shift_text_piece();
-        let piece = ParserCircuitPiece::new(self.current_millis_per_char,
-                                            data);
+        let piece =
+            ParserCircuitPiece::new(self.current_millis_per_char, data);
         self.push_piece(Box::new(piece));
     }
 
@@ -166,7 +174,9 @@ impl Parser {
         }
     }
 
-    pub fn set_color_to_default(&mut self) { self.set_color(DEFAULT_COLOR); }
+    pub fn set_color_to_default(&mut self) {
+        self.set_color(DEFAULT_COLOR);
+    }
 
     pub fn set_font(&mut self, font_name: &str) {
         if let Ok(font) = Font::from_str(font_name) {
@@ -175,8 +185,10 @@ impl Parser {
                 self.current_font = font;
             }
         } else {
-            debug_warn!("Bad font name {:?} in paragraph format string",
-                        font_name);
+            debug_warn!(
+                "Bad font name {:?} in paragraph format string",
+                font_name
+            );
         }
     }
 
@@ -187,8 +199,10 @@ impl Parser {
                 self.current_millis_per_char = number;
             }
         } else {
-            debug_warn!("Bad number {:?} in paragraph format string",
-                        number_string);
+            debug_warn!(
+                "Bad number {:?} in paragraph format string",
+                number_string
+            );
         }
     }
 
@@ -222,16 +236,18 @@ impl Parser {
         if !self.current_piece.is_empty() {
             let slant = if self.current_italic { 0.5 } else { 0.0 };
             let chars = mem::replace(&mut self.current_piece, Vec::new());
-            let piece = ParserTextPiece::new(self.current_font,
-                                             self.current_color,
-                                             slant,
-                                             self.current_millis_per_char,
-                                             chars);
+            let piece = ParserTextPiece::new(
+                self.current_font,
+                self.current_color,
+                slant,
+                self.current_millis_per_char,
+                chars,
+            );
             self.push_piece(Box::new(piece));
         }
     }
 
-    fn push_piece(&mut self, piece: Box<ParserPiece>) {
+    fn push_piece(&mut self, piece: Box<dyn ParserPiece>) {
         let pieces = match self.current_align {
             ParserAlign::Left => &mut self.current_line.left,
             ParserAlign::Center => &mut self.current_line.center,
@@ -240,8 +256,12 @@ impl Parser {
         pieces.push(piece);
     }
 
-    pub fn compile(mut self, font_size: f32, line_gap: f32, max_width: f32)
-                   -> (RectSize<f32>, usize, Vec<CompiledLine>) {
+    pub fn compile(
+        mut self,
+        font_size: f32,
+        line_gap: f32,
+        max_width: f32,
+    ) -> (RectSize<f32>, usize, Vec<CompiledLine>) {
         debug_assert!(font_size > 0.0);
         debug_assert!(max_width >= 0.0);
         self.shift_text_piece();
@@ -270,8 +290,8 @@ impl Parser {
                             next_piece = Some(pp2);
                         }
                         ParserPieceSplit::NoneFits(opt_pp2) => {
-                            let line_was_empty = compiler
-                                .current_line_is_empty();
+                            let line_was_empty =
+                                compiler.current_line_is_empty();
                             if !line_was_empty {
                                 compiler.fix_x_offsets(align);
                                 compiler.newline(wrap_indent);
@@ -301,9 +321,9 @@ impl Parser {
 //===========================================================================//
 
 struct ParserLine {
-    left: Vec<Box<ParserPiece>>,
-    center: Vec<Box<ParserPiece>>,
-    right: Vec<Box<ParserPiece>>,
+    left: Vec<Box<dyn ParserPiece>>,
+    center: Vec<Box<dyn ParserPiece>>,
+    right: Vec<Box<dyn ParserPiece>>,
     wrap_indent: f32,
 }
 
@@ -321,7 +341,7 @@ impl ParserLine {
         self.left.is_empty() && self.center.is_empty() && self.right.is_empty()
     }
 
-    fn columns(self) -> Vec<(ParserAlign, Vec<Box<ParserPiece>>)> {
+    fn columns(self) -> Vec<(ParserAlign, Vec<Box<dyn ParserPiece>>)> {
         vec![
             (ParserAlign::Left, self.left),
             (ParserAlign::Center, self.center),

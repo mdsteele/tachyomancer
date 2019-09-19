@@ -19,8 +19,8 @@
 
 use super::super::port::{PortColor, PortConstraint, PortFlow};
 use super::super::size::WireSize;
-use tachy::geom::{Coords, CoordsSize, Orientation};
-use tachy::geom::Direction;
+use crate::tachy::geom::Direction;
+use crate::tachy::geom::{Coords, CoordsSize, Orientation};
 
 //===========================================================================//
 
@@ -34,9 +34,12 @@ pub struct ChipData {
 
 pub type AbstractPort = (PortFlow, PortColor, (i32, i32), Direction);
 
-pub fn localize(coords: Coords, orient: Orientation, size: CoordsSize,
-                port: &AbstractPort)
-                -> (Coords, Direction) {
+pub fn localize(
+    coords: Coords,
+    orient: Orientation,
+    size: CoordsSize,
+    port: &AbstractPort,
+) -> (Coords, Direction) {
     let &(_, _, delta, dir) = port;
     (coords + orient.transform_in_size(delta.into(), size), orient * dir)
 }
@@ -57,9 +60,13 @@ pub enum AbstractConstraint {
 }
 
 impl AbstractConstraint {
-    pub fn reify(&self, coords: Coords, orient: Orientation,
-                 size: CoordsSize, ports: &[AbstractPort])
-                 -> PortConstraint {
+    pub fn reify(
+        &self,
+        coords: Coords,
+        orient: Orientation,
+        size: CoordsSize,
+        ports: &[AbstractPort],
+    ) -> PortConstraint {
         match *self {
             AbstractConstraint::Exact(index, wsize) => {
                 let loc = localize(coords, orient, size, &ports[index]);

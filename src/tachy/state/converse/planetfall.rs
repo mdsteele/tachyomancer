@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::types::ConversationBuilder;
-use tachy::save::{Profile, Puzzle};
+use crate::tachy::save::{Profile, Puzzle};
 
 //===========================================================================//
 

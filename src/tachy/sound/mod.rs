@@ -123,20 +123,20 @@ pub fn type_key_data() -> Result<Vec<f32>, String> {
 //===========================================================================//
 
 fn decode_flac(name: &str, data: &[u8]) -> Result<Vec<f32>, String> {
-    let mut reader =
-        FlacReader::new(data)
-            .map_err(|err| format!("Failed to decode {}: {}", name, err))?;
+    let mut reader = FlacReader::new(data)
+        .map_err(|err| format!("Failed to decode {}: {}", name, err))?;
     let streaminfo = reader.streaminfo();
     if streaminfo.sample_rate != AUDIO_RATE {
-        return Err(format!("Sample rate of {} is {}, but expected {}",
-                           name,
-                           streaminfo.sample_rate,
-                           AUDIO_RATE));
+        return Err(format!(
+            "Sample rate of {} is {}, but expected {}",
+            name, streaminfo.sample_rate, AUDIO_RATE
+        ));
     }
     if streaminfo.channels != 1 {
-        return Err(format!("Found {} channels in {}, but expected mono",
-                           streaminfo.channels,
-                           name));
+        return Err(format!(
+            "Found {} channels in {}, but expected mono",
+            streaminfo.channels, name
+        ));
     }
     let num_samples = match streaminfo.samples {
         Some(num) => num as usize,
@@ -147,17 +147,18 @@ fn decode_flac(name: &str, data: &[u8]) -> Result<Vec<f32>, String> {
     let scale = 1.0 / ((1 << (streaminfo.bits_per_sample - 1)) as f32);
     let mut samples = Vec::<f32>::with_capacity(num_samples);
     for sample in reader.samples() {
-        let sample =
-            sample
-                .map_err(|err| format!("Failed to decode {}: {}", name, err))?;
+        let sample = sample
+            .map_err(|err| format!("Failed to decode {}: {}", name, err))?;
         samples.push(scale * (sample as f32));
     }
     if samples.len() != num_samples {
-        return Err(format!("Wrong number of samples for {} \
-                            (expected {}, but was {})",
-                           name,
-                           num_samples,
-                           samples.len()));
+        return Err(format!(
+            "Wrong number of samples for {} \
+             (expected {}, but was {})",
+            name,
+            num_samples,
+            samples.len()
+        ));
     }
     Ok(samples)
 }

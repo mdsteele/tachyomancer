@@ -17,11 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Color3, Color4, Rect, RectSize};
 use cgmath::{Matrix4, Vector2, Vector3};
 use gl;
 use gl::types::{GLenum, GLint};
 use std::marker::PhantomData;
-use tachy::geom::{Color3, Color4, Rect, RectSize};
 
 //===========================================================================//
 
@@ -34,25 +34,28 @@ pub struct ShaderUniform<T> {
 
 impl<T: UniformValue> ShaderUniform<T> {
     pub(super) fn new(loc: GLint) -> ShaderUniform<T> {
-        ShaderUniform {
-            loc,
-            phantom: PhantomData,
-        }
+        ShaderUniform { loc, phantom: PhantomData }
     }
 
-    pub fn set(&self, value: &T) { value.set_uniform(self.loc) }
+    pub fn set(&self, value: &T) {
+        value.set_uniform(self.loc)
+    }
 }
 
 //===========================================================================//
 
 pub trait UniformValue {
     fn gl_type() -> GLenum;
-    fn array_size() -> GLint { 1 }
+    fn array_size() -> GLint {
+        1
+    }
     fn set_uniform(&self, loc: GLint);
 }
 
 impl UniformValue for Color3 {
-    fn gl_type() -> GLenum { gl::FLOAT_VEC3 }
+    fn gl_type() -> GLenum {
+        gl::FLOAT_VEC3
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform3f(loc, self.r, self.g, self.b);
@@ -61,7 +64,9 @@ impl UniformValue for Color3 {
 }
 
 impl UniformValue for Color4 {
-    fn gl_type() -> GLenum { gl::FLOAT_VEC4 }
+    fn gl_type() -> GLenum {
+        gl::FLOAT_VEC4
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform4f(loc, self.r, self.g, self.b, self.a);
@@ -70,7 +75,9 @@ impl UniformValue for Color4 {
 }
 
 impl UniformValue for f32 {
-    fn gl_type() -> GLenum { gl::FLOAT }
+    fn gl_type() -> GLenum {
+        gl::FLOAT
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform1f(loc, *self);
@@ -79,7 +86,9 @@ impl UniformValue for f32 {
 }
 
 impl UniformValue for Matrix4<f32> {
-    fn gl_type() -> GLenum { gl::FLOAT_MAT4 }
+    fn gl_type() -> GLenum {
+        gl::FLOAT_MAT4
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::UniformMatrix4fv(loc, 1, gl::FALSE, &self[0][0]);
@@ -88,7 +97,9 @@ impl UniformValue for Matrix4<f32> {
 }
 
 impl UniformValue for Rect<f32> {
-    fn gl_type() -> GLenum { gl::FLOAT_VEC4 }
+    fn gl_type() -> GLenum {
+        gl::FLOAT_VEC4
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform4f(loc, self.x, self.y, self.width, self.height);
@@ -97,7 +108,9 @@ impl UniformValue for Rect<f32> {
 }
 
 impl UniformValue for RectSize<f32> {
-    fn gl_type() -> GLenum { gl::FLOAT_VEC2 }
+    fn gl_type() -> GLenum {
+        gl::FLOAT_VEC2
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform2f(loc, self.width, self.height);
@@ -106,7 +119,9 @@ impl UniformValue for RectSize<f32> {
 }
 
 impl UniformValue for Vector2<u32> {
-    fn gl_type() -> GLenum { gl::UNSIGNED_INT_VEC2 }
+    fn gl_type() -> GLenum {
+        gl::UNSIGNED_INT_VEC2
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform2ui(loc, self.x, self.y);
@@ -115,7 +130,9 @@ impl UniformValue for Vector2<u32> {
 }
 
 impl UniformValue for Vector3<f32> {
-    fn gl_type() -> GLenum { gl::FLOAT_VEC3 }
+    fn gl_type() -> GLenum {
+        gl::FLOAT_VEC3
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform3f(loc, self.x, self.y, self.z);
@@ -124,7 +141,9 @@ impl UniformValue for Vector3<f32> {
 }
 
 impl UniformValue for u32 {
-    fn gl_type() -> GLenum { gl::UNSIGNED_INT }
+    fn gl_type() -> GLenum {
+        gl::UNSIGNED_INT
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform1ui(loc, *self);
@@ -133,8 +152,12 @@ impl UniformValue for u32 {
 }
 
 impl UniformValue for [u32; 64] {
-    fn gl_type() -> GLenum { gl::UNSIGNED_INT }
-    fn array_size() -> GLint { 64 }
+    fn gl_type() -> GLenum {
+        gl::UNSIGNED_INT
+    }
+    fn array_size() -> GLint {
+        64
+    }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
             gl::Uniform1uiv(loc, 64, self.as_ptr());

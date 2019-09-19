@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::size::WireSize;
-use tachy::geom::{Coords, Direction};
+use crate::tachy::geom::{Coords, Direction};
 
 //===========================================================================//
 
@@ -56,7 +56,9 @@ pub struct PortSpec {
 }
 
 impl PortSpec {
-    pub fn loc(&self) -> (Coords, Direction) { (self.coords, self.dir) }
+    pub fn loc(&self) -> (Coords, Direction) {
+        (self.coords, self.dir)
+    }
 }
 
 //===========================================================================//

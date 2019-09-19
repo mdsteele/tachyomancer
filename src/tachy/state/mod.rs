@@ -30,14 +30,17 @@ mod puzzle;
 mod size;
 
 pub use self::change::GridChange;
-pub use self::check::{WireColor, WireInfo, determine_wire_sizes, group_wires,
-                      map_ports_to_wires, recolor_wires};
+pub use self::check::{
+    determine_wire_sizes, group_wires, map_ports_to_wires, recolor_wires,
+    WireColor, WireInfo,
+};
 pub use self::chip::ChipExt;
 pub use self::converse::{ConversationBubble, ConversationExt, Portrait};
 pub use self::cutscene::{Cutscene, CutsceneScript, Theater};
 pub use self::edit::{ChipsIter, EditGrid, WireFragmentsIter};
-pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore,
-                     FabricationEval};
+pub use self::eval::{
+    CircuitEval, EvalError, EvalResult, EvalScore, FabricationEval,
+};
 pub use self::game::GameState;
 pub use self::port::{PortColor, PortConstraint, PortFlow, PortSpec};
 pub use self::puzzle::*;

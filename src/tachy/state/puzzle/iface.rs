@@ -19,7 +19,9 @@
 
 use super::super::port::{PortColor, PortConstraint, PortFlow, PortSpec};
 use super::super::size::WireSize;
-use tachy::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction};
+use crate::tachy::geom::{
+    Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
+};
 
 //===========================================================================//
 
@@ -119,14 +121,18 @@ impl Interface {
         size.into()
     }
 
-    pub fn side(&self) -> Direction { self.side }
+    pub fn side(&self) -> Direction {
+        self.side
+    }
 
     pub fn ports(&self, bounds: CoordsRect) -> Vec<(&'static str, PortSpec)> {
         self.ports_with_top_left(self.top_left(bounds))
     }
 
-    pub fn ports_with_top_left(&self, top_left: Coords)
-                               -> Vec<(&'static str, PortSpec)> {
+    pub fn ports_with_top_left(
+        &self,
+        top_left: Coords,
+    ) -> Vec<(&'static str, PortSpec)> {
         let delta = match self.side {
             Direction::South | Direction::West => {
                 self.side.rotate_ccw().delta()
@@ -157,28 +163,32 @@ impl Interface {
             .into_iter()
             .enumerate()
             .map(|(index, (_, port))| {
-                     PortConstraint::Exact(port.loc(), self.ports[index].size)
-                 })
+                PortConstraint::Exact(port.loc(), self.ports[index].size)
+            })
             .collect()
     }
 
     pub fn tooltip_format(&self) -> String {
         if self.ports.len() == 1 && self.ports[0].description.is_empty() {
             let port = &self.ports[0];
-            format!("$*{}$>({}-bit {} {:?})$<$*\n{}",
-                    self.name,
-                    port.size.num_bits(),
-                    port.color.tooltip_format(),
-                    port.flow,
-                    self.description)
+            format!(
+                "$*{}$>({}-bit {} {:?})$<$*\n{}",
+                self.name,
+                port.size.num_bits(),
+                port.color.tooltip_format(),
+                port.flow,
+                self.description
+            )
         } else {
             let mut fmt = format!("$*{}$*\n{}\n", self.name, self.description);
             for port in self.ports.iter() {
-                fmt.push_str(&format!("\n$*{}$>({}-bit {} {:?})$<$*",
-                                      port.name,
-                                      port.size.num_bits(),
-                                      port.color.tooltip_format(),
-                                      port.flow));
+                fmt.push_str(&format!(
+                    "\n$*{}$>({}-bit {} {:?})$<$*",
+                    port.name,
+                    port.size.num_bits(),
+                    port.color.tooltip_format(),
+                    port.flow
+                ));
                 if !port.description.is_empty() {
                     fmt.push_str(&format!("\n  $!{}", port.description));
                 }

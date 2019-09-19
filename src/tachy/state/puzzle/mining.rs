@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::iface::{Interface, InterfacePort, InterfacePosition};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -43,16 +43,18 @@ pub const INTERFACES: &[Interface] = &[
         ports: &[
             InterfacePort {
                 name: "Dist",
-                description: "\
-                    Indicates how far away the robot is from the base.",
+                description:
+                    "\
+                     Indicates how far away the robot is from the base.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
             InterfacePort {
                 name: "Back",
-                description: "\
-                    Signal here when the robot should return to the base.",
+                description:
+                    "\
+                     Signal here when the robot should return to the base.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::Zero,
@@ -67,26 +69,29 @@ pub const INTERFACES: &[Interface] = &[
         ports: &[
             InterfacePort {
                 name: "Carry",
-                description: "\
-                    Indicates how much ore the robot is currently carrying, \
-                    in kilograms.",
+                description:
+                    "\
+                     Indicates how much ore the robot is currently carrying, \
+                     in kilograms.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "Found",
-                description: "\
-                    Sends an event with the size of an ore deposit (from \
-                    1-3kg) when the robot passes over it.",
+                description:
+                    "\
+                     Sends an event with the size of an ore deposit (from \
+                     1-3kg) when the robot passes over it.",
                 flow: PortFlow::Send,
                 color: PortColor::Event,
                 size: WireSize::Two,
             },
             InterfacePort {
                 name: "Dig",
-                description: "\
-                    Signal here to dig up the ore deposit under the robot.",
+                description:
+                    "\
+                     Signal here to dig up the ore deposit under the robot.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::Zero,
@@ -112,8 +117,9 @@ pub struct MiningRobotEval {
 }
 
 impl MiningRobotEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> MiningRobotEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> MiningRobotEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 3);
@@ -132,16 +138,25 @@ impl MiningRobotEval {
         }
     }
 
-    pub fn current_position(&self) -> usize { self.current_position }
+    pub fn current_position(&self) -> usize {
+        self.current_position
+    }
 
-    pub fn ore_carried(&self) -> u32 { self.ore_carried }
+    pub fn ore_carried(&self) -> u32 {
+        self.ore_carried
+    }
 
-    pub fn ore_at_base(&self) -> u32 { self.ore_at_base }
+    pub fn ore_at_base(&self) -> u32 {
+        self.ore_at_base
+    }
 }
 
 impl PuzzleEval for MiningRobotEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         state.send_behavior(self.dist_wire, self.current_position as u32);
         state.send_behavior(self.carry_wire, self.ore_carried);
         let ore = self.ore_deposits[self.current_position];
@@ -155,8 +170,11 @@ impl PuzzleEval for MiningRobotEval {
         }
     }
 
-    fn end_cycle(&mut self, time_step: u32, state: &CircuitState)
-                 -> Vec<EvalError> {
+    fn end_cycle(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let mut errors = Vec::<EvalError>::new();
         if state.recv_event(self.back_wire).is_some() {
             self.returning_to_base = true;
@@ -167,16 +185,16 @@ impl PuzzleEval for MiningRobotEval {
                 self.ore_carried += ore;
                 self.ore_deposits[self.current_position] = 0;
             } else {
-                let message = format!("Tried to dig up a {}kg ore deposit \
-                                       while already carrying {}kg (max load \
-                                       is {}kg).",
-                                      ore,
-                                      self.ore_carried,
-                                      MAX_ORE_CARRIED);
+                let message = format!(
+                    "Tried to dig up a {}kg ore deposit \
+                     while already carrying {}kg (max load \
+                     is {}kg).",
+                    ore, self.ore_carried, MAX_ORE_CARRIED
+                );
                 let error = EvalError {
                     time_step,
                     port: Some(self.dig_port),
-                    message: message,
+                    message,
                 };
                 errors.push(error);
             }
@@ -184,8 +202,11 @@ impl PuzzleEval for MiningRobotEval {
         errors
     }
 
-    fn end_time_step(&mut self, _time_step: u32, _state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        _time_step: u32,
+        _state: &CircuitState,
+    ) -> Vec<EvalError> {
         let last_position = self.ore_deposits.len() - 1;
         if self.returning_to_base {
             if self.current_position > 0 {

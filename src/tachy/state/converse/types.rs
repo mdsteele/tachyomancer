@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::cutscene::Cutscene;
-use tachy::save::{Conversation, Profile, Puzzle};
+use crate::tachy::save::{Conversation, Profile, Puzzle};
 
 //===========================================================================//
 
@@ -56,8 +56,10 @@ pub(super) struct ConversationBuilder {
 }
 
 impl ConversationBuilder {
-    pub(super) fn new(conv: Conversation, profile: &Profile)
-                      -> ConversationBuilder {
+    pub(super) fn new(
+        conv: Conversation,
+        profile: &Profile,
+    ) -> ConversationBuilder {
         ConversationBuilder {
             conv,
             progress: profile.conversation_progress(conv),
@@ -65,11 +67,15 @@ impl ConversationBuilder {
         }
     }
 
-    pub(super) fn build(self) -> Vec<ConversationBubble> { self.bubbles }
+    pub(super) fn build(self) -> Vec<ConversationBubble> {
+        self.bubbles
+    }
 
-    pub(super) fn choice<'a, 'b>(&'a mut self, profile: &'b Profile,
-                                 key: &str)
-                                 -> ChoiceBuilder<'a, 'b> {
+    pub(super) fn choice<'a, 'b>(
+        &'a mut self,
+        profile: &'b Profile,
+        key: &str,
+    ) -> ChoiceBuilder<'a, 'b> {
         ChoiceBuilder::new(self, profile, key)
     }
 
@@ -105,7 +111,9 @@ impl ConversationBuilder {
     }
 
     #[allow(dead_code)]
-    pub(super) fn liu(&mut self, text: &str) { self.npc(Portrait::Liu, text); }
+    pub(super) fn liu(&mut self, text: &str) {
+        self.npc(Portrait::Liu, text);
+    }
 
     #[allow(dead_code)]
     pub(super) fn purge(&mut self, text: &str) {
@@ -122,13 +130,19 @@ impl ConversationBuilder {
             .push(ConversationBubble::NpcSpeech(portrait, text.to_string()));
     }
 
-    pub(super) fn puzzle(&mut self, profile: &Profile, puzzle: Puzzle)
-                         -> Result<(), ()> {
+    pub(super) fn puzzle(
+        &mut self,
+        profile: &Profile,
+        puzzle: Puzzle,
+    ) -> Result<(), ()> {
         self.puzzles(profile, &[puzzle])
     }
 
-    pub(super) fn puzzles(&mut self, profile: &Profile, puzzles: &[Puzzle])
-                          -> Result<(), ()> {
+    pub(super) fn puzzles(
+        &mut self,
+        profile: &Profile,
+        puzzles: &[Puzzle],
+    ) -> Result<(), ()> {
         debug_assert!(!puzzles.is_empty());
         self.bubbles.push(ConversationBubble::Puzzles(puzzles.to_vec()));
         if puzzles.iter().all(|&puzzle| profile.is_puzzle_solved(puzzle)) {
@@ -155,9 +169,11 @@ pub(super) struct ChoiceBuilder<'a, 'b> {
 }
 
 impl<'a, 'b> ChoiceBuilder<'a, 'b> {
-    pub(super) fn new(conversation: &'a mut ConversationBuilder,
-                      profile: &'b Profile, key: &str)
-                      -> ChoiceBuilder<'a, 'b> {
+    pub(super) fn new(
+        conversation: &'a mut ConversationBuilder,
+        profile: &'b Profile,
+        key: &str,
+    ) -> ChoiceBuilder<'a, 'b> {
         ChoiceBuilder {
             conversation,
             profile,
@@ -166,19 +182,22 @@ impl<'a, 'b> ChoiceBuilder<'a, 'b> {
         }
     }
 
-    pub(super) fn option(mut self, value: &str, label: &str)
-                         -> ChoiceBuilder<'a, 'b> {
+    pub(super) fn option(
+        mut self,
+        value: &str,
+        label: &str,
+    ) -> ChoiceBuilder<'a, 'b> {
         self.choices.push((value.to_string(), label.to_string()));
         self
     }
 
     pub(super) fn done(self) -> Result<String, ()> {
         debug_assert!(!self.choices.is_empty());
-        let choice =
-            self.profile
-                .get_conversation_choice(self.conversation.conv, &self.key);
-        if choice.is_some() ||
-            self.conversation.progress > self.conversation.bubbles.len()
+        let choice = self
+            .profile
+            .get_conversation_choice(self.conversation.conv, &self.key);
+        if choice.is_some()
+            || self.conversation.progress > self.conversation.bubbles.len()
         {
             let (value, label) = self.get_choice(choice);
             let bubble = ConversationBubble::YouSpeech(label);

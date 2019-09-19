@@ -18,13 +18,13 @@
 // +--------------------------------------------------------------------------+
 
 use super::paragraph::Paragraph;
+use crate::tachy::font::Align;
+use crate::tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
+use crate::tachy::gui::{Event, Keycode, Resources, Sound, Ui};
+use crate::tachy::save::Prefs;
+use crate::tachy::state::{CutsceneScript, Portrait, Theater};
 use cgmath::{self, Matrix4, Point2};
 use std::collections::BTreeMap;
-use tachy::font::Align;
-use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
-use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
-use tachy::save::Prefs;
-use tachy::state::{CutsceneScript, Portrait, Theater};
 
 //===========================================================================//
 
@@ -83,18 +83,23 @@ impl CutsceneView {
         }
     }
 
-    pub fn init<'a>(&'a mut self, ui: &'a mut Ui<'a>,
-                    (cutscene, prefs): (&mut CutsceneScript, &'a Prefs)) {
+    pub fn init<'a>(
+        &'a mut self,
+        ui: &'a mut Ui<'a>,
+        (cutscene, prefs): (&mut CutsceneScript, &'a Prefs),
+    ) {
         cutscene.tick(0.0, &mut TheaterImpl::new(self, ui, prefs));
     }
 
     pub fn draw(&self, resources: &Resources, cutscene: &CutsceneScript) {
-        let matrix = cgmath::ortho(0.0,
-                                   self.size.width,
-                                   self.size.height,
-                                   0.0,
-                                   -1.0,
-                                   1.0);
+        let matrix = cgmath::ortho(
+            0.0,
+            self.size.width,
+            self.size.height,
+            0.0,
+            -1.0,
+            1.0,
+        );
         let rect = Rect::with_size(Point2::new(0.0, 0.0), self.size);
         resources.shaders().solid().fill_rect(&matrix, self.bg_color, rect);
 
@@ -103,46 +108,64 @@ impl CutsceneView {
         }
 
         if cutscene.is_paused() {
-            self.draw_message(resources,
-                              &matrix,
-                              MESSAGE_OUTER_MARGIN,
-                              CONTINUE_MESSAGE);
+            self.draw_message(
+                resources,
+                &matrix,
+                MESSAGE_OUTER_MARGIN,
+                CONTINUE_MESSAGE,
+            );
         }
         if self.skip_clicks >= CLICKS_TO_SHOW_SKIP {
-            self.draw_message(resources,
-                              &matrix,
-                              self.size.height - MESSAGE_OUTER_MARGIN,
-                              SKIP_MESSAGE);
+            self.draw_message(
+                resources,
+                &matrix,
+                self.size.height - MESSAGE_OUTER_MARGIN,
+                SKIP_MESSAGE,
+            );
         }
     }
 
-    fn draw_message(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                    y_center: f32, message: &str) {
+    fn draw_message(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        y_center: f32,
+        message: &str,
+    ) {
         let ui = resources.shaders().ui();
         let font = resources.fonts().roman();
-        let bubble_height = MESSAGE_FONT_SIZE.ceil() +
-            2.0 * MESSAGE_INNER_MARGIN_VERT;
-        let bubble_width = font.str_width(MESSAGE_FONT_SIZE, message).ceil() +
-            2.0 * MESSAGE_INNER_MARGIN_HORZ;
-        let bubble_rect = Rect::new(0.5 * (self.size.width - bubble_width),
-                                    y_center - 0.5 * bubble_height,
-                                    bubble_width,
-                                    bubble_height);
-        ui.draw_bubble(matrix,
-                       &bubble_rect,
-                       &Color4::CYAN1,
-                       &Color4::ORANGE1,
-                       &Color4::PURPLE0_TRANSLUCENT);
-        font.draw(matrix,
-                  MESSAGE_FONT_SIZE,
-                  Align::MidCenter,
-                  (0.5 * self.size.width, y_center),
-                  message);
+        let bubble_height =
+            MESSAGE_FONT_SIZE.ceil() + 2.0 * MESSAGE_INNER_MARGIN_VERT;
+        let bubble_width = font.str_width(MESSAGE_FONT_SIZE, message).ceil()
+            + 2.0 * MESSAGE_INNER_MARGIN_HORZ;
+        let bubble_rect = Rect::new(
+            0.5 * (self.size.width - bubble_width),
+            y_center - 0.5 * bubble_height,
+            bubble_width,
+            bubble_height,
+        );
+        ui.draw_bubble(
+            matrix,
+            &bubble_rect,
+            &Color4::CYAN1,
+            &Color4::ORANGE1,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
+        font.draw(
+            matrix,
+            MESSAGE_FONT_SIZE,
+            Align::MidCenter,
+            (0.5 * self.size.width, y_center),
+            message,
+        );
     }
 
-    pub fn on_event<'a>(&'a mut self, event: &Event, ui: &'a mut Ui<'a>,
-                        (cutscene, prefs): (&mut CutsceneScript, &'a Prefs))
-                        -> Option<CutsceneAction> {
+    pub fn on_event<'a>(
+        &'a mut self,
+        event: &Event,
+        ui: &'a mut Ui<'a>,
+        (cutscene, prefs): (&mut CutsceneScript, &'a Prefs),
+    ) -> Option<CutsceneAction> {
         match event {
             Event::ClockTick(tick) => {
                 for bubble in self.talk_bubbles.values_mut() {
@@ -158,8 +181,8 @@ impl CutsceneView {
                         self.skip_click_time = 0.0;
                     }
                 }
-                if cutscene.tick(tick.elapsed,
-                                 &mut TheaterImpl::new(self, ui, prefs))
+                if cutscene
+                    .tick(tick.elapsed, &mut TheaterImpl::new(self, ui, prefs))
                 {
                     return Some(CutsceneAction::Finished);
                 }
@@ -173,9 +196,8 @@ impl CutsceneView {
             Event::MouseDown(mouse) => {
                 if mouse.left {
                     self.unpause(ui, cutscene);
-                } else if mouse.right &&
-                           cfg!(any(target_os = "android",
-                                    target_os = "ios"))
+                } else if mouse.right
+                    && cfg!(any(target_os = "android", target_os = "ios"))
                 {
                     self.maybe_skip(ui, prefs, cutscene);
                 }
@@ -185,8 +207,12 @@ impl CutsceneView {
         return None;
     }
 
-    fn maybe_skip<'a>(&'a mut self, ui: &'a mut Ui<'a>, prefs: &'a Prefs,
-                      cutscene: &mut CutsceneScript) {
+    fn maybe_skip<'a>(
+        &'a mut self,
+        ui: &'a mut Ui<'a>,
+        prefs: &'a Prefs,
+        cutscene: &mut CutsceneScript,
+    ) {
         if self.skip_clicks >= CLICKS_TO_SHOW_SKIP {
             self.skip_clicks = 0;
             self.skip_click_time = 0.0;
@@ -231,34 +257,35 @@ struct TalkBubble {
 }
 
 impl TalkBubble {
-    fn new(window_size: RectSize<f32>, prefs: &Prefs, portrait: Portrait,
-           (x_pos, y_pos): (i32, i32), format: &str)
-           -> TalkBubble {
-        let paragraph = Paragraph::compile(TALK_FONT_SIZE,
-                                           TALK_LINE_HEIGHT,
-                                           TALK_MAX_PARAGRAPH_WIDTH,
-                                           prefs,
-                                           format);
+    fn new(
+        window_size: RectSize<f32>,
+        prefs: &Prefs,
+        portrait: Portrait,
+        (x_pos, y_pos): (i32, i32),
+        format: &str,
+    ) -> TalkBubble {
+        let paragraph = Paragraph::compile(
+            TALK_FONT_SIZE,
+            TALK_LINE_HEIGHT,
+            TALK_MAX_PARAGRAPH_WIDTH,
+            prefs,
+            format,
+        );
         let horz = 0.5 + (x_pos as f32) / 200.0;
         let vert = 0.5 + (y_pos as f32) / 200.0;
-        let width = TALK_PORTRAIT_WIDTH + 3 * TALK_INNER_MARGIN +
-            (paragraph.width().ceil() as i32);
+        let width = TALK_PORTRAIT_WIDTH
+            + 3 * TALK_INNER_MARGIN
+            + (paragraph.width().ceil() as i32);
         let height = TALK_PORTRAIT_HEIGHT
-            .max(paragraph.height().ceil() as i32) +
-            2 * TALK_INNER_MARGIN;
-        let rect =
-            Rect::new((horz * (window_size.width - (width as f32)))
-                          .round() as i32,
-                      (vert * (window_size.height - (height as f32)))
-                          .round() as i32,
-                      width,
-                      height);
-        TalkBubble {
-            rect,
-            portrait,
-            paragraph,
-            millis: 0.0,
-        }
+            .max(paragraph.height().ceil() as i32)
+            + 2 * TALK_INNER_MARGIN;
+        let rect = Rect::new(
+            (horz * (window_size.width - (width as f32))).round() as i32,
+            (vert * (window_size.height - (height as f32))).round() as i32,
+            width,
+            height,
+        );
+        TalkBubble { rect, portrait, paragraph, millis: 0.0 }
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -268,16 +295,20 @@ impl TalkBubble {
         resources.shaders().solid().fill_rect(matrix, color, rect);
 
         // Draw portrait:
-        let portrait_left_top = Point2::new(self.rect.x + TALK_INNER_MARGIN,
-                                            self.rect.y + TALK_INNER_MARGIN);
-        resources.shaders().portrait().draw(matrix,
-                                            self.portrait as u32,
-                                            portrait_left_top.as_f32(),
-                                            resources.textures().portraits());
+        let portrait_left_top = Point2::new(
+            self.rect.x + TALK_INNER_MARGIN,
+            self.rect.y + TALK_INNER_MARGIN,
+        );
+        resources.shaders().portrait().draw(
+            matrix,
+            self.portrait as u32,
+            portrait_left_top.as_f32(),
+            resources.textures().portraits(),
+        );
 
         // Draw paragraph:
-        let left = (self.rect.x + TALK_PORTRAIT_WIDTH +
-                        2 * TALK_INNER_MARGIN) as f32;
+        let left =
+            (self.rect.x + TALK_PORTRAIT_WIDTH + 2 * TALK_INNER_MARGIN) as f32;
         let top = (self.rect.y + TALK_INNER_MARGIN) as f32;
         let millis = self.millis as usize;
         self.paragraph.draw_partial(resources, matrix, (left, top), millis);
@@ -316,15 +347,22 @@ struct TheaterImpl<'a> {
 }
 
 impl<'a> TheaterImpl<'a> {
-    fn new(view: &'a mut CutsceneView, ui: &'a mut Ui<'a>, prefs: &'a Prefs)
-           -> TheaterImpl<'a> {
+    fn new(
+        view: &'a mut CutsceneView,
+        ui: &'a mut Ui<'a>,
+        prefs: &'a Prefs,
+    ) -> TheaterImpl<'a> {
         TheaterImpl { view, ui, prefs }
     }
 }
 
 impl<'a> Theater for TheaterImpl<'a> {
-    fn add_talk(&mut self, portrait: Portrait, pos: (i32, i32), format: &str)
-                -> i32 {
+    fn add_talk(
+        &mut self,
+        portrait: Portrait,
+        pos: (i32, i32),
+        format: &str,
+    ) -> i32 {
         let tag = self.view.next_talk_bubble_tag;
         self.view.next_talk_bubble_tag += 1;
         let bubble =

@@ -19,12 +19,12 @@
 
 use super::chip::ChipType;
 use super::wire::WireShape;
+use crate::tachy::geom::{Coords, CoordsRect, Direction, Orientation};
 use serde::de::Error;
-use std::collections::{BTreeMap, HashMap, hash_map};
+use std::collections::{hash_map, BTreeMap, HashMap};
 use std::fs;
 use std::i32;
 use std::path::Path;
-use tachy::geom::{Coords, CoordsRect, Direction, Orientation};
 use toml;
 
 //===========================================================================//
@@ -46,12 +46,9 @@ impl CircuitData {
     }
 
     pub fn load(path: &Path) -> Result<CircuitData, String> {
-        let bytes = fs::read(path)
-            .map_err(|err| {
-                         format!("Could not read circuit file from {:?}: {}",
-                                 path,
-                                 err)
-                     })?;
+        let bytes = fs::read(path).map_err(|err| {
+            format!("Could not read circuit file from {:?}: {}", path, err)
+        })?;
         toml::from_slice(&bytes)
             .map_err(|err| format!("Could not deserialize circuit: {}", err))
     }
@@ -63,17 +60,15 @@ impl CircuitData {
 
     pub fn save(&self, path: &Path) -> Result<(), String> {
         let bytes = self.serialize_toml()?;
-        fs::write(path, bytes)
-            .map_err(|err| {
-                         format!("Could not write circuit file to {:?}: {}",
-                                 path,
-                                 err)
-                     })?;
+        fs::write(path, bytes).map_err(|err| {
+            format!("Could not write circuit file to {:?}: {}", path, err)
+        })?;
         Ok(())
     }
 
-    pub fn deserialize_from_string(string: &str)
-                                   -> Result<CircuitData, String> {
+    pub fn deserialize_from_string(
+        string: &str,
+    ) -> Result<CircuitData, String> {
         toml::from_str(string)
             .map_err(|err| format!("Could not deserialize circuit: {}", err))
     }
@@ -89,8 +84,12 @@ impl CircuitData {
 pub struct CircuitChipData(HashMap<Coords, (ChipType, Orientation)>);
 
 impl CircuitChipData {
-    pub fn insert(&mut self, coords: Coords, ctype: ChipType,
-                  orient: Orientation) {
+    pub fn insert(
+        &mut self,
+        coords: Coords,
+        ctype: ChipType,
+        orient: Orientation,
+    ) {
         self.0.insert(coords, (ctype, orient));
     }
 
@@ -107,38 +106,27 @@ impl<'d> serde::Deserialize<'d> for CircuitChipData {
         let map = BTreeMap::<&str, &str>::deserialize(deserializer)?;
         let mut chips = HashMap::with_capacity(map.len());
         for (key, chip_str) in map.into_iter() {
-            let coords = key_string_coords(key)
-                .ok_or_else(|| {
-                    D::Error::custom(format!("Invalid coords key: {:?}", key))
-                })?;
+            let coords = key_string_coords(key).ok_or_else(|| {
+                D::Error::custom(format!("Invalid coords key: {:?}", key))
+            })?;
             let mut items = chip_str.splitn(2, '-');
-            let orient_str = items
-                .next()
-                .ok_or_else(|| {
-                    D::Error::custom(format!("Invalid chip spec: {:?}",
-                                             chip_str))
-                })?;
-            let orient = orient_str
-                .parse::<Orientation>()
-                .map_err(|_| {
-                    D::Error::custom(format!("Invalid chip spec: {:?}",
-                                             chip_str))
-                })?;
-            let ctype_str = items
-                .next()
-                .ok_or_else(|| {
-                    D::Error::custom(format!("Invalid chip spec: {:?}",
-                                             chip_str))
-                })?;
-            let ctype = ctype_str
-                .parse::<ChipType>()
-                .map_err(|_| {
-                    D::Error::custom(format!("Invalid chip spec: {:?}",
-                                             chip_str))
-                })?;
+            let orient_str = items.next().ok_or_else(|| {
+                D::Error::custom(format!("Invalid chip spec: {:?}", chip_str))
+            })?;
+            let orient = orient_str.parse::<Orientation>().map_err(|_| {
+                D::Error::custom(format!("Invalid chip spec: {:?}", chip_str))
+            })?;
+            let ctype_str = items.next().ok_or_else(|| {
+                D::Error::custom(format!("Invalid chip spec: {:?}", chip_str))
+            })?;
+            let ctype = ctype_str.parse::<ChipType>().map_err(|_| {
+                D::Error::custom(format!("Invalid chip spec: {:?}", chip_str))
+            })?;
             if items.next().is_some() {
-                return Err(D::Error::custom(format!("Invalid chip spec: {:?}",
-                                                    chip_str)));
+                return Err(D::Error::custom(format!(
+                    "Invalid chip spec: {:?}",
+                    chip_str
+                )));
             }
             chips.insert(coords, (ctype, orient));
         }
@@ -154,9 +142,8 @@ impl serde::Serialize for CircuitChipData {
         self.0
             .iter()
             .map(|(&coords, &(ctype, orient))| {
-                     (coords_key_string(coords),
-                      format!("{}-{:?}", orient, ctype))
-                 })
+                (coords_key_string(coords), format!("{}-{:?}", orient, ctype))
+            })
             .collect::<BTreeMap<String, String>>()
             .serialize(serializer)
     }
@@ -175,7 +162,9 @@ impl<'a> Iterator for CircuitChipDataIter<'a> {
             .map(|(&coords, &(ctype, orient))| (coords, ctype, orient))
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 //===========================================================================//
@@ -183,8 +172,12 @@ impl<'a> Iterator for CircuitChipDataIter<'a> {
 pub struct CircuitWireData(HashMap<(Coords, Direction), WireShape>);
 
 impl CircuitWireData {
-    pub fn insert(&mut self, coords: Coords, dir: Direction,
-                  shape: WireShape) {
+    pub fn insert(
+        &mut self,
+        coords: Coords,
+        dir: Direction,
+        shape: WireShape,
+    ) {
         self.0.insert((coords, dir), shape);
     }
 
@@ -201,11 +194,9 @@ impl<'d> serde::Deserialize<'d> for CircuitWireData {
         let map = BTreeMap::<&str, WireShape>::deserialize(deserializer)?;
         let mut wires = HashMap::with_capacity(map.len());
         for (key, shape) in map.into_iter() {
-            let location = key_string_location(key)
-                .ok_or_else(|| {
-                    D::Error::custom(format!("Invalid location key: {:?}",
-                                             key))
-                })?;
+            let location = key_string_location(key).ok_or_else(|| {
+                D::Error::custom(format!("Invalid location key: {:?}", key))
+            })?;
             wires.insert(location, shape);
         }
         Ok(CircuitWireData(wires))
@@ -220,8 +211,8 @@ impl serde::Serialize for CircuitWireData {
         self.0
             .iter()
             .map(|(&(coords, dir), &shape)| {
-                     (location_key_string(coords, dir), shape)
-                 })
+                (location_key_string(coords, dir), shape)
+            })
             .collect::<BTreeMap<String, WireShape>>()
             .serialize(serializer)
     }
@@ -238,7 +229,9 @@ impl<'a> Iterator for CircuitWireDataIter<'a> {
         self.inner.next().map(|(&(coords, dir), &shape)| (coords, dir, shape))
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 //===========================================================================//
@@ -320,30 +313,39 @@ fn key_string_location(key: &str) -> Option<(Coords, Direction)> {
 #[cfg(test)]
 mod tests {
     use super::{ChipType, CircuitData, WireShape};
-    use tachy::geom::{Coords, Direction, Orientation, Rect};
+    use crate::tachy::geom::{Coords, Direction, Orientation, Rect};
     use toml;
 
     #[test]
     fn serialize_circuit_data() {
         let mut data = CircuitData::new(-2, -1, 8, 5);
-        data.chips.insert(Coords::new(0, 2),
-                          ChipType::Break,
-                          Orientation::default().flip_vert());
-        data.chips.insert(Coords::new(-1, 2),
-                          ChipType::Button,
-                          Orientation::default());
-        data.wires
-            .insert(Coords::new(-1, 2), Direction::East, WireShape::Stub);
+        data.chips.insert(
+            Coords::new(0, 2),
+            ChipType::Break,
+            Orientation::default().flip_vert(),
+        );
+        data.chips.insert(
+            Coords::new(-1, 2),
+            ChipType::Button,
+            Orientation::default(),
+        );
+        data.wires.insert(
+            Coords::new(-1, 2),
+            Direction::East,
+            WireShape::Stub,
+        );
         data.wires.insert(Coords::new(0, 2), Direction::West, WireShape::Stub);
         let bytes = data.serialize_toml().unwrap();
-        assert_eq!(String::from_utf8(bytes).unwrap().as_str(),
-                   "bounds = [-2, -1, 8, 5]\n\n\
-                    [chips]\n\
-                    m1p2 = \"f0-Button\"\n\
-                    p0p2 = \"t0-Break\"\n\n\
-                    [wires]\n\
-                    m1p2e = \"Stub\"\n\
-                    p0p2w = \"Stub\"\n");
+        assert_eq!(
+            String::from_utf8(bytes).unwrap().as_str(),
+            "bounds = [-2, -1, 8, 5]\n\n\
+             [chips]\n\
+             m1p2 = \"f0-Button\"\n\
+             p0p2 = \"t0-Break\"\n\n\
+             [wires]\n\
+             m1p2e = \"Stub\"\n\
+             p0p2w = \"Stub\"\n"
+        );
     }
 
     #[test]
@@ -360,20 +362,26 @@ mod tests {
         assert_eq!(
             data.chips.0,
             vec![
-                (Coords::new(-1, 2),
-                 (ChipType::Button, Orientation::default())),
-                (Coords::new(0, 2),
-                 (ChipType::Break, Orientation::default().flip_vert())),
-            ].into_iter()
-                .collect()
+                (
+                    Coords::new(-1, 2),
+                    (ChipType::Button, Orientation::default())
+                ),
+                (
+                    Coords::new(0, 2),
+                    (ChipType::Break, Orientation::default().flip_vert())
+                ),
+            ]
+            .into_iter()
+            .collect()
         );
         assert_eq!(
             data.wires.0,
             vec![
                 ((Coords::new(-1, 2), Direction::East), WireShape::Stub),
                 ((Coords::new(0, 2), Direction::West), WireShape::Stub),
-            ].into_iter()
-                .collect()
+            ]
+            .into_iter()
+            .collect()
         );
     }
 }

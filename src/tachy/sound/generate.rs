@@ -41,7 +41,9 @@ pub enum WaveKind {
 }
 
 impl Default for WaveKind {
-    fn default() -> WaveKind { WaveKind::Sine }
+    fn default() -> WaveKind {
+        WaveKind::Sine
+    }
 }
 
 //===========================================================================//
@@ -75,9 +77,13 @@ pub struct SoundSpec {
 }
 
 impl SoundSpec {
-    pub fn new() -> SoundSpec { SoundSpec::default() }
+    pub fn new() -> SoundSpec {
+        SoundSpec::default()
+    }
 
-    pub fn generate(&self) -> Vec<f32> { Synth::generate(self) }
+    pub fn generate(&self) -> Vec<f32> {
+        Synth::generate(self)
+    }
 }
 
 //===========================================================================//
@@ -92,12 +98,7 @@ struct Rng {
 
 impl Rng {
     fn new() -> Rng {
-        Rng {
-            x: 123456789,
-            y: 362436069,
-            z: 521288629,
-            w: 88675123,
-        }
+        Rng { x: 123456789, y: 362436069, z: 521288629, w: 88675123 }
     }
 
     /// Returns a random f32 from -1 to 1.
@@ -112,7 +113,9 @@ impl Rng {
 }
 
 impl Default for Rng {
-    fn default() -> Rng { Rng::new() }
+    fn default() -> Rng {
+        Rng::new()
+    }
 }
 
 /*===========================================================================*/
@@ -219,8 +222,8 @@ impl Synth {
             self.arp_mod = 1.0 + (spec.arp_mod as f64).powi(2) * 10.0;
         }
         self.arp_time = 0;
-        self.arp_limit = ((1.0 - spec.arp_speed).powi(2) * 20000.0 + 32.0) as
-            i32;
+        self.arp_limit =
+            ((1.0 - spec.arp_speed).powi(2) * 20000.0 + 32.0) as i32;
         if spec.arp_speed == 1.0 {
             self.arp_limit = 0;
         }
@@ -230,8 +233,8 @@ impl Synth {
             self.fltdp = 0.0;
             self.fltw = (1.0 - spec.lpf_cutoff).powi(3) * 0.1;
             self.fltw_d = 1.0 + spec.lpf_ramp * 0.0001;
-            self.fltdmp = 5.0 / (1.0 + spec.lpf_resonance.powi(2) * 20.0) *
-                (0.01 + self.fltw);
+            self.fltdmp = 5.0 / (1.0 + spec.lpf_resonance.powi(2) * 20.0)
+                * (0.01 + self.fltw);
             if self.fltdmp > 0.8 {
                 self.fltdmp = 0.8;
             }
@@ -270,8 +273,8 @@ impl Synth {
             self.refill_noise_buffer();
             // Reset repeat:
             self.rep_time = 0;
-            self.rep_limit = ((1.0 - spec.repeat_speed).powi(2) * 20000.0 +
-                                  32.0) as i32;
+            self.rep_limit =
+                ((1.0 - spec.repeat_speed).powi(2) * 20000.0 + 32.0) as i32;
             if spec.repeat_speed == 0.0 {
                 self.rep_limit = 0;
             }
@@ -308,8 +311,8 @@ impl Synth {
             let mut rfperiod: f32 = synth.fperiod as f32;
             if synth.vib_amp > 0.0 {
                 synth.vib_phase += synth.vib_speed;
-                rfperiod = (synth.fperiod as f32) *
-                    (1.0 + synth.vib_phase.sin() * synth.vib_amp);
+                rfperiod = (synth.fperiod as f32)
+                    * (1.0 + synth.vib_phase.sin() * synth.vib_amp);
             }
             synth.period = rfperiod as i32;
             if synth.period < 8 {
@@ -333,23 +336,23 @@ impl Synth {
             }
             if synth.env_stage == 0 {
                 debug_assert!(synth.env_length[0] > 0);
-                synth.env_vol = (synth.env_time as f32) /
-                    (synth.env_length[0] as f32);
+                synth.env_vol =
+                    (synth.env_time as f32) / (synth.env_length[0] as f32);
             }
             if synth.env_stage == 1 {
                 synth.env_vol = 1.0;
                 if synth.env_length[1] > 0 {
-                    synth.env_vol += (1.0 -
-                                          (synth.env_time as f32) /
-                                              (synth.env_length[1] as f32)) *
-                        2.0 *
-                        spec.env_punch;
+                    synth.env_vol += (1.0
+                        - (synth.env_time as f32)
+                            / (synth.env_length[1] as f32))
+                        * 2.0
+                        * spec.env_punch;
                 }
             }
             if synth.env_stage == 2 {
                 synth.env_vol = if synth.env_length[2] > 0 {
-                    1.0 -
-                        (synth.env_time as f32) / (synth.env_length[2] as f32)
+                    1.0 - (synth.env_time as f32)
+                        / (synth.env_length[2] as f32)
                 } else {
                     1.0
                 };
@@ -385,13 +388,17 @@ impl Synth {
                 let fp: f32 = (synth.phase as f32) / (synth.period as f32);
                 let mut sample: f32 = match spec.wave_kind {
                     WaveKind::Noise => {
-                        synth.noise_buffer[(synth.phase * 32 / synth.period) as
-                                               usize]
+                        synth.noise_buffer
+                            [(synth.phase * 32 / synth.period) as usize]
                     }
                     WaveKind::Sawtooth => 1.0 - fp * 2.0,
                     WaveKind::Sine => (fp * TWO_PI).sin(),
                     WaveKind::Square => {
-                        if fp < synth.square_duty { 0.5 } else { -0.5 }
+                        if fp < synth.square_duty {
+                            0.5
+                        } else {
+                            -0.5
+                        }
                     }
                     WaveKind::Triangle => 4.0 * (fp - 0.5).abs() - 1.0,
                     WaveKind::Wobble => {

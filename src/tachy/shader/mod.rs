@@ -75,27 +75,49 @@ impl Shaders {
         Ok(shaders)
     }
 
-    pub fn board(&self) -> &BoardShader { &self.board }
+    pub fn board(&self) -> &BoardShader {
+        &self.board
+    }
 
-    pub fn chip(&self) -> &ChipShader { &self.chip }
+    pub fn chip(&self) -> &ChipShader {
+        &self.chip
+    }
 
-    pub fn frame(&self) -> &FrameBufferShader { &self.frame }
+    pub fn frame(&self) -> &FrameBufferShader {
+        &self.frame
+    }
 
-    pub fn heightmap(&self) -> &HeightmapShader { &self.heightmap }
+    pub fn heightmap(&self) -> &HeightmapShader {
+        &self.heightmap
+    }
 
-    pub fn icon(&self) -> &IconShader { &self.icon }
+    pub fn icon(&self) -> &IconShader {
+        &self.icon
+    }
 
-    pub fn port(&self) -> &PortShader { &self.port }
+    pub fn port(&self) -> &PortShader {
+        &self.port
+    }
 
-    pub fn portrait(&self) -> &PortraitShader { &self.portrait }
+    pub fn portrait(&self) -> &PortraitShader {
+        &self.portrait
+    }
 
-    pub fn scene(&self) -> &SceneShader { &self.scene }
+    pub fn scene(&self) -> &SceneShader {
+        &self.scene
+    }
 
-    pub fn solid(&self) -> &SolidShader { &self.solid }
+    pub fn solid(&self) -> &SolidShader {
+        &self.solid
+    }
 
-    pub fn ui(&self) -> &UiShader { &self.ui }
+    pub fn ui(&self) -> &UiShader {
+        &self.ui
+    }
 
-    pub fn wire(&self) -> &WireShader { &self.wire }
+    pub fn wire(&self) -> &WireShader {
+        &self.wire
+    }
 }
 
 //===========================================================================//

@@ -25,16 +25,17 @@ mod logic;
 mod special;
 mod value;
 
-use self::data::{AbstractConstraint, ChipData, localize};
+use self::data::{localize, AbstractConstraint, ChipData};
 use super::eval::{ChipEval, CircuitInteraction};
-use super::port::{PortColor, PortConstraint, PortDependency, PortFlow,
-                  PortSpec};
+use super::port::{
+    PortColor, PortConstraint, PortDependency, PortFlow, PortSpec,
+};
 use super::size::WireSize;
+use crate::tachy::geom::{Coords, Orientation};
+use crate::tachy::save::{ChipType, Puzzle};
 use cgmath::Bounded;
 use std::cell::RefCell;
 use std::rc::Rc;
-use tachy::geom::{Coords, Orientation};
-use tachy::save::{ChipType, Puzzle};
 
 //===========================================================================//
 
@@ -55,11 +56,17 @@ pub trait ChipExt {
 
     fn ports(&self, coords: Coords, orient: Orientation) -> Vec<PortSpec>;
 
-    fn constraints(&self, coords: Coords, orient: Orientation)
-                   -> Vec<PortConstraint>;
+    fn constraints(
+        &self,
+        coords: Coords,
+        orient: Orientation,
+    ) -> Vec<PortConstraint>;
 
-    fn dependencies(&self, coords: Coords, orient: Orientation)
-                    -> Vec<PortDependency>;
+    fn dependencies(
+        &self,
+        coords: Coords,
+        orient: Orientation,
+    ) -> Vec<PortDependency>;
 }
 
 impl ChipExt for ChipType {
@@ -72,10 +79,10 @@ impl ChipExt for ChipType {
 
     fn availibility(&self) -> ChipAvailability {
         match *self {
-            ChipType::Const(_) |
-            ChipType::Display |
-            ChipType::Not |
-            ChipType::And => ChipAvailability::Always,
+            ChipType::Const(_)
+            | ChipType::Display
+            | ChipType::Not
+            | ChipType::And => ChipAvailability::Always,
             ChipType::Or => ChipAvailability::UnlockedBy(Puzzle::TutorialOr),
             ChipType::Xor => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateXor)
@@ -105,16 +112,23 @@ impl ChipExt for ChipType {
             ChipType::Filter => {
                 ChipAvailability::OnlyIn(&[Puzzle::TutorialDemux])
             }
-            ChipType::Break | ChipType::Clock | ChipType::Delay |
-            ChipType::Demux | ChipType::Discard | ChipType::Join |
-            ChipType::Latest | ChipType::Ram | ChipType::Sample => {
+            ChipType::Break
+            | ChipType::Clock
+            | ChipType::Delay
+            | ChipType::Demux
+            | ChipType::Discard
+            | ChipType::Join
+            | ChipType::Latest
+            | ChipType::Ram
+            | ChipType::Sample => {
                 ChipAvailability::UnlockedBy(Puzzle::TutorialDemux)
             }
             ChipType::Inc => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateInc)
             }
-            ChipType::Button |
-            ChipType::Toggle(_) => ChipAvailability::InteractiveOnly,
+            ChipType::Button | ChipType::Toggle(_) => {
+                ChipAvailability::InteractiveOnly
+            }
         }
     }
 
@@ -136,8 +150,8 @@ impl ChipExt for ChipType {
                             max_size = max_size.min(s);
                         }
                         AbstractConstraint::Double(_, i) if i == index => {
-                            max_size = max_size
-                                .min(WireSize::max_value().half());
+                            max_size =
+                                max_size.min(WireSize::max_value().half());
                         }
                         _ => {}
                     }
@@ -145,8 +159,8 @@ impl ChipExt for ChipType {
                 PortSpec {
                     flow,
                     color,
-                    coords: coords +
-                        orient.transform_in_size(delta.into(), size),
+                    coords: coords
+                        + orient.transform_in_size(delta.into(), size),
                     dir: orient * dir,
                     max_size,
                 }
@@ -154,20 +168,26 @@ impl ChipExt for ChipType {
             .collect()
     }
 
-    fn constraints(&self, coords: Coords, orient: Orientation)
-                   -> Vec<PortConstraint> {
+    fn constraints(
+        &self,
+        coords: Coords,
+        orient: Orientation,
+    ) -> Vec<PortConstraint> {
         let size = self.size();
         let data = chip_data(*self);
         data.constraints
             .iter()
             .map(|constraint| {
-                     constraint.reify(coords, orient, size, data.ports)
-                 })
+                constraint.reify(coords, orient, size, data.ports)
+            })
             .collect()
     }
 
-    fn dependencies(&self, coords: Coords, orient: Orientation)
-                    -> Vec<PortDependency> {
+    fn dependencies(
+        &self,
+        coords: Coords,
+        orient: Orientation,
+    ) -> Vec<PortDependency> {
         let size = self.size();
         let data = chip_data(*self);
         data.dependencies
@@ -224,10 +244,12 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
 
 //===========================================================================//
 
-pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
-                             slots: &[(usize, WireSize)],
-                             interact: &Rc<RefCell<CircuitInteraction>>)
-                             -> Vec<(usize, Box<ChipEval>)> {
+pub(super) fn new_chip_evals(
+    ctype: ChipType,
+    coords: Coords,
+    slots: &[(usize, WireSize)],
+    interact: &Rc<RefCell<CircuitInteraction>>,
+) -> Vec<(usize, Box<dyn ChipEval>)> {
     debug_assert_eq!(slots.len(), chip_data(ctype).ports.len());
     match ctype {
         ChipType::Add => self::arith::AddChipEval::new_evals(slots),
@@ -236,11 +258,11 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
         ChipType::Break => {
             self::special::BreakChipEval::new_evals(slots, coords)
         }
-        ChipType::Button => {
-            self::special::ButtonChipEval::new_evals(slots,
-                                                     coords,
-                                                     interact.clone())
-        }
+        ChipType::Button => self::special::ButtonChipEval::new_evals(
+            slots,
+            coords,
+            interact.clone(),
+        ),
         ChipType::Clock => self::event::ClockChipEval::new_evals(slots),
         ChipType::Cmp => self::compare::CmpChipEval::new_evals(slots),
         ChipType::CmpEq => self::compare::CmpEqChipEval::new_evals(slots),
@@ -266,12 +288,12 @@ pub(super) fn new_chip_evals(ctype: ChipType, coords: Coords,
         ChipType::Ram => self::special::RamChipEval::new_evals(slots),
         ChipType::Sample => self::event::SampleChipEval::new_evals(slots),
         ChipType::Sub => self::arith::SubChipEval::new_evals(slots),
-        ChipType::Toggle(value) => {
-            self::special::ToggleChipEval::new_evals(value,
-                                                     slots,
-                                                     coords,
-                                                     interact.clone())
-        }
+        ChipType::Toggle(value) => self::special::ToggleChipEval::new_evals(
+            value,
+            slots,
+            coords,
+            interact.clone(),
+        ),
         ChipType::Unpack => self::value::UnpackChipEval::new_evals(slots),
         ChipType::Xor => self::logic::XorChipEval::new_evals(slots),
     }

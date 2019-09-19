@@ -27,7 +27,9 @@ pub struct Color3 {
 }
 
 impl Color3 {
-    pub const fn new(r: f32, g: f32, b: f32) -> Color3 { Color3 { r, g, b } }
+    pub const fn new(r: f32, g: f32, b: f32) -> Color3 {
+        Color3 { r, g, b }
+    }
 
     pub const fn with_alpha(&self, alpha: f32) -> Color4 {
         Color4::new(self.r, self.g, self.b, alpha)
@@ -123,8 +125,10 @@ mod tests {
 
     #[test]
     fn color3_with_alpha() {
-        assert_eq!(Color3::new(0.1, 0.2, 0.3).with_alpha(0.4),
-                   Color4::new(0.1, 0.2, 0.3, 0.4));
+        assert_eq!(
+            Color3::new(0.1, 0.2, 0.3).with_alpha(0.4),
+            Color4::new(0.1, 0.2, 0.3, 0.4)
+        );
     }
 
     #[test]
@@ -132,10 +136,14 @@ mod tests {
         let color1 = Color4::new(0.25, 0.75, 1.0, 0.5);
         let color2 = Color4::new(0.75, 0.0, 0.25, 1.0);
         assert_eq!(color1.mix(color2, 0.0), color1);
-        assert_eq!(color1.mix(color2, 0.25),
-                   Color4::new(0.375, 0.5625, 0.8125, 0.625));
-        assert_eq!(color1.mix(color2, 0.5),
-                   Color4::new(0.5, 0.375, 0.625, 0.75));
+        assert_eq!(
+            color1.mix(color2, 0.25),
+            Color4::new(0.375, 0.5625, 0.8125, 0.625)
+        );
+        assert_eq!(
+            color1.mix(color2, 0.5),
+            Color4::new(0.5, 0.375, 0.625, 0.75)
+        );
         assert_eq!(color1.mix(color2, 1.0), color2);
     }
 }

@@ -18,13 +18,13 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::button::Scrollbar;
+use crate::tachy::font::Align;
+use crate::tachy::geom::{AsFloat, Color3, Color4, Rect};
+use crate::tachy::gl::Stencil;
+use crate::tachy::gui::{Event, Resources, Sound, Ui};
 use cgmath::Matrix4;
 use num_integer::div_mod_floor;
 use std::borrow::Borrow;
-use tachy::font::Align;
-use tachy::geom::{AsFloat, Color3, Color4, Rect};
-use tachy::gl::Stencil;
-use tachy::gui::{Event, Resources, Sound, Ui};
 
 //===========================================================================//
 
@@ -59,17 +59,22 @@ pub struct ListView<T> {
 }
 
 impl<T: Clone + Eq> ListView<T> {
-    pub fn new<Q>(rect: Rect<i32>, ui: &mut Ui,
-                  items: Vec<(T, String, bool, Option<ListIcon>)>, current: &Q)
-                  -> ListView<T>
+    pub fn new<Q>(
+        rect: Rect<i32>,
+        ui: &mut Ui,
+        items: Vec<(T, String, bool, Option<ListIcon>)>,
+        current: &Q,
+    ) -> ListView<T>
     where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
-        let scrollbar_rect = Rect::new(rect.right() - SCROLLBAR_WIDTH,
-                                       rect.y,
-                                       SCROLLBAR_WIDTH,
-                                       rect.height);
+        let scrollbar_rect = Rect::new(
+            rect.right() - SCROLLBAR_WIDTH,
+            rect.y,
+            SCROLLBAR_WIDTH,
+            rect.height,
+        );
         let mut list = ListView {
             rect,
             items: Vec::new(),
@@ -79,9 +84,12 @@ impl<T: Clone + Eq> ListView<T> {
         list
     }
 
-    pub fn draw<Q>(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                   current: &Q)
-    where
+    pub fn draw<Q>(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        current: &Q,
+    ) where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
@@ -103,9 +111,12 @@ impl<T: Clone + Eq> ListView<T> {
         solid.tint_rect(matrix, Color4::PURPLE0_TRANSLUCENT, rect);
     }
 
-    fn draw_items<Q>(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                     current: &Q)
-    where
+    fn draw_items<Q>(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        current: &Q,
+    ) where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
@@ -115,9 +126,9 @@ impl<T: Clone + Eq> ListView<T> {
             self.items.iter().enumerate()
         {
             // Item frame:
-            let top = self.rect.y +
-                (index as i32) * (ITEM_HEIGHT + ITEM_SPACING) -
-                self.scrollbar.scroll_top();
+            let top = self.rect.y
+                + (index as i32) * (ITEM_HEIGHT + ITEM_SPACING)
+                - self.scrollbar.scroll_top();
             if top >= self.rect.bottom() || top + ITEM_HEIGHT <= self.rect.y {
                 continue;
             }
@@ -126,29 +137,30 @@ impl<T: Clone + Eq> ListView<T> {
             } else {
                 Color4::TRANSPARENT
             };
-            let rect = Rect::new(self.rect.x as f32,
-                                 top as f32,
-                                 item_width,
-                                 ITEM_HEIGHT as f32);
-            ui.draw_list_item(matrix,
-                              &rect,
-                              &Color4::CYAN2,
-                              &Color4::ORANGE2,
-                              &bg_color);
+            let rect = Rect::new(
+                self.rect.x as f32,
+                top as f32,
+                item_width,
+                ITEM_HEIGHT as f32,
+            );
+            ui.draw_list_item(
+                matrix,
+                &rect,
+                &Color4::CYAN2,
+                &Color4::ORANGE2,
+                &bg_color,
+            );
 
             // Icon:
             if let Some(icon) = opt_icon {
-                let icon_rect =
-                    Rect::new(rect.x + (ITEM_INNER_MARGIN as f32),
-                              rect.y +
-                                  0.5 * (ITEM_HEIGHT - ICON_HEIGHT) as f32,
-                              ICON_WIDTH as f32,
-                              ICON_HEIGHT as f32);
-                let color = if bold {
-                    &Color4::ORANGE3
-                } else {
-                    &Color4::ORANGE5
-                };
+                let icon_rect = Rect::new(
+                    rect.x + (ITEM_INNER_MARGIN as f32),
+                    rect.y + 0.5 * (ITEM_HEIGHT - ICON_HEIGHT) as f32,
+                    ICON_WIDTH as f32,
+                    ICON_HEIGHT as f32,
+                );
+                let color =
+                    if bold { &Color4::ORANGE3 } else { &Color4::ORANGE5 };
                 let texture = resources.textures().list_icons();
                 let shader = resources.shaders().icon();
                 shader.draw(matrix, icon_rect, icon as u32, color, texture);
@@ -160,21 +172,23 @@ impl<T: Clone + Eq> ListView<T> {
             } else {
                 0
             };
-            let text_left = (self.rect.x + ITEM_INNER_MARGIN +
-                text_offset) as f32;
+            let text_left =
+                (self.rect.x + ITEM_INNER_MARGIN + text_offset) as f32;
             let text_top = (top + ITEM_HEIGHT / 2) as f32;
             let (font, text_color) = if bold {
                 (resources.fonts().bold(), &Color4::ORANGE4)
             } else {
                 (resources.fonts().roman(), &Color4::WHITE)
             };
-            font.draw_style(matrix,
-                            FONT_SIZE,
-                            Align::MidLeft,
-                            (text_left, text_top),
-                            text_color,
-                            0.0,
-                            label.as_str());
+            font.draw_style(
+                matrix,
+                FONT_SIZE,
+                Align::MidLeft,
+                (text_left, text_top),
+                text_color,
+                0.0,
+                label.as_str(),
+            );
         }
     }
 
@@ -182,15 +196,21 @@ impl<T: Clone + Eq> ListView<T> {
         let mut rect = self.rect.as_f32();
         rect.width = self.item_width() as f32;
         let ui = resources.shaders().ui();
-        ui.draw_list_frame(matrix,
-                           &rect,
-                           &Color4::CYAN2,
-                           &Color4::ORANGE2,
-                           &Color4::PURPLE0);
+        ui.draw_list_frame(
+            matrix,
+            &rect,
+            &Color4::CYAN2,
+            &Color4::ORANGE2,
+            &Color4::PURPLE0,
+        );
     }
 
-    pub fn on_event<Q>(&mut self, event: &Event, ui: &mut Ui, current: &Q)
-                       -> Option<T>
+    pub fn on_event<Q>(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        current: &Q,
+    ) -> Option<T>
     where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
@@ -198,14 +218,16 @@ impl<T: Clone + Eq> ListView<T> {
         self.scrollbar.on_event(event, ui);
         match event {
             Event::MouseDown(mouse)
-                if mouse.left && self.rect.contains_point(mouse.pt) => {
+                if mouse.left && self.rect.contains_point(mouse.pt) =>
+            {
                 if mouse.pt.x - self.rect.x < self.item_width() {
-                    let (index, rel_y) =
-                        div_mod_floor(mouse.pt.y - self.rect.y +
-                                          self.scrollbar.scroll_top(),
-                                      ITEM_HEIGHT + ITEM_SPACING);
-                    if rel_y < ITEM_HEIGHT && index >= 0 &&
-                        (index as usize) < self.items.len()
+                    let (index, rel_y) = div_mod_floor(
+                        mouse.pt.y - self.rect.y + self.scrollbar.scroll_top(),
+                        ITEM_HEIGHT + ITEM_SPACING,
+                    );
+                    if rel_y < ITEM_HEIGHT
+                        && index >= 0
+                        && (index as usize) < self.items.len()
                     {
                         let value = &self.items[index as usize].0;
                         if value.borrow() != current {
@@ -223,10 +245,12 @@ impl<T: Clone + Eq> ListView<T> {
         return None;
     }
 
-    pub fn set_items<Q>(&mut self, ui: &mut Ui,
-                        items: Vec<(T, String, bool, Option<ListIcon>)>,
-                        current: &Q)
-    where
+    pub fn set_items<Q>(
+        &mut self,
+        ui: &mut Ui,
+        items: Vec<(T, String, bool, Option<ListIcon>)>,
+        current: &Q,
+    ) where
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
@@ -237,9 +261,9 @@ impl<T: Clone + Eq> ListView<T> {
             .iter()
             .position(|(value, _, _, _)| value.borrow() == current)
             .unwrap_or(0);
-        let mid_current = (current_index as i32) *
-            (ITEM_HEIGHT + ITEM_SPACING) +
-            ITEM_HEIGHT / 2;
+        let mid_current = (current_index as i32)
+            * (ITEM_HEIGHT + ITEM_SPACING)
+            + ITEM_HEIGHT / 2;
         self.scrollbar.scroll_to(mid_current, ui);
         self.items = items;
         ui.request_redraw();

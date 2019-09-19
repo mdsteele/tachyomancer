@@ -18,10 +18,10 @@
 // +--------------------------------------------------------------------------+
 
 use super::hotkey::{Hotkey, HotkeyCodes, Keycode};
+use crate::tachy::geom::RectSize;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use tachy::geom::RectSize;
 use toml;
 
 //===========================================================================//
@@ -73,11 +73,7 @@ impl Prefs {
             needs_save = true;
             PrefsData::default()
         };
-        let mut prefs = Prefs {
-            path: path.to_path_buf(),
-            data,
-            needs_save,
-        };
+        let mut prefs = Prefs { path: path.to_path_buf(), data, needs_save };
         prefs.save()?;
         Ok(prefs)
     }
@@ -87,9 +83,8 @@ impl Prefs {
             return Ok(());
         }
         debug_log!("Saving prefs to {:?}", self.path);
-        let data =
-            toml::to_vec(&self.data)
-                .map_err(|err| format!("Could not serialize prefs: {}", err))?;
+        let data = toml::to_vec(&self.data)
+            .map_err(|err| format!("Could not serialize prefs: {}", err))?;
         fs::write(&self.path, data)
             .map_err(|err| format!("Could not write prefs file: {}", err))?;
         self.needs_save = false;
@@ -114,7 +109,9 @@ impl Prefs {
         self.needs_save = true;
     }
 
-    pub fn fullscreen(&self) -> bool { self.data.fullscreen.unwrap_or(true) }
+    pub fn fullscreen(&self) -> bool {
+        self.data.fullscreen.unwrap_or(true)
+    }
 
     pub fn set_fullscreen(&mut self, fullscreen: bool) {
         self.data.fullscreen = Some(fullscreen);
@@ -183,7 +180,9 @@ impl Prefs {
         self.needs_save = true;
     }
 
-    pub fn hotkeys_are_defaults(&self) -> bool { self.data.hotkeys.is_none() }
+    pub fn hotkeys_are_defaults(&self) -> bool {
+        self.data.hotkeys.is_none()
+    }
 
     pub fn set_hotkeys_to_defaults(&mut self) {
         if self.data.hotkeys.is_some() {

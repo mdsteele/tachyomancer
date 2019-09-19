@@ -30,16 +30,17 @@ mod progress;
 mod puzzle;
 mod wire;
 
-pub use self::chip::{CHIP_CATEGORIES, ChipSet, ChipType};
+pub use self::chip::{ChipSet, ChipType, CHIP_CATEGORIES};
 pub use self::circuit::CircuitData;
-pub use self::converse::{Chapter, Conversation, ConversationIter,
-                         ConversationProgress};
+pub use self::converse::{
+    Chapter, Conversation, ConversationIter, ConversationProgress,
+};
 pub use self::dir::{ProfileNamesIter, SaveDir};
 pub use self::hotkey::{Hotkey, HotkeyIter};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
 pub use self::profile::Profile;
-pub use self::progress::{CIRCUIT_NAME_MAX_CHARS, CircuitNamesIter};
+pub use self::progress::{CircuitNamesIter, CIRCUIT_NAME_MAX_CHARS};
 pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
 pub use self::wire::WireShape;
 

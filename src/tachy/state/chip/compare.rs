@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::data::{AbstractConstraint, ChipData};
 use super::super::eval::{ChipEval, CircuitState};
-use tachy::geom::Direction;
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::data::{AbstractConstraint, ChipData};
+use crate::tachy::geom::Direction;
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -44,8 +44,9 @@ pub struct CmpChipEval {
 }
 
 impl CmpChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), CMP_CHIP_DATA.ports.len());
         let chip_eval = CmpChipEval {
             input1: slots[0].0,
@@ -76,8 +77,9 @@ pub struct CmpEqChipEval {
 }
 
 impl CmpEqChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), CMPEQ_CHIP_DATA.ports.len());
         let chip_eval = CmpEqChipEval {
             input1: slots[0].0,
@@ -108,8 +110,9 @@ pub struct EqChipEval {
 }
 
 impl EqChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), EQ_CHIP_DATA.ports.len());
         let chip_eval = EqChipEval {
             input1: slots[0].0,

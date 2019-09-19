@@ -45,8 +45,8 @@ impl HeightmapModel {
         }
         let vbuffer = VertexBuffer::new(&vertices);
 
-        let mut indices = Vec::<u16>::with_capacity(6 * (dim as usize) *
-                                                        (dim as usize));
+        let mut indices =
+            Vec::<u16>::with_capacity(6 * (dim as usize) * (dim as usize));
         for row in 0..dim {
             for col in 0..dim {
                 let i1 = (dim + 1) * row + col;
@@ -62,11 +62,7 @@ impl HeightmapModel {
         varray.bind();
         vbuffer.attribf(0, 2, 0, 0);
 
-        HeightmapModel {
-            varray,
-            _vbuffer: vbuffer,
-            ibuffer,
-        }
+        HeightmapModel { varray, _vbuffer: vbuffer, ibuffer }
     }
 
     pub fn draw(&self) {

@@ -17,12 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::data::{AbstractConstraint, ChipData};
 use super::super::eval::{ChipEval, CircuitInteraction, CircuitState};
+use super::data::{AbstractConstraint, ChipData};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 use std::cell::RefCell;
 use std::rc::Rc;
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -42,14 +42,13 @@ pub struct BreakChipEval {
 }
 
 impl BreakChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)], coords: Coords)
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+        coords: Coords,
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), BREAK_CHIP_DATA.ports.len());
-        let chip_eval = BreakChipEval {
-            input: slots[0].0,
-            output: slots[1].0,
-            coords,
-        };
+        let chip_eval =
+            BreakChipEval { input: slots[0].0, output: slots[1].0, coords };
         vec![(1, Box::new(chip_eval))]
     }
 }
@@ -79,9 +78,11 @@ pub struct ButtonChipEval {
 }
 
 impl ButtonChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)], coords: Coords,
-                     interact: Rc<RefCell<CircuitInteraction>>)
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+        coords: Coords,
+        interact: Rc<RefCell<CircuitInteraction>>,
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), BUTTON_CHIP_DATA.ports.len());
         let chip_eval = ButtonChipEval {
             output: slots[0].0,
@@ -95,15 +96,15 @@ impl ButtonChipEval {
 
 impl ChipEval for ButtonChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        if let Some(count) = self.interact
-            .borrow_mut()
-            .buttons
-            .remove(&self.coords)
+        if let Some(count) =
+            self.interact.borrow_mut().buttons.remove(&self.coords)
         {
-            debug_log!("Button at ({}, {}) was pressed {} time(s)",
-                       self.coords.x,
-                       self.coords.y,
-                       count);
+            debug_log!(
+                "Button at ({}, {}) was pressed {} time(s)",
+                self.coords.x,
+                self.coords.y,
+                count
+            );
             self.press_count += count;
         }
         if self.press_count > 0 {
@@ -120,9 +121,7 @@ impl ChipEval for ButtonChipEval {
 //===========================================================================//
 
 pub const DISPLAY_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-    ],
+    ports: &[(PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West)],
     constraints: &[],
     dependencies: &[],
 };
@@ -160,8 +159,9 @@ pub struct RamChipEval {
 }
 
 impl RamChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), RAM_CHIP_DATA.ports.len());
         let addr_size = slots[0].1;
         let num_addrs = 1usize << addr_size.num_bits();
@@ -176,7 +176,7 @@ impl RamChipEval {
             input_b: slots[3].0,
             input_e: slots[4].0,
             output: slots[5].0,
-            storage: storage,
+            storage,
         };
         vec![(2, Box::new(chip_eval_1)), (5, Box::new(chip_eval_2))]
     }
@@ -196,9 +196,7 @@ impl ChipEval for RamChipEval {
 //===========================================================================//
 
 pub const TOGGLE_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
-    ],
+    ports: &[(PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East)],
     constraints: &[AbstractConstraint::Exact(0, WireSize::One)],
     dependencies: &[],
 };
@@ -211,32 +209,30 @@ pub struct ToggleChipEval {
 }
 
 impl ToggleChipEval {
-    pub fn new_evals(value: bool, slots: &[(usize, WireSize)],
-                     coords: Coords,
-                     interact: Rc<RefCell<CircuitInteraction>>)
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        value: bool,
+        slots: &[(usize, WireSize)],
+        coords: Coords,
+        interact: Rc<RefCell<CircuitInteraction>>,
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), TOGGLE_CHIP_DATA.ports.len());
-        let chip_eval = ToggleChipEval {
-            output: slots[0].0,
-            value,
-            coords,
-            interact,
-        };
+        let chip_eval =
+            ToggleChipEval { output: slots[0].0, value, coords, interact };
         vec![(0, Box::new(chip_eval))]
     }
 }
 
 impl ChipEval for ToggleChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        if let Some(count) = self.interact
-            .borrow_mut()
-            .buttons
-            .remove(&self.coords)
+        if let Some(count) =
+            self.interact.borrow_mut().buttons.remove(&self.coords)
         {
-            debug_log!("Toggle at ({}, {}) was pressed {} time(s)",
-                       self.coords.x,
-                       self.coords.y,
-                       count);
+            debug_log!(
+                "Toggle at ({}, {}) was pressed {} time(s)",
+                self.coords.x,
+                self.coords.y,
+                count
+            );
             if count % 2 != 0 {
                 self.value = !self.value;
             }

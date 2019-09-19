@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::coords::{Coords, CoordsDelta};
-use cgmath::{Deg, vec2};
+use cgmath::{vec2, Deg};
 use std::ops;
 use strum::IntoEnumIterator;
 
@@ -33,7 +33,9 @@ pub enum Direction {
 }
 
 impl Direction {
-    pub fn all() -> DirectionIter { Direction::iter() }
+    pub fn all() -> DirectionIter {
+        Direction::iter()
+    }
 
     pub fn delta(self) -> CoordsDelta {
         match self {
@@ -91,7 +93,9 @@ impl Direction {
 impl ops::Add<Direction> for Coords {
     type Output = Coords;
 
-    fn add(self, other: Direction) -> Coords { self + other.delta() }
+    fn add(self, other: Direction) -> Coords {
+        self + other.delta()
+    }
 }
 
 impl ops::Add<DirDelta> for Direction {
@@ -110,7 +114,9 @@ impl ops::Add<DirDelta> for Direction {
 impl ops::Sub<Direction> for Coords {
     type Output = Coords;
 
-    fn sub(self, other: Direction) -> Coords { self - other.delta() }
+    fn sub(self, other: Direction) -> Coords {
+        self - other.delta()
+    }
 }
 
 impl ops::Sub<Direction> for Direction {

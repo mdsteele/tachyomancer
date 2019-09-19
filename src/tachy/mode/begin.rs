@@ -18,10 +18,10 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::ModeChange;
-use tachy::gui::{Event, Window};
-use tachy::save::MenuSection;
-use tachy::state::{Cutscene, GameState};
-use tachy::view::{BeginAction, BeginView};
+use crate::tachy::gui::{Event, Window};
+use crate::tachy::save::MenuSection;
+use crate::tachy::state::{Cutscene, GameState};
+use crate::tachy::view::{BeginAction, BeginView};
 
 //===========================================================================//
 
@@ -46,10 +46,12 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                                 return ModeChange::Next;
                             }
                             Err(err) => {
-                                view.show_error(&mut window.ui(),
-                                                state,
-                                                "create profile",
-                                                &err);
+                                view.show_error(
+                                    &mut window.ui(),
+                                    state,
+                                    "create profile",
+                                    &err,
+                                );
                             }
                         }
                     }

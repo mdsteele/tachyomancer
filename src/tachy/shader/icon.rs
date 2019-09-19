@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Color4, MatrixExt, Rect};
+use crate::tachy::gl::{
+    Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture2D, VertexArray, VertexBuffer,
+};
 use cgmath::Matrix4;
-use tachy::geom::{Color4, MatrixExt, Rect};
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -64,14 +66,21 @@ impl IconShader {
         Ok(shader)
     }
 
-    pub fn draw(&self, matrix: &Matrix4<f32>, rect: Rect<f32>, index: u32,
-                color: &Color4, texture: &Texture2D) {
+    pub fn draw(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: Rect<f32>,
+        index: u32,
+        color: &Color4,
+        texture: &Texture2D,
+    ) {
         self.program.bind();
         self.color.set(color);
         self.icon_index.set(&index);
         self.icon_texture.set(texture);
-        let mvp = matrix * Matrix4::trans2(rect.x, rect.y) *
-            Matrix4::scale2(rect.width, rect.height);
+        let mvp = matrix
+            * Matrix4::trans2(rect.x, rect.y)
+            * Matrix4::scale2(rect.width, rect.height);
         self.mvp.set(&mvp);
         self.varray.bind();
         self.rect_vbuffer.attribi(0, 2, 0, 0);

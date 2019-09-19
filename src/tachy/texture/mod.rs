@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use tachy::gl::{Texture1D, Texture2D};
+use crate::tachy::gl::{Texture1D, Texture2D};
 
 //===========================================================================//
 
@@ -323,22 +323,24 @@ pub struct Textures {
 
 impl Textures {
     pub fn new() -> Result<Textures, String> {
-        let brushed_metal = Texture2D::from_jpeg("brushed_metal",
-                                                 BRUSHED_METAL_JPEG_DATA)?;
-        let chip_icons = Texture2D::from_png("texture/chip_icons",
-                                             CHIP_ICONS_PNG_DATA)?;
-        let list_icons = Texture2D::from_png("texture/list_icons",
-                                             LIST_ICONS_PNG_DATA)?;
-        let portraits = Texture2D::from_png("texture/portraits",
-                                            PORTRAITS_PNG_DATA)?;
-        let red_desert = Texture2D::from_jpeg("red_desert",
-                                              RED_DESERT_JPEG_DATA)?;
-        let red_planet = Texture2D::from_jpeg("red_planet",
-                                              RED_PLANET_JPEG_DATA)?;
-        let starfield = Texture2D::from_jpeg("starfield",
-                                             STARFIELD_JPEG_DATA)?;
-        let valley_heightmap = Texture2D::from_png("valley_heightmap",
-                                                   VALLEY_HEIGHTMAP_PNG_DATA)?;
+        let brushed_metal =
+            Texture2D::from_jpeg("brushed_metal", BRUSHED_METAL_JPEG_DATA)?;
+        let chip_icons =
+            Texture2D::from_png("texture/chip_icons", CHIP_ICONS_PNG_DATA)?;
+        let list_icons =
+            Texture2D::from_png("texture/list_icons", LIST_ICONS_PNG_DATA)?;
+        let portraits =
+            Texture2D::from_png("texture/portraits", PORTRAITS_PNG_DATA)?;
+        let red_desert =
+            Texture2D::from_jpeg("red_desert", RED_DESERT_JPEG_DATA)?;
+        let red_planet =
+            Texture2D::from_jpeg("red_planet", RED_PLANET_JPEG_DATA)?;
+        let starfield =
+            Texture2D::from_jpeg("starfield", STARFIELD_JPEG_DATA)?;
+        let valley_heightmap = Texture2D::from_png(
+            "valley_heightmap",
+            VALLEY_HEIGHTMAP_PNG_DATA,
+        )?;
         let white = Texture2D::new_rgba(1, 1, &[255, 255, 255, 255])?;
         let wire = Texture1D::new_rgba(WIRE_TEXTURE1D_DATA)?;
         let textures = Textures {
@@ -356,25 +358,45 @@ impl Textures {
         Ok(textures)
     }
 
-    pub fn brushed_metal(&self) -> &Texture2D { &self.brushed_metal }
+    pub fn brushed_metal(&self) -> &Texture2D {
+        &self.brushed_metal
+    }
 
-    pub fn chip_icons(&self) -> &Texture2D { &self.chip_icons }
+    pub fn chip_icons(&self) -> &Texture2D {
+        &self.chip_icons
+    }
 
-    pub fn list_icons(&self) -> &Texture2D { &self.list_icons }
+    pub fn list_icons(&self) -> &Texture2D {
+        &self.list_icons
+    }
 
-    pub fn portraits(&self) -> &Texture2D { &self.portraits }
+    pub fn portraits(&self) -> &Texture2D {
+        &self.portraits
+    }
 
-    pub fn red_desert(&self) -> &Texture2D { &self.red_desert }
+    pub fn red_desert(&self) -> &Texture2D {
+        &self.red_desert
+    }
 
-    pub fn red_planet(&self) -> &Texture2D { &self.red_planet }
+    pub fn red_planet(&self) -> &Texture2D {
+        &self.red_planet
+    }
 
-    pub fn starfield(&self) -> &Texture2D { &self.starfield }
+    pub fn starfield(&self) -> &Texture2D {
+        &self.starfield
+    }
 
-    pub fn valley_heightmap(&self) -> &Texture2D { &self.valley_heightmap }
+    pub fn valley_heightmap(&self) -> &Texture2D {
+        &self.valley_heightmap
+    }
 
-    pub fn white(&self) -> &Texture2D { &self.white }
+    pub fn white(&self) -> &Texture2D {
+        &self.white
+    }
 
-    pub fn wire(&self) -> &Texture1D { &self.wire }
+    pub fn wire(&self) -> &Texture1D {
+        &self.wire
+    }
 }
 
 //===========================================================================//

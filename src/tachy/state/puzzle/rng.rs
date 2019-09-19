@@ -47,7 +47,9 @@ impl SimpleRng {
         (self.z << 16) | (self.w & 0xffff)
     }
 
-    pub fn rand_u4(&mut self) -> u32 { self.rand_u32() & 0xf }
+    pub fn rand_u4(&mut self) -> u32 {
+        self.rand_u32() & 0xf
+    }
 
     /// Returns a random value between lower and upper, inclusive.
     pub fn rand_int(&mut self, lower: u32, upper: u32) -> u32 {

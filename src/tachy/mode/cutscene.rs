@@ -18,9 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::ModeChange;
-use tachy::gui::{Event, Window};
-use tachy::state::GameState;
-use tachy::view::{CutsceneAction, CutsceneView};
+use crate::tachy::gui::{Event, Window};
+use crate::tachy::state::GameState;
+use crate::tachy::view::{CutsceneAction, CutsceneView};
 
 //===========================================================================//
 
@@ -45,9 +45,11 @@ fn run_internal(state: &mut GameState, window: &mut Window) -> ModeChange {
                 window.pump_video();
             }
             event => {
-                match view.on_event(&event,
-                                    &mut window.ui(),
-                                    state.cutscene_mut_and_prefs().unwrap()) {
+                match view.on_event(
+                    &event,
+                    &mut window.ui(),
+                    state.cutscene_mut_and_prefs().unwrap(),
+                ) {
                     Some(CutsceneAction::Finished) => finished = true,
                     None => {}
                 }

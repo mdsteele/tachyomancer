@@ -27,7 +27,9 @@ pub struct Polygon {
 }
 
 impl Polygon {
-    pub fn new(vertices: Vec<Point2<f32>>) -> Polygon { Polygon { vertices } }
+    pub fn new(vertices: Vec<Point2<f32>>) -> Polygon {
+        Polygon { vertices }
+    }
 
     pub fn as_ref(&self) -> PolygonRef {
         PolygonRef::new(self.vertices.as_slice())
@@ -41,8 +43,11 @@ impl Polygon {
     /// Given the endpoints of a linear path, returns the index of the first
     /// polygon edge intersected by the path and the point where the
     /// intersection occurs, if any.
-    pub fn edge_intersection(&self, start: Point2<f32>, end: Point2<f32>)
-                             -> Option<(usize, Point2<f32>)> {
+    pub fn edge_intersection(
+        &self,
+        start: Point2<f32>,
+        end: Point2<f32>,
+    ) -> Option<(usize, Point2<f32>)> {
         self.as_ref().edge_intersection(start, end)
     }
 }
@@ -71,8 +76,8 @@ impl<'a> PolygonRef<'a> {
         for edge in self.edges() {
             // Common case: if the edge is completely above or below the ray,
             // then skip it.
-            if (edge.p1.y > pt.y && edge.p2.y > pt.y) ||
-                (edge.p1.y <= pt.y && edge.p2.y <= pt.y)
+            if (edge.p1.y > pt.y && edge.p2.y > pt.y)
+                || (edge.p1.y <= pt.y && edge.p2.y <= pt.y)
             {
                 continue;
             }
@@ -94,9 +99,9 @@ impl<'a> PolygonRef<'a> {
             // then this is an edge-crossing.  If the intersection is exactly
             // on the point, then the point is on the edge and we're in the
             // polygon.
-            let intersection_x = edge.p1.x +
-                (pt.y - edge.p1.y) * (edge.p2.x - edge.p1.x) /
-                    (edge.p2.y - edge.p1.y);
+            let intersection_x = edge.p1.x
+                + (pt.y - edge.p1.y) * (edge.p2.x - edge.p1.x)
+                    / (edge.p2.y - edge.p1.y);
             if pt.x < intersection_x {
                 inside = !inside;
             } else if pt.x == intersection_x {
@@ -109,8 +114,11 @@ impl<'a> PolygonRef<'a> {
     /// Given the endpoints of a linear path, returns the index of the first
     /// polygon edge intersected by the path and the point where the
     /// intersection occurs, if any.
-    pub fn edge_intersection(&self, start: Point2<f32>, mut end: Point2<f32>)
-                             -> Option<(usize, Point2<f32>)> {
+    pub fn edge_intersection(
+        &self,
+        start: Point2<f32>,
+        mut end: Point2<f32>,
+    ) -> Option<(usize, Point2<f32>)> {
         let mut hit: Option<(usize, Point2<f32>)> = None;
         for (index, edge) in self.edges().enumerate() {
             if let Some(pos) = edge.intersection(start, end) {
@@ -121,7 +129,9 @@ impl<'a> PolygonRef<'a> {
         hit
     }
 
-    fn edges(&self) -> PolygonEdges { PolygonEdges::new(self.vertices) }
+    fn edges(&self) -> PolygonEdges {
+        PolygonEdges::new(self.vertices)
+    }
 }
 
 //===========================================================================//
@@ -171,8 +181,11 @@ impl LineSegment {
 
     /// Given the endpoints of a linear path, returns the line segment point
     /// intersected by the path, if any.
-    fn intersection(&self, start: Point2<f32>, end: Point2<f32>)
-                    -> Option<Point2<f32>> {
+    fn intersection(
+        &self,
+        start: Point2<f32>,
+        end: Point2<f32>,
+    ) -> Option<Point2<f32>> {
         let segment_delta = self.p2 - self.p1;
         let path_delta = end - start;
         let denom = cross(path_delta, segment_delta);
@@ -211,47 +224,56 @@ mod tests {
 
     #[test]
     fn line_segment_intersection() {
-        let line = LineSegment::new(Point2::new(1.0, 1.0),
-                                    Point2::new(5.0, 3.0));
-        assert_eq!(line.intersection(Point2::new(1.0, 2.0),
-                                     Point2::new(5.0, 4.0)),
-                   None);
-        assert_eq!(line.intersection(Point2::new(0.0, 5.0),
-                                     Point2::new(0.0, 0.0)),
-                   None);
-        assert_eq!(line.intersection(Point2::new(2.0, 5.0),
-                                     Point2::new(2.0, 2.0)),
-                   None);
-        assert_eq!(line.intersection(Point2::new(1.0, 3.0),
-                                     Point2::new(5.0, 1.0)),
-                   Some(Point2::new(3.0, 2.0)));
-        assert_eq!(line.intersection(Point2::new(2.0, 5.0),
-                                     Point2::new(2.0, 0.0)),
-                   Some(Point2::new(2.0, 1.5)));
+        let line =
+            LineSegment::new(Point2::new(1.0, 1.0), Point2::new(5.0, 3.0));
+        assert_eq!(
+            line.intersection(Point2::new(1.0, 2.0), Point2::new(5.0, 4.0)),
+            None
+        );
+        assert_eq!(
+            line.intersection(Point2::new(0.0, 5.0), Point2::new(0.0, 0.0)),
+            None
+        );
+        assert_eq!(
+            line.intersection(Point2::new(2.0, 5.0), Point2::new(2.0, 2.0)),
+            None
+        );
+        assert_eq!(
+            line.intersection(Point2::new(1.0, 3.0), Point2::new(5.0, 1.0)),
+            Some(Point2::new(3.0, 2.0))
+        );
+        assert_eq!(
+            line.intersection(Point2::new(2.0, 5.0), Point2::new(2.0, 0.0)),
+            Some(Point2::new(2.0, 1.5))
+        );
     }
 
     #[test]
     fn intersection_starting_on_line_segment() {
-        let line = LineSegment::new(Point2::new(1.0, 2.0),
-                                    Point2::new(2.0, 3.0));
-        assert_eq!(line.intersection(Point2::new(1.5, 2.5),
-                                     Point2::new(1.0, 3.0)),
-                   Some(Point2::new(1.5, 2.5)));
-        assert_eq!(line.intersection(Point2::new(1.5, 2.5),
-                                     Point2::new(2.0, 2.0)),
-                   Some(Point2::new(1.5, 2.5)));
+        let line =
+            LineSegment::new(Point2::new(1.0, 2.0), Point2::new(2.0, 3.0));
+        assert_eq!(
+            line.intersection(Point2::new(1.5, 2.5), Point2::new(1.0, 3.0)),
+            Some(Point2::new(1.5, 2.5))
+        );
+        assert_eq!(
+            line.intersection(Point2::new(1.5, 2.5), Point2::new(2.0, 2.0)),
+            Some(Point2::new(1.5, 2.5))
+        );
     }
 
     #[test]
     fn intersection_ending_on_line_segment() {
-        let line = LineSegment::new(Point2::new(1.0, 2.0),
-                                    Point2::new(2.0, 3.0));
-        assert_eq!(line.intersection(Point2::new(1.0, 3.0),
-                                     Point2::new(1.5, 2.5)),
-                   Some(Point2::new(1.5, 2.5)));
-        assert_eq!(line.intersection(Point2::new(2.0, 2.0),
-                                     Point2::new(1.5, 2.5)),
-                   Some(Point2::new(1.5, 2.5)));
+        let line =
+            LineSegment::new(Point2::new(1.0, 2.0), Point2::new(2.0, 3.0));
+        assert_eq!(
+            line.intersection(Point2::new(1.0, 3.0), Point2::new(1.5, 2.5)),
+            Some(Point2::new(1.5, 2.5))
+        );
+        assert_eq!(
+            line.intersection(Point2::new(2.0, 2.0), Point2::new(1.5, 2.5)),
+            Some(Point2::new(1.5, 2.5))
+        );
     }
 
     #[test]
@@ -272,15 +294,27 @@ mod tests {
             Point2::new(3.0, 1.0),
             Point2::new(1.0, 3.0),
         ]);
-        assert_eq!(polygon.edge_intersection(Point2::new(5.0, 2.0),
-                                             Point2::new(-1.0, 2.0)),
-                   Some((1, Point2::new(2.0, 2.0))));
-        assert_eq!(polygon.edge_intersection(Point2::new(-1.0, 2.0),
-                                             Point2::new(5.0, 2.0)),
-                   Some((2, Point2::new(1.0, 2.0))));
-        assert_eq!(polygon.edge_intersection(Point2::new(5.0, 2.0),
-                                             Point2::new(-1.0, 10.0)),
-                   None);
+        assert_eq!(
+            polygon.edge_intersection(
+                Point2::new(5.0, 2.0),
+                Point2::new(-1.0, 2.0)
+            ),
+            Some((1, Point2::new(2.0, 2.0)))
+        );
+        assert_eq!(
+            polygon.edge_intersection(
+                Point2::new(-1.0, 2.0),
+                Point2::new(5.0, 2.0)
+            ),
+            Some((2, Point2::new(1.0, 2.0)))
+        );
+        assert_eq!(
+            polygon.edge_intersection(
+                Point2::new(5.0, 2.0),
+                Point2::new(-1.0, 10.0)
+            ),
+            None
+        );
     }
 
     #[test]

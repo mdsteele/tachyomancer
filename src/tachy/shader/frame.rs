@@ -17,11 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{AsFloat, MatrixExt, RectSize};
+use crate::tachy::gl::{
+    FrameBuffer, Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture2DMultisample, VertexArray, VertexBuffer,
+};
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{AsFloat, MatrixExt, RectSize};
-use tachy::gl::{FrameBuffer, Primitive, Shader, ShaderProgram, ShaderSampler,
-                ShaderType, ShaderUniform, Texture2DMultisample, VertexArray,
-                VertexBuffer};
 
 //===========================================================================//
 
@@ -73,16 +74,23 @@ impl FrameBufferShader {
         Ok(shader)
     }
 
-    pub fn draw(&self, matrix: &Matrix4<f32>, fbuffer: &FrameBuffer,
-                left_top: Point2<f32>, grayscale: bool) {
+    pub fn draw(
+        &self,
+        matrix: &Matrix4<f32>,
+        fbuffer: &FrameBuffer,
+        left_top: Point2<f32>,
+        grayscale: bool,
+    ) {
         self.program.bind();
         self.texture.set(fbuffer.texture());
         self.mvp.set(&(matrix * Matrix4::trans2(left_top.x, left_top.y)));
         let size = fbuffer.size().as_f32();
         self.frame_size.set(&size);
         let texture_size = fbuffer.texture_size().as_f32();
-        self.tex_size.set(&RectSize::new(size.width / texture_size.width,
-                                         size.height / texture_size.height));
+        self.tex_size.set(&RectSize::new(
+            size.width / texture_size.width,
+            size.height / texture_size.height,
+        ));
         self.grayscale.set(&(if grayscale { 1 } else { 0 }));
         self.varray.bind();
         self.varray.draw(Primitive::TriangleStrip, 0, 4);

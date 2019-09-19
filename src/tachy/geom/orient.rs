@@ -35,7 +35,9 @@ pub struct Orientation {
 }
 
 impl Orientation {
-    pub fn is_mirrored(&self) -> bool { self.mirror }
+    pub fn is_mirrored(&self) -> bool {
+        self.mirror
+    }
 
     pub fn matrix(&self) -> Matrix4<f32> {
         let matrix = Matrix4::from_angle_z(Deg(90.0 * (self.rotate as f32)));
@@ -46,14 +48,13 @@ impl Orientation {
         }
     }
 
-    pub fn transform_in_size(&self, delta: CoordsDelta, size: CoordsSize)
-                             -> CoordsDelta {
+    pub fn transform_in_size(
+        &self,
+        delta: CoordsDelta,
+        size: CoordsSize,
+    ) -> CoordsDelta {
         let x = delta.x;
-        let y = if self.mirror {
-            size.height - delta.y - 1
-        } else {
-            delta.y
-        };
+        let y = if self.mirror { size.height - delta.y - 1 } else { delta.y };
         let (x, y) = match self.rotate {
             0 => (x, y),
             1 => (size.height - y - 1, x),
@@ -87,26 +88,17 @@ impl Orientation {
     }
 
     pub fn rotate_cw(self) -> Orientation {
-        Orientation {
-            rotate: (self.rotate + 1) % 4,
-            mirror: self.mirror,
-        }
+        Orientation { rotate: (self.rotate + 1) % 4, mirror: self.mirror }
     }
 
     pub fn rotate_ccw(self) -> Orientation {
-        Orientation {
-            rotate: (self.rotate + 3) % 4,
-            mirror: self.mirror,
-        }
+        Orientation { rotate: (self.rotate + 3) % 4, mirror: self.mirror }
     }
 }
 
 impl Default for Orientation {
     fn default() -> Orientation {
-        Orientation {
-            rotate: 0,
-            mirror: false,
-        }
+        Orientation { rotate: 0, mirror: false }
     }
 }
 
@@ -172,10 +164,7 @@ impl<T> ops::Mul<RectSize<T>> for Orientation {
         if self.rotate % 2 == 0 {
             size
         } else {
-            RectSize {
-                width: size.height,
-                height: size.width,
-            }
+            RectSize { width: size.height, height: size.width }
         }
     }
 }

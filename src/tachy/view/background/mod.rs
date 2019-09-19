@@ -24,13 +24,15 @@ mod shared;
 pub use self::odyssey::OdysseyBackgroundView;
 pub use self::planetfall::PlanetfallBackgroundView;
 pub use self::shared::BackgroundView;
-use tachy::geom::RectSize;
-use tachy::save::Chapter;
+use crate::tachy::geom::RectSize;
+use crate::tachy::save::Chapter;
 
 //===========================================================================//
 
-pub fn background_for_chapter(chapter: Chapter, screen_size: RectSize<f32>)
-                              -> Box<BackgroundView> {
+pub fn background_for_chapter(
+    chapter: Chapter,
+    screen_size: RectSize<f32>,
+) -> Box<dyn BackgroundView> {
     match chapter {
         Chapter::Odyssey => Box::new(OdysseyBackgroundView::new(screen_size)),
         // TODO: other chapter backgrounds

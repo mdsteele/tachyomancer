@@ -19,18 +19,21 @@
 
 use super::change::GridChange;
 use super::check::{self, WireColor, WireError, WireInfo};
-use super::chip::{ChipExt, new_chip_evals};
+use super::chip::{new_chip_evals, ChipExt};
 use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
-use super::puzzle::{Interface, PuzzleExt, new_puzzle_eval};
+use super::puzzle::{new_puzzle_eval, Interface, PuzzleExt};
 use super::size::WireSize;
-use std::collections::{HashMap, HashSet, hash_map, hash_set};
+use crate::tachy::geom::{
+    Coords, CoordsDelta, CoordsRect, CoordsSize, Direction, Orientation, Rect,
+};
+use crate::tachy::save::{
+    ChipSet, ChipType, CircuitData, Profile, Puzzle, WireShape,
+};
+use std::collections::{hash_map, hash_set, HashMap, HashSet};
 use std::mem;
 use std::time::{Duration, Instant};
 use std::usize;
-use tachy::geom::{Coords, CoordsDelta, CoordsRect, CoordsSize, Direction,
-                  Orientation, Rect};
-use tachy::save::{ChipSet, ChipType, CircuitData, Profile, Puzzle, WireShape};
 
 //===========================================================================//
 
@@ -68,8 +71,10 @@ impl EditGrid {
         let mut grid = EditGrid {
             puzzle,
             allowed_chips: puzzle.allowed_chips(profile),
-            bounds: CoordsRect::with_size(Coords::new(0, 0),
-                                          puzzle.initial_board_size()),
+            bounds: CoordsRect::with_size(
+                Coords::new(0, 0),
+                puzzle.initial_board_size(),
+            ),
             interfaces: puzzle.interfaces(),
             fragments: HashMap::new(),
             chips: HashMap::new(),
@@ -87,9 +92,11 @@ impl EditGrid {
         grid
     }
 
-    pub fn from_circuit_data(puzzle: Puzzle, profile: &Profile,
-                             data: &CircuitData)
-                             -> EditGrid {
+    pub fn from_circuit_data(
+        puzzle: Puzzle,
+        profile: &Profile,
+        data: &CircuitData,
+    ) -> EditGrid {
         let mut grid = EditGrid {
             puzzle,
             allowed_chips: puzzle.allowed_chips(profile),
@@ -148,8 +155,8 @@ impl EditGrid {
                 WireShape::SplitTee => {
                     let dir2 = dir.rotate_cw();
                     let dir3 = dir.rotate_ccw();
-                    if !grid.has_frag(coords, dir2) &&
-                        !grid.has_frag(coords, dir3)
+                    if !grid.has_frag(coords, dir2)
+                        && !grid.has_frag(coords, dir3)
                     {
                         grid.set_frag(coords, dir, WireShape::SplitTee);
                         grid.set_frag(coords, dir2, WireShape::SplitRight);
@@ -159,8 +166,8 @@ impl EditGrid {
                 WireShape::SplitLeft => {
                     let dir2 = dir.rotate_cw();
                     let dir3 = -dir;
-                    if !grid.has_frag(coords, dir2) &&
-                        !grid.has_frag(coords, dir3)
+                    if !grid.has_frag(coords, dir2)
+                        && !grid.has_frag(coords, dir3)
                     {
                         grid.set_frag(coords, dir, WireShape::SplitLeft);
                         grid.set_frag(coords, dir2, WireShape::SplitTee);
@@ -170,8 +177,8 @@ impl EditGrid {
                 WireShape::SplitRight => {
                     let dir2 = dir.rotate_ccw();
                     let dir3 = -dir;
-                    if !grid.has_frag(coords, dir2) &&
-                        !grid.has_frag(coords, dir3)
+                    if !grid.has_frag(coords, dir2)
+                        && !grid.has_frag(coords, dir3)
                     {
                         grid.set_frag(coords, dir, WireShape::SplitRight);
                         grid.set_frag(coords, dir2, WireShape::SplitTee);
@@ -179,9 +186,9 @@ impl EditGrid {
                     }
                 }
                 WireShape::Cross => {
-                    if !grid.has_frag(coords, -dir) &&
-                        !grid.has_frag(coords, dir.rotate_cw()) &&
-                        !grid.has_frag(coords, dir.rotate_ccw())
+                    if !grid.has_frag(coords, -dir)
+                        && !grid.has_frag(coords, dir.rotate_cw())
+                        && !grid.has_frag(coords, dir.rotate_ccw())
                     {
                         for d in Direction::all() {
                             grid.set_frag(coords, d, WireShape::Cross);
@@ -208,10 +215,12 @@ impl EditGrid {
     }
 
     pub fn to_circuit_data(&self) -> CircuitData {
-        let mut data = CircuitData::new(self.bounds.x,
-                                        self.bounds.y,
-                                        self.bounds.width,
-                                        self.bounds.height);
+        let mut data = CircuitData::new(
+            self.bounds.x,
+            self.bounds.y,
+            self.bounds.width,
+            self.bounds.height,
+        );
         for (coords, ctype, orient) in self.chips() {
             data.chips.insert(coords, ctype, orient);
         }
@@ -220,34 +229,34 @@ impl EditGrid {
                 (WireShape::Stub, _) => {
                     // Exclude stubs that can be inferred in from_circuit_data.
                     match self.fragments.get(&(coords + dir, -dir)) {
-                        Some(&(WireShape::Stub, _)) => {
-                            match dir {
-                                Direction::East | Direction::South => {}
-                                Direction::West | Direction::North => continue,
-                            }
-                        }
+                        Some(&(WireShape::Stub, _)) => match dir {
+                            Direction::East | Direction::South => {}
+                            Direction::West | Direction::North => continue,
+                        },
                         Some(&(_, _)) => continue,
                         None => unreachable!(),
                     }
                 }
-                (WireShape::Straight, Direction::East) |
-                (WireShape::Straight, Direction::South) |
-                (WireShape::TurnLeft, _) |
-                (WireShape::SplitTee, _) |
-                (WireShape::Cross, Direction::East) => {}
-                (WireShape::Straight, Direction::West) |
-                (WireShape::Straight, Direction::North) |
-                (WireShape::TurnRight, _) |
-                (WireShape::SplitLeft, _) |
-                (WireShape::SplitRight, _) |
-                (WireShape::Cross, _) => continue,
+                (WireShape::Straight, Direction::East)
+                | (WireShape::Straight, Direction::South)
+                | (WireShape::TurnLeft, _)
+                | (WireShape::SplitTee, _)
+                | (WireShape::Cross, Direction::East) => {}
+                (WireShape::Straight, Direction::West)
+                | (WireShape::Straight, Direction::North)
+                | (WireShape::TurnRight, _)
+                | (WireShape::SplitLeft, _)
+                | (WireShape::SplitRight, _)
+                | (WireShape::Cross, _) => continue,
             }
             data.wires.insert(coords, dir, shape);
         }
         data
     }
 
-    pub fn is_modified(&self) -> bool { self.modified_since.is_some() }
+    pub fn is_modified(&self) -> bool {
+        self.modified_since.is_some()
+    }
 
     pub fn has_been_modified_for_at_least(&self, duration: Duration) -> bool {
         match self.modified_since {
@@ -262,13 +271,21 @@ impl EditGrid {
         }
     }
 
-    pub fn mark_unmodified(&mut self) { self.modified_since = None; }
+    pub fn mark_unmodified(&mut self) {
+        self.modified_since = None;
+    }
 
-    pub fn puzzle(&self) -> Puzzle { self.puzzle }
+    pub fn puzzle(&self) -> Puzzle {
+        self.puzzle
+    }
 
-    pub fn allowed_chips(&self) -> &ChipSet { &self.allowed_chips }
+    pub fn allowed_chips(&self) -> &ChipSet {
+        &self.allowed_chips
+    }
 
-    pub fn bounds(&self) -> CoordsRect { self.bounds }
+    pub fn bounds(&self) -> CoordsRect {
+        self.bounds
+    }
 
     pub fn min_bounds_size(&self) -> CoordsSize {
         Interface::min_bounds_size(self.interfaces)
@@ -285,9 +302,9 @@ impl EditGrid {
             }
         }
         for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
-            if !bounds.contains_point(coords) &&
-                (shape != WireShape::Stub ||
-                     !bounds.contains_point(coords + dir))
+            if !bounds.contains_point(coords)
+                && (shape != WireShape::Stub
+                    || !bounds.contains_point(coords + dir))
             {
                 return false;
             }
@@ -295,22 +312,25 @@ impl EditGrid {
         return true;
     }
 
-    pub fn interfaces(&self) -> &[Interface] { &self.interfaces }
+    pub fn interfaces(&self) -> &[Interface] {
+        &self.interfaces
+    }
 
     /// Returns an interator over `(Coords, ChipType, Orientation)` tuples.
-    pub fn chips(&self) -> ChipsIter { ChipsIter { inner: self.chips.iter() } }
+    pub fn chips(&self) -> ChipsIter {
+        ChipsIter { inner: self.chips.iter() }
+    }
 
     /// Returns an interator over `(Coords, Direction, WireShape, WireSize,
     /// WireColor)` tuples.
     pub fn wire_fragments(&self) -> WireFragmentsIter {
-        WireFragmentsIter {
-            inner: self.fragments.iter(),
-            wires: &self.wires,
-        }
+        WireFragmentsIter { inner: self.fragments.iter(), wires: &self.wires }
     }
 
-    pub fn wire_fragments_for_wire_index(&self, wire_index: usize)
-                                         -> WireFragmentsForWireIter {
+    pub fn wire_fragments_for_wire_index(
+        &self,
+        wire_index: usize,
+    ) -> WireFragmentsForWireIter {
         WireFragmentsForWireIter {
             inner: self.wires[wire_index].fragments.iter(),
             fragments: &self.fragments,
@@ -325,14 +345,18 @@ impl EditGrid {
         }
     }
 
-    pub fn has_errors(&self) -> bool { !self.errors.is_empty() }
+    pub fn has_errors(&self) -> bool {
+        !self.errors.is_empty()
+    }
 
     pub fn has_chip_at(&self, coords: Coords) -> bool {
         self.chips.contains_key(&coords)
     }
 
-    pub fn chip_at(&self, coords: Coords)
-                   -> Option<(Coords, ChipType, Orientation)> {
+    pub fn chip_at(
+        &self,
+        coords: Coords,
+    ) -> Option<(Coords, ChipType, Orientation)> {
         match self.chips.get(&coords) {
             Some(&ChipCell::Chip(ctype, orient)) => {
                 Some((coords, ctype, orient))
@@ -344,11 +368,10 @@ impl EditGrid {
                         Some((new_coords, ctype, orient))
                     }
                     other => {
-                        panic!("ChipRef({:?}) at {:?} points to {:?} at {:?}",
-                               delta,
-                               coords,
-                               other,
-                               new_coords);
+                        panic!(
+                            "ChipRef({:?}) at {:?} points to {:?} at {:?}",
+                            delta, coords, other, new_coords
+                        );
                     }
                 }
             }
@@ -356,8 +379,10 @@ impl EditGrid {
         }
     }
 
-    pub fn interface_at(&self, coords: Coords)
-                        -> Option<(Coords, usize, &'static Interface)> {
+    pub fn interface_at(
+        &self,
+        coords: Coords,
+    ) -> Option<(Coords, usize, &'static Interface)> {
         for (index, interface) in self.interfaces.iter().enumerate() {
             let top_left = interface.top_left(self.bounds);
             let rect = Rect::with_size(top_left, interface.size());
@@ -368,13 +393,19 @@ impl EditGrid {
         return None;
     }
 
-    pub fn wire_index_at(&self, coords: Coords, dir: Direction)
-                         -> Option<usize> {
+    pub fn wire_index_at(
+        &self,
+        coords: Coords,
+        dir: Direction,
+    ) -> Option<usize> {
         self.fragments.get(&(coords, dir)).map(|&(_, index)| index)
     }
 
-    pub fn wire_shape_at(&self, coords: Coords, dir: Direction)
-                         -> Option<WireShape> {
+    pub fn wire_shape_at(
+        &self,
+        coords: Coords,
+        dir: Direction,
+    ) -> Option<WireShape> {
         self.fragments.get(&(coords, dir)).map(|&(shape, _)| shape)
     }
 
@@ -445,8 +476,10 @@ impl EditGrid {
     }
 
     #[must_use = "must not ignore try_mutate_provisionally failure"]
-    pub fn try_mutate_provisionally(&mut self, changes: Vec<GridChange>)
-                                    -> bool {
+    pub fn try_mutate_provisionally(
+        &mut self,
+        changes: Vec<GridChange>,
+    ) -> bool {
         if let Some(mut changes) = self.try_mutate_internal(changes) {
             self.provisional_changes.append(&mut changes);
             true
@@ -487,8 +520,10 @@ impl EditGrid {
     }
 
     #[must_use = "must not ignore try_mutate_internal result"]
-    fn try_mutate_internal(&mut self, mut changes: Vec<GridChange>)
-                           -> Option<Vec<GridChange>> {
+    fn try_mutate_internal(
+        &mut self,
+        mut changes: Vec<GridChange>,
+    ) -> Option<Vec<GridChange>> {
         if self.eval.is_some() {
             return None;
         }
@@ -533,8 +568,8 @@ impl EditGrid {
                     // (1) also remove the fragment in the adjacent cell, or
                     // (2) add a new fragment in place of the removed one.
                     let loc2 = (coords + dir, -dir);
-                    if !(old_wires.contains_key(&loc2) ||
-                             new_wires.contains_key(&loc))
+                    if !(old_wires.contains_key(&loc2)
+                        || new_wires.contains_key(&loc))
                     {
                         return false;
                     }
@@ -549,8 +584,10 @@ impl EditGrid {
                                 return false;
                             }
                         }
-                        WireShape::TurnLeft | WireShape::SplitLeft |
-                        WireShape::SplitTee | WireShape::Cross => {
+                        WireShape::TurnLeft
+                        | WireShape::SplitLeft
+                        | WireShape::SplitTee
+                        | WireShape::Cross => {
                             if !old_wires
                                 .contains_key(&(coords, dir.rotate_cw()))
                             {
@@ -569,9 +606,9 @@ impl EditGrid {
                 for (&loc, &shape) in new_wires.iter() {
                     // If we're adding a wire fragment, it must be in bounds.
                     let (coords, dir) = loc;
-                    if !(self.bounds.contains_point(coords) ||
-                             (shape == WireShape::Stub &&
-                                  self.bounds.contains_point(coords + dir)))
+                    if !(self.bounds.contains_point(coords)
+                        || (shape == WireShape::Stub
+                            && self.bounds.contains_point(coords + dir)))
                     {
                         return false;
                     }
@@ -580,18 +617,20 @@ impl EditGrid {
                     if let Some((chip_coords, ctype, orient)) =
                         self.chip_at(coords)
                     {
-                        if shape != WireShape::Stub ||
-                            Rect::with_size(chip_coords,
-                                            orient * ctype.size())
-                                .contains_point(coords + dir)
+                        if shape != WireShape::Stub
+                            || Rect::with_size(
+                                chip_coords,
+                                orient * ctype.size(),
+                            )
+                            .contains_point(coords + dir)
                         {
                             return false;
                         }
                     }
                     // If we're adding a wire fragment, then we must be
                     // removing the fragment that's currently there, if any.
-                    if self.fragments.contains_key(&loc) &&
-                        !old_wires.contains_key(&loc)
+                    if self.fragments.contains_key(&loc)
+                        && !old_wires.contains_key(&loc)
                     {
                         return false;
                     }
@@ -600,9 +639,9 @@ impl EditGrid {
                     // must be an existing fragment in the adjacent cell that
                     // we're not removing.
                     let loc2 = (coords + dir, -dir);
-                    if !(new_wires.contains_key(&loc2) ||
-                             (self.fragments.contains_key(&loc2) &&
-                                  !old_wires.contains_key(&loc2)))
+                    if !(new_wires.contains_key(&loc2)
+                        || (self.fragments.contains_key(&loc2)
+                            && !old_wires.contains_key(&loc2)))
                     {
                         return false;
                     }
@@ -613,50 +652,50 @@ impl EditGrid {
                         _ if old_wires.get(&loc) == Some(&shape) => {}
                         WireShape::Stub => {}
                         WireShape::Straight => {
-                            if new_wires.get(&(coords, -dir)) !=
-                                Some(&WireShape::Straight)
+                            if new_wires.get(&(coords, -dir))
+                                != Some(&WireShape::Straight)
                             {
                                 return false;
                             }
                         }
                         WireShape::TurnLeft => {
-                            if new_wires.get(&(coords, dir.rotate_cw())) !=
-                                Some(&WireShape::TurnRight)
+                            if new_wires.get(&(coords, dir.rotate_cw()))
+                                != Some(&WireShape::TurnRight)
                             {
                                 return false;
                             }
                         }
                         WireShape::TurnRight => {
-                            if new_wires.get(&(coords, dir.rotate_ccw())) !=
-                                Some(&WireShape::TurnLeft)
+                            if new_wires.get(&(coords, dir.rotate_ccw()))
+                                != Some(&WireShape::TurnLeft)
                             {
                                 return false;
                             }
                         }
                         WireShape::SplitTee => {
-                            if new_wires.get(&(coords, dir.rotate_cw())) !=
-                                Some(&WireShape::SplitRight)
+                            if new_wires.get(&(coords, dir.rotate_cw()))
+                                != Some(&WireShape::SplitRight)
                             {
                                 return false;
                             }
                         }
                         WireShape::SplitLeft => {
-                            if new_wires.get(&(coords, dir.rotate_cw())) !=
-                                Some(&WireShape::SplitTee)
+                            if new_wires.get(&(coords, dir.rotate_cw()))
+                                != Some(&WireShape::SplitTee)
                             {
                                 return false;
                             }
                         }
                         WireShape::SplitRight => {
-                            if new_wires.get(&(coords, -dir)) !=
-                                Some(&WireShape::SplitLeft)
+                            if new_wires.get(&(coords, -dir))
+                                != Some(&WireShape::SplitLeft)
                             {
                                 return false;
                             }
                         }
                         WireShape::Cross => {
-                            if new_wires.get(&(coords, dir.rotate_cw())) !=
-                                Some(&WireShape::Cross)
+                            if new_wires.get(&(coords, dir.rotate_cw()))
+                                != Some(&WireShape::Cross)
                             {
                                 return false;
                             }
@@ -721,8 +760,8 @@ impl EditGrid {
                 }
             }
             GridChange::SetBounds(old_bounds, new_bounds) => {
-                if self.bounds == old_bounds &&
-                    self.can_have_bounds(new_bounds)
+                if self.bounds == old_bounds
+                    && self.can_have_bounds(new_bounds)
                 {
                     self.bounds = new_bounds;
                 } else {
@@ -765,25 +804,31 @@ impl EditGrid {
         self.errors = check::recolor_wires(&mut self.wires);
         self.wires_for_ports = check::map_ports_to_wires(&self.wires);
 
-        let constraints: Vec<PortConstraint> = self.interfaces
+        let constraints: Vec<PortConstraint> = self
+            .interfaces
             .iter()
             .flat_map(|interface| interface.constraints(self.bounds))
             .chain(self.chips().flat_map(|(coords, ctype, orient)| {
-                                             ctype.constraints(coords, orient)
-                                         }))
+                ctype.constraints(coords, orient)
+            }))
             .collect();
-        self.errors.extend(check::determine_wire_sizes(&mut self.wires,
-                                                       &self.wires_for_ports,
-                                                       constraints));
+        self.errors.extend(check::determine_wire_sizes(
+            &mut self.wires,
+            &self.wires_for_ports,
+            constraints,
+        ));
 
-        let dependencies: Vec<PortDependency> = self.chips()
+        let dependencies: Vec<PortDependency> = self
+            .chips()
             .flat_map(|(coords, ctype, orient)| {
-                          ctype.dependencies(coords, orient)
-                      })
+                ctype.dependencies(coords, orient)
+            })
             .collect();
-        match check::detect_loops(&mut self.wires,
-                                    &self.wires_for_ports,
-                                    dependencies) {
+        match check::detect_loops(
+            &mut self.wires,
+            &self.wires_for_ports,
+            dependencies,
+        ) {
             Ok(groups) => {
                 if self.errors.is_empty() {
                     self.wire_groups = groups;
@@ -793,7 +838,9 @@ impl EditGrid {
         }
     }
 
-    pub fn eval(&self) -> Option<&CircuitEval> { self.eval.as_ref() }
+    pub fn eval(&self) -> Option<&CircuitEval> {
+        self.eval.as_ref()
+    }
 
     pub fn eval_mut(&mut self) -> Option<&mut CircuitEval> {
         self.eval.as_mut()
@@ -826,19 +873,19 @@ impl EditGrid {
         }
 
         let interact = CircuitInteraction::new();
-        let mut chip_evals: Vec<Vec<Box<ChipEval>>> =
+        let mut chip_evals: Vec<Vec<Box<dyn ChipEval>>> =
             (0..self.wire_groups.len()).map(|_| vec![]).collect();
         for (coords, ctype, orient) in self.chips() {
             let ports = ctype.ports(coords, orient);
             let wires: Vec<(usize, WireSize)> = ports
                 .iter()
                 .map(|port| {
-                         let wire_index = wires_for_ports[&port.loc()];
-                         let wire = &self.wires[wire_index];
-                         debug_assert!(!wire.has_error);
-                         debug_assert!(!wire.size.is_empty());
-                         (wire_index, wire.size.lower_bound().unwrap())
-                     })
+                    let wire_index = wires_for_ports[&port.loc()];
+                    let wire = &self.wires[wire_index];
+                    debug_assert!(!wire.has_error);
+                    debug_assert!(!wire.size.is_empty());
+                    (wire_index, wire.size.lower_bound().unwrap())
+                })
                 .collect();
             for (port_index, chip_eval) in
                 new_chip_evals(ctype, coords, &wires, &interact)
@@ -850,28 +897,30 @@ impl EditGrid {
         }
 
         let puzzle_eval = {
-            let slots: Vec<Vec<((Coords, Direction), usize)>> =
-                self.interfaces
-                    .iter()
-                    .map(|interface| {
-                        interface
-                            .ports(self.bounds)
-                            .into_iter()
-                            .map(|(_, port)| {
-                                     let loc = port.loc();
-                                     (loc, wires_for_ports[&loc])
-                                 })
-                            .collect()
-                    })
-                    .collect();
+            let slots: Vec<Vec<((Coords, Direction), usize)>> = self
+                .interfaces
+                .iter()
+                .map(|interface| {
+                    interface
+                        .ports(self.bounds)
+                        .into_iter()
+                        .map(|(_, port)| {
+                            let loc = port.loc();
+                            (loc, wires_for_ports[&loc])
+                        })
+                        .collect()
+                })
+                .collect();
             new_puzzle_eval(self.puzzle, slots)
         };
 
-        self.eval = Some(CircuitEval::new(self.wires.len(),
-                                          null_wires,
-                                          chip_evals,
-                                          puzzle_eval,
-                                          interact));
+        self.eval = Some(CircuitEval::new(
+            self.wires.len(),
+            null_wires,
+            chip_evals,
+            puzzle_eval,
+            interact,
+        ));
         debug_log!("Starting evaluation");
         return true;
     }
@@ -893,9 +942,11 @@ impl EditGrid {
     pub fn wire_tooltip_format(&self, index: usize) -> String {
         if index >= self.wires.len() {
             // This shouldn't happen.
-            return format!("ERROR: index={} num_wires={}",
-                           index,
-                           self.wires.len());
+            return format!(
+                "ERROR: index={} num_wires={}",
+                index,
+                self.wires.len()
+            );
         }
         let wire = &self.wires[index];
         let size = if let Some(size) = wire.size.lower_bound() {
@@ -913,16 +964,20 @@ impl EditGrid {
             match wire.color {
                 WireColor::Unknown | WireColor::Ambiguous => {}
                 WireColor::Behavior => {
-                    fmt.push_str(&format!("\nCurrent value: {}",
-                                          eval.wire_value(index)));
+                    fmt.push_str(&format!(
+                        "\nCurrent value: {}",
+                        eval.wire_value(index)
+                    ));
                 }
                 WireColor::Event => {
                     if let Some(value) = eval.wire_event(index) {
                         if wire.size.lower_bound() == Some(WireSize::Zero) {
                             fmt.push_str("\nCurrently has an event.");
                         } else {
-                            fmt.push_str(&format!("\nCurrent event value: {}",
-                                                  value));
+                            fmt.push_str(&format!(
+                                "\nCurrent event value: {}",
+                                value
+                            ));
                         }
                     } else {
                         fmt.push_str("\nNo current event.");
@@ -933,38 +988,53 @@ impl EditGrid {
         for error in self.errors.iter() {
             match *error {
                 WireError::MultipleSenders(idx) if idx == index => {
-                    fmt.push_str("\n\n$RError:$D This wire is connected to \
-                                  multiple send ports.  Disconnect it from \
-                                  all but one of those ports.");
+                    fmt.push_str(
+                        "\n\n$RError:$D This wire is connected to \
+                         multiple send ports.  Disconnect it from \
+                         all but one of those ports.",
+                    );
                 }
                 WireError::PortColorMismatch(idx) if idx == index => {
-                    fmt.push_str("\n\n$RError:$D This wire is connected to \
-                                  both a $Obehavior$D and an $Cevent$D \
-                                  port.  Wires may only connect ports of the \
-                                  same type.");
+                    fmt.push_str(
+                        "\n\n$RError:$D This wire is connected to \
+                         both a $Obehavior$D and an $Cevent$D \
+                         port.  Wires may only connect ports of the \
+                         same type.",
+                    );
                 }
                 WireError::NoValidSize(idx) if idx == index => {
                     // TODO: Make this message more helpful.  For example, if
                     //   the wire must be exactly 2 bits on one side and 4 bits
                     //   on the other, we should give those values.
-                    fmt.push_str("\n\n$RError:$D This wire is connecting \
-                                  mismatching bit sizes.");
+                    fmt.push_str(
+                        "\n\n$RError:$D This wire is connecting \
+                         mismatching bit sizes.",
+                    );
                 }
                 WireError::UnbrokenLoop(ref indices, contains_events)
-                    if indices.contains(&index) => {
-                    fmt.push_str("\n\n$RError:$D This wire forms a closed \
-                                  loop");
+                    if indices.contains(&index) =>
+                {
+                    fmt.push_str(
+                        "\n\n$RError:$D This wire forms a closed \
+                         loop",
+                    );
                     if contains_events {
-                        fmt.push_str(".  $CEvent$D wire loops can be broken \
-                                      with a $*Clock$* or $*Delay$* chip.");
+                        fmt.push_str(
+                            ".  $CEvent$D wire loops can be broken \
+                             with a $*Clock$* or $*Delay$* chip.",
+                        );
                     } else if self.puzzle.allows_events() {
-                        fmt.push_str(".  $OBehavior$D wires may not form \
-                                      loops, but loops with $Cevent$D wires \
-                                      can be broken with a $*Clock$* or \
-                                      $*Delay$* chip.");
+                        fmt.push_str(
+                            ".  $OBehavior$D wires may not form \
+                             loops, but loops with $Cevent$D wires \
+                             can be broken with a $*Clock$* or \
+                             $*Delay$* chip.",
+                        );
                     } else {
-                        fmt.push_str(", and $Obehavior$D circuits must be \
-                                      acyclic.");
+                        fmt.push_str(
+                            ", and $Obehavior$D circuits must be \
+                             acyclic.",
+                        );
                     }
                 }
                 _ => {}
@@ -979,88 +1049,110 @@ impl EditGrid {
     #[cfg(debug_assertions)]
     fn validate_wire_fragments(&self) {
         for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
-            assert!(self.fragments.get(&(coords + dir, -dir)).is_some(),
-                    "{:?} at ({}, {}) {:?} has nothing in adjacent cell",
-                    shape,
-                    coords.x,
-                    coords.y,
-                    dir);
+            assert!(
+                self.fragments.get(&(coords + dir, -dir)).is_some(),
+                "{:?} at ({}, {}) {:?} has nothing in adjacent cell",
+                shape,
+                coords.x,
+                coords.y,
+                dir
+            );
             match shape {
                 WireShape::Stub => {}
                 WireShape::Straight => {
-                    assert_eq!(self.wire_shape_at(coords, -dir),
-                               Some(WireShape::Straight),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
+                    assert_eq!(
+                        self.wire_shape_at(coords, -dir),
+                        Some(WireShape::Straight),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
                 }
                 WireShape::TurnLeft => {
-                    assert_eq!(self.wire_shape_at(coords, dir.rotate_cw()),
-                               Some(WireShape::TurnRight),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
+                    assert_eq!(
+                        self.wire_shape_at(coords, dir.rotate_cw()),
+                        Some(WireShape::TurnRight),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
                 }
                 WireShape::TurnRight => {
-                    assert_eq!(self.wire_shape_at(coords, dir.rotate_ccw()),
-                               Some(WireShape::TurnLeft),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
+                    assert_eq!(
+                        self.wire_shape_at(coords, dir.rotate_ccw()),
+                        Some(WireShape::TurnLeft),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
                 }
                 WireShape::SplitLeft => {
-                    assert_eq!(self.wire_shape_at(coords, -dir),
-                               Some(WireShape::SplitRight),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
-                    assert_eq!(self.wire_shape_at(coords, dir.rotate_cw()),
-                               Some(WireShape::SplitTee),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
+                    assert_eq!(
+                        self.wire_shape_at(coords, -dir),
+                        Some(WireShape::SplitRight),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
+                    assert_eq!(
+                        self.wire_shape_at(coords, dir.rotate_cw()),
+                        Some(WireShape::SplitTee),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
                 }
                 WireShape::SplitRight => {
-                    assert_eq!(self.wire_shape_at(coords, -dir),
-                               Some(WireShape::SplitLeft),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
-                    assert_eq!(self.wire_shape_at(coords, dir.rotate_ccw()),
-                               Some(WireShape::SplitTee),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
+                    assert_eq!(
+                        self.wire_shape_at(coords, -dir),
+                        Some(WireShape::SplitLeft),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
+                    assert_eq!(
+                        self.wire_shape_at(coords, dir.rotate_ccw()),
+                        Some(WireShape::SplitTee),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
                 }
                 WireShape::SplitTee => {
-                    assert_eq!(self.wire_shape_at(coords, dir.rotate_ccw()),
-                               Some(WireShape::SplitLeft),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
-                    assert_eq!(self.wire_shape_at(coords, dir.rotate_cw()),
-                               Some(WireShape::SplitRight),
-                               "({}, {}) {:?}",
-                               coords.x,
-                               coords.y,
-                               dir);
+                    assert_eq!(
+                        self.wire_shape_at(coords, dir.rotate_ccw()),
+                        Some(WireShape::SplitLeft),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
+                    assert_eq!(
+                        self.wire_shape_at(coords, dir.rotate_cw()),
+                        Some(WireShape::SplitRight),
+                        "({}, {}) {:?}",
+                        coords.x,
+                        coords.y,
+                        dir
+                    );
                 }
                 WireShape::Cross => {
                     for dir2 in Direction::all() {
-                        assert_eq!(self.wire_shape_at(coords, dir2),
-                                   Some(WireShape::Cross),
-                                   "({}, {}) {:?}",
-                                   coords.x,
-                                   coords.y,
-                                   dir);
+                        assert_eq!(
+                            self.wire_shape_at(coords, dir2),
+                            Some(WireShape::Cross),
+                            "({}, {}) {:?}",
+                            coords.x,
+                            coords.y,
+                            dir
+                        );
                     }
                 }
             }
@@ -1101,8 +1193,9 @@ impl<'a> Iterator for WireFragmentsIter<'a> {
     type Item = (Coords, Direction, WireShape, WireSize, WireColor, bool);
 
     fn next(
-        &mut self)
-        -> Option<(Coords, Direction, WireShape, WireSize, WireColor, bool)> {
+        &mut self,
+    ) -> Option<(Coords, Direction, WireShape, WireSize, WireColor, bool)>
+    {
         if let Some((&(coords, dir), &(shape, index))) = self.inner.next() {
             let wire = &self.wires[index];
             let size = wire.size.lower_bound().unwrap_or(WireSize::One);
@@ -1112,11 +1205,15 @@ impl<'a> Iterator for WireFragmentsIter<'a> {
         }
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<'a> ExactSizeIterator for WireFragmentsIter<'a> {
-    fn len(&self) -> usize { self.inner.len() }
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
 }
 
 //===========================================================================//
@@ -1138,11 +1235,15 @@ impl<'a> Iterator for WireFragmentsForWireIter<'a> {
         }
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<'a> ExactSizeIterator for WireFragmentsForWireIter<'a> {
-    fn len(&self) -> usize { self.inner.len() }
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
 }
 
 //===========================================================================//

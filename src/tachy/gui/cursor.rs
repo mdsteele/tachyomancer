@@ -68,7 +68,9 @@ pub enum Cursor {
 }
 
 impl Default for Cursor {
-    fn default() -> Cursor { Cursor::Arrow }
+    fn default() -> Cursor {
+        Cursor::Arrow
+    }
 }
 
 //===========================================================================//
@@ -82,26 +84,26 @@ impl Cursors {
     pub(super) fn new() -> Result<Cursors, String> {
         let png_name = "texture/cursor";
         let decoder = png::Decoder::new(CURSOR_PNG_DATA);
-        let (info, mut reader) = decoder
-            .read_info()
-            .map_err(|err| {
-                         format!("Failed to read PNG header for {}: {}",
-                                 png_name,
-                                 err)
-                     })?;
+        let (info, mut reader) = decoder.read_info().map_err(|err| {
+            format!("Failed to read PNG header for {}: {}", png_name, err)
+        })?;
 
         // Determine pixel format:
         if info.bit_depth != png::BitDepth::Eight {
-            return Err(format!("PNG {} bit depth should be {:?}, but is {:?}",
-                               png_name,
-                               png::BitDepth::Eight,
-                               info.bit_depth));
+            return Err(format!(
+                "PNG {} bit depth should be {:?}, but is {:?}",
+                png_name,
+                png::BitDepth::Eight,
+                info.bit_depth
+            ));
         }
         if info.color_type != png::ColorType::RGBA {
-            return Err(format!("PNG {} color type should be {:?}, but is {:?}",
-                               png_name,
-                               png::ColorType::RGBA,
-                               info.color_type));
+            return Err(format!(
+                "PNG {} color type should be {:?}, but is {:?}",
+                png_name,
+                png::ColorType::RGBA,
+                info.color_type
+            ));
         }
         let bytes_per_pixel: usize = 4;
         let sdl_format = if cfg!(target_endian = "big") {
@@ -114,18 +116,18 @@ impl Cursors {
         let total_width = info.width as usize;
         let total_height = info.height as usize;
         if total_width % NUM_CURSOR_COLS != 0 {
-            return Err(format!("PNG {} width should be a multiple of {}, \
-                                but is {}",
-                               png_name,
-                               NUM_CURSOR_COLS,
-                               total_width));
+            return Err(format!(
+                "PNG {} width should be a multiple of {}, \
+                 but is {}",
+                png_name, NUM_CURSOR_COLS, total_width
+            ));
         }
         if total_height % NUM_CURSOR_ROWS != 0 {
-            return Err(format!("PNG {} height should be a multiple of {}, \
-                                but is {}",
-                               png_name,
-                               NUM_CURSOR_ROWS,
-                               total_height));
+            return Err(format!(
+                "PNG {} height should be a multiple of {}, \
+                 but is {}",
+                png_name, NUM_CURSOR_ROWS, total_height
+            ));
         }
         let cursor_width = total_width / NUM_CURSOR_COLS;
         let cursor_height = total_height / NUM_CURSOR_ROWS;
@@ -133,33 +135,31 @@ impl Cursors {
         // Read data:
         let mut data = vec![0u8; bytes_per_pixel * total_width * total_height];
         if let Err(err) = reader.next_frame(&mut data) {
-            return Err(format!("Failed to decode PNG data for {}: {}",
-                               png_name,
-                               err));
+            return Err(format!(
+                "Failed to decode PNG data for {}: {}",
+                png_name, err
+            ));
         }
 
         // Construct SDL cursors:
         let mut cursors = HashMap::<Cursor, mouse::Cursor>::new();
         for &(cursor, (col, row), (hot_x, hot_y)) in CURSORS.iter() {
-            let data_start = col * cursor_width +
-                row * total_width * cursor_height;
-            let sdl_surface =
-                Surface::from_data(&mut data[(bytes_per_pixel *
-                                                  data_start)..],
-                                   cursor_width as u32,
-                                   cursor_height as u32,
-                                   (bytes_per_pixel * total_width) as u32,
-                                   sdl_format)?;
+            let data_start =
+                col * cursor_width + row * total_width * cursor_height;
+            let sdl_surface = Surface::from_data(
+                &mut data[(bytes_per_pixel * data_start)..],
+                cursor_width as u32,
+                cursor_height as u32,
+                (bytes_per_pixel * total_width) as u32,
+                sdl_format,
+            )?;
             let sdl_cursor =
                 mouse::Cursor::from_surface(&sdl_surface, hot_x, hot_y)?;
             cursors.insert(cursor, sdl_cursor);
         }
         let current_cursor = Cursor::default();
         cursors[&current_cursor].set();
-        Ok(Cursors {
-               current_cursor,
-               cursors,
-           })
+        Ok(Cursors { current_cursor, cursors })
     }
 
     pub fn set(&mut self, next: NextCursor) {
@@ -179,7 +179,9 @@ pub struct NextCursor {
 }
 
 impl NextCursor {
-    pub fn new() -> NextCursor { NextCursor { requested: None } }
+    pub fn new() -> NextCursor {
+        NextCursor { requested: None }
+    }
 
     pub fn request(&mut self, cursor: Cursor) {
         if self.requested.is_none() {

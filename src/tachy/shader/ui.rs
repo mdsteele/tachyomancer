@@ -17,12 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Color4, MatrixExt, Rect};
+use crate::tachy::gl::{
+    IndexBuffer, Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture2D, VertexArray, VertexBuffer,
+};
 use cgmath::Matrix4;
 use num_integer::div_mod_floor;
-use tachy::geom::{Color4, MatrixExt, Rect};
-use tachy::gl::{IndexBuffer, Primitive, Shader, ShaderProgram, ShaderSampler,
-                ShaderType, ShaderUniform, Texture2D, VertexArray,
-                VertexBuffer};
 
 //===========================================================================//
 
@@ -226,22 +227,22 @@ impl UiShader {
         let ibuffer = IndexBuffer::new(INDEX_DATA);
         let corners_vbuffer = VertexBuffer::new(CORNERS_DATA);
 
-        let (box_varray, box_vbuffer) = make_vertices(&corners_vbuffer,
-                                                      BOX_DATA);
-        let (bubble_varray, bubble_vbuffer) = make_vertices(&corners_vbuffer,
-                                                            BUBBLE_DATA);
+        let (box_varray, box_vbuffer) =
+            make_vertices(&corners_vbuffer, BOX_DATA);
+        let (bubble_varray, bubble_vbuffer) =
+            make_vertices(&corners_vbuffer, BUBBLE_DATA);
         let (checkbox_varray, checkbox_vbuffer) =
             make_vertices(&corners_vbuffer, CHECKBOX_DATA);
-        let (dialog_varray, dialog_vbuffer) = make_vertices(&corners_vbuffer,
-                                                            DIALOG_DATA);
-        let (scroll_varray, scroll_vbuffer) = make_vertices(&corners_vbuffer,
-                                                            SCROLL_DATA);
+        let (dialog_varray, dialog_vbuffer) =
+            make_vertices(&corners_vbuffer, DIALOG_DATA);
+        let (scroll_varray, scroll_vbuffer) =
+            make_vertices(&corners_vbuffer, SCROLL_DATA);
         let (selection_box_varray, selection_box_vbuffer) =
             make_vertices(&corners_vbuffer, SELECTION_BOX_DATA);
-        let (tray_varray_1, tray_vbuffer_1) = make_vertices(&corners_vbuffer,
-                                                            TRAY_DATA_1);
-        let (tray_varray_2, tray_vbuffer_2) = make_vertices(&corners_vbuffer,
-                                                            TRAY_DATA_2);
+        let (tray_varray_1, tray_vbuffer_1) =
+            make_vertices(&corners_vbuffer, TRAY_DATA_1);
+        let (tray_varray_2, tray_vbuffer_2) =
+            make_vertices(&corners_vbuffer, TRAY_DATA_2);
 
         let shader = UiShader {
             program,
@@ -275,9 +276,15 @@ impl UiShader {
         Ok(shader)
     }
 
-    fn bind(&self, matrix: &Matrix4<f32>, screen_rect: &Rect<f32>,
-            color1: &Color4, color2: &Color4, color3: &Color4,
-            tex_rect: &Rect<f32>) {
+    fn bind(
+        &self,
+        matrix: &Matrix4<f32>,
+        screen_rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+        tex_rect: &Rect<f32>,
+    ) {
         self.program.bind();
         self.mvp.set(matrix);
         self.screen_rect.set(screen_rect);
@@ -288,33 +295,57 @@ impl UiShader {
         self.sampler.set(&self.texture);
     }
 
-    pub fn draw_box2(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                     color1: &Color4, color2: &Color4, color3: &Color4) {
+    pub fn draw_box2(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.5, 0.125, 0.25, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.box_varray.bind();
         self.box_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_box4(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                     color1: &Color4, color2: &Color4, color3: &Color4) {
+    pub fn draw_box4(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.5, 0.0, 0.25, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.box_varray.bind();
         self.box_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_bubble(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                       color1: &Color4, color2: &Color4, color3: &Color4) {
+    pub fn draw_bubble(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.75, 0.375, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.bubble_varray.bind();
         self.bubble_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_checkbox(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                         color1: &Color4, color2: &Color4, color3: &Color4,
-                         checked: bool) {
+    pub fn draw_checkbox(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+        checked: bool,
+    ) {
         let tex_rect = if checked {
             Rect::new(0.875, 0.125, 0.125, 0.125)
         } else {
@@ -326,64 +357,106 @@ impl UiShader {
             .draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_dialog(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                       color1: &Color4, color2: &Color4, color3: &Color4) {
+    pub fn draw_dialog(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.0, 0.5, 0.5, 0.5);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.dialog_varray.bind();
         self.dialog_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_icon(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                     icon_index: usize, color1: &Color4, color2: &Color4,
-                     color3: &Color4) {
+    pub fn draw_icon(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        icon_index: usize,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let (icon_row, icon_col) = div_mod_floor(icon_index, 3);
-        let tex_rect = Rect::new(0.5 + 0.125 * (icon_col as f32),
-                                 0.75 + 0.125 * (icon_row as f32),
-                                 0.125,
-                                 0.125);
+        let tex_rect = Rect::new(
+            0.5 + 0.125 * (icon_col as f32),
+            0.75 + 0.125 * (icon_row as f32),
+            0.125,
+            0.125,
+        );
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.checkbox_varray.bind();
         self.checkbox_varray
             .draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_list_frame(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                           color1: &Color4, color2: &Color4, color3: &Color4) {
+    pub fn draw_list_frame(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.75, 0.25, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.scroll_varray.bind();
         self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_list_item(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                          color1: &Color4, color2: &Color4, color3: &Color4) {
+    pub fn draw_list_item(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.875, 0.25, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.scroll_varray.bind();
         self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_scroll_bar(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                           color1: &Color4, color2: &Color4, color3: &Color4) {
+    pub fn draw_scroll_bar(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.875, 0.0, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.scroll_varray.bind();
         self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_scroll_handle(&self, matrix: &Matrix4<f32>,
-                              rect: &Rect<f32>, color1: &Color4,
-                              color2: &Color4, color3: &Color4) {
+    pub fn draw_scroll_handle(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.75, 0.0, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.scroll_varray.bind();
         self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_selection_box(&self, matrix: &Matrix4<f32>,
-                              rect: &Rect<f32>, color1: &Color4,
-                              color2: &Color4, color3: &Color4) {
+    pub fn draw_selection_box(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.875, 0.375, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.selection_box_varray.bind();
@@ -391,53 +464,69 @@ impl UiShader {
             .draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_tray(&self, matrix: &Matrix4<f32>, rect: &Rect<f32>,
-                     tab_size: f32, flip_horz: bool, color1: &Color4,
-                     color2: &Color4, color3: &Color4) {
+    pub fn draw_tray(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        tab_size: f32,
+        flip_horz: bool,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
         let tex_rect = Rect::new(0.0, 0.0, 0.5, 0.5);
         let matrix = if flip_horz {
-            matrix * Matrix4::trans2(rect.x + rect.width, rect.y) *
-                Matrix4::scale2(-1.0, 1.0)
+            matrix
+                * Matrix4::trans2(rect.x + rect.width, rect.y)
+                * Matrix4::scale2(-1.0, 1.0)
         } else {
             matrix * Matrix4::trans2(rect.x, rect.y)
         };
 
-        let rect1 = Rect::new(0.0,
-                              0.0,
-                              rect.width + TRAY_TAB_WIDTH,
-                              TRAY_TAB_UPPER_MARGIN +
-                                  2.0 * TRAY_TAB_INNER_MARGIN +
-                                  TRAY_TAB_LOWER_MARGIN +
-                                  tab_size);
+        let rect1 = Rect::new(
+            0.0,
+            0.0,
+            rect.width + TRAY_TAB_WIDTH,
+            TRAY_TAB_UPPER_MARGIN
+                + 2.0 * TRAY_TAB_INNER_MARGIN
+                + TRAY_TAB_LOWER_MARGIN
+                + tab_size,
+        );
         self.bind(&matrix, &rect1, color1, color2, color3, &tex_rect);
         self.tray_varray_1.bind();
         self.tray_varray_1.draw_elements(Primitive::Triangles, &self.ibuffer);
 
-        let rect2 = Rect::new(0.0,
-                              rect1.height,
-                              rect1.width,
-                              rect.height - rect1.height);
+        let rect2 = Rect::new(
+            0.0,
+            rect1.height,
+            rect1.width,
+            rect.height - rect1.height,
+        );
         self.bind(&matrix, &rect2, color1, color2, color3, &tex_rect);
         self.tray_varray_2.bind();
         self.tray_varray_2.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn tray_tab_rect(rect: Rect<f32>, tab_size: f32, flip_horz: bool)
-                         -> Rect<f32> {
-        let left = if flip_horz {
-            rect.x - TRAY_TAB_WIDTH
-        } else {
-            rect.right()
-        };
-        Rect::new(left,
-                  rect.y + TRAY_TAB_UPPER_MARGIN,
-                  TRAY_TAB_WIDTH,
-                  tab_size + 2.0 * TRAY_TAB_INNER_MARGIN)
+    pub fn tray_tab_rect(
+        rect: Rect<f32>,
+        tab_size: f32,
+        flip_horz: bool,
+    ) -> Rect<f32> {
+        let left =
+            if flip_horz { rect.x - TRAY_TAB_WIDTH } else { rect.right() };
+        Rect::new(
+            left,
+            rect.y + TRAY_TAB_UPPER_MARGIN,
+            TRAY_TAB_WIDTH,
+            tab_size + 2.0 * TRAY_TAB_INNER_MARGIN,
+        )
     }
 }
 
-fn make_vertices(corners: &VertexBuffer<u8>, data: &[f32])
-                 -> (VertexArray, VertexBuffer<f32>) {
+fn make_vertices(
+    corners: &VertexBuffer<u8>,
+    data: &[f32],
+) -> (VertexArray, VertexBuffer<f32>) {
     let varray = VertexArray::new(3);
     let vbuffer = VertexBuffer::new(data);
     varray.bind();

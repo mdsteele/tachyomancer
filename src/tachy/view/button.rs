@@ -17,11 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::font::{Align, Font};
+use crate::tachy::geom::{AsFloat, Color3, Color4, Rect};
+use crate::tachy::gui::{
+    ClockEventData, Cursor, Event, Keycode, Resources, Sound, Ui,
+};
+use crate::tachy::save::Hotkey;
 use cgmath::{Matrix4, Point2};
-use tachy::font::{Align, Font};
-use tachy::geom::{AsFloat, Color3, Color4, Rect};
-use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Sound, Ui};
-use tachy::save::Hotkey;
 
 //===========================================================================//
 
@@ -60,8 +62,9 @@ pub struct Checkbox {
 impl Checkbox {
     pub fn new(mid_left: Point2<i32>, label: &str) -> Checkbox {
         let top = mid_left.y - CHECKBOX_BOX_SIZE / 2;
-        let width = CHECKBOX_BOX_SIZE + CHECKBOX_BOX_SPACING +
-            CHECKBOX_FONT.str_width(CHECKBOX_FONT_SIZE, label).ceil() as i32;
+        let width = CHECKBOX_BOX_SIZE
+            + CHECKBOX_BOX_SPACING
+            + CHECKBOX_FONT.str_width(CHECKBOX_FONT_SIZE, label).ceil() as i32;
         Checkbox {
             rect: Rect::new(mid_left.x, top, width, CHECKBOX_BOX_SIZE),
             label: label.to_string(),
@@ -69,45 +72,62 @@ impl Checkbox {
         }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                checked: bool, enabled: bool) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        checked: bool,
+        enabled: bool,
+    ) {
         let ui = resources.shaders().ui();
-        let box_rect = Rect::new(self.rect.x,
-                                 self.rect.y,
-                                 CHECKBOX_BOX_SIZE,
-                                 CHECKBOX_BOX_SIZE);
+        let box_rect = Rect::new(
+            self.rect.x,
+            self.rect.y,
+            CHECKBOX_BOX_SIZE,
+            CHECKBOX_BOX_SIZE,
+        );
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
         } else {
-            Color4::PURPLE0_TRANSLUCENT.mix(Color4::PURPLE3_TRANSLUCENT,
-                                            self.hover_pulse.brightness())
+            Color4::PURPLE0_TRANSLUCENT.mix(
+                Color4::PURPLE3_TRANSLUCENT,
+                self.hover_pulse.brightness(),
+            )
         };
-        ui.draw_checkbox(matrix,
-                         &box_rect.as_f32(),
-                         &Color4::ORANGE4,
-                         &Color4::CYAN5,
-                         &bg_color,
-                         checked);
+        ui.draw_checkbox(
+            matrix,
+            &box_rect.as_f32(),
+            &Color4::ORANGE4,
+            &Color4::CYAN5,
+            &bg_color,
+            checked,
+        );
         let font = resources.fonts().get(CHECKBOX_FONT);
-        font.draw(&matrix,
-                  CHECKBOX_FONT_SIZE,
-                  Align::MidLeft,
-                  ((box_rect.x + CHECKBOX_BOX_SIZE +
-                        CHECKBOX_BOX_SPACING) as f32,
-                   (box_rect.y + CHECKBOX_BOX_SIZE / 2) as f32),
-                  &self.label);
+        font.draw(
+            &matrix,
+            CHECKBOX_FONT_SIZE,
+            Align::MidLeft,
+            (
+                (box_rect.x + CHECKBOX_BOX_SIZE + CHECKBOX_BOX_SPACING) as f32,
+                (box_rect.y + CHECKBOX_BOX_SIZE / 2) as f32,
+            ),
+            &self.label,
+        );
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, checked: bool,
-                    enabled: bool)
-                    -> Option<bool> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        checked: bool,
+        enabled: bool,
+    ) -> Option<bool> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::MouseDown(mouse) => {
-                if enabled && mouse.left &&
-                    self.rect.contains_point(mouse.pt)
+                if enabled && mouse.left && self.rect.contains_point(mouse.pt)
                 {
                     self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
@@ -144,8 +164,9 @@ pub struct HotkeyBox {
 impl HotkeyBox {
     pub fn new(mid_left: Point2<i32>, hotkey: Hotkey) -> HotkeyBox {
         let top = mid_left.y - HOTKEY_BOX_HEIGHT / 2;
-        let width = HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING +
-            HOTKEY_FONT
+        let width = HOTKEY_BOX_WIDTH
+            + HOTKEY_BOX_SPACING
+            + HOTKEY_FONT
                 .str_width(HOTKEY_LABEL_FONT_SIZE, hotkey.name())
                 .ceil() as i32;
         HotkeyBox {
@@ -156,45 +177,68 @@ impl HotkeyBox {
         }
     }
 
-    pub fn hotkey(&self) -> Hotkey { self.hotkey }
+    pub fn hotkey(&self) -> Hotkey {
+        self.hotkey
+    }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                keycode: Keycode) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        keycode: Keycode,
+    ) {
         let ui = resources.shaders().ui();
-        let box_rect = Rect::new(self.rect.x,
-                                 self.rect.y,
-                                 HOTKEY_BOX_WIDTH,
-                                 HOTKEY_BOX_HEIGHT);
+        let box_rect = Rect::new(
+            self.rect.x,
+            self.rect.y,
+            HOTKEY_BOX_WIDTH,
+            HOTKEY_BOX_HEIGHT,
+        );
         let bg_color = if self.listening {
             Color4::PURPLE5
         } else {
-            Color4::PURPLE0_TRANSLUCENT.mix(Color4::PURPLE3_TRANSLUCENT,
-                                            self.hover_pulse.brightness())
+            Color4::PURPLE0_TRANSLUCENT.mix(
+                Color4::PURPLE3_TRANSLUCENT,
+                self.hover_pulse.brightness(),
+            )
         };
-        ui.draw_scroll_handle(matrix,
-                              &box_rect.as_f32(),
-                              &Color4::ORANGE4,
-                              &Color4::CYAN5,
-                              &bg_color);
+        ui.draw_scroll_handle(
+            matrix,
+            &box_rect.as_f32(),
+            &Color4::ORANGE4,
+            &Color4::CYAN5,
+            &bg_color,
+        );
         let font = resources.fonts().get(HOTKEY_FONT);
         if !self.listening {
-            font.draw(&matrix,
-                      HOTKEY_BOX_FONT_SIZE,
-                      Align::MidCenter,
-                      ((box_rect.x + box_rect.width / 2) as f32,
-                       (box_rect.y + box_rect.height / 2) as f32),
-                      Hotkey::keycode_name(keycode));
+            font.draw(
+                &matrix,
+                HOTKEY_BOX_FONT_SIZE,
+                Align::MidCenter,
+                (
+                    (box_rect.x + box_rect.width / 2) as f32,
+                    (box_rect.y + box_rect.height / 2) as f32,
+                ),
+                Hotkey::keycode_name(keycode),
+            );
         }
-        font.draw(&matrix,
-                  HOTKEY_LABEL_FONT_SIZE,
-                  Align::MidLeft,
-                  ((box_rect.right() + HOTKEY_BOX_SPACING) as f32,
-                   (box_rect.y + box_rect.height / 2) as f32),
-                  self.hotkey.name());
+        font.draw(
+            &matrix,
+            HOTKEY_LABEL_FONT_SIZE,
+            Align::MidLeft,
+            (
+                (box_rect.right() + HOTKEY_BOX_SPACING) as f32,
+                (box_rect.y + box_rect.height / 2) as f32,
+            ),
+            self.hotkey.name(),
+        );
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui)
-                    -> Option<HotkeyBoxAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+    ) -> Option<HotkeyBoxAction> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick, ui);
@@ -248,13 +292,12 @@ pub struct HoverPulse {
 
 impl HoverPulse {
     pub fn new() -> HoverPulse {
-        HoverPulse {
-            hovering: false,
-            brightness: 0.0,
-        }
+        HoverPulse { hovering: false, brightness: 0.0 }
     }
 
-    pub fn brightness(&self) -> f32 { self.brightness as f32 }
+    pub fn brightness(&self) -> f32 {
+        self.brightness as f32
+    }
 
     pub fn on_click(&mut self, ui: &mut Ui) {
         self.brightness = HOVER_PULSE_CLICK;
@@ -264,14 +307,14 @@ impl HoverPulse {
     pub fn on_clock_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
         if self.hovering {
             if self.brightness > HOVER_PULSE_HOVERING {
-                self.brightness = (self.brightness -
-                                       tick.elapsed * HOVER_PULSE_DECAY_RATE)
+                self.brightness = (self.brightness
+                    - tick.elapsed * HOVER_PULSE_DECAY_RATE)
                     .max(HOVER_PULSE_HOVERING);
                 ui.request_redraw();
             }
         } else if self.brightness > 0.0 {
-            self.brightness = (self.brightness -
-                                   tick.elapsed * HOVER_PULSE_DECAY_RATE)
+            self.brightness = (self.brightness
+                - tick.elapsed * HOVER_PULSE_DECAY_RATE)
                 .max(0.0);
             ui.request_redraw();
         }
@@ -292,7 +335,9 @@ impl HoverPulse {
         }
     }
 
-    pub fn unfocus(&mut self) { self.hovering = false; }
+    pub fn unfocus(&mut self) {
+        self.hovering = false;
+    }
 }
 
 //===========================================================================//
@@ -306,13 +351,21 @@ impl<T: Clone + PartialEq> RadioButton<T> {
         RadioButton { inner: TextButton::new(rect, label, value) }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                value: &T) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        value: &T,
+    ) {
         self.inner.draw(resources, matrix, value != &self.inner.value);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, value: &T)
-                    -> Option<T> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        value: &T,
+    ) -> Option<T> {
         let enabled = value != &self.inner.value;
         self.inner.on_event(event, ui, enabled)
     }
@@ -326,21 +379,29 @@ pub struct RadioCheckbox<T> {
 }
 
 impl<T: Clone + PartialEq> RadioCheckbox<T> {
-    pub fn new(mid_left: Point2<i32>, label: &str, value: T)
-               -> RadioCheckbox<T> {
-        RadioCheckbox {
-            inner: Checkbox::new(mid_left, label),
-            value,
-        }
+    pub fn new(
+        mid_left: Point2<i32>,
+        label: &str,
+        value: T,
+    ) -> RadioCheckbox<T> {
+        RadioCheckbox { inner: Checkbox::new(mid_left, label), value }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                value: &T) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        value: &T,
+    ) {
         self.inner.draw(resources, matrix, value == &self.value, true);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, value: &T)
-                    -> Option<T> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        value: &T,
+    ) -> Option<T> {
         let checked = value == &self.value;
         if let Some(true) = self.inner.on_event(event, ui, checked, true) {
             Some(self.value.clone())
@@ -362,17 +423,16 @@ pub struct Scrollbar {
 impl Scrollbar {
     pub fn new(rect: Rect<i32>, total_height: i32) -> Scrollbar {
         let scroll_max = (total_height - rect.height).max(0);
-        Scrollbar {
-            rect,
-            scroll_top: 0,
-            scroll_max,
-            drag: None,
-        }
+        Scrollbar { rect, scroll_top: 0, scroll_max, drag: None }
     }
 
-    pub fn is_visible(&self) -> bool { self.scroll_max != 0 }
+    pub fn is_visible(&self) -> bool {
+        self.scroll_max != 0
+    }
 
-    pub fn scroll_top(&self) -> i32 { self.scroll_top }
+    pub fn scroll_top(&self) -> i32 {
+        self.scroll_top
+    }
 
     pub fn set_total_height(&mut self, total_height: i32, ui: &mut Ui) {
         let new_scroll_max = (total_height - self.rect.height).max(0);
@@ -405,21 +465,25 @@ impl Scrollbar {
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         if let Some(handle_rect) = self.handle_rect() {
             let ui = resources.shaders().ui();
-            ui.draw_scroll_bar(matrix,
-                               &self.rect.as_f32(),
-                               &Color4::ORANGE3,
-                               &Color4::CYAN2,
-                               &Color4::PURPLE0_TRANSLUCENT);
+            ui.draw_scroll_bar(
+                matrix,
+                &self.rect.as_f32(),
+                &Color4::ORANGE3,
+                &Color4::CYAN2,
+                &Color4::PURPLE0_TRANSLUCENT,
+            );
             let (fg_color, bg_color) = if self.drag.is_some() {
                 (&Color4::ORANGE4, &Color4::PURPLE3)
             } else {
                 (&Color4::ORANGE3, &Color4::PURPLE1)
             };
-            ui.draw_scroll_handle(matrix,
-                                  &handle_rect.as_f32(),
-                                  fg_color,
-                                  &Color4::CYAN2,
-                                  bg_color);
+            ui.draw_scroll_handle(
+                matrix,
+                &handle_rect.as_f32(),
+                fg_color,
+                &Color4::CYAN2,
+                bg_color,
+            );
         }
     }
 
@@ -443,9 +507,10 @@ impl Scrollbar {
                 if let Some(drag_offset) = self.drag {
                     let new_handle_y = mouse.pt.y - drag_offset - self.rect.y;
                     let total_height = self.scroll_max + self.rect.height;
-                    let new_scroll_top = div_round(total_height *
-                                                       new_handle_y,
-                                                   self.rect.height);
+                    let new_scroll_top = div_round(
+                        total_height * new_handle_y,
+                        self.rect.height,
+                    );
                     self.scroll_top =
                         new_scroll_top.max(0).min(self.scroll_max);
                     ui.request_redraw();
@@ -470,13 +535,16 @@ impl Scrollbar {
     fn handle_rect(&self) -> Option<Rect<i32>> {
         if self.scroll_max != 0 {
             let total_height = self.scroll_max + self.rect.height;
-            Some(Rect::new(self.rect.x,
-                           self.rect.y +
-                               div_round(self.rect.height * self.scroll_top,
-                                         total_height),
-                           self.rect.width,
-                           div_round(self.rect.height * self.rect.height,
-                                     total_height)))
+            Some(Rect::new(
+                self.rect.x,
+                self.rect.y
+                    + div_round(
+                        self.rect.height * self.scroll_top,
+                        total_height,
+                    ),
+                self.rect.width,
+                div_round(self.rect.height * self.rect.height, total_height),
+            ))
         } else {
             None
         }
@@ -513,27 +581,36 @@ impl Slider {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         let ui = resources.shaders().ui();
-        ui.draw_scroll_bar(matrix,
-                           &self.rect.as_f32(),
-                           &Color4::ORANGE3,
-                           &Color4::CYAN2,
-                           &Color4::PURPLE0_TRANSLUCENT);
+        ui.draw_scroll_bar(
+            matrix,
+            &self.rect.as_f32(),
+            &Color4::ORANGE3,
+            &Color4::CYAN2,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
         let (fg_color, bg_color) = if self.drag.is_some() {
             (&Color4::ORANGE5, Color4::PURPLE3)
         } else {
-            (&Color4::ORANGE4,
-             Color4::PURPLE1
-                 .mix(Color4::PURPLE3, self.hover_pulse.brightness()))
+            (
+                &Color4::ORANGE4,
+                Color4::PURPLE1
+                    .mix(Color4::PURPLE3, self.hover_pulse.brightness()),
+            )
         };
-        ui.draw_scroll_handle(matrix,
-                              &self.handle_rect().as_f32(),
-                              fg_color,
-                              &Color4::CYAN2,
-                              &bg_color);
+        ui.draw_scroll_handle(
+            matrix,
+            &self.handle_rect().as_f32(),
+            fg_color,
+            &Color4::CYAN2,
+            &bg_color,
+        );
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui)
-                    -> Option<SliderAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+    ) -> Option<SliderAction> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick, ui);
@@ -551,9 +628,10 @@ impl Slider {
                     let old_left = self.handle_left();
                     let delta = mouse.pt.x - start;
                     let range = self.rect.width - self.rect.height;
-                    let value = div_round(range * self.value +
-                                              delta * self.maximum,
-                                          range);
+                    let value = div_round(
+                        range * self.value + delta * self.maximum,
+                        range,
+                    );
                     let value = value.max(0).min(self.maximum);
                     if value != self.value {
                         self.value = value.max(0).min(self.maximum);
@@ -591,9 +669,11 @@ impl Slider {
     }
 
     fn handle_left(&self) -> i32 {
-        self.rect.x +
-            div_round((self.rect.width - self.rect.height) * self.value,
-                      self.maximum)
+        self.rect.x
+            + div_round(
+                (self.rect.width - self.rect.height) * self.value,
+                self.maximum,
+            )
     }
 
     fn handle_rect(&self) -> Rect<i32> {
@@ -630,7 +710,9 @@ impl TextBox {
         }
     }
 
-    pub fn string(&self) -> &str { &self.string }
+    pub fn string(&self) -> &str {
+        &self.string
+    }
 
     fn cursor_blink_is_visible(&self) -> bool {
         self.cursor_blink < 0.5 * TEXT_BOX_CURSOR_BLINK_PERIOD
@@ -642,22 +724,26 @@ impl TextBox {
         resources.shaders().solid().fill_rect(&matrix, Color3::BLACK, rect);
         // Text:
         let font = resources.fonts().get(TEXT_BOX_FONT);
-        font.draw(&matrix,
-                  TEXT_BOX_FONT_SIZE,
-                  Align::MidLeft,
-                  (rect.x + TEXT_BOX_INNER_MARGIN,
-                   rect.y + 0.5 * rect.height),
-                  &self.string);
+        font.draw(
+            &matrix,
+            TEXT_BOX_FONT_SIZE,
+            Align::MidLeft,
+            (rect.x + TEXT_BOX_INNER_MARGIN, rect.y + 0.5 * rect.height),
+            &self.string,
+        );
         // Cursor:
         if self.cursor_blink_is_visible() {
             let color = Color3::new(0.5, 0.5, 0.0);
-            let cursor_rect =
-                Rect::new(rect.x + TEXT_BOX_INNER_MARGIN +
-                              TEXT_BOX_FONT.ratio() * TEXT_BOX_FONT_SIZE *
-                                  self.cursor_char as f32,
-                          rect.y + 0.5 * (rect.height - TEXT_BOX_FONT_SIZE),
-                          1.0,
-                          TEXT_BOX_FONT_SIZE);
+            let cursor_rect = Rect::new(
+                rect.x
+                    + TEXT_BOX_INNER_MARGIN
+                    + TEXT_BOX_FONT.ratio()
+                        * TEXT_BOX_FONT_SIZE
+                        * self.cursor_char as f32,
+                rect.y + 0.5 * (rect.height - TEXT_BOX_FONT_SIZE),
+                1.0,
+                TEXT_BOX_FONT_SIZE,
+            );
             resources.shaders().solid().fill_rect(&matrix, color, cursor_rect);
         }
     }
@@ -666,82 +752,81 @@ impl TextBox {
         match event {
             Event::ClockTick(tick) => {
                 let was_visible = self.cursor_blink_is_visible();
-                self.cursor_blink = (self.cursor_blink + tick.elapsed) %
-                    TEXT_BOX_CURSOR_BLINK_PERIOD;
+                self.cursor_blink = (self.cursor_blink + tick.elapsed)
+                    % TEXT_BOX_CURSOR_BLINK_PERIOD;
                 let is_visible = self.cursor_blink_is_visible();
                 if is_visible != was_visible {
                     ui.request_redraw();
                 }
             }
-            Event::KeyDown(key) => {
-                match key.code {
-                    Keycode::Backspace => {
-                        let rest = self.string.split_off(self.cursor_byte);
-                        if let Some(chr) = self.string.pop() {
-                            self.cursor_byte -= chr.len_utf8();
-                            self.cursor_char -= 1;
-                            self.cursor_blink = 0.0;
-                            ui.request_redraw();
-                            ui.audio().play_sound(Sound::TypeKey);
-                        }
-                        self.string.push_str(&rest);
+            Event::KeyDown(key) => match key.code {
+                Keycode::Backspace => {
+                    let rest = self.string.split_off(self.cursor_byte);
+                    if let Some(chr) = self.string.pop() {
+                        self.cursor_byte -= chr.len_utf8();
+                        self.cursor_char -= 1;
+                        self.cursor_blink = 0.0;
+                        ui.request_redraw();
+                        ui.audio().play_sound(Sound::TypeKey);
                     }
-                    Keycode::Delete => {
-                        if self.cursor_byte < self.string.len() {
-                            self.string.remove(self.cursor_byte);
-                            ui.request_redraw();
-                            ui.audio().play_sound(Sound::TypeKey);
-                        }
-                    }
-                    Keycode::Up | Keycode::PageUp | Keycode::Home => {
-                        if self.cursor_byte > 0 {
-                            self.cursor_byte = 0;
-                            self.cursor_char = 0;
-                            self.cursor_blink = 0.0;
-                            ui.request_redraw();
-                        }
-                    }
-                    Keycode::Down | Keycode::PageDown | Keycode::End => {
-                        if self.cursor_byte < self.string.len() {
-                            self.cursor_byte = self.string.len();
-                            self.cursor_char = self.string.chars().count();
-                            self.cursor_blink = 0.0;
-                            ui.request_redraw();
-                        }
-                    }
-                    Keycode::Left => {
-                        let (part, _) = self.string.split_at(self.cursor_byte);
-                        if let Some(chr) = part.chars().next_back() {
-                            self.cursor_byte -= chr.len_utf8();
-                            self.cursor_char -= 1;
-                            self.cursor_blink = 0.0;
-                            ui.request_redraw();
-                        }
-                    }
-                    Keycode::Right => {
-                        let (_, part) = self.string.split_at(self.cursor_byte);
-                        if let Some(chr) = part.chars().next() {
-                            self.cursor_byte += chr.len_utf8();
-                            self.cursor_char += 1;
-                            self.cursor_blink = 0.0;
-                            ui.request_redraw();
-                        }
-                    }
-                    _ => {}
+                    self.string.push_str(&rest);
                 }
-            }
+                Keycode::Delete => {
+                    if self.cursor_byte < self.string.len() {
+                        self.string.remove(self.cursor_byte);
+                        ui.request_redraw();
+                        ui.audio().play_sound(Sound::TypeKey);
+                    }
+                }
+                Keycode::Up | Keycode::PageUp | Keycode::Home => {
+                    if self.cursor_byte > 0 {
+                        self.cursor_byte = 0;
+                        self.cursor_char = 0;
+                        self.cursor_blink = 0.0;
+                        ui.request_redraw();
+                    }
+                }
+                Keycode::Down | Keycode::PageDown | Keycode::End => {
+                    if self.cursor_byte < self.string.len() {
+                        self.cursor_byte = self.string.len();
+                        self.cursor_char = self.string.chars().count();
+                        self.cursor_blink = 0.0;
+                        ui.request_redraw();
+                    }
+                }
+                Keycode::Left => {
+                    let (part, _) = self.string.split_at(self.cursor_byte);
+                    if let Some(chr) = part.chars().next_back() {
+                        self.cursor_byte -= chr.len_utf8();
+                        self.cursor_char -= 1;
+                        self.cursor_blink = 0.0;
+                        ui.request_redraw();
+                    }
+                }
+                Keycode::Right => {
+                    let (_, part) = self.string.split_at(self.cursor_byte);
+                    if let Some(chr) = part.chars().next() {
+                        self.cursor_byte += chr.len_utf8();
+                        self.cursor_char += 1;
+                        self.cursor_blink = 0.0;
+                        ui.request_redraw();
+                    }
+                }
+                _ => {}
+            },
             Event::MouseDown(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
                     ui.cursor().request(Cursor::Text);
-                    let rel_x = ((mouse.pt.x - self.rect.x) as f32) -
-                        TEXT_BOX_INNER_MARGIN;
-                    let char_index =
-                        ((rel_x /
-                              (TEXT_BOX_FONT.ratio() * TEXT_BOX_FONT_SIZE))
-                             .round()
-                             .max(0.0) as usize)
-                            .min(self.string.chars().count());
-                    self.cursor_byte = self.string
+                    let rel_x = ((mouse.pt.x - self.rect.x) as f32)
+                        - TEXT_BOX_INNER_MARGIN;
+                    let char_index = ((rel_x
+                        / (TEXT_BOX_FONT.ratio() * TEXT_BOX_FONT_SIZE))
+                        .round()
+                        .max(0.0)
+                        as usize)
+                        .min(self.string.chars().count());
+                    self.cursor_byte = self
+                        .string
                         .chars()
                         .take(char_index)
                         .map(|chr| chr.len_utf8())
@@ -751,8 +836,7 @@ impl TextBox {
                     ui.request_redraw();
                 }
             }
-            Event::MouseMove(mouse) |
-            Event::MouseUp(mouse) => {
+            Event::MouseMove(mouse) | Event::MouseUp(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
                     ui.cursor().request(Cursor::Text);
                 }
@@ -762,8 +846,8 @@ impl TextBox {
                     if self.string.chars().count() >= self.max_len {
                         break;
                     }
-                    if (chr >= ' ' && chr <= '~') ||
-                        (chr >= '\u{a1}' && chr <= '\u{ff}')
+                    if (chr >= ' ' && chr <= '~')
+                        || (chr >= '\u{a1}' && chr <= '\u{ff}')
                     {
                         self.string.insert(self.cursor_byte, chr);
                         self.cursor_byte += chr.len_utf8();
@@ -794,9 +878,12 @@ impl<T: Clone> TextButton<T> {
         TextButton::new_with_key(rect, label, value, None)
     }
 
-    pub fn new_with_key(rect: Rect<i32>, label: &str, value: T,
-                        keycode: Option<Keycode>)
-                        -> TextButton<T> {
+    pub fn new_with_key(
+        rect: Rect<i32>,
+        label: &str,
+        value: T,
+        keycode: Option<Keycode>,
+    ) -> TextButton<T> {
         TextButton {
             rect,
             label: label.to_string(),
@@ -806,30 +893,44 @@ impl<T: Clone> TextButton<T> {
         }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                enabled: bool) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        enabled: bool,
+    ) {
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
         } else {
-            Color4::PURPLE0_TRANSLUCENT.mix(Color4::PURPLE3_TRANSLUCENT,
-                                            self.hover_pulse.brightness())
+            Color4::PURPLE0_TRANSLUCENT.mix(
+                Color4::PURPLE3_TRANSLUCENT,
+                self.hover_pulse.brightness(),
+            )
         };
         let rect = self.rect.as_f32();
-        resources.shaders().ui().draw_box4(&matrix,
-                                           &rect,
-                                           &Color4::ORANGE5,
-                                           &Color4::CYAN3,
-                                           &bg_color);
+        resources.shaders().ui().draw_box4(
+            &matrix,
+            &rect,
+            &Color4::ORANGE5,
+            &Color4::CYAN3,
+            &bg_color,
+        );
         let font = resources.fonts().get(TEXT_BUTTON_FONT);
-        font.draw(&matrix,
-                  TEXT_BUTTON_FONT_SIZE,
-                  Align::MidCenter,
-                  (rect.x + 0.5 * rect.width, rect.y + 0.5 * rect.height),
-                  &self.label);
+        font.draw(
+            &matrix,
+            TEXT_BUTTON_FONT_SIZE,
+            Align::MidCenter,
+            (rect.x + 0.5 * rect.width, rect.y + 0.5 * rect.height),
+            &self.label,
+        );
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui, enabled: bool)
-                    -> Option<T> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        enabled: bool,
+    ) -> Option<T> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick, ui);
@@ -842,8 +943,7 @@ impl<T: Clone> TextButton<T> {
                 }
             }
             Event::MouseDown(mouse) => {
-                if enabled && mouse.left &&
-                    self.rect.contains_point(mouse.pt)
+                if enabled && mouse.left && self.rect.contains_point(mouse.pt)
                 {
                     self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);

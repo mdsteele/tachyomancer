@@ -18,12 +18,12 @@
 // +--------------------------------------------------------------------------+
 
 use super::types::{CompiledPiece, ParserPiece, ParserPieceSplit};
+use crate::tachy::font::{Align, Font};
+use crate::tachy::geom::Color4;
+use crate::tachy::gui::Resources;
 use cgmath::Matrix4;
 use std::char;
 use std::mem;
-use tachy::font::{Align, Font};
-use tachy::geom::Color4;
-use tachy::gui::Resources;
 
 //===========================================================================//
 
@@ -36,38 +36,45 @@ pub struct ParserTextPiece {
 }
 
 impl ParserTextPiece {
-    pub fn new(font: Font, color: Color4, slant: f32,
-               millis_per_char: usize, chars: Vec<u8>)
-               -> ParserTextPiece {
-        ParserTextPiece {
-            font,
-            color,
-            slant,
-            millis_per_char,
-            chars,
-        }
+    pub fn new(
+        font: Font,
+        color: Color4,
+        slant: f32,
+        millis_per_char: usize,
+        chars: Vec<u8>,
+    ) -> ParserTextPiece {
+        ParserTextPiece { font, color, slant, millis_per_char, chars }
     }
 }
 
 impl ParserPiece for ParserTextPiece {
-    fn is_empty(&self) -> bool { self.chars.is_empty() }
+    fn is_empty(&self) -> bool {
+        self.chars.is_empty()
+    }
 
     fn width(&self, font_size: f32) -> f32 {
         font_size * self.font.ratio() * (self.chars.len() as f32)
     }
 
-    fn height(&self, font_size: f32) -> f32 { font_size }
+    fn height(&self, font_size: f32) -> f32 {
+        font_size
+    }
 
-    fn num_millis(&self) -> usize { self.millis_per_char * self.chars.len() }
+    fn num_millis(&self) -> usize {
+        self.millis_per_char * self.chars.len()
+    }
 
-    fn split(&mut self, font_size: f32, remaining_width: f32)
-             -> ParserPieceSplit {
+    fn split(
+        &mut self,
+        font_size: f32,
+        remaining_width: f32,
+    ) -> ParserPieceSplit {
         debug_assert!(font_size > 0.0);
         let remaining_chars: usize = if remaining_width <= 0.0 {
             0
         } else {
-            (remaining_width / (font_size * self.font.ratio())).floor() as
-                usize
+            (remaining_width / (font_size * self.font.ratio())).floor()
+                as usize
         };
 
         if self.chars.len() <= remaining_chars {
@@ -116,7 +123,11 @@ impl ParserPiece for ParserTextPiece {
         return ParserPieceSplit::NoneFits(None);
     }
 
-    fn compile(&mut self, x_offset: f32, y_offset: f32) -> Box<CompiledPiece> {
+    fn compile(
+        &mut self,
+        x_offset: f32,
+        y_offset: f32,
+    ) -> Box<dyn CompiledPiece> {
         let piece = CompiledTextPiece {
             offset: (x_offset, y_offset),
             font: self.font,
@@ -150,15 +161,25 @@ struct CompiledTextPiece {
 }
 
 impl CompiledPiece for CompiledTextPiece {
-    fn height(&self, font_size: f32) -> f32 { font_size }
+    fn height(&self, font_size: f32) -> f32 {
+        font_size
+    }
 
-    fn add_x_offset(&mut self, x_offset: f32) { self.offset.0 += x_offset; }
+    fn add_x_offset(&mut self, x_offset: f32) {
+        self.offset.0 += x_offset;
+    }
 
-    fn add_y_offset(&mut self, y_offset: f32) { self.offset.1 += y_offset; }
+    fn add_y_offset(&mut self, y_offset: f32) {
+        self.offset.1 += y_offset;
+    }
 
-    fn draw(&self, resources: &Resources, paragraph_matrix: &Matrix4<f32>,
-            font_size: f32, millis_remaining: &mut usize)
-            -> bool {
+    fn draw(
+        &self,
+        resources: &Resources,
+        paragraph_matrix: &Matrix4<f32>,
+        font_size: f32,
+        millis_remaining: &mut usize,
+    ) -> bool {
         let text_millis = self.chars.len() * self.millis_per_char;
         let (chars, finished) = if text_millis <= *millis_remaining {
             *millis_remaining -= text_millis;
@@ -170,13 +191,15 @@ impl CompiledPiece for CompiledTextPiece {
             (&self.chars[..substring_chars], false)
         };
         let font = resources.fonts().get(self.font);
-        font.draw_chars(paragraph_matrix,
-                        font_size,
-                        Align::TopLeft,
-                        self.offset,
-                        &self.color,
-                        self.slant,
-                        chars);
+        font.draw_chars(
+            paragraph_matrix,
+            font_size,
+            Align::TopLeft,
+            self.offset,
+            &self.color,
+            self.slant,
+            chars,
+        );
         finished
     }
 

@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::MatrixExt;
+use crate::tachy::gl::{
+    Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture2D, VertexArray, VertexBuffer,
+};
 use cgmath::{Matrix4, Point2};
-use tachy::geom::MatrixExt;
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -40,12 +42,16 @@ pub struct PortraitShader {
 
 impl PortraitShader {
     pub(super) fn new() -> Result<PortraitShader, String> {
-        let vert = Shader::new(ShaderType::Vertex,
-                               "portrait.vert",
-                               PORTRAIT_VERT_CODE)?;
-        let frag = Shader::new(ShaderType::Fragment,
-                               "portrait.frag",
-                               PORTRAIT_FRAG_CODE)?;
+        let vert = Shader::new(
+            ShaderType::Vertex,
+            "portrait.vert",
+            PORTRAIT_VERT_CODE,
+        )?;
+        let frag = Shader::new(
+            ShaderType::Fragment,
+            "portrait.frag",
+            PORTRAIT_FRAG_CODE,
+        )?;
         let program = ShaderProgram::new(&[&vert, &frag])?;
 
         let mvp = program.get_uniform("MVP")?;
@@ -68,8 +74,13 @@ impl PortraitShader {
         Ok(shader)
     }
 
-    pub fn draw(&self, matrix: &Matrix4<f32>, portrait_index: u32,
-                left_top: Point2<f32>, texture: &Texture2D) {
+    pub fn draw(
+        &self,
+        matrix: &Matrix4<f32>,
+        portrait_index: u32,
+        left_top: Point2<f32>,
+        texture: &Texture2D,
+    ) {
         self.program.bind();
         self.mvp.set(&(matrix * Matrix4::trans2(left_top.x, left_top.y)));
         self.portrait_index.set(&portrait_index);

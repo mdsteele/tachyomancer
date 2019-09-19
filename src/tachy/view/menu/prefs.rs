@@ -17,14 +17,16 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::button::{
+    Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton, RadioCheckbox, Slider,
+    SliderAction, TextButton,
+};
 use super::list::{ListIcon, ListView};
-use super::super::button::{Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton,
-                           RadioCheckbox, Slider, SliderAction, TextButton};
+use crate::tachy::geom::{Rect, RectSize};
+use crate::tachy::gui::{Event, Resources, Sound, Ui, Window, WindowOptions};
+use crate::tachy::save::Hotkey;
+use crate::tachy::state::GameState;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{Rect, RectSize};
-use tachy::gui::{Event, Resources, Sound, Ui, Window, WindowOptions};
-use tachy::save::Hotkey;
-use tachy::state::GameState;
 
 //===========================================================================//
 
@@ -71,42 +73,53 @@ pub struct PrefsView {
 }
 
 impl PrefsView {
-    pub fn new(rect: Rect<i32>, window: &mut Window, state: &GameState)
-               -> PrefsView {
+    pub fn new(
+        rect: Rect<i32>,
+        window: &mut Window,
+        state: &GameState,
+    ) -> PrefsView {
         let num_panes = PANES.len() as i32;
-        let pane_button_height = (rect.height + PANE_BUTTON_SPACING) /
-            (num_panes + 1) -
-            PANE_BUTTON_SPACING;
+        let pane_button_height = (rect.height + PANE_BUTTON_SPACING)
+            / (num_panes + 1)
+            - PANE_BUTTON_SPACING;
         let pane_buttons = PANES
             .iter()
             .enumerate()
             .map(|(index, &(pane, label))| {
-                let top = rect.y +
-                    (index as i32) *
-                        (pane_button_height + PANE_BUTTON_SPACING);
-                let rect = Rect::new(rect.x,
-                                     top,
-                                     PANE_BUTTON_WIDTH,
-                                     pane_button_height);
+                let top = rect.y
+                    + (index as i32)
+                        * (pane_button_height + PANE_BUTTON_SPACING);
+                let rect = Rect::new(
+                    rect.x,
+                    top,
+                    PANE_BUTTON_WIDTH,
+                    pane_button_height,
+                );
                 RadioButton::new(rect, label, pane)
             })
             .collect();
 
-        let quit_button_top = rect.y +
-            num_panes * (pane_button_height + PANE_BUTTON_SPACING);
+        let quit_button_top =
+            rect.y + num_panes * (pane_button_height + PANE_BUTTON_SPACING);
         let quit_button_height = rect.height - (quit_button_top - rect.y);
-        let quit_button = TextButton::new(Rect::new(rect.x,
-                                                    quit_button_top,
-                                                    PANE_BUTTON_WIDTH,
-                                                    quit_button_height),
-                                          "Exit Game",
-                                          PrefsAction::QuitGame);
+        let quit_button = TextButton::new(
+            Rect::new(
+                rect.x,
+                quit_button_top,
+                PANE_BUTTON_WIDTH,
+                quit_button_height,
+            ),
+            "Exit Game",
+            PrefsAction::QuitGame,
+        );
 
         let pane_offset = PANE_BUTTON_WIDTH + PANE_BUTTON_SPACING;
-        let pane_rect = Rect::new(rect.x + pane_offset,
-                                  rect.y,
-                                  rect.width - pane_offset,
-                                  rect.height);
+        let pane_rect = Rect::new(
+            rect.x + pane_offset,
+            rect.y,
+            rect.width - pane_offset,
+            rect.height,
+        );
         let audio_video_pane = AudioVideoPane::new(pane_rect, window, state);
         let mut ui = window.ui();
         let hotkeys_pane = HotkeysPane::new(pane_rect);
@@ -122,8 +135,12 @@ impl PrefsView {
         }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                state: &GameState) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        state: &GameState,
+    ) {
         debug_assert!(state.profile().is_some());
         for button in self.pane_buttons.iter() {
             button.draw(resources, matrix, &self.current_pane);
@@ -146,9 +163,12 @@ impl PrefsView {
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    state: &mut GameState)
-                    -> Option<PrefsAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        state: &mut GameState,
+    ) -> Option<PrefsAction> {
         debug_assert!(state.profile().is_some());
         if let Some(action) = self.on_pane_event(event, ui, state) {
             return Some(action);
@@ -156,8 +176,7 @@ impl PrefsView {
 
         let mut next_pane: Option<PrefsPane> = None;
         for button in self.pane_buttons.iter_mut() {
-            if let Some(pane) = button
-                .on_event(event, ui, &self.current_pane)
+            if let Some(pane) = button.on_event(event, ui, &self.current_pane)
             {
                 next_pane = Some(pane);
                 break;
@@ -175,9 +194,12 @@ impl PrefsView {
         return None;
     }
 
-    fn on_pane_event(&mut self, event: &Event, ui: &mut Ui,
-                     state: &mut GameState)
-                     -> Option<PrefsAction> {
+    fn on_pane_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        state: &mut GameState,
+    ) -> Option<PrefsAction> {
         match self.current_pane {
             PrefsPane::AudioVideo => {
                 self.audio_video_pane.on_event(event, ui, state)
@@ -212,37 +234,41 @@ pub struct AudioVideoPane {
 }
 
 impl AudioVideoPane {
-    pub fn new(rect: Rect<i32>, window: &Window, state: &GameState)
-               -> AudioVideoPane {
+    pub fn new(
+        rect: Rect<i32>,
+        window: &Window,
+        state: &GameState,
+    ) -> AudioVideoPane {
         let antialias_checkbox =
             Checkbox::new(Point2::new(rect.x, rect.y + 20), "Antialiasing");
-        let fullscreen_checkbox = Checkbox::new(Point2::new(rect.x + 300,
-                                                            rect.y + 20),
-                                                "Fullscreen");
-        let sound_volume_slider =
-            Slider::new(Rect::new(rect.x, rect.y + 80, rect.width, 30),
-                        state.prefs().sound_volume_percent(),
-                        100);
-        let music_volume_slider =
-            Slider::new(Rect::new(rect.x, rect.y + 130, rect.width, 30),
-                        state.prefs().music_volume_percent(),
-                        100);
+        let fullscreen_checkbox = Checkbox::new(
+            Point2::new(rect.x + 300, rect.y + 20),
+            "Fullscreen",
+        );
+        let sound_volume_slider = Slider::new(
+            Rect::new(rect.x, rect.y + 80, rect.width, 30),
+            state.prefs().sound_volume_percent(),
+            100,
+        );
+        let music_volume_slider = Slider::new(
+            Rect::new(rect.x, rect.y + 130, rect.width, 30),
+            state.prefs().music_volume_percent(),
+            100,
+        );
 
         let res_pos = |index| Point2::new(rect.x, rect.y + 185 + 30 * index);
         let mut resolution_buttons =
             vec![RadioCheckbox::new(res_pos(0), "Native", None)];
         resolution_buttons.extend(
-            window
-                .possible_resolutions()
-                .iter()
-                .enumerate()
-                .map(|(index, &res)| {
-                    RadioCheckbox::new(res_pos((index as i32) + 1),
-                                       &format!("{}x{}",
-                                                res.width,
-                                                res.height),
-                                       Some(res))
-                }),
+            window.possible_resolutions().iter().enumerate().map(
+                |(index, &res)| {
+                    RadioCheckbox::new(
+                        res_pos((index as i32) + 1),
+                        &format!("{}x{}", res.width, res.height),
+                        Some(res),
+                    )
+                },
+            ),
         );
 
         let apply_button_rect =
@@ -266,15 +292,24 @@ impl AudioVideoPane {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        self.antialias_checkbox.draw(resources,
-                                     matrix,
-                                     self.new_window_options.antialiasing,
-                                     true);
-        self.fullscreen_checkbox
-            .draw(resources, matrix, self.new_window_options.fullscreen, true);
+        self.antialias_checkbox.draw(
+            resources,
+            matrix,
+            self.new_window_options.antialiasing,
+            true,
+        );
+        self.fullscreen_checkbox.draw(
+            resources,
+            matrix,
+            self.new_window_options.fullscreen,
+            true,
+        );
         for button in self.resolution_buttons.iter() {
-            button
-                .draw(resources, matrix, &self.new_window_options.resolution);
+            button.draw(
+                resources,
+                matrix,
+                &self.new_window_options.resolution,
+            );
         }
         self.sound_volume_slider.draw(resources, matrix);
         self.music_volume_slider.draw(resources, matrix);
@@ -284,24 +319,29 @@ impl AudioVideoPane {
         self.revert_button.draw(resources, matrix, enabled);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    state: &mut GameState)
-                    -> Option<PrefsAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        state: &mut GameState,
+    ) -> Option<PrefsAction> {
         if let &Event::Unfocus = event {
             self.new_window_options = self.current_window_options.clone();
         }
 
         let antialiasing = self.new_window_options.antialiasing;
-        if let Some(checked) = self.antialias_checkbox
-            .on_event(event, ui, antialiasing, true)
+        if let Some(checked) =
+            self.antialias_checkbox.on_event(event, ui, antialiasing, true)
         {
             self.new_window_options.antialiasing = checked;
         }
 
-        if let Some(checked) =
-            self.fullscreen_checkbox
-                .on_event(event, ui, self.new_window_options.fullscreen, true)
-        {
+        if let Some(checked) = self.fullscreen_checkbox.on_event(
+            event,
+            ui,
+            self.new_window_options.fullscreen,
+            true,
+        ) {
             self.new_window_options.fullscreen = checked;
         }
 
@@ -361,22 +401,23 @@ impl HotkeysPane {
         let mut top = rect.y - 16;
         let hotkey_boxes = Hotkey::all()
             .map(|hotkey| {
-                     top += 32;
-                     HotkeyBox::new(Point2::new(left, top), hotkey)
-                 })
+                top += 32;
+                HotkeyBox::new(Point2::new(left, top), hotkey)
+            })
             .collect();
         let defaults_button_rect =
             Rect::new(rect.right() - 200, rect.bottom() - 40, 200, 40);
         let defaults_button =
             TextButton::new(defaults_button_rect, "Restore Defaults", ());
-        HotkeysPane {
-            hotkey_boxes,
-            defaults_button,
-        }
+        HotkeysPane { hotkey_boxes, defaults_button }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                state: &GameState) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        state: &GameState,
+    ) {
         for hotkey_box in self.hotkey_boxes.iter() {
             let keycode = state.prefs().hotkey_code(hotkey_box.hotkey());
             hotkey_box.draw(resources, matrix, keycode);
@@ -386,9 +427,12 @@ impl HotkeysPane {
         self.defaults_button.draw(resources, matrix, enabled);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    state: &mut GameState)
-                    -> Option<PrefsAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        state: &mut GameState,
+    ) -> Option<PrefsAction> {
         let enabled = !state.prefs().hotkeys_are_defaults();
         if self.defaults_button.on_event(event, ui, enabled).is_some() {
             state.prefs_mut().set_hotkeys_to_defaults();
@@ -428,42 +472,49 @@ pub struct ProfilesPane {
 }
 
 impl ProfilesPane {
-    pub fn new(rect: Rect<i32>, ui: &mut Ui, state: &GameState)
-               -> ProfilesPane {
+    pub fn new(
+        rect: Rect<i32>,
+        ui: &mut Ui,
+        state: &GameState,
+    ) -> ProfilesPane {
         debug_assert!(state.profile().is_some());
-        let profile_list =
-            ListView::new(Rect::new(rect.x, rect.y, 300, rect.height),
-                          ui,
-                          profile_list_items(state),
-                          state.profile().unwrap().name());
-        let new_button =
-            TextButton::new(Rect::new(rect.right() - 150, rect.y, 150, 40),
-                            "New Profile",
-                            PrefsAction::NewProfile);
-        let delete_button = TextButton::new(Rect::new(rect.right() - 150,
-                                                      rect.bottom() - 40,
-                                                      150,
-                                                      40),
-                                            "Delete Profile",
-                                            PrefsAction::DeleteProfile);
-        ProfilesPane {
-            profile_list,
-            new_button,
-            delete_button,
-        }
+        let profile_list = ListView::new(
+            Rect::new(rect.x, rect.y, 300, rect.height),
+            ui,
+            profile_list_items(state),
+            state.profile().unwrap().name(),
+        );
+        let new_button = TextButton::new(
+            Rect::new(rect.right() - 150, rect.y, 150, 40),
+            "New Profile",
+            PrefsAction::NewProfile,
+        );
+        let delete_button = TextButton::new(
+            Rect::new(rect.right() - 150, rect.bottom() - 40, 150, 40),
+            "Delete Profile",
+            PrefsAction::DeleteProfile,
+        );
+        ProfilesPane { profile_list, new_button, delete_button }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                state: &GameState) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        state: &GameState,
+    ) {
         let current_profile_name = state.profile().unwrap().name();
         self.profile_list.draw(resources, matrix, current_profile_name);
         self.new_button.draw(resources, matrix, true);
         self.delete_button.draw(resources, matrix, true);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    state: &mut GameState)
-                    -> Option<PrefsAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        state: &mut GameState,
+    ) -> Option<PrefsAction> {
         let current_profile_name = state.profile().unwrap().name();
         if let Some(profile_name) =
             self.profile_list.on_event(event, ui, current_profile_name)
@@ -480,14 +531,17 @@ impl ProfilesPane {
     }
 
     pub fn update_profile_list(&mut self, ui: &mut Ui, state: &GameState) {
-        self.profile_list.set_items(ui,
-                                    profile_list_items(state),
-                                    state.profile().unwrap().name());
+        self.profile_list.set_items(
+            ui,
+            profile_list_items(state),
+            state.profile().unwrap().name(),
+        );
     }
 }
 
-fn profile_list_items(state: &GameState)
-                      -> Vec<(String, String, bool, Option<ListIcon>)> {
+fn profile_list_items(
+    state: &GameState,
+) -> Vec<(String, String, bool, Option<ListIcon>)> {
     state
         .profile_names()
         .map(|name| (name.to_string(), name.to_string(), false, None))

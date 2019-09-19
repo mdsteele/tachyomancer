@@ -21,7 +21,7 @@ use super::encode::{decode_name, encode_name};
 use super::prefs::Prefs;
 use super::profile::Profile;
 use app_dirs::{self, AppDataType, AppDirsError, AppInfo};
-use std::collections::{BTreeSet, btree_set};
+use std::collections::{btree_set, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
 use unicase::UniCase;
@@ -43,19 +43,15 @@ impl SaveDir {
         // Get or create save dir.
         let base_path: PathBuf = match path {
             Some(p) => p.clone(),
-            None => {
-                get_default_save_dir_path()
-                    .map_err(|err| {
-                        format!("Could not find save data directory: {}", err)
-                    })?
-            }
+            None => get_default_save_dir_path().map_err(|err| {
+                format!("Could not find save data directory: {}", err)
+            })?,
         };
         debug_log!("Using save data directory: {:?}", base_path);
         if !base_path.exists() {
-            fs::create_dir_all(&base_path)
-                .map_err(|err| {
-                    format!("Could not create save data directory: {}", err)
-                })?;
+            fs::create_dir_all(&base_path).map_err(|err| {
+                format!("Could not create save data directory: {}", err)
+            })?;
         }
 
         // Load prefs.
@@ -64,19 +60,17 @@ impl SaveDir {
 
         // Load list of profiles.
         let mut profile_names = BTreeSet::<UniCase<String>>::new();
-        let entries = base_path
-            .read_dir()
-            .map_err(|err| {
-                format!("Could not read contents of save data directory: {}",
-                        err)
-            })?;
+        let entries = base_path.read_dir().map_err(|err| {
+            format!("Could not read contents of save data directory: {}", err)
+        })?;
         for entry_result in entries {
-            let entry = entry_result
-                .map_err(|err| {
-                    format!("Error while reading contents of save data \
-                             directory: {}",
-                            err)
-                })?;
+            let entry = entry_result.map_err(|err| {
+                format!(
+                    "Error while reading contents of save data \
+                     directory: {}",
+                    err
+                )
+            })?;
             if !entry.path().is_dir() {
                 continue;
             }
@@ -107,18 +101,20 @@ impl SaveDir {
             prefs.save()?;
         }
 
-        Ok(SaveDir {
-               base_path,
-               prefs,
-               profile_names,
-           })
+        Ok(SaveDir { base_path, prefs, profile_names })
     }
 
-    pub fn prefs(&self) -> &Prefs { &self.prefs }
+    pub fn prefs(&self) -> &Prefs {
+        &self.prefs
+    }
 
-    pub fn prefs_mut(&mut self) -> &mut Prefs { &mut self.prefs }
+    pub fn prefs_mut(&mut self) -> &mut Prefs {
+        &mut self.prefs
+    }
 
-    pub fn save(&mut self) -> Result<(), String> { self.prefs.save() }
+    pub fn save(&mut self) -> Result<(), String> {
+        self.prefs.save()
+    }
 
     pub fn profile_names(&self) -> ProfileNamesIter {
         ProfileNamesIter { inner: self.profile_names.iter() }
@@ -131,8 +127,9 @@ impl SaveDir {
         self.profile_names.contains(&UniCase::new(name.to_string()))
     }
 
-    pub fn load_current_profile_if_any(&self)
-                                       -> Result<Option<Profile>, String> {
+    pub fn load_current_profile_if_any(
+        &self,
+    ) -> Result<Option<Profile>, String> {
         if let Some(name) = self.prefs.current_profile() {
             let path = self.base_path.join(encode_name(name));
             let profile = Profile::create_or_load(name.to_string(), &path)?;
@@ -142,8 +139,10 @@ impl SaveDir {
         }
     }
 
-    pub fn create_or_load_profile(&mut self, name: String)
-                                  -> Result<Profile, String> {
+    pub fn create_or_load_profile(
+        &mut self,
+        name: String,
+    ) -> Result<Profile, String> {
         let is_current_profile = self.prefs.current_profile() == Some(&name);
         let path = self.base_path.join(encode_name(&name));
         let profile = Profile::create_or_load(name, &path)?;
@@ -179,22 +178,16 @@ impl<'a> Iterator for ProfileNamesIter<'a> {
 
 //===========================================================================//
 
-const APP_INFO: AppInfo = AppInfo {
-    name: "Tachyomancer",
-    author: "mdsteele",
-};
+const APP_INFO: AppInfo = AppInfo { name: "Tachyomancer", author: "mdsteele" };
 
 fn get_default_save_dir_path() -> Result<PathBuf, String> {
-    app_dirs::app_root(AppDataType::UserData, &APP_INFO)
-        .map_err(|err| match err {
-                     AppDirsError::Io(error) => format!("IO error: {}", error),
-                     AppDirsError::NotSupported => {
-                         "App dir not supported".to_string()
-                     }
-                     AppDirsError::InvalidAppInfo => {
-                         "App info invalid".to_string()
-                     }
-                 })
+    app_dirs::app_root(AppDataType::UserData, &APP_INFO).map_err(|err| {
+        match err {
+            AppDirsError::Io(error) => format!("IO error: {}", error),
+            AppDirsError::NotSupported => "App dir not supported".to_string(),
+            AppDirsError::InvalidAppInfo => "App info invalid".to_string(),
+        }
+    })
 }
 
 //===========================================================================//

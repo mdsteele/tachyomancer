@@ -18,11 +18,12 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::chip::CHIP_MARGIN;
+use crate::tachy::geom::{
+    AsFloat, AsInt, CoordsDelta, CoordsRect, CoordsSize, Direction, Rect,
+};
+use crate::tachy::gui::{Cursor, NextCursor, Sound, Ui};
+use crate::tachy::state::{EditGrid, GridChange};
 use cgmath::Point2;
-use tachy::geom::{AsFloat, AsInt, CoordsDelta, CoordsRect, CoordsSize,
-                  Direction, Rect};
-use tachy::gui::{Cursor, NextCursor, Sound, Ui};
-use tachy::state::{EditGrid, GridChange};
 
 //===========================================================================//
 
@@ -53,8 +54,10 @@ impl BoundsHandle {
         }
     }
 
-    pub fn for_grid_pt(grid_pt: Point2<f32>, grid: &EditGrid)
-                       -> Option<BoundsHandle> {
+    pub fn for_grid_pt(
+        grid_pt: Point2<f32>,
+        grid: &EditGrid,
+    ) -> Option<BoundsHandle> {
         let inner = grid.bounds().as_f32().expand(CHIP_MARGIN);
         if inner.contains_point(grid_pt) {
             return None;
@@ -99,8 +102,9 @@ impl BoundsHandle {
             BoundsHandle::TopRight | BoundsHandle::BottomLeft => {
                 Cursor::ResizeNortheastSouthwest
             }
-            BoundsHandle::TopLeft |
-            BoundsHandle::BottomRight => Cursor::ResizeNorthwestSoutheast,
+            BoundsHandle::TopLeft | BoundsHandle::BottomRight => {
+                Cursor::ResizeNorthwestSoutheast
+            }
         }
     }
 }
@@ -117,9 +121,11 @@ pub struct BoundsDrag {
 }
 
 impl BoundsDrag {
-    pub fn new(handle: BoundsHandle, start_grid_pt: Point2<f32>,
-               grid: &mut EditGrid)
-               -> BoundsDrag {
+    pub fn new(
+        handle: BoundsHandle,
+        start_grid_pt: Point2<f32>,
+        grid: &mut EditGrid,
+    ) -> BoundsDrag {
         BoundsDrag {
             min_size: grid.min_bounds_size(),
             handle,
@@ -130,31 +136,40 @@ impl BoundsDrag {
         }
     }
 
-    pub fn bounds(&self) -> CoordsRect { self.bounds }
+    pub fn bounds(&self) -> CoordsRect {
+        self.bounds
+    }
 
-    pub fn is_acceptable(&self) -> bool { self.acceptable }
+    pub fn is_acceptable(&self) -> bool {
+        self.acceptable
+    }
 
     pub fn request_cursor(&self, next_cursor: &mut NextCursor) {
         next_cursor.request(self.handle.cursor());
     }
 
-    pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui,
-                   grid: &EditGrid) {
+    pub fn move_to(
+        &mut self,
+        grid_pt: Point2<f32>,
+        ui: &mut Ui,
+        grid: &EditGrid,
+    ) {
         self.drag_current_grid_pt = grid_pt;
-        let delta: CoordsDelta = (self.drag_current_grid_pt -
-                                      self.drag_start_grid_pt)
+        let delta: CoordsDelta = (self.drag_current_grid_pt
+            - self.drag_start_grid_pt)
             .as_i32_round();
         let old_bounds = grid.bounds();
         let mut left = old_bounds.x;
         let mut right = old_bounds.x + old_bounds.width;
         match self.handle {
-            BoundsHandle::TopLeft | BoundsHandle::Left |
-            BoundsHandle::BottomLeft => {
+            BoundsHandle::TopLeft
+            | BoundsHandle::Left
+            | BoundsHandle::BottomLeft => {
                 left = (left + delta.x).min(right - self.min_size.width);
             }
-            BoundsHandle::TopRight |
-            BoundsHandle::Right |
-            BoundsHandle::BottomRight => {
+            BoundsHandle::TopRight
+            | BoundsHandle::Right
+            | BoundsHandle::BottomRight => {
                 right = (right + delta.x).max(left + self.min_size.width);
             }
             BoundsHandle::Top | BoundsHandle::Bottom => {}
@@ -162,13 +177,14 @@ impl BoundsDrag {
         let mut top = old_bounds.y;
         let mut bottom = old_bounds.y + old_bounds.height;
         match self.handle {
-            BoundsHandle::TopLeft | BoundsHandle::Top |
-            BoundsHandle::TopRight => {
+            BoundsHandle::TopLeft
+            | BoundsHandle::Top
+            | BoundsHandle::TopRight => {
                 top = (top + delta.y).min(bottom - self.min_size.height);
             }
-            BoundsHandle::BottomLeft |
-            BoundsHandle::Bottom |
-            BoundsHandle::BottomRight => {
+            BoundsHandle::BottomLeft
+            | BoundsHandle::Bottom
+            | BoundsHandle::BottomRight => {
                 bottom = (bottom + delta.y).max(top + self.min_size.height);
             }
             BoundsHandle::Left | BoundsHandle::Right => {}

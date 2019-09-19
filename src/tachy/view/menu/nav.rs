@@ -17,28 +17,39 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Rect, RectSize};
+use crate::tachy::gui::{Event, Resources, Ui};
+use crate::tachy::state::GameState;
 use cgmath::Matrix4;
-use tachy::geom::{Rect, RectSize};
-use tachy::gui::{Event, Resources, Ui};
-use tachy::state::GameState;
 
 //===========================================================================//
 
 pub struct NavigationView {}
 
 impl NavigationView {
-    pub fn new(_screen_size: RectSize<f32>, _rect: Rect<i32>, _ui: &mut Ui,
-               _state: &GameState)
-               -> NavigationView {
+    pub fn new(
+        _screen_size: RectSize<f32>,
+        _rect: Rect<i32>,
+        _ui: &mut Ui,
+        _state: &GameState,
+    ) -> NavigationView {
         NavigationView {}
     }
 
-    pub fn draw(&self, _resources: &Resources, _matrix: &Matrix4<f32>,
-                _state: &GameState) {
+    pub fn draw(
+        &self,
+        _resources: &Resources,
+        _matrix: &Matrix4<f32>,
+        _state: &GameState,
+    ) {
     }
 
-    pub fn on_event(&mut self, _event: &Event, _ui: &mut Ui,
-                    _state: &mut GameState) {
+    pub fn on_event(
+        &mut self,
+        _event: &Event,
+        _ui: &mut Ui,
+        _state: &mut GameState,
+    ) {
     }
 }
 

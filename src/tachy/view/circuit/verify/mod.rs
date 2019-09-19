@@ -27,16 +27,17 @@ mod shared;
 
 use self::shared::{FabricationVerifyView, PuzzleVerifyView};
 use super::tray::TraySlide;
-use cgmath::{Deg, Matrix4, Point2, vec2};
-use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
-use tachy::gui::{Cursor, Event, Resources, Ui};
-use tachy::save::Puzzle;
-use tachy::shader::UiShader;
-use tachy::state::{CircuitEval, FabricateHalveEval, FabricateIncEval,
-                   FabricateMulEval, FabricateXorEval, TutorialAddEval,
-                   TutorialDemuxEval, TutorialMuxEval, TutorialOrEval,
-                   TutorialSumEval};
+use crate::tachy::font::Align;
+use crate::tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
+use crate::tachy::gui::{Cursor, Event, Resources, Ui};
+use crate::tachy::save::Puzzle;
+use crate::tachy::shader::UiShader;
+use crate::tachy::state::{
+    CircuitEval, FabricateHalveEval, FabricateIncEval, FabricateMulEval,
+    FabricateXorEval, TutorialAddEval, TutorialDemuxEval, TutorialMuxEval,
+    TutorialOrEval, TutorialSumEval,
+};
+use cgmath::{vec2, Deg, Matrix4, Point2};
 
 //===========================================================================//
 
@@ -50,15 +51,19 @@ const TRAY_TAB_TEXT: &str = "STATUS";
 
 pub struct VerificationTray {
     rect: Rect<i32>,
-    subview: Box<PuzzleVerifyView>,
+    subview: Box<dyn PuzzleVerifyView>,
     slide: TraySlide,
 }
 
 impl VerificationTray {
-    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle)
-               -> VerificationTray {
-        let right_bottom = Point2::new(window_size.width - TRAY_INNER_MARGIN,
-                                       window_size.height - TRAY_INNER_MARGIN);
+    pub fn new(
+        window_size: RectSize<i32>,
+        current_puzzle: Puzzle,
+    ) -> VerificationTray {
+        let right_bottom = Point2::new(
+            window_size.width - TRAY_INNER_MARGIN,
+            window_size.height - TRAY_INNER_MARGIN,
+        );
         let subview = match current_puzzle {
             Puzzle::AutomateBeacon => {
                 self::beacon::BeaconVerifyView::new(right_bottom)
@@ -117,51 +122,59 @@ impl VerificationTray {
             Rect::new(window_size.width, window_size.height, 0, 0)
         } else {
             let size = subview_size.expand(TRAY_INNER_MARGIN);
-            Rect::new(window_size.width - size.width,
-                      window_size.height - size.height,
-                      size.width,
-                      size.height + 20)
+            Rect::new(
+                window_size.width - size.width,
+                window_size.height - size.height,
+                size.width,
+                size.height + 20,
+            )
         };
-        VerificationTray {
-            rect,
-            subview,
-            slide: TraySlide::new(rect.width),
-        }
+        VerificationTray { rect, subview, slide: TraySlide::new(rect.width) }
     }
 
     fn slid_rect(&self) -> Rect<i32> {
         self.rect + vec2(self.slide.distance(), 0)
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                circuit_eval: Option<&CircuitEval>) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        circuit_eval: Option<&CircuitEval>,
+    ) {
         if self.rect.is_empty() {
             return;
         }
-        let matrix = matrix *
-            Matrix4::trans2(self.slide.distance() as f32, 0.0);
+        let matrix =
+            matrix * Matrix4::trans2(self.slide.distance() as f32, 0.0);
         let ui = resources.shaders().ui();
         let rect = self.rect.as_f32();
         let tab_rect =
             UiShader::tray_tab_rect(rect, TRAY_TAB_HEIGHT, TRAY_FLIP_HORZ);
-        ui.draw_tray(&matrix,
-                     &rect,
-                     TRAY_TAB_HEIGHT,
-                     TRAY_FLIP_HORZ,
-                     &Color4::ORANGE2,
-                     &Color4::CYAN2,
-                     &Color4::PURPLE0_TRANSLUCENT);
+        ui.draw_tray(
+            &matrix,
+            &rect,
+            TRAY_TAB_HEIGHT,
+            TRAY_FLIP_HORZ,
+            &Color4::ORANGE2,
+            &Color4::CYAN2,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
 
-        let tab_matrix = matrix *
-            Matrix4::trans2(tab_rect.x + 0.5 * tab_rect.width,
-                            tab_rect.y + 0.5 * tab_rect.height) *
-            Matrix4::from_angle_z(Deg(90.0));
+        let tab_matrix = matrix
+            * Matrix4::trans2(
+                tab_rect.x + 0.5 * tab_rect.width,
+                tab_rect.y + 0.5 * tab_rect.height,
+            )
+            * Matrix4::from_angle_z(Deg(90.0));
         let font = resources.fonts().roman();
-        font.draw(&tab_matrix,
-                  TRAY_TAB_FONT_SIZE,
-                  Align::MidCenter,
-                  (0.0, -2.0),
-                  TRAY_TAB_TEXT);
+        font.draw(
+            &tab_matrix,
+            TRAY_TAB_FONT_SIZE,
+            Align::MidCenter,
+            (0.0, -2.0),
+            TRAY_TAB_TEXT,
+        );
 
         self.subview.draw(resources, &matrix, circuit_eval);
     }
@@ -173,9 +186,11 @@ impl VerificationTray {
             }
             Event::MouseDown(mouse) => {
                 let rel_mouse_pt = mouse.pt - vec2(self.slide.distance(), 0);
-                let tab_rect = UiShader::tray_tab_rect(self.rect.as_f32(),
-                                                       TRAY_TAB_HEIGHT,
-                                                       TRAY_FLIP_HORZ);
+                let tab_rect = UiShader::tray_tab_rect(
+                    self.rect.as_f32(),
+                    TRAY_TAB_HEIGHT,
+                    TRAY_FLIP_HORZ,
+                );
                 if tab_rect.contains_point(rel_mouse_pt.as_f32()) {
                     self.slide.toggle();
                     return true;
@@ -183,24 +198,27 @@ impl VerificationTray {
                     return true;
                 }
             }
-            Event::MouseMove(mouse) |
-            Event::MouseUp(mouse) => {
+            Event::MouseMove(mouse) | Event::MouseUp(mouse) => {
                 let rel_mouse_pt = mouse.pt - vec2(self.slide.distance(), 0);
-                let tab_rect = UiShader::tray_tab_rect(self.rect.as_f32(),
-                                                       TRAY_TAB_HEIGHT,
-                                                       TRAY_FLIP_HORZ);
-                if self.rect.contains_point(rel_mouse_pt) ||
-                    tab_rect.contains_point(rel_mouse_pt.as_f32())
+                let tab_rect = UiShader::tray_tab_rect(
+                    self.rect.as_f32(),
+                    TRAY_TAB_HEIGHT,
+                    TRAY_FLIP_HORZ,
+                );
+                if self.rect.contains_point(rel_mouse_pt)
+                    || tab_rect.contains_point(rel_mouse_pt.as_f32())
                 {
                     ui.cursor().request(Cursor::default());
                 }
             }
             Event::Multitouch(touch)
-                if self.slid_rect().contains_point(touch.pt) => {
+                if self.slid_rect().contains_point(touch.pt) =>
+            {
                 return true;
             }
             Event::Scroll(scroll)
-                if self.slid_rect().contains_point(scroll.pt) => {
+                if self.slid_rect().contains_point(scroll.pt) =>
+            {
                 return true;
             }
             _ => {}

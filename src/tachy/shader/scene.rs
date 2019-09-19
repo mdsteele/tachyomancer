@@ -17,9 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::gl::{
+    Model, Shader, ShaderProgram, ShaderSampler, ShaderType, ShaderUniform,
+    Texture2D,
+};
 use cgmath::{InnerSpace, Matrix4, Vector3};
-use tachy::gl::{Model, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture2D};
 
 //===========================================================================//
 
@@ -65,20 +67,25 @@ impl SceneShader {
         Ok(shader)
     }
 
-    pub fn render(&self, p_matrix: &Matrix4<f32>, v_matrix: &Matrix4<f32>,
-                  light_dir_world_space: Vector3<f32>,
-                  m_matrix: &Matrix4<f32>, texture: &Texture2D,
-                  model: &Model) {
+    pub fn render(
+        &self,
+        p_matrix: &Matrix4<f32>,
+        v_matrix: &Matrix4<f32>,
+        light_dir_world_space: Vector3<f32>,
+        m_matrix: &Matrix4<f32>,
+        texture: &Texture2D,
+        model: &Model,
+    ) {
         self.program.bind();
         self.p.set(p_matrix);
         self.mv.set(&(v_matrix * m_matrix));
         // TODO: Make light levels a method parameter
         self.ambient_light.set(&0.3);
         self.diffuse_light.set(&0.7);
-        let light_dir_cam_space = (v_matrix *
-                                       light_dir_world_space.extend(0.0))
-            .truncate()
-            .normalize();
+        let light_dir_cam_space = (v_matrix
+            * light_dir_world_space.extend(0.0))
+        .truncate()
+        .normalize();
         self.light_dir_cam_space.set(&light_dir_cam_space);
         self.texture.set(texture);
         model.draw();

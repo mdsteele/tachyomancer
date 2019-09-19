@@ -17,26 +17,31 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::gui::Resources;
 use cgmath::Matrix4;
-use tachy::gui::Resources;
 
 //===========================================================================//
 
 pub struct CompiledLine {
-    pieces: Vec<Box<CompiledPiece>>,
+    pieces: Vec<Box<dyn CompiledPiece>>,
 }
 
 impl CompiledLine {
-    pub fn new(pieces: Vec<Box<CompiledPiece>>) -> CompiledLine {
+    pub fn new(pieces: Vec<Box<dyn CompiledPiece>>) -> CompiledLine {
         CompiledLine { pieces }
     }
 
-    pub fn pieces(&self) -> &[Box<CompiledPiece>] { &self.pieces }
+    pub fn pieces(&self) -> &[Box<dyn CompiledPiece>] {
+        &self.pieces
+    }
 
-    pub fn draw(&self, resources: &Resources,
-                paragraph_matrix: &Matrix4<f32>, font_size: f32,
-                num_millis: &mut usize)
-                -> bool {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        paragraph_matrix: &Matrix4<f32>,
+        font_size: f32,
+        num_millis: &mut usize,
+    ) -> bool {
         for piece in self.pieces.iter() {
             let drew_full_piece =
                 piece.draw(resources, paragraph_matrix, font_size, num_millis);
@@ -57,9 +62,13 @@ pub trait CompiledPiece {
 
     fn add_y_offset(&mut self, y_offset: f32);
 
-    fn draw(&self, resources: &Resources, paragraph_matrix: &Matrix4<f32>,
-            font_size: f32, millis_remaining: &mut usize)
-            -> bool;
+    fn draw(
+        &self,
+        resources: &Resources,
+        paragraph_matrix: &Matrix4<f32>,
+        font_size: f32,
+        millis_remaining: &mut usize,
+    ) -> bool;
 
     fn debug_string(&self) -> String;
 }
@@ -84,18 +93,25 @@ pub trait ParserPiece {
 
     fn num_millis(&self) -> usize;
 
-    fn split(&mut self, font_size: f32, remaining_width: f32)
-             -> ParserPieceSplit;
+    fn split(
+        &mut self,
+        font_size: f32,
+        remaining_width: f32,
+    ) -> ParserPieceSplit;
 
-    fn compile(&mut self, x_offset: f32, y_offset: f32) -> Box<CompiledPiece>;
+    fn compile(
+        &mut self,
+        x_offset: f32,
+        y_offset: f32,
+    ) -> Box<dyn CompiledPiece>;
 }
 
 //===========================================================================//
 
 pub enum ParserPieceSplit {
     AllFits,
-    SomeFits(Box<ParserPiece>),
-    NoneFits(Option<Box<ParserPiece>>),
+    SomeFits(Box<dyn ParserPiece>),
+    NoneFits(Option<Box<dyn ParserPiece>>),
 }
 
 //===========================================================================//

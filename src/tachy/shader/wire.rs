@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Color3, Color4};
+use crate::tachy::gl::{
+    Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture1D, VertexArray, VertexBuffer,
+};
 use cgmath::Matrix4;
-use tachy::geom::{Color3, Color4};
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture1D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -176,8 +178,13 @@ impl WireShader {
         Ok(shader)
     }
 
-    fn bind(&self, matrix: &Matrix4<f32>, wire_color: &Color3,
-            hilight_color: &Color4, texture: &Texture1D) {
+    fn bind(
+        &self,
+        matrix: &Matrix4<f32>,
+        wire_color: &Color3,
+        hilight_color: &Color4,
+        texture: &Texture1D,
+    ) {
         self.program.bind();
         self.mvp.set(matrix);
         self.wire_color.set(wire_color);
@@ -187,54 +194,84 @@ impl WireShader {
     }
 
     /// Draws an east wire stub in the box from (-1, -1) to (1, 1).
-    pub fn draw_stub(&self, matrix: &Matrix4<f32>, size_index: usize,
-                     wire_color: &Color3, hilight_color: &Color4,
-                     texture: &Texture1D) {
+    pub fn draw_stub(
+        &self,
+        matrix: &Matrix4<f32>,
+        size_index: usize,
+        wire_color: &Color3,
+        hilight_color: &Color4,
+        texture: &Texture1D,
+    ) {
         self.bind(matrix, wire_color, hilight_color, texture);
         let start = 0 + size_index * VERTICES_PER_WIRE_SIZE;
         self.varray.draw(Primitive::TriangleFan, start, 9);
     }
 
     /// Draws a horizontal straight wire in the box from (-1, -1) to (1, 1).
-    pub fn draw_straight(&self, matrix: &Matrix4<f32>, size_index: usize,
-                         wire_color: &Color3, hilight_color: &Color4,
-                         texture: &Texture1D) {
+    pub fn draw_straight(
+        &self,
+        matrix: &Matrix4<f32>,
+        size_index: usize,
+        wire_color: &Color3,
+        hilight_color: &Color4,
+        texture: &Texture1D,
+    ) {
         self.bind(matrix, wire_color, hilight_color, texture);
         let start = 9 + size_index * VERTICES_PER_WIRE_SIZE;
         self.varray.draw(Primitive::TriangleStrip, start, 4);
     }
 
     /// Draws a south/east wire corner in the box from (-1, -1) to (1, 1).
-    pub fn draw_turn(&self, matrix: &Matrix4<f32>, size_index: usize,
-                     wire_color: &Color3, hilight_color: &Color4,
-                     texture: &Texture1D) {
+    pub fn draw_turn(
+        &self,
+        matrix: &Matrix4<f32>,
+        size_index: usize,
+        wire_color: &Color3,
+        hilight_color: &Color4,
+        texture: &Texture1D,
+    ) {
         self.bind(matrix, wire_color, hilight_color, texture);
         let start = 13 + size_index * VERTICES_PER_WIRE_SIZE;
         self.varray.draw(Primitive::TriangleStrip, start, 8);
     }
 
     /// Draws a south/east/north wire tee in the box from (-1, -1) to (1, 1).
-    pub fn draw_tee(&self, matrix: &Matrix4<f32>, size_index: usize,
-                    wire_color: &Color3, hilight_color: &Color4,
-                    texture: &Texture1D) {
+    pub fn draw_tee(
+        &self,
+        matrix: &Matrix4<f32>,
+        size_index: usize,
+        wire_color: &Color3,
+        hilight_color: &Color4,
+        texture: &Texture1D,
+    ) {
         self.bind(matrix, wire_color, hilight_color, texture);
         let start = 21 + size_index * VERTICES_PER_WIRE_SIZE;
         self.varray.draw(Primitive::TriangleFan, start, 13);
     }
 
     /// Draws a wire cross in the box from (-1, -1) to (1, 1).
-    pub fn draw_cross(&self, matrix: &Matrix4<f32>, size_index: usize,
-                      wire_color: &Color3, hilight_color: &Color4,
-                      texture: &Texture1D) {
+    pub fn draw_cross(
+        &self,
+        matrix: &Matrix4<f32>,
+        size_index: usize,
+        wire_color: &Color3,
+        hilight_color: &Color4,
+        texture: &Texture1D,
+    ) {
         self.bind(matrix, wire_color, hilight_color, texture);
         let start = 34 + size_index * VERTICES_PER_WIRE_SIZE;
         self.varray.draw(Primitive::TriangleFan, start, 18);
     }
 
     /// Draws an east half-straight wire in the box from (-1, -1) to (1, 1).
-    pub fn draw_half_straight(&self, matrix: &Matrix4<f32>,
-                              size_index: usize, wire_color: &Color3,
-                              hilight_color: &Color4, texture: &Texture1D) {
+    pub fn draw_half_straight(
+        &self,
+        matrix: &Matrix4<f32>,
+        size_index: usize,
+        wire_color: &Color3,
+        hilight_color: &Color4,
+        texture: &Texture1D,
+    ) {
         self.bind(matrix, wire_color, hilight_color, texture);
         let start = 52 + size_index * VERTICES_PER_WIRE_SIZE;
         self.varray.draw(Primitive::TriangleFan, start, 9);

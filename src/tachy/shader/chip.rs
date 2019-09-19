@@ -17,11 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Color3, Rect};
+use crate::tachy::gl::{
+    IndexBuffer, Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture2D, VertexArray, VertexBuffer,
+};
 use cgmath::Matrix4;
-use tachy::geom::{Color3, Rect};
-use tachy::gl::{IndexBuffer, Primitive, Shader, ShaderProgram, ShaderSampler,
-                ShaderType, ShaderUniform, Texture2D, VertexArray,
-                VertexBuffer};
 
 //===========================================================================//
 
@@ -114,13 +115,20 @@ impl ChipShader {
         Ok(shader)
     }
 
-    pub fn draw_basic(&self, matrix: &Matrix4<f32>, icon_index: u32,
-                      icon_color: Color3, icon_texture: &Texture2D) {
+    pub fn draw_basic(
+        &self,
+        matrix: &Matrix4<f32>,
+        icon_index: u32,
+        icon_color: Color3,
+        icon_texture: &Texture2D,
+    ) {
         let (tex_row, tex_col) = (icon_index / 8, icon_index % 8);
-        let tex_rect = Rect::new(0.125 * (tex_col as f32),
-                                 0.125 * (tex_row as f32),
-                                 0.125,
-                                 0.125);
+        let tex_rect = Rect::new(
+            0.125 * (tex_col as f32),
+            0.125 * (tex_row as f32),
+            0.125,
+            0.125,
+        );
         self.program.bind();
         self.mvp.set(matrix);
         self.tex_rect.set(&tex_rect);

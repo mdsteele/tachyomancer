@@ -18,11 +18,12 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::BackgroundView;
-use cgmath::{self, Deg, Matrix4, Point3, Vector3, vec3};
-use tachy::geom::{Color3, Rect, RectSize};
-use tachy::gl::{Depth, HeightmapModel, Model, ModelBuilder,
-                ModelBuilderContext};
-use tachy::gui::{Event, Keycode, Resources, Ui};
+use crate::tachy::geom::{Color3, Rect, RectSize};
+use crate::tachy::gl::{
+    Depth, HeightmapModel, Model, ModelBuilder, ModelBuilderContext,
+};
+use crate::tachy::gui::{Event, Keycode, Resources, Ui};
+use cgmath::{self, vec3, Deg, Matrix4, Point3, Vector3};
 
 //===========================================================================//
 
@@ -45,10 +46,12 @@ impl PlanetfallBackgroundView {
         let mut sky = ModelBuilder::new();
         {
             let mut ctx = sky.context();
-            ctx.plane(Point3::new(0.0, 0.0, -100.0),
-                      RectSize::new(300.0, 300.0),
-                      Vector3::unit_z(),
-                      Color3::WHITE);
+            ctx.plane(
+                Point3::new(0.0, 0.0, -100.0),
+                RectSize::new(300.0, 300.0),
+                Vector3::unit_z(),
+                Color3::WHITE,
+            );
         }
 
         PlanetfallBackgroundView {
@@ -64,42 +67,50 @@ impl PlanetfallBackgroundView {
 impl BackgroundView for PlanetfallBackgroundView {
     fn draw(&self, resources: &Resources) {
         let _depth = Depth::new();
-        let v_matrix = Matrix4::look_at(Point3::new(0.0, 15.0, 90.0),
-                                        Point3::new(0.0, self.look_y, 0.0),
-                                        Vector3::unit_y());
+        let v_matrix = Matrix4::look_at(
+            Point3::new(0.0, 15.0, 90.0),
+            Point3::new(0.0, self.look_y, 0.0),
+            Vector3::unit_y(),
+        );
         let light_dir_world_space = Vector3::new(-3.0, 30.0, 10.0);
 
         let shader = resources.shaders().scene();
         let m_matrix = Matrix4::from_translation(vec3(15.0, 0.0, 35.0));
-        shader.render(&self.p_matrix,
-                      &v_matrix,
-                      light_dir_world_space,
-                      &m_matrix,
-                      resources.textures().white(),
-                      &self.habitat_model);
+        shader.render(
+            &self.p_matrix,
+            &v_matrix,
+            light_dir_world_space,
+            &m_matrix,
+            resources.textures().white(),
+            &self.habitat_model,
+        );
 
-        let m_matrix = Matrix4::from_translation(vec3(0.0, 0.0, -100.0)) *
-            Matrix4::from_angle_y(Deg(-145.0)) *
-            Matrix4::from_nonuniform_scale(300.0, 30.0, 300.0) *
-            Matrix4::from_translation(vec3(-0.5, 0.0, -0.5));
+        let m_matrix = Matrix4::from_translation(vec3(0.0, 0.0, -100.0))
+            * Matrix4::from_angle_y(Deg(-145.0))
+            * Matrix4::from_nonuniform_scale(300.0, 30.0, 300.0)
+            * Matrix4::from_translation(vec3(-0.5, 0.0, -0.5));
         let shader = resources.shaders().heightmap();
-        shader.render(&self.p_matrix,
-                      &v_matrix,
-                      light_dir_world_space,
-                      &m_matrix,
-                      resources.textures().valley_heightmap(),
-                      Rect::new(0.0, -0.5, 2.0, 2.0),
-                      resources.textures().red_desert(),
-                      Rect::new(0.0, 0.0, 2.0, 2.0),
-                      &self.terrain_model);
+        shader.render(
+            &self.p_matrix,
+            &v_matrix,
+            light_dir_world_space,
+            &m_matrix,
+            resources.textures().valley_heightmap(),
+            Rect::new(0.0, -0.5, 2.0, 2.0),
+            resources.textures().red_desert(),
+            Rect::new(0.0, 0.0, 2.0, 2.0),
+            &self.terrain_model,
+        );
 
         let shader = resources.shaders().scene();
-        shader.render(&self.p_matrix,
-                      &v_matrix,
-                      light_dir_world_space,
-                      &Matrix4::from_scale(5.0),
-                      resources.textures().starfield(),
-                      &self.sky_model);
+        shader.render(
+            &self.p_matrix,
+            &v_matrix,
+            light_dir_world_space,
+            &Matrix4::from_scale(5.0),
+            resources.textures().starfield(),
+            &self.sky_model,
+        );
     }
 
     fn on_event(&mut self, event: &Event, ui: &mut Ui) {
@@ -124,11 +135,7 @@ impl BackgroundView for PlanetfallBackgroundView {
 
 //===========================================================================//
 
-const ORIGIN: Point3<f32> = Point3 {
-    x: 0.0,
-    y: 0.0,
-    z: 0.0,
-};
+const ORIGIN: Point3<f32> = Point3 { x: 0.0, y: 0.0, z: 0.0 };
 
 fn make_habitat(ctx: &mut ModelBuilderContext) {
     make_dome(ctx, 3.0);
@@ -160,27 +167,35 @@ fn make_habitat(ctx: &mut ModelBuilderContext) {
 
 fn make_dome(ctx: &mut ModelBuilderContext, radius: f32) {
     let cyl_height = 1.0;
-    ctx.cylinder(Point3::new(0.0, -3.0, 0.0),
-                 Point3::new(0.0, cyl_height, 0.0),
-                 radius,
-                 20,
-                 Color3::WHITE);
-    ctx.with_transform(Matrix4::from_translation(vec3(0.0, cyl_height, 0.0)) *
-                           Matrix4::from_nonuniform_scale(1.0, 0.5, 1.0))
-        .sphere(ORIGIN, radius, 20, Color3::WHITE);
+    ctx.cylinder(
+        Point3::new(0.0, -3.0, 0.0),
+        Point3::new(0.0, cyl_height, 0.0),
+        radius,
+        20,
+        Color3::WHITE,
+    );
+    ctx.with_transform(
+        Matrix4::from_translation(vec3(0.0, cyl_height, 0.0))
+            * Matrix4::from_nonuniform_scale(1.0, 0.5, 1.0),
+    )
+    .sphere(ORIGIN, radius, 20, Color3::WHITE);
 }
 
-fn make_tunnel<'a>(ctx: &'a mut ModelBuilderContext, length: f32,
-                   angle: Deg<f32>)
-                   -> ModelBuilderContext<'a> {
+fn make_tunnel<'a>(
+    ctx: &'a mut ModelBuilderContext,
+    length: f32,
+    angle: Deg<f32>,
+) -> ModelBuilderContext<'a> {
     let mut subctx = ctx.with_transform(Matrix4::from_angle_y(angle));
     subctx
         .with_transform(Matrix4::from_nonuniform_scale(1.0, 1.5, 1.0))
-        .cylinder(ORIGIN,
-                  Point3::new(length, 0.0, 0.0),
-                  1.0,
-                  20,
-                  Color3::new(0.7, 0.7, 0.7));
+        .cylinder(
+            ORIGIN,
+            Point3::new(length, 0.0, 0.0),
+            1.0,
+            20,
+            Color3::new(0.7, 0.7, 0.7),
+        );
     subctx.transformed(Matrix4::from_translation(vec3(length, 0.0, 0.0)))
 }
 

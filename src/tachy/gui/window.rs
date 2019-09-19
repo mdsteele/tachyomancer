@@ -23,13 +23,13 @@ use super::cursor::NextCursor;
 use super::event::Event;
 use super::resource::Resources;
 use super::ui::Ui;
+use crate::tachy::font::Align;
+use crate::tachy::geom::{AsFloat, Color4, RectSize};
 use gl;
 use sdl2;
 use std::mem;
 use std::os::raw::c_void;
 use std::time::Instant;
-use tachy::font::Align;
-use tachy::geom::{AsFloat, Color4, RectSize};
 
 //===========================================================================//
 
@@ -62,8 +62,10 @@ pub struct Window<'a> {
 }
 
 impl<'a> Window<'a> {
-    pub fn create(gui_context: &'a mut GuiContext, options: WindowOptions)
-                  -> Result<Window<'a>, String> {
+    pub fn create(
+        gui_context: &'a mut GuiContext,
+        options: WindowOptions,
+    ) -> Result<Window<'a>, String> {
         debug_log!("Creating window: {:?}", options);
         {
             let gl_attr = gui_context.video_subsystem.gl_attr();
@@ -98,10 +100,11 @@ impl<'a> Window<'a> {
                 .height
                 .max(WINDOW_MIN_HEIGHT)
                 .min(native_resolution.height);
-            let mut builder =
-                gui_context
-                    .video_subsystem
-                    .window(WINDOW_TITLE, width as u32, height as u32);
+            let mut builder = gui_context.video_subsystem.window(
+                WINDOW_TITLE,
+                width as u32,
+                height as u32,
+            );
             builder.opengl();
             if options.fullscreen {
                 if options.resolution.is_none() {
@@ -121,11 +124,9 @@ impl<'a> Window<'a> {
         // support Windows, we should wait until after we've created the GL
         // context before calling SDL_GL_GetProcAddress.
         gl::load_with(|name| {
-                          gui_context
-                              .video_subsystem
-                              .gl_get_proc_address(name) as
-                              *const c_void
-                      });
+            gui_context.video_subsystem.gl_get_proc_address(name)
+                as *const c_void
+        });
         gui_context
             .video_subsystem
             .gl_set_swap_interval(sdl2::video::SwapInterval::VSync)?;
@@ -137,11 +138,11 @@ impl<'a> Window<'a> {
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         let resources = Resources::new()?;
-        let mut possible_resolutions = gui_context.get_possible_resolutions()?;
+        let mut possible_resolutions =
+            gui_context.get_possible_resolutions()?;
         possible_resolutions.retain(|res| {
-                                        res.width >= WINDOW_MIN_WIDTH &&
-                                            res.height >= WINDOW_MIN_HEIGHT
-                                    });
+            res.width >= WINDOW_MIN_WIDTH && res.height >= WINDOW_MIN_HEIGHT
+        });
         let window = Window {
             gui_context,
             sdl_window,
@@ -168,16 +169,22 @@ impl<'a> Window<'a> {
         &self.possible_resolutions
     }
 
-    pub fn options(&self) -> &WindowOptions { &self.options }
+    pub fn options(&self) -> &WindowOptions {
+        &self.options
+    }
 
-    pub fn resources(&self) -> &Resources { &self.resources }
+    pub fn resources(&self) -> &Resources {
+        &self.resources
+    }
 
     pub fn ui(&mut self) -> Ui {
-        Ui::new(&mut self.audio,
-                &mut self.gui_context.clipboard,
-                &mut self.next_cursor,
-                &self.gui_context.event_pump,
-                &mut self.redraw_requested)
+        Ui::new(
+            &mut self.audio,
+            &mut self.gui_context.clipboard,
+            &mut self.next_cursor,
+            &self.gui_context.event_pump,
+            &mut self.redraw_requested,
+        )
     }
 
     pub fn set_cursor_visible(&mut self, visible: bool) {
@@ -217,8 +224,7 @@ impl<'a> Window<'a> {
                     return Event::new_clock_tick(elapsed);
                 }
                 Some(sdl_event) => {
-                    if let Some(event) = Event::from_sdl_event(sdl_event,
-                                                               pump)
+                    if let Some(event) = Event::from_sdl_event(sdl_event, pump)
                     {
                         return event;
                     }
@@ -243,13 +249,15 @@ impl<'a> Window<'a> {
             let matrix =
                 cgmath::ortho(0.0, size.width, size.height, 0.0, -1.0, 1.0);
             let font = self.resources.fonts().roman();
-            font.draw_style(&matrix,
-                            20.0,
-                            Align::TopRight,
-                            (size.width - 5.0, 5.0),
-                            &Color4::WHITE,
-                            0.0,
-                            &format!("{:03}", self.debug_counter));
+            font.draw_style(
+                &matrix,
+                20.0,
+                Align::TopRight,
+                (size.width - 5.0, 5.0),
+                &Color4::WHITE,
+                0.0,
+                &format!("{:03}", self.debug_counter),
+            );
             self.debug_counter = (self.debug_counter + 1) % 1000;
         }
         self.sdl_window.gl_swap_window();

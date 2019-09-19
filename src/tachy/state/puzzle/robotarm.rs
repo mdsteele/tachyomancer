@@ -17,11 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::rng::SimpleRng;
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -47,18 +47,20 @@ pub const INTERFACES: &[Interface] = &[
         ports: &[
             InterfacePort {
                 name: "Xmit",
-                description: "\
-                    Connects to the radio transmitter.  Signal here when \
-                    the command is completed.",
+                description:
+                    "\
+                     Connects to the radio transmitter.  Signal here when \
+                     the command is completed.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
             InterfacePort {
                 name: "Recv",
-                description: "\
-                    Connects to the radio receiver.  Sends an event when a \
-                    radio command arrives.",
+                description:
+                    "\
+                     Connects to the radio receiver.  Sends an event when a \
+                     radio command arrives.",
                 flow: PortFlow::Send,
                 color: PortColor::Event,
                 size: WireSize::Four,
@@ -67,31 +69,35 @@ pub const INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Arm Interface",
-        description: "\
-            Connects to the sensors and servo motors of the robot arm.",
+        description:
+            "\
+             Connects to the sensors and servo motors of the robot arm.",
         side: Direction::East,
         pos: InterfacePosition::Right(0),
         ports: &[
             InterfacePort {
                 name: "Pos",
-                description: "\
-                    Indicates the current position of the arm (0-7).",
+                description:
+                    "\
+                     Indicates the current position of the arm (0-7).",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "Rotate",
-                description: "\
-                    Send 1 to rotate clockwise, 0 to rotate counterclockwise.",
+                description:
+                    "\
+                     Send 1 to rotate clockwise, 0 to rotate counterclockwise.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::One,
             },
             InterfacePort {
                 name: "Manip",
-                description: "\
-                    Signal here to manipulate at the current position.",
+                description:
+                    "\
+                     Signal here to manipulate at the current position.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::Zero,
@@ -99,8 +105,8 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Done",
                 description: "\
-                    Signals when the the robot arm has finished \
-                    moving/manipulating.",
+                              Signals when the the robot arm has finished \
+                              moving/manipulating.",
                 flow: PortFlow::Send,
                 color: PortColor::Event,
                 size: WireSize::Zero,
@@ -169,16 +175,25 @@ impl RobotArmEval {
         }
     }
 
-    pub fn current_position(&self) -> u32 { self.current_position }
+    pub fn current_position(&self) -> u32 {
+        self.current_position
+    }
 
-    pub fn current_angle(&self) -> u32 { self.current_position_degrees }
+    pub fn current_angle(&self) -> u32 {
+        self.current_position_degrees
+    }
 
-    pub fn last_command(&self) -> u32 { self.last_command }
+    pub fn last_command(&self) -> u32 {
+        self.last_command
+    }
 }
 
 impl PuzzleEval for RobotArmEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         if self.time_to_next_command == Some(0) {
             self.time_to_next_command = None;
             self.num_completed_commands += 1;
@@ -186,9 +201,9 @@ impl PuzzleEval for RobotArmEval {
                 return Some(EvalScore::Value(time_step as i32));
             }
             let quarter = NUM_POSITIONS / 4;
-            self.last_command = (self.last_command +
-                                     self.rng.rand_int(quarter, 3 * quarter)) %
-                NUM_POSITIONS;
+            self.last_command = (self.last_command
+                + self.rng.rand_int(quarter, 3 * quarter))
+                % NUM_POSITIONS;
             self.has_completed_command = false;
             self.has_sent_radio_reply = false;
             state.send_event(self.recv_wire, self.last_command);
@@ -203,8 +218,11 @@ impl PuzzleEval for RobotArmEval {
         return None;
     }
 
-    fn end_cycle(&mut self, time_step: u32, state: &CircuitState)
-                 -> Vec<EvalError> {
+    fn end_cycle(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let mut errors = Vec::<EvalError>::new();
         if state.recv_event(self.xmit_wire).is_some() {
             if !self.has_completed_command {
@@ -238,10 +256,11 @@ impl PuzzleEval for RobotArmEval {
                 };
             } else if state.recv_event(self.manip_wire).is_some() {
                 if self.current_position != self.last_command {
-                    let message = format!("Manipulated position {}, but last \
-                                           command was for position {}.",
-                                          self.current_position,
-                                          self.last_command);
+                    let message = format!(
+                        "Manipulated position {}, but last \
+                         command was for position {}.",
+                        self.current_position, self.last_command
+                    );
                     let error = EvalError {
                         time_step,
                         port: Some(self.manip_port),
@@ -264,12 +283,17 @@ impl PuzzleEval for RobotArmEval {
         errors
     }
 
-    fn end_time_step(&mut self, _time_step: u32, _state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        _time_step: u32,
+        _state: &CircuitState,
+    ) -> Vec<EvalError> {
         if self.has_sent_radio_reply && self.time_to_next_command.is_none() {
             self.time_to_next_command =
-                Some(self.rng.rand_int(MIN_TIME_TO_NEXT_COMMAND,
-                                       MAX_TIME_TO_NEXT_COMMAND));
+                Some(self.rng.rand_int(
+                    MIN_TIME_TO_NEXT_COMMAND,
+                    MAX_TIME_TO_NEXT_COMMAND,
+                ));
         }
         match self.motor_movement {
             MotorMovement::Stationary => {}
@@ -285,8 +309,8 @@ impl PuzzleEval for RobotArmEval {
             }
             MotorMovement::TurningCcw(time) => {
                 self.current_position_degrees =
-                    (self.current_position_degrees +
-                         (360 - DEGREES_PER_TIME)) % 360;
+                    (self.current_position_degrees + (360 - DEGREES_PER_TIME))
+                        % 360;
                 self.motor_movement = if time > 1 {
                     MotorMovement::TurningCcw(time - 1)
                 } else {
@@ -306,9 +330,9 @@ impl PuzzleEval for RobotArmEval {
                 };
             }
         }
-        self.current_position = div_round(self.current_position_degrees,
-                                          DEGREES_PER_POSITION) %
-            NUM_POSITIONS;
+        self.current_position =
+            div_round(self.current_position_degrees, DEGREES_PER_POSITION)
+                % NUM_POSITIONS;
         if let Some(ref mut time) = self.time_to_next_command {
             if *time > 0 {
                 *time -= 1;

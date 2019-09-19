@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use tachy::gui::{ClockEventData, Ui};
+use crate::tachy::gui::{ClockEventData, Ui};
 
 //===========================================================================//
 
@@ -29,16 +29,16 @@ pub struct TraySlide {
 
 impl TraySlide {
     pub fn new(width: i32) -> TraySlide {
-        TraySlide {
-            max_slide: (width + 1) as f64,
-            slide: 0.0,
-            shown: true,
-        }
+        TraySlide { max_slide: (width + 1) as f64, slide: 0.0, shown: true }
     }
 
-    pub fn toggle(&mut self) { self.shown = !self.shown; }
+    pub fn toggle(&mut self) {
+        self.shown = !self.shown;
+    }
 
-    pub fn distance(&self) -> i32 { self.slide.round() as i32 }
+    pub fn distance(&self) -> i32 {
+        self.slide.round() as i32
+    }
 
     pub fn on_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
         let goal = if self.shown { 0.0 } else { self.max_slide };

@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::{Coords, CoordsRect, Direction, Orientation};
+use crate::tachy::save::{ChipType, WireShape};
 use std::collections::HashMap;
-use tachy::geom::{Coords, CoordsRect, Direction, Orientation};
-use tachy::save::{ChipType, WireShape};
 
 //===========================================================================//
 
@@ -27,8 +27,10 @@ use tachy::save::{ChipType, WireShape};
 pub enum GridChange {
     /// Removes the first set of wire fragments and adds the second set of wire
     /// fragments.
-    ReplaceWires(HashMap<(Coords, Direction), WireShape>,
-                 HashMap<(Coords, Direction), WireShape>),
+    ReplaceWires(
+        HashMap<(Coords, Direction), WireShape>,
+        HashMap<(Coords, Direction), WireShape>,
+    ),
     /// Places a chip onto the board.
     AddChip(Coords, ChipType, Orientation),
     /// Removes a chip from the board.
@@ -38,13 +40,16 @@ pub enum GridChange {
 }
 
 impl GridChange {
-    pub(super) fn invert_and_collapse_group(mut changes: Vec<GridChange>)
-                                            -> Vec<GridChange> {
+    pub(super) fn invert_and_collapse_group(
+        mut changes: Vec<GridChange>,
+    ) -> Vec<GridChange> {
         let mut new_changes = Vec::<GridChange>::new();
         while let Some(change) = changes.pop() {
             match (new_changes.pop(), change.invert()) {
-                (Some(GridChange::ReplaceWires(mut old1, mut new1)),
-                 GridChange::ReplaceWires(old2, new2)) => {
+                (
+                    Some(GridChange::ReplaceWires(mut old1, mut new1)),
+                    GridChange::ReplaceWires(old2, new2),
+                ) => {
                     for (loc, shape) in old2.into_iter() {
                         if new1.get(&loc) == Some(&shape) {
                             new1.remove(&loc);
@@ -63,14 +68,18 @@ impl GridChange {
                         new_changes.push(GridChange::ReplaceWires(old1, new1));
                     }
                 }
-                (Some(GridChange::AddChip(c1, t1, o1)),
-                 GridChange::RemoveChip(c2, t2, o2))
-                    if c1 == c2 && t1 == t2 && o1 == o2 => {}
-                (Some(GridChange::RemoveChip(c1, t1, o1)),
-                 GridChange::AddChip(c2, t2, o2))
-                    if c1 == c2 && t1 == t2 && o1 == o2 => {}
-                (Some(GridChange::SetBounds(r1, r2)),
-                 GridChange::SetBounds(r3, r4)) => {
+                (
+                    Some(GridChange::AddChip(c1, t1, o1)),
+                    GridChange::RemoveChip(c2, t2, o2),
+                ) if c1 == c2 && t1 == t2 && o1 == o2 => {}
+                (
+                    Some(GridChange::RemoveChip(c1, t1, o1)),
+                    GridChange::AddChip(c2, t2, o2),
+                ) if c1 == c2 && t1 == t2 && o1 == o2 => {}
+                (
+                    Some(GridChange::SetBounds(r1, r2)),
+                    GridChange::SetBounds(r3, r4),
+                ) => {
                     debug_assert_eq!(r2, r3);
                     if r1 != r4 {
                         new_changes.push(GridChange::SetBounds(r1, r4));
@@ -82,14 +91,14 @@ impl GridChange {
                     }
                     match change2 {
                         GridChange::ReplaceWires(mut old, mut new) => {
-                            new.retain(
-                                |loc, shape| if old.get(loc) == Some(shape) {
+                            new.retain(|loc, shape| {
+                                if old.get(loc) == Some(shape) {
                                     old.remove(loc);
                                     false
                                 } else {
                                     true
-                                },
-                            );
+                                }
+                            });
                             if !(old.is_empty() && new.is_empty()) {
                                 new_changes
                                     .push(GridChange::ReplaceWires(old, new));
@@ -125,17 +134,18 @@ impl GridChange {
 #[cfg(test)]
 mod tests {
     use super::GridChange;
+    use crate::tachy::geom::{Coords, CoordsRect, Direction, Orientation};
+    use crate::tachy::save::{ChipType, WireShape};
     use std::collections::HashMap;
-    use tachy::geom::{Coords, CoordsRect, Direction, Orientation};
-    use tachy::save::{ChipType, WireShape};
 
     fn collapse_group(changes: Vec<GridChange>) -> Vec<GridChange> {
         let inverted = GridChange::invert_and_collapse_group(changes);
         GridChange::invert_group(inverted)
     }
 
-    fn wires(fragments: Vec<(Coords, Direction, WireShape)>)
-             -> HashMap<(Coords, Direction), WireShape> {
+    fn wires(
+        fragments: Vec<(Coords, Direction, WireShape)>,
+    ) -> HashMap<(Coords, Direction), WireShape> {
         fragments.into_iter().map(|(c, d, s)| ((c, d), s)).collect()
     }
 
@@ -150,10 +160,10 @@ mod tests {
     #[test]
     fn collapse_noop_replace_wires_to_nothing() {
         let fragment = (Coords::new(-2, 5), Direction::North, WireShape::Stub);
-        let changes = vec![
-            GridChange::ReplaceWires(wires(vec![fragment]),
-                                     wires(vec![fragment])),
-        ];
+        let changes = vec![GridChange::ReplaceWires(
+            wires(vec![fragment]),
+            wires(vec![fragment]),
+        )];
         let expected = vec![];
         assert_eq!(collapse_group(changes), expected);
     }
@@ -170,7 +180,7 @@ mod tests {
                 wires(vec![
                     (coords, Direction::East, WireShape::Stub),
                     (coords, Direction::West, WireShape::Stub),
-                ])
+                ]),
             ),
             GridChange::ReplaceWires(
                 wires(vec![
@@ -180,7 +190,7 @@ mod tests {
                 wires(vec![
                     (coords, Direction::East, WireShape::Straight),
                     (coords, Direction::West, WireShape::Straight),
-                ])
+                ]),
             ),
         ];
         let expected = vec![];
@@ -201,7 +211,7 @@ mod tests {
                     (coords, Direction::East, WireShape::Stub),
                     (coords, Direction::West, WireShape::TurnLeft),
                     (coords, Direction::North, WireShape::TurnRight),
-                ])
+                ]),
             ),
             GridChange::ReplaceWires(
                 wires(vec![
@@ -213,23 +223,21 @@ mod tests {
                     (coords, Direction::West, WireShape::TurnRight),
                     (coords, Direction::North, WireShape::Stub),
                     (coords, Direction::South, WireShape::TurnLeft),
-                ])
-            ),
-        ];
-        let expected = vec![
-            GridChange::ReplaceWires(
-                wires(vec![
-                    (coords, Direction::East, WireShape::Straight),
-                    (coords, Direction::West, WireShape::Straight),
-                    (coords, Direction::South, WireShape::Stub),
                 ]),
-                wires(vec![
-                    (coords, Direction::East, WireShape::Stub),
-                    (coords, Direction::West, WireShape::TurnRight),
-                    (coords, Direction::South, WireShape::TurnLeft),
-                ])
             ),
         ];
+        let expected = vec![GridChange::ReplaceWires(
+            wires(vec![
+                (coords, Direction::East, WireShape::Straight),
+                (coords, Direction::West, WireShape::Straight),
+                (coords, Direction::South, WireShape::Stub),
+            ]),
+            wires(vec![
+                (coords, Direction::East, WireShape::Stub),
+                (coords, Direction::West, WireShape::TurnRight),
+                (coords, Direction::South, WireShape::TurnLeft),
+            ]),
+        )];
         assert_eq!(collapse_group(changes), expected);
     }
 
@@ -239,27 +247,24 @@ mod tests {
         let orient1 = Orientation::default();
         let orient2 = orient1.rotate_cw();
 
-        let changes =
-            vec![
-                GridChange::AddChip(coords, ChipType::Add, orient1),
-                GridChange::RemoveChip(coords, ChipType::Add, orient1),
-            ];
+        let changes = vec![
+            GridChange::AddChip(coords, ChipType::Add, orient1),
+            GridChange::RemoveChip(coords, ChipType::Add, orient1),
+        ];
         let expected = vec![];
         assert_eq!(collapse_group(changes), expected);
 
-        let changes =
-            vec![
-                GridChange::RemoveChip(coords, ChipType::Add, orient1),
-                GridChange::AddChip(coords, ChipType::Add, orient1),
-            ];
+        let changes = vec![
+            GridChange::RemoveChip(coords, ChipType::Add, orient1),
+            GridChange::AddChip(coords, ChipType::Add, orient1),
+        ];
         let expected = vec![];
         assert_eq!(collapse_group(changes), expected);
 
-        let changes =
-            vec![
-                GridChange::RemoveChip(coords, ChipType::Add, orient1),
-                GridChange::AddChip(coords, ChipType::Add, orient2),
-            ];
+        let changes = vec![
+            GridChange::RemoveChip(coords, ChipType::Add, orient1),
+            GridChange::AddChip(coords, ChipType::Add, orient2),
+        ];
         let expected = changes.clone();
         assert_eq!(collapse_group(changes), expected);
     }

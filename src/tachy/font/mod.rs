@@ -20,11 +20,13 @@
 mod enums;
 
 pub use self::enums::{Align, Font};
+use crate::tachy::geom::{Color4, MatrixExt};
+use crate::tachy::gl::{
+    Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture2D, VertexArray, VertexBuffer,
+};
 use cgmath::{Matrix4, Vector2};
 use std::rc::Rc;
-use tachy::geom::{Color4, MatrixExt};
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -64,11 +66,17 @@ impl Fonts {
         }
     }
 
-    pub fn alien(&self) -> &FontData { &self.alien }
+    pub fn alien(&self) -> &FontData {
+        &self.alien
+    }
 
-    pub fn bold(&self) -> &FontData { &self.bold }
+    pub fn bold(&self) -> &FontData {
+        &self.bold
+    }
 
-    pub fn roman(&self) -> &FontData { &self.roman }
+    pub fn roman(&self) -> &FontData {
+        &self.roman
+    }
 }
 
 //===========================================================================//
@@ -83,45 +91,65 @@ impl FontData {
     fn new(font: Font, shader: &Rc<TextShader>) -> Result<FontData, String> {
         let (png_name, png_data) = font.png_name_and_data();
         let texture = Texture2D::from_png(png_name, png_data)?;
-        Ok(FontData {
-               shader: shader.clone(),
-               texture,
-               ratio: font.ratio(),
-           })
+        Ok(FontData { shader: shader.clone(), texture, ratio: font.ratio() })
     }
 
-    pub fn ratio(&self) -> f32 { self.ratio }
+    pub fn ratio(&self) -> f32 {
+        self.ratio
+    }
 
     pub fn str_width(&self, height: f32, text: &str) -> f32 {
         Font::str_width_for_ratio(self.ratio(), height, text)
     }
 
-    pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, align: Align,
-                start: (f32, f32), text: &str) {
+    pub fn draw(
+        &self,
+        matrix: &Matrix4<f32>,
+        height: f32,
+        align: Align,
+        start: (f32, f32),
+        text: &str,
+    ) {
         let color = &Color4::WHITE;
         let slant = 0.0;
         self.draw_style(matrix, height, align, start, color, slant, text);
     }
 
-    pub fn draw_style(&self, matrix: &Matrix4<f32>, height: f32,
-                      align: Align, start: (f32, f32), color: &Color4,
-                      slant: f32, text: &str) {
+    pub fn draw_style(
+        &self,
+        matrix: &Matrix4<f32>,
+        height: f32,
+        align: Align,
+        start: (f32, f32),
+        color: &Color4,
+        slant: f32,
+        text: &str,
+    ) {
         let chars: Vec<u8> = text.chars().map(|chr| chr as u8).collect();
         self.draw_chars(matrix, height, align, start, color, slant, &chars);
     }
 
-    pub fn draw_chars(&self, matrix: &Matrix4<f32>, height: f32,
-                      align: Align, start: (f32, f32), color: &Color4,
-                      slant: f32, chars: &[u8]) {
+    pub fn draw_chars(
+        &self,
+        matrix: &Matrix4<f32>,
+        height: f32,
+        align: Align,
+        start: (f32, f32),
+        color: &Color4,
+        slant: f32,
+        chars: &[u8],
+    ) {
         let size = (self.ratio * height, height);
-        self.shader.draw(matrix,
-                         size,
-                         align,
-                         start,
-                         color,
-                         slant,
-                         &self.texture,
-                         chars);
+        self.shader.draw(
+            matrix,
+            size,
+            align,
+            start,
+            color,
+            slant,
+            &self.texture,
+            chars,
+        );
     }
 }
 
@@ -182,9 +210,17 @@ impl TextShader {
         Ok(shader)
     }
 
-    fn draw(&self, matrix: &Matrix4<f32>, size: (f32, f32),
-            alignment: Align, start: (f32, f32), color: &Color4, slant: f32,
-            font: &Texture2D, chars: &[u8]) {
+    fn draw(
+        &self,
+        matrix: &Matrix4<f32>,
+        size: (f32, f32),
+        alignment: Align,
+        start: (f32, f32),
+        color: &Color4,
+        slant: f32,
+        font: &Texture2D,
+        chars: &[u8],
+    ) {
         self.program.bind();
         self.varray.bind();
         self.color.set(color);
@@ -212,12 +248,16 @@ impl TextShader {
                 array[i] = chars[offset + i] as u32;
             }
             self.text.set(&array);
-            let mvp = matrix * Matrix4::trans2(start.0, start.1) *
-                Matrix4::scale2(size.0, size.1) *
-                Matrix4::trans2v(shift);
+            let mvp = matrix
+                * Matrix4::trans2(start.0, start.1)
+                * Matrix4::scale2(size.0, size.1)
+                * Matrix4::trans2v(shift);
             self.mvp.set(&mvp);
-            self.varray
-                .draw(Primitive::Triangles, 0, CHAR_VERTICES.len() * stride);
+            self.varray.draw(
+                Primitive::Triangles,
+                0,
+                CHAR_VERTICES.len() * stride,
+            );
             shift.x += stride as f32;
             offset += stride;
         }

@@ -25,11 +25,11 @@ mod types;
 
 use self::parse::Parser;
 use self::types::{CompiledLine, ParserAlign};
+use crate::tachy::geom::{Color4, MatrixExt, RectSize};
+use crate::tachy::gui::Resources;
+use crate::tachy::save::Prefs;
 use cgmath::Matrix4;
 use std::str::Chars;
-use tachy::geom::{Color4, MatrixExt, RectSize};
-use tachy::gui::Resources;
-use tachy::save::Prefs;
 
 //===========================================================================//
 
@@ -84,9 +84,13 @@ impl Paragraph {
     ///   an image of that chip.
     /// * `$#t#`, where `t` is TOML for a circuit, inserts an image of that
     ///   circuit.
-    pub fn compile(font_size: f32, line_height: f32, max_width: f32,
-                   prefs: &Prefs, format: &str)
-                   -> Paragraph {
+    pub fn compile(
+        font_size: f32,
+        line_height: f32,
+        max_width: f32,
+        prefs: &Prefs,
+        format: &str,
+    ) -> Paragraph {
         debug_assert!(font_size > 0.0);
         debug_assert!(max_width >= 0.0);
         let line_gap = line_height - font_size;
@@ -133,8 +137,10 @@ impl Paragraph {
                         debug_warn!("Invalid paragraph escape: ${}", ch);
                     }
                     None => {
-                        debug_warn!("Incomplete paragraph escape at end of \
-                                     format string");
+                        debug_warn!(
+                            "Incomplete paragraph escape at end of \
+                             format string"
+                        );
                     }
                 }
             } else if chr == '\n' {
@@ -145,37 +151,50 @@ impl Paragraph {
         }
         let (size, total_millis, lines) =
             parser.compile(font_size, line_gap, max_width);
-        Paragraph {
-            lines,
-            font_size,
-            total_millis,
-            size,
-        }
+        Paragraph { lines, font_size, total_millis, size }
     }
 
-    pub fn escape(string: &str) -> String { string.replace('$', "$$") }
+    pub fn escape(string: &str) -> String {
+        string.replace('$', "$$")
+    }
 
-    pub fn width(&self) -> f32 { self.size.width }
+    pub fn width(&self) -> f32 {
+        self.size.width
+    }
 
-    pub fn height(&self) -> f32 { self.size.height }
+    pub fn height(&self) -> f32 {
+        self.size.height
+    }
 
-    pub fn total_millis(&self) -> usize { self.total_millis }
+    pub fn total_millis(&self) -> usize {
+        self.total_millis
+    }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                left_top: (f32, f32)) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        left_top: (f32, f32),
+    ) {
         self.draw_partial(resources, matrix, left_top, self.total_millis);
     }
 
-    pub fn draw_partial(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                        left_top: (f32, f32), mut num_millis: usize) {
+    pub fn draw_partial(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        left_top: (f32, f32),
+        mut num_millis: usize,
+    ) {
         let (left, top) = left_top;
         let paragraph_matrix = matrix * Matrix4::trans2(left, top);
         for line in self.lines.iter() {
-            if !line.draw(resources,
-                          &paragraph_matrix,
-                          self.font_size,
-                          &mut num_millis)
-            {
+            if !line.draw(
+                resources,
+                &paragraph_matrix,
+                self.font_size,
+                &mut num_millis,
+            ) {
                 break;
             }
         }
@@ -199,8 +218,8 @@ fn parse_arg(chars: &mut Chars, close: char) -> String {
 #[cfg(test)]
 mod tests {
     use super::Paragraph;
-    use tachy::font::Font;
-    use tachy::save::Prefs;
+    use crate::tachy::font::Font;
+    use crate::tachy::save::Prefs;
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn get_lines(paragraph: &Paragraph) -> Vec<String> {
@@ -239,8 +258,10 @@ mod tests {
         let prefs = Prefs::for_testing();
         let format = "a b c d ThisWordIsTooLong e f";
         let paragraph = Paragraph::compile(size, size, width, &prefs, format);
-        assert_eq!(get_lines(&paragraph),
-                   vec!["a b c", "d", "ThisWordIsTooLong", "e f"]);
+        assert_eq!(
+            get_lines(&paragraph),
+            vec!["a b c", "d", "ThisWordIsTooLong", "e f"]
+        );
     }
 
     #[test]

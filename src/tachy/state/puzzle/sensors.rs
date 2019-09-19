@@ -17,60 +17,56 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::iface::{Interface, InterfacePort, InterfacePosition};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
 pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Upper",
-        description: "\
-            Indicates the current upper bound of the scan range (inclusive).",
+        description:
+            "\
+             Indicates the current upper bound of the scan range (inclusive).",
         side: Direction::West,
         pos: InterfacePosition::Left(0),
-        ports: &[
-            InterfacePort {
-                name: "Upper",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Upper",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
     Interface {
         name: "Lower",
-        description: "\
-            Indicates the current lower bound of the scan range (inclusive).",
+        description:
+            "\
+             Indicates the current lower bound of the scan range (inclusive).",
         side: Direction::West,
         pos: InterfacePosition::Right(0),
-        ports: &[
-            InterfacePort {
-                name: "Lower",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Lower",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
     Interface {
         name: "Out",
         description: "Controls where the scan range will be subdivided.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
 ];
 
@@ -105,16 +101,25 @@ impl SensorsEval {
         }
     }
 
-    pub fn lower_bound(&self) -> u32 { self.current_lower }
+    pub fn lower_bound(&self) -> u32 {
+        self.current_lower
+    }
 
-    pub fn upper_bound(&self) -> u32 { self.current_upper }
+    pub fn upper_bound(&self) -> u32 {
+        self.current_upper
+    }
 
-    pub fn num_goals_found(&self) -> usize { self.num_goals_found }
+    pub fn num_goals_found(&self) -> usize {
+        self.num_goals_found
+    }
 }
 
 impl PuzzleEval for SensorsEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         if self.num_goals_found >= GOALS.len() {
             Some(EvalScore::Value(time_step as i32))
         } else {
@@ -124,8 +129,11 @@ impl PuzzleEval for SensorsEval {
         }
     }
 
-    fn end_time_step(&mut self, _time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        _time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let out = state.recv_behavior(self.out_wire).0;
         if self.current_lower == self.current_upper {
             if out == self.current_lower {

@@ -25,8 +25,19 @@ use strum::IntoEnumIterator;
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, EnumCount, EnumIter, EnumString, Eq, Hash, Ord,
-         PartialEq, PartialOrd)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    EnumCount,
+    EnumIter,
+    EnumString,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
 pub enum Hotkey {
     EvalReset,
     EvalRunPause,
@@ -48,7 +59,9 @@ pub enum Hotkey {
 
 impl Hotkey {
     /// Returns an iterator over all hotkeys.
-    pub fn all() -> HotkeyIter { Hotkey::iter() }
+    pub fn all() -> HotkeyIter {
+        Hotkey::iter()
+    }
 
     pub fn name(self) -> &'static str {
         match self {
@@ -210,9 +223,8 @@ impl serde::Serialize for HotkeyCodes {
             .iter()
             .filter(|(&hotkey, &code)| code != hotkey.default_keycode())
             .filter_map(|(&hotkey, &code)| {
-                            keycode_name(code)
-                                .map(|name| (format!("{:?}", hotkey), name))
-                        })
+                keycode_name(code).map(|name| (format!("{:?}", hotkey), name))
+            })
             .collect::<BTreeMap<String, &str>>()
             .serialize(serializer)
     }
@@ -376,8 +388,10 @@ mod tests {
     #[test]
     fn default_hotkey_code_round_trip() {
         for hotkey in Hotkey::all() {
-            assert_eq!(Hotkey::default_for_keycode(hotkey.default_keycode()),
-                       Some(hotkey));
+            assert_eq!(
+                Hotkey::default_for_keycode(hotkey.default_keycode()),
+                Some(hotkey)
+            );
         }
     }
 
@@ -438,9 +452,11 @@ mod tests {
         hotkeys.set_keycode(Hotkey::FlipHorz, Keycode::Semicolon);
         hotkeys.set_keycode(Hotkey::FlipVert, Keycode::Tab);
         let bytes = toml::to_vec(&hotkeys).unwrap();
-        assert_eq!(str::from_utf8(&bytes).unwrap(),
-                   "FlipHorz = \";\"\n\
-                    FlipVert = \"Tab\"\n");
+        assert_eq!(
+            str::from_utf8(&bytes).unwrap(),
+            "FlipHorz = \";\"\n\
+             FlipVert = \"Tab\"\n"
+        );
         let hotkeys: HotkeyCodes = toml::from_slice(&bytes).unwrap();
         assert_eq!(hotkeys.keycode(Hotkey::FlipHorz), Keycode::Semicolon);
         assert_eq!(hotkeys.keycode(Hotkey::FlipVert), Keycode::Tab);

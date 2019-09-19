@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use tachy::font::Fonts;
-use tachy::shader::Shaders;
-use tachy::texture::Textures;
+use crate::tachy::font::Fonts;
+use crate::tachy::shader::Shaders;
+use crate::tachy::texture::Textures;
 
 //===========================================================================//
 
@@ -34,18 +34,20 @@ impl Resources {
         let fonts = Fonts::new()?;
         let shaders = Shaders::new()?;
         let textures = Textures::new()?;
-        Ok(Resources {
-               fonts,
-               shaders,
-               textures,
-           })
+        Ok(Resources { fonts, shaders, textures })
     }
 
-    pub fn fonts(&self) -> &Fonts { &self.fonts }
+    pub fn fonts(&self) -> &Fonts {
+        &self.fonts
+    }
 
-    pub fn shaders(&self) -> &Shaders { &self.shaders }
+    pub fn shaders(&self) -> &Shaders {
+        &self.shaders
+    }
 
-    pub fn textures(&self) -> &Textures { &self.textures }
+    pub fn textures(&self) -> &Textures {
+        &self.textures
+    }
 }
 
 //===========================================================================//

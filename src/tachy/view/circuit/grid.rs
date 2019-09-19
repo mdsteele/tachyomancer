@@ -17,25 +17,29 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::bounds::{BOUNDS_MARGIN, BoundsDrag, BoundsHandle};
-use super::chipdrag::ChipDrag;
-use super::select::{self, SelectingDrag, Selection, SelectionDrag};
-use super::super::chip::{CHIP_MARGIN, ChipModel, chip_grid_rect,
-                         interface_grid_rect};
+use super::super::chip::{
+    chip_grid_rect, interface_grid_rect, ChipModel, CHIP_MARGIN,
+};
 use super::super::tooltip::Tooltip;
 use super::super::wire::WireModel;
+use super::bounds::{BoundsDrag, BoundsHandle, BOUNDS_MARGIN};
+use super::chipdrag::ChipDrag;
+use super::select::{self, SelectingDrag, Selection, SelectionDrag};
 use super::tooltip::GridTooltipTag;
 use super::tutorial::TutorialBubble;
 use super::wiredrag::WireDrag;
-use cgmath::{self, Matrix4, Point2, Vector2, vec2};
+use crate::tachy::geom::{
+    AsFloat, AsInt, Color3, Color4, Coords, CoordsRect, Direction, MatrixExt,
+    Orientation, Rect, RectSize,
+};
+use crate::tachy::gui::{
+    ClockEventData, Cursor, Event, Keycode, NextCursor, Resources, Sound, Ui,
+};
+use crate::tachy::save::{ChipType, Hotkey, Prefs};
+use crate::tachy::state::{EditGrid, GridChange, WireColor};
+use cgmath::{self, vec2, Matrix4, Point2, Vector2};
 use std::collections::HashSet;
 use std::mem;
-use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsRect,
-                  Direction, MatrixExt, Orientation, Rect, RectSize};
-use tachy::gui::{ClockEventData, Cursor, Event, Keycode, NextCursor,
-                 Resources, Sound, Ui};
-use tachy::save::{ChipType, Hotkey, Prefs};
-use tachy::state::{EditGrid, GridChange, WireColor};
 
 //===========================================================================//
 
@@ -74,14 +78,18 @@ pub struct EditGridView {
 }
 
 impl EditGridView {
-    pub fn new(window_size: RectSize<i32>, init_circuit_bounds: CoordsRect,
-               tutorial_bubbles: Vec<(Direction, TutorialBubble)>)
-               -> EditGridView {
+    pub fn new(
+        window_size: RectSize<i32>,
+        init_circuit_bounds: CoordsRect,
+        tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
+    ) -> EditGridView {
         let pixel_bounds = init_circuit_bounds * GRID_CELL_SIZE;
         EditGridView {
             size: window_size.as_f32(),
-            scroll: Vector2::new(pixel_bounds.x + pixel_bounds.width / 2,
-                                 pixel_bounds.y + pixel_bounds.height / 2),
+            scroll: Vector2::new(
+                pixel_bounds.x + pixel_bounds.width / 2,
+                pixel_bounds.y + pixel_bounds.height / 2,
+            ),
             zoom: ZOOM_DEFAULT,
             interaction: Interaction::Nothing,
             tutorial_bubbles,
@@ -93,10 +101,12 @@ impl EditGridView {
     fn draw_background_grid(&self, resources: &Resources) {
         let matrix = cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
         let size = self.size * self.zoom.recip();
-        let pixel_rect = Rect::new((self.scroll.x as f32) - 0.5 * size.width,
-                                   (self.scroll.y as f32) - 0.5 * size.height,
-                                   size.width,
-                                   size.height);
+        let pixel_rect = Rect::new(
+            (self.scroll.x as f32) - 0.5 * size.width,
+            (self.scroll.y as f32) - 0.5 * size.height,
+            size.width,
+            size.height,
+        );
         let coords_rect = pixel_rect * (GRID_CELL_SIZE as f32).recip();
         resources.shaders().board().draw(&matrix, coords_rect);
     }
@@ -137,54 +147,54 @@ impl EditGridView {
             } else {
                 grid.bounds()
             };
-        let bounds = bounds.as_f32().expand(BOUNDS_MARGIN) *
-            ((GRID_CELL_SIZE as f32) * self.zoom);
+        let bounds = bounds.as_f32().expand(BOUNDS_MARGIN)
+            * ((GRID_CELL_SIZE as f32) * self.zoom);
         let margin: i32 = 8;
         for &(dir, ref bubble) in self.tutorial_bubbles.iter() {
             let topleft = match dir {
-                Direction::East => {
-                    Point2::new((bounds.right().round() as i32) + margin,
-                                ((bounds.y + 0.5 * bounds.height).round() as
-                                     i32) -
-                                    bubble.height() / 2)
-                }
-                Direction::South => {
-                    Point2::new(((bounds.x + 0.5 * bounds.width).round() as
-                                     i32) -
-                                    bubble.width() / 2,
-                                (bounds.bottom().round() as i32) + margin)
-                }
-                Direction::West => {
-                    Point2::new((bounds.x.round() as i32) - margin -
-                                    bubble.width(),
-                                ((bounds.y + 0.5 * bounds.height).round() as
-                                     i32) -
-                                    bubble.height() / 2)
-                }
-                Direction::North => {
-                    Point2::new(((bounds.x + 0.5 * bounds.width).round() as
-                                     i32) -
-                                    bubble.width() / 2,
-                                (bounds.y.round() as i32) - margin -
-                                    bubble.height())
-                }
+                Direction::East => Point2::new(
+                    (bounds.right().round() as i32) + margin,
+                    ((bounds.y + 0.5 * bounds.height).round() as i32)
+                        - bubble.height() / 2,
+                ),
+                Direction::South => Point2::new(
+                    ((bounds.x + 0.5 * bounds.width).round() as i32)
+                        - bubble.width() / 2,
+                    (bounds.bottom().round() as i32) + margin,
+                ),
+                Direction::West => Point2::new(
+                    (bounds.x.round() as i32) - margin - bubble.width(),
+                    ((bounds.y + 0.5 * bounds.height).round() as i32)
+                        - bubble.height() / 2,
+                ),
+                Direction::North => Point2::new(
+                    ((bounds.x + 0.5 * bounds.width).round() as i32)
+                        - bubble.width() / 2,
+                    (bounds.y.round() as i32) - margin - bubble.height(),
+                ),
             };
             bubble.draw(resources, &matrix, topleft);
         }
     }
 
-    fn draw_interfaces(&self, resources: &Resources,
-                       grid_matrix: &Matrix4<f32>, grid: &EditGrid) {
+    fn draw_interfaces(
+        &self,
+        resources: &Resources,
+        grid_matrix: &Matrix4<f32>,
+        grid: &EditGrid,
+    ) {
         let bounds = match self.interaction {
             Interaction::DraggingBounds(ref drag) => drag.bounds(),
             _ => grid.bounds(),
         };
         for interface in grid.interfaces() {
             let coords = interface.top_left(bounds);
-            ChipModel::draw_interface(resources,
-                                      &grid_matrix,
-                                      coords,
-                                      interface);
+            ChipModel::draw_interface(
+                resources,
+                &grid_matrix,
+                coords,
+                interface,
+            );
         }
     }
 
@@ -230,28 +240,28 @@ impl EditGridView {
             // TODO: When a wire with an error is selected, we should hilight
             //   the causes of the error (e.g. the two sender ports, or the
             //   wire loop, or whatever).
-            let color = if has_error {
-                WireColor::Ambiguous
-            } else {
-                color
-            };
+            let color = if has_error { WireColor::Ambiguous } else { color };
             if half_wire == Some((coords, dir)) {
-                WireModel::draw_half_straight(resources,
-                                              &grid_matrix,
-                                              coords,
-                                              dir,
-                                              color,
-                                              size,
-                                              hilight);
+                WireModel::draw_half_straight(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    dir,
+                    color,
+                    size,
+                    hilight,
+                );
             } else {
-                WireModel::draw_fragment(resources,
-                                         &grid_matrix,
-                                         coords,
-                                         dir,
-                                         shape,
-                                         color,
-                                         size,
-                                         hilight);
+                WireModel::draw_fragment(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    dir,
+                    shape,
+                    color,
+                    size,
+                    hilight,
+                );
             }
         }
 
@@ -266,31 +276,39 @@ impl EditGridView {
             if Some(coords) == dragged_chip_coords {
                 continue;
             }
-            ChipModel::draw_chip(resources,
-                                 &grid_matrix,
-                                 coords,
-                                 ctype,
-                                 orient,
-                                 Some(grid));
+            ChipModel::draw_chip(
+                resources,
+                &grid_matrix,
+                coords,
+                ctype,
+                orient,
+                Some(grid),
+            );
         }
 
         // Draw selection box (if any):
         match self.interaction {
             Interaction::SelectingRect(ref drag) => {
-                drag.draw_box(resources,
-                              &self.unzoomed_matrix(),
-                              (GRID_CELL_SIZE as f32) * self.zoom);
+                drag.draw_box(
+                    resources,
+                    &self.unzoomed_matrix(),
+                    (GRID_CELL_SIZE as f32) * self.zoom,
+                );
             }
             Interaction::RectSelected(rect) => {
-                Selection::draw_box(resources,
-                                    &self.unzoomed_matrix(),
-                                    rect,
-                                    (GRID_CELL_SIZE as f32) * self.zoom);
+                Selection::draw_box(
+                    resources,
+                    &self.unzoomed_matrix(),
+                    rect,
+                    (GRID_CELL_SIZE as f32) * self.zoom,
+                );
             }
             Interaction::DraggingSelection(ref drag) => {
-                drag.draw_selection(resources,
-                                    &self.unzoomed_matrix(),
-                                    (GRID_CELL_SIZE as f32) * self.zoom);
+                drag.draw_selection(
+                    resources,
+                    &self.unzoomed_matrix(),
+                    (GRID_CELL_SIZE as f32) * self.zoom,
+                );
             }
             _ => {}
         }
@@ -299,15 +317,17 @@ impl EditGridView {
     pub fn draw_dragged(&self, resources: &Resources) {
         if let Interaction::DraggingChip(ref drag) = self.interaction {
             let pt = drag.chip_topleft();
-            let grid_matrix = self.vp_matrix() *
-                Matrix4::from_scale(GRID_CELL_SIZE as f32) *
-                Matrix4::trans2(pt.x, pt.y);
-            ChipModel::draw_chip(resources,
-                                 &grid_matrix,
-                                 Coords::new(0, 0),
-                                 drag.chip_type(),
-                                 drag.new_orient(),
-                                 None);
+            let grid_matrix = self.vp_matrix()
+                * Matrix4::from_scale(GRID_CELL_SIZE as f32)
+                * Matrix4::trans2(pt.x, pt.y);
+            ChipModel::draw_chip(
+                resources,
+                &grid_matrix,
+                Coords::new(0, 0),
+                drag.chip_type(),
+                drag.new_orient(),
+                None,
+            );
         }
     }
 
@@ -316,27 +336,35 @@ impl EditGridView {
     }
 
     fn ortho_matrix(&self) -> Matrix4<f32> {
-        cgmath::ortho(-0.5 * self.size.width,
-                      0.5 * self.size.width,
-                      0.5 * self.size.height,
-                      -0.5 * self.size.height,
-                      -100.0,
-                      100.0)
+        cgmath::ortho(
+            -0.5 * self.size.width,
+            0.5 * self.size.width,
+            0.5 * self.size.height,
+            -0.5 * self.size.height,
+            -100.0,
+            100.0,
+        )
     }
 
     fn vp_matrix(&self) -> Matrix4<f32> {
-        self.ortho_matrix() * Matrix4::from_scale(self.zoom) *
-            Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
+        self.ortho_matrix()
+            * Matrix4::from_scale(self.zoom)
+            * Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
     }
 
     fn unzoomed_matrix(&self) -> Matrix4<f32> {
-        self.ortho_matrix() *
-            Matrix4::trans2((-self.scroll.x as f32) * self.zoom,
-                            (-self.scroll.y as f32) * self.zoom)
+        self.ortho_matrix()
+            * Matrix4::trans2(
+                (-self.scroll.x as f32) * self.zoom,
+                (-self.scroll.y as f32) * self.zoom,
+            )
     }
 
-    pub fn request_interaction_cursor(&self, event: &Event,
-                                      next_cursor: &mut NextCursor) {
+    pub fn request_interaction_cursor(
+        &self,
+        event: &Event,
+        next_cursor: &mut NextCursor,
+    ) {
         match event {
             Event::MouseUp(mouse) if mouse.left => return,
             _ => {}
@@ -345,8 +373,8 @@ impl EditGridView {
             Interaction::DraggingBounds(ref drag) => {
                 drag.request_cursor(next_cursor);
             }
-            Interaction::DraggingChip(_) |
-            Interaction::DraggingSelection(_) => {
+            Interaction::DraggingChip(_)
+            | Interaction::DraggingSelection(_) => {
                 next_cursor.request(Cursor::HandClosed);
             }
             Interaction::DraggingWires(_) => {
@@ -355,20 +383,22 @@ impl EditGridView {
             Interaction::SelectingRect(_) => {
                 next_cursor.request(Cursor::Crosshair);
             }
-            Interaction::Nothing |
-            Interaction::RectSelected(_) => {}
+            Interaction::Nothing | Interaction::RectSelected(_) => {}
         }
     }
 
-    fn cursor_for_grid_pt(&self, grid_pt: Point2<f32>, grid: &EditGrid)
-                          -> Cursor {
+    fn cursor_for_grid_pt(
+        &self,
+        grid_pt: Point2<f32>,
+        grid: &EditGrid,
+    ) -> Cursor {
         let coords = grid_pt.as_i32_floor();
         match self.interaction {
             Interaction::Nothing => {
                 if grid.eval().is_some() {
                     match grid.chip_at(coords) {
-                        Some((_, ChipType::Button, _)) |
-                        Some((_, ChipType::Toggle(_), _)) => {
+                        Some((_, ChipType::Button, _))
+                        | Some((_, ChipType::Toggle(_), _)) => {
                             return Cursor::HandPointing;
                         }
                         _ => return Cursor::NoSign,
@@ -394,7 +424,8 @@ impl EditGridView {
                 if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
                     return Cursor::Crosshair;
                 }
-                if grid.bounds()
+                if grid
+                    .bounds()
                     .as_f32()
                     .expand(CHIP_MARGIN)
                     .contains_point(grid_pt)
@@ -427,32 +458,32 @@ impl EditGridView {
             }
         } else {
             match self.interaction {
-                Interaction::DraggingChip(ref mut drag) => {
-                    match hotkey {
-                        Hotkey::FlipHorz => drag.flip_horz(ui),
-                        Hotkey::FlipVert => drag.flip_vert(ui),
-                        Hotkey::RotateCcw => drag.rotate_ccw(ui),
-                        Hotkey::RotateCw => drag.rotate_cw(ui),
-                        _ => {}
-                    }
-                }
-                Interaction::DraggingSelection(ref mut drag) => {
-                    match hotkey {
-                        Hotkey::FlipHorz => drag.flip_horz(ui),
-                        Hotkey::FlipVert => drag.flip_vert(ui),
-                        Hotkey::RotateCcw => drag.rotate_ccw(ui),
-                        Hotkey::RotateCw => drag.rotate_cw(ui),
-                        _ => {}
-                    }
-                }
+                Interaction::DraggingChip(ref mut drag) => match hotkey {
+                    Hotkey::FlipHorz => drag.flip_horz(ui),
+                    Hotkey::FlipVert => drag.flip_vert(ui),
+                    Hotkey::RotateCcw => drag.rotate_ccw(ui),
+                    Hotkey::RotateCw => drag.rotate_cw(ui),
+                    _ => {}
+                },
+                Interaction::DraggingSelection(ref mut drag) => match hotkey {
+                    Hotkey::FlipHorz => drag.flip_horz(ui),
+                    Hotkey::FlipVert => drag.flip_vert(ui),
+                    Hotkey::RotateCcw => drag.rotate_ccw(ui),
+                    Hotkey::RotateCw => drag.rotate_cw(ui),
+                    _ => {}
+                },
                 _ => {}
             }
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    grid: &mut EditGrid, prefs: &Prefs)
-                    -> Option<EditGridAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        grid: &mut EditGrid,
+        prefs: &Prefs,
+    ) -> Option<EditGridAction> {
         match event {
             Event::ClockTick(tick) => {
                 self.tooltip
@@ -460,13 +491,18 @@ impl EditGridView {
                 // Scroll if we're holding down any scroll key(s):
                 let (left, right, up, down) = {
                     let keyboard = ui.keyboard();
-                    (keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollLeft)),
-                     keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollRight)),
-                     keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollUp)),
-                     keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollDown)))
+                    (
+                        keyboard
+                            .is_held(prefs.hotkey_code(Hotkey::ScrollLeft)),
+                        keyboard
+                            .is_held(prefs.hotkey_code(Hotkey::ScrollRight)),
+                        keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollUp)),
+                        keyboard
+                            .is_held(prefs.hotkey_code(Hotkey::ScrollDown)),
+                    )
                 };
-                let dist = ((SCROLL_GRID_CELLS_PER_SECOND * tick.elapsed) *
-                                (GRID_CELL_SIZE as f64))
+                let dist = ((SCROLL_GRID_CELLS_PER_SECOND * tick.elapsed)
+                    * (GRID_CELL_SIZE as f64))
                     .round() as i32;
                 if left && !right {
                     self.scroll_by_screen_dist(-dist, 0, ui);
@@ -487,9 +523,11 @@ impl EditGridView {
                         track_towards(self.scroll.x, scroll_limit.x, tick);
                     ui.request_redraw();
                 } else if self.scroll.x > scroll_limit.right() {
-                    self.scroll.x = track_towards(self.scroll.x,
-                                                  scroll_limit.right(),
-                                                  tick);
+                    self.scroll.x = track_towards(
+                        self.scroll.x,
+                        scroll_limit.right(),
+                        tick,
+                    );
                     ui.request_redraw();
                 }
                 if self.scroll.y < scroll_limit.y {
@@ -497,15 +535,17 @@ impl EditGridView {
                         track_towards(self.scroll.y, scroll_limit.y, tick);
                     ui.request_redraw();
                 } else if self.scroll.y > scroll_limit.bottom() {
-                    self.scroll.y = track_towards(self.scroll.y,
-                                                  scroll_limit.bottom(),
-                                                  tick);
+                    self.scroll.y = track_towards(
+                        self.scroll.y,
+                        scroll_limit.bottom(),
+                        tick,
+                    );
                     ui.request_redraw();
                 }
             }
             Event::KeyDown(key) => {
-                if key.code == Keycode::Backspace ||
-                    key.code == Keycode::Delete
+                if key.code == Keycode::Backspace
+                    || key.code == Keycode::Delete
                 {
                     match self.interaction {
                         Interaction::Nothing => {
@@ -539,19 +579,18 @@ impl EditGridView {
                             }
                         }
                         Keycode::V => {
-                            if let Some(selection) =
-                                Selection::from_clipboard(ui.clipboard(),
-                                                          grid.allowed_chips())
-                            {
+                            if let Some(selection) = Selection::from_clipboard(
+                                ui.clipboard(),
+                                grid.allowed_chips(),
+                            ) {
                                 self.cancel_interaction(ui, grid);
                                 let size = selection.size().as_f32();
                                 let rel = vec2(size.width, size.height) * 0.5;
                                 let grid_pt =
                                     self.screen_pt_to_grid_pt(key.mouse_pt);
-                                let drag = SelectionDrag::new(selection,
-                                                              rel,
-                                                              grid_pt,
-                                                              None);
+                                let drag = SelectionDrag::new(
+                                    selection, rel, grid_pt, None,
+                                );
                                 self.interaction =
                                     Interaction::DraggingSelection(drag);
                                 ui.request_redraw();
@@ -591,8 +630,8 @@ impl EditGridView {
                 self.stop_hover(ui);
                 if grid.eval().is_some() {
                     match grid.chip_at(grid_pt.as_i32_floor()) {
-                        Some((coords, ChipType::Button, _)) |
-                        Some((coords, ChipType::Toggle(_), _)) => {
+                        Some((coords, ChipType::Button, _))
+                        | Some((coords, ChipType::Toggle(_), _)) => {
                             // TODO: play sound depending on chip type
                             grid.eval_mut()
                                 .unwrap()
@@ -607,13 +646,15 @@ impl EditGridView {
                     Interaction::Nothing => {}
                     Interaction::RectSelected(rect) => {
                         if rect.contains_point(grid_pt.as_i32_floor()) {
-                            let selection = select::cut_provisionally(grid,
-                                                                      rect);
+                            let selection =
+                                select::cut_provisionally(grid, rect);
                             let grab_rel = grid_pt - rect.top_left().as_f32();
-                            let drag = SelectionDrag::new(selection,
-                                                          grab_rel,
-                                                          grid_pt,
-                                                          Some(rect));
+                            let drag = SelectionDrag::new(
+                                selection,
+                                grab_rel,
+                                grid_pt,
+                                Some(rect),
+                            );
                             self.interaction =
                                 Interaction::DraggingSelection(drag);
                         } else {
@@ -645,8 +686,7 @@ impl EditGridView {
                         return None;
                     }
                 }
-                if let Some(handle) = BoundsHandle::for_grid_pt(grid_pt,
-                                                                grid)
+                if let Some(handle) = BoundsHandle::for_grid_pt(grid_pt, grid)
                 {
                     let drag = BoundsDrag::new(handle, grid_pt, grid);
                     self.interaction = Interaction::DraggingBounds(drag);
@@ -660,10 +700,12 @@ impl EditGridView {
                         let change =
                             GridChange::RemoveChip(coords, ctype, orient);
                         if grid.try_mutate_provisionally(vec![change]) {
-                            let drag = ChipDrag::new(ctype,
-                                                     orient,
-                                                     Some(coords),
-                                                     grid_pt);
+                            let drag = ChipDrag::new(
+                                ctype,
+                                orient,
+                                Some(coords),
+                                grid_pt,
+                            );
                             self.interaction = Interaction::DraggingChip(drag);
                             ui.audio().play_sound(Sound::GrabChip);
                         }
@@ -671,13 +713,16 @@ impl EditGridView {
                     }
                 }
                 if SelectingDrag::is_near_vertex(grid_pt, grid.bounds()) {
-                    let drag = SelectingDrag::new(grid.bounds(),
-                                                  grid_pt.as_i32_round());
+                    let drag = SelectingDrag::new(
+                        grid.bounds(),
+                        grid_pt.as_i32_round(),
+                    );
                     self.interaction = Interaction::SelectingRect(drag);
                     ui.request_redraw();
                     return None;
                 }
-                if grid.bounds()
+                if grid
+                    .bounds()
                     .as_f32()
                     .expand(CHIP_MARGIN)
                     .contains_point(grid_pt)
@@ -720,15 +765,14 @@ impl EditGridView {
                 ui.cursor().request(self.cursor_for_grid_pt(grid_pt, grid));
                 let mut should_stop_interaction = false;
                 match self.interaction {
-                    Interaction::Nothing |
-                    Interaction::RectSelected(_) => {
+                    Interaction::Nothing | Interaction::RectSelected(_) => {
                         if !mouse.left && !mouse.right {
                             if let Some(tag) =
                                 GridTooltipTag::for_grid_pt(grid, grid_pt)
                             {
                                 if let GridTooltipTag::Wire(wire) = tag {
-                                    if self.interaction.is_nothing() &&
-                                        self.hover_wire != Some(wire)
+                                    if self.interaction.is_nothing()
+                                        && self.hover_wire != Some(wire)
                                     {
                                         self.hover_wire = Some(wire);
                                         ui.request_redraw();
@@ -827,8 +871,12 @@ impl EditGridView {
         }
     }
 
-    pub fn grab_from_parts_tray(&mut self, screen_pt: Point2<i32>,
-                                ui: &mut Ui, ctype: ChipType) {
+    pub fn grab_from_parts_tray(
+        &mut self,
+        screen_pt: Point2<i32>,
+        ui: &mut Ui,
+        ctype: ChipType,
+    ) {
         let size = ctype.size();
         let start = 0.5 * Point2::new(size.width, size.height).as_f32();
         let mut drag =
@@ -850,8 +898,11 @@ impl EditGridView {
 
     /// Ceases the current interaction (if any) and sets `self.interaction` to
     /// `Nothing`.  Returns true if any provisional changes were rolled back.
-    fn cancel_interaction(&mut self, ui: &mut Ui, grid: &mut EditGrid)
-                          -> bool {
+    fn cancel_interaction(
+        &mut self,
+        ui: &mut Ui,
+        grid: &mut EditGrid,
+    ) -> bool {
         match self.interaction.take() {
             Interaction::DraggingChip(drag) => drag.cancel(ui, grid),
             Interaction::DraggingSelection(drag) => drag.cancel(ui, grid),
@@ -865,19 +916,13 @@ impl EditGridView {
 
     fn zoom_by(&mut self, factor: f32, ui: &mut Ui) {
         if factor < 1.0 {
-            let minimum = if self.zoom > ZOOM_DEFAULT {
-                ZOOM_DEFAULT
-            } else {
-                ZOOM_MIN
-            };
+            let minimum =
+                if self.zoom > ZOOM_DEFAULT { ZOOM_DEFAULT } else { ZOOM_MIN };
             self.zoom = (self.zoom * factor).max(minimum);
             ui.request_redraw();
         } else if factor > 1.0 {
-            let maximum = if self.zoom < ZOOM_DEFAULT {
-                ZOOM_DEFAULT
-            } else {
-                ZOOM_MAX
-            };
+            let maximum =
+                if self.zoom < ZOOM_DEFAULT { ZOOM_DEFAULT } else { ZOOM_MAX };
             self.zoom = (self.zoom * factor).min(maximum);
             ui.request_redraw();
         }
@@ -890,10 +935,12 @@ impl EditGridView {
 
     fn screen_pt_to_grid_pt(&self, screen_pt: Point2<i32>) -> Point2<f32> {
         let half_size = self.size * 0.5;
-        (((screen_pt.as_f32() - vec2(half_size.width, half_size.height)) /
-              self.zoom)
-             .as_i32_round() + self.scroll)
-            .as_f32() / (GRID_CELL_SIZE as f32)
+        (((screen_pt.as_f32() - vec2(half_size.width, half_size.height))
+            / self.zoom)
+            .as_i32_round()
+            + self.scroll)
+            .as_f32()
+            / (GRID_CELL_SIZE as f32)
     }
 
     fn coords_for_screen_pt(&self, screen_pt: Point2<i32>) -> Coords {
@@ -908,14 +955,16 @@ fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {
     current + (change.round() as i32)
 }
 
-fn try_toggle_switch(coords: Coords, value: bool, orient: Orientation,
-                     grid: &mut EditGrid)
-                     -> bool {
-    let changes =
-        vec![
-            GridChange::RemoveChip(coords, ChipType::Toggle(value), orient),
-            GridChange::AddChip(coords, ChipType::Toggle(!value), orient),
-        ];
+fn try_toggle_switch(
+    coords: Coords,
+    value: bool,
+    orient: Orientation,
+    grid: &mut EditGrid,
+) -> bool {
+    let changes = vec![
+        GridChange::RemoveChip(coords, ChipType::Toggle(value), orient),
+        GridChange::AddChip(coords, ChipType::Toggle(!value), orient),
+    ];
     grid.try_mutate(changes)
 }
 

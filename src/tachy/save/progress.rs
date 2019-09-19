@@ -19,7 +19,7 @@
 
 use super::circuit::CircuitData;
 use super::encode::{decode_name, encode_name};
-use std::collections::{BTreeSet, btree_set};
+use std::collections::{btree_set, BTreeSet};
 use std::fs;
 use std::i64;
 use std::io;
@@ -77,12 +77,12 @@ impl PuzzleProgress {
         // Create directory if needed:
         if !base_path.exists() {
             debug_log!("Creating puzzle directory at {:?}", base_path);
-            fs::create_dir_all(&base_path)
-                .map_err(|err| {
-                    format!("Could not create puzzle directory at {:?}: {}",
-                            base_path,
-                            err)
-                })?;
+            fs::create_dir_all(&base_path).map_err(|err| {
+                format!(
+                    "Could not create puzzle directory at {:?}: {}",
+                    base_path, err
+                )
+            })?;
         }
 
         // Load progress data:
@@ -97,10 +97,12 @@ impl PuzzleProgress {
                     data
                 }
                 Err(err) => {
-                    debug_log!("Could not read puzzle progress \
-                                data file from {:?}: {}",
-                               data_path,
-                               err);
+                    debug_log!(
+                        "Could not read puzzle progress \
+                         data file from {:?}: {}",
+                        data_path,
+                        err
+                    );
                     PuzzleProgressData::default()
                 }
             }
@@ -111,24 +113,23 @@ impl PuzzleProgress {
 
         // Get circuit names:
         let mut circuit_names = BTreeSet::<UniCase<String>>::new();
-        let entries = base_path
-            .read_dir()
-            .map_err(|err| {
-                format!("Could not read contents of puzzle directory {:?}: {}",
-                        base_path,
-                        err)
-            })?;
+        let entries = base_path.read_dir().map_err(|err| {
+            format!(
+                "Could not read contents of puzzle directory {:?}: {}",
+                base_path, err
+            )
+        })?;
         for entry_result in entries {
-            let entry = entry_result
-                .map_err(|err| {
-                    format!("Error while reading contents of \
-                             puzzle directory {:?}: {}",
-                            base_path,
-                            err)
-                })?;
+            let entry = entry_result.map_err(|err| {
+                format!(
+                    "Error while reading contents of \
+                     puzzle directory {:?}: {}",
+                    base_path, err
+                )
+            })?;
             let entry_path = entry.path();
-            if entry_path.extension() != Some("toml".as_ref()) ||
-                entry_path.file_name() == Some(DATA_FILE_NAME.as_ref())
+            if entry_path.extension() != Some("toml".as_ref())
+                || entry_path.file_name() == Some(DATA_FILE_NAME.as_ref())
             {
                 continue;
             }
@@ -154,19 +155,21 @@ impl PuzzleProgress {
             let data_path = self.base_path.join(DATA_FILE_NAME);
             debug_log!("Saving puzzle progress to {:?}", data_path);
             let data_toml = self.data.serialize_toml()?;
-            fs::write(&data_path, data_toml)
-                .map_err(|err| {
-                             format!("Could not write puzzle progress \
-                                      data file to {:?}: {}",
-                                     data_path,
-                                     err)
-                         })?;
+            fs::write(&data_path, data_toml).map_err(|err| {
+                format!(
+                    "Could not write puzzle progress \
+                     data file to {:?}: {}",
+                    data_path, err
+                )
+            })?;
             self.needs_save = false;
         }
         Ok(())
     }
 
-    pub fn is_solved(&self) -> bool { !self.scores().is_empty() }
+    pub fn is_solved(&self) -> bool {
+        !self.scores().is_empty()
+    }
 
     pub fn scores(&self) -> &[(i32, i32)] {
         if let Some(ref points) = self.data.graph {
@@ -201,22 +204,30 @@ impl PuzzleProgress {
         self.circuit_names.contains(&UniCase::new(name.to_string()))
     }
 
-    pub fn load_circuit(&self, circuit_name: &str)
-                        -> Result<CircuitData, String> {
+    pub fn load_circuit(
+        &self,
+        circuit_name: &str,
+    ) -> Result<CircuitData, String> {
         let circuit_name_uni = UniCase::new(circuit_name.to_string());
         let circuit_path = match self.circuit_names.get(&circuit_name_uni) {
             Some(name) => self.circuit_path(&name),
-            None => return Err(format!("No such circuit: {:?}", circuit_name)),
+            None => {
+                return Err(format!("No such circuit: {:?}", circuit_name))
+            }
         };
-        debug_log!("Loading circuit {:?} from {:?}",
-                   circuit_name,
-                   circuit_path);
+        debug_log!(
+            "Loading circuit {:?} from {:?}",
+            circuit_name,
+            circuit_path
+        );
         CircuitData::load(&circuit_path)
     }
 
-    pub fn save_circuit(&mut self, circuit_name: &str,
-                        circuit_data: &CircuitData)
-                        -> Result<(), String> {
+    pub fn save_circuit(
+        &mut self,
+        circuit_name: &str,
+        circuit_data: &CircuitData,
+    ) -> Result<(), String> {
         if !is_valid_circuit_name(circuit_name) {
             return Err(format!("Invalid circuit name: {:?}", circuit_name));
         }
@@ -231,8 +242,11 @@ impl PuzzleProgress {
         Ok(())
     }
 
-    pub fn copy_circuit(&mut self, old_name: &str, new_name: &str)
-                        -> Result<(), String> {
+    pub fn copy_circuit(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+    ) -> Result<(), String> {
         let old_name_uni = UniCase::new(old_name.to_string());
         let old_path = match self.circuit_names.get(&old_name_uni) {
             Some(name) => self.circuit_path(&name),
@@ -250,39 +264,47 @@ impl PuzzleProgress {
             return Err(format!("Path already exists: {:?}", new_path));
         }
         debug_log!("Copying circuit from {:?} to {:?}", old_path, new_path);
-        fs::copy(&old_path, &new_path)
-            .map_err(|err| {
-                format!("Could not copy circuit file {:?} to {:?}: {}",
-                        old_path,
-                        new_path,
-                        err)
-            })?;
+        fs::copy(&old_path, &new_path).map_err(|err| {
+            format!(
+                "Could not copy circuit file {:?} to {:?}: {}",
+                old_path, new_path, err
+            )
+        })?;
         self.circuit_names.insert(new_name_uni);
         Ok(())
     }
 
-    pub fn delete_circuit(&mut self, circuit_name: &str)
-                          -> Result<(), String> {
+    pub fn delete_circuit(
+        &mut self,
+        circuit_name: &str,
+    ) -> Result<(), String> {
         let circuit_name_uni = UniCase::new(circuit_name.to_string());
         let circuit_path = match self.circuit_names.get(&circuit_name_uni) {
             Some(name) => self.circuit_path(&name),
-            None => return Err(format!("No such circuit: {:?}", circuit_name)),
+            None => {
+                return Err(format!("No such circuit: {:?}", circuit_name))
+            }
         };
-        debug_log!("Deleting circuit {:?} at {:?}",
-                   circuit_name,
-                   circuit_path);
-        fs::remove_file(&circuit_path)
-            .map_err(|err| {
-                         format!("Could not delete circuit file {:?}: {}",
-                                 circuit_path,
-                                 err)
-                     })?;
+        debug_log!(
+            "Deleting circuit {:?} at {:?}",
+            circuit_name,
+            circuit_path
+        );
+        fs::remove_file(&circuit_path).map_err(|err| {
+            format!(
+                "Could not delete circuit file {:?}: {}",
+                circuit_path, err
+            )
+        })?;
         self.circuit_names.remove(&circuit_name_uni);
         Ok(())
     }
 
-    pub fn rename_circuit(&mut self, old_name: &str, new_name: &str)
-                          -> Result<(), String> {
+    pub fn rename_circuit(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+    ) -> Result<(), String> {
         let old_name_uni = UniCase::new(old_name.to_string());
         let old_path = match self.circuit_names.get(&old_name_uni) {
             Some(name) => self.circuit_path(&name),
@@ -311,13 +333,12 @@ impl PuzzleProgress {
             }
         }
         debug_log!("Moving circuit from {:?} to {:?}", old_path, new_path);
-        fs::rename(&old_path, &new_path)
-            .map_err(|err| {
-                format!("Could not move circuit file {:?} to {:?}: {}",
-                        old_path,
-                        new_path,
-                        err)
-            })?;
+        fs::rename(&old_path, &new_path).map_err(|err| {
+            format!(
+                "Could not move circuit file {:?} to {:?}: {}",
+                old_path, new_path, err
+            )
+        })?;
         self.circuit_names.remove(&old_name_uni);
         self.circuit_names.insert(new_name_uni);
         Ok(())

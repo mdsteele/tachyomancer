@@ -17,22 +17,26 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::font::Align;
+use crate::tachy::geom::{AsFloat, Color3, Rect, RectSize};
+use crate::tachy::gui::Resources;
+use crate::tachy::state::{CircuitEval, EvalError, FabricationEval};
 use cgmath::{Matrix4, Point2};
 use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::u32;
-use tachy::font::Align;
-use tachy::geom::{AsFloat, Color3, Rect, RectSize};
-use tachy::gui::Resources;
-use tachy::state::{CircuitEval, EvalError, FabricationEval};
 
 //===========================================================================//
 
 pub trait PuzzleVerifyView {
     fn size(&self) -> RectSize<i32>;
 
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-            circuit_eval: Option<&CircuitEval>);
+    fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        circuit_eval: Option<&CircuitEval>,
+    );
 }
 
 //===========================================================================//
@@ -40,14 +44,22 @@ pub trait PuzzleVerifyView {
 pub struct NullVerifyView {}
 
 impl NullVerifyView {
-    pub fn new() -> Box<PuzzleVerifyView> { Box::new(NullVerifyView {}) }
+    pub fn new() -> Box<dyn PuzzleVerifyView> {
+        Box::new(NullVerifyView {})
+    }
 }
 
 impl PuzzleVerifyView for NullVerifyView {
-    fn size(&self) -> RectSize<i32> { RectSize::new(0, 0) }
+    fn size(&self) -> RectSize<i32> {
+        RectSize::new(0, 0)
+    }
 
-    fn draw(&self, _resources: &Resources, _matrix: &Matrix4<f32>,
-            _circuit_eval: Option<&CircuitEval>) {
+    fn draw(
+        &self,
+        _resources: &Resources,
+        _matrix: &Matrix4<f32>,
+        _circuit_eval: Option<&CircuitEval>,
+    ) {
     }
 }
 
@@ -59,22 +71,27 @@ pub struct FabricationVerifyView<T> {
 }
 
 impl<T: FabricationEval> FabricationVerifyView<T> {
-    pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
-        let table = FabricationTable::new(right_bottom,
-                                          T::table_column_names(),
-                                          T::expected_table_values());
-        Box::new(FabricationVerifyView::<T> {
-                     table,
-                     phantom: PhantomData,
-                 })
+    pub fn new(right_bottom: Point2<i32>) -> Box<dyn PuzzleVerifyView> {
+        let table = FabricationTable::new(
+            right_bottom,
+            T::table_column_names(),
+            T::expected_table_values(),
+        );
+        Box::new(FabricationVerifyView::<T> { table, phantom: PhantomData })
     }
 }
 
 impl<T: FabricationEval> PuzzleVerifyView for FabricationVerifyView<T> {
-    fn size(&self) -> RectSize<i32> { self.table.size() }
+    fn size(&self) -> RectSize<i32> {
+        self.table.size()
+    }
 
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-            circuit_eval: Option<&CircuitEval>) {
+    fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        circuit_eval: Option<&CircuitEval>,
+    ) {
         let (time_step, values, errors) = if let Some(eval) = circuit_eval {
             let puzzle = eval.puzzle_eval::<T>();
             (Some(eval.time_step()), puzzle.table_values(), eval.errors())
@@ -98,41 +115,52 @@ pub struct FabricationTable {
 }
 
 impl FabricationTable {
-    pub fn new(right_bottom: Point2<i32>,
-               column_names: &'static [&'static str],
-               expected_values: &[u64])
-               -> FabricationTable {
+    pub fn new(
+        right_bottom: Point2<i32>,
+        column_names: &'static [&'static str],
+        expected_values: &[u64],
+    ) -> FabricationTable {
         let num_cols = column_names.len();
         assert_eq!(expected_values.len() % num_cols, 0);
         let num_rows = expected_values.len() / num_cols;
         let height = TABLE_ROW_HEIGHT * ((num_rows as i32) + 1);
         let width = TABLE_COLUMN_WIDTH * (num_cols as i32);
-        let rect = Rect::new(right_bottom.x - width,
-                             right_bottom.y - height,
-                             width,
-                             height);
-        FabricationTable {
-            rect,
-            column_names,
-            num_rows,
-        }
+        let rect = Rect::new(
+            right_bottom.x - width,
+            right_bottom.y - height,
+            width,
+            height,
+        );
+        FabricationTable { rect, column_names, num_rows }
     }
 
-    pub fn size(&self) -> RectSize<i32> { self.rect.size() }
+    pub fn size(&self) -> RectSize<i32> {
+        self.rect.size()
+    }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                time_step: Option<u32>, values: &[u64], errors: &[EvalError]) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        time_step: Option<u32>,
+        values: &[u64],
+        errors: &[EvalError],
+    ) {
         let rect = self.rect.as_f32();
         let column_width = rect.width / (self.column_names.len() as f32);
         let row_height = TABLE_ROW_HEIGHT as f32;
         for (index, column_name) in self.column_names.iter().enumerate() {
             let font = resources.fonts().roman();
-            font.draw(matrix,
-                      TABLE_FONT_SIZE,
-                      Align::MidCenter,
-                      (rect.x + ((index as f32) + 0.5) * column_width,
-                       rect.y + 0.5 * row_height),
-                      &column_name);
+            font.draw(
+                matrix,
+                TABLE_FONT_SIZE,
+                Align::MidCenter,
+                (
+                    rect.x + ((index as f32) + 0.5) * column_width,
+                    rect.y + 0.5 * row_height,
+                ),
+                &column_name,
+            );
         }
         let num_columns = self.column_names.len();
 
@@ -160,11 +188,13 @@ impl FabricationTable {
                 }
                 let col_center = rect.x + ((col as f32) + 0.5) * column_width;
                 let font = resources.fonts().roman();
-                font.draw(matrix,
-                          TABLE_FONT_SIZE,
-                          Align::MidCenter,
-                          (col_center, row_center),
-                          &value.to_string());
+                font.draw(
+                    matrix,
+                    TABLE_FONT_SIZE,
+                    Align::MidCenter,
+                    (col_center, row_center),
+                    &value.to_string(),
+                );
             }
         }
     }

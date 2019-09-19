@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::Rect;
+use crate::tachy::gl::{
+    Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform, VertexArray,
+    VertexBuffer,
+};
 use cgmath::Matrix4;
-use tachy::geom::Rect;
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderType, ShaderUniform,
-                VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -52,12 +54,12 @@ impl BoardShader {
         varray.bind();
         vbuffer.attribf(0, 2, 0, 0);
         Ok(BoardShader {
-               program,
-               mvp,
-               coords_rect,
-               varray,
-               _vbuffer: vbuffer,
-           })
+            program,
+            mvp,
+            coords_rect,
+            varray,
+            _vbuffer: vbuffer,
+        })
     }
 
     pub fn draw(&self, matrix: &Matrix4<f32>, coords_rect: Rect<f32>) {

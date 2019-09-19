@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::iface::{Interface, InterfacePort, InterfacePosition};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -136,16 +136,25 @@ impl LanderEval {
         self.current_altitude.ceil() as u32
     }
 
-    pub fn current_angle(&self) -> u32 { self.current_angle as u32 }
+    pub fn current_angle(&self) -> u32 {
+        self.current_angle as u32
+    }
 
-    pub fn current_fuel(&self) -> u32 { self.current_fuel }
+    pub fn current_fuel(&self) -> u32 {
+        self.current_fuel
+    }
 }
 
 impl PuzzleEval for LanderEval {
-    fn seconds_per_time_step(&self) -> f64 { 0.05 }
+    fn seconds_per_time_step(&self) -> f64 {
+        0.05
+    }
 
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         let altitude = self.current_altitude();
         state.send_behavior(self.alt_wire, altitude);
         state.send_behavior(self.angle_wire, self.current_angle());
@@ -157,8 +166,11 @@ impl PuzzleEval for LanderEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let port_thrust = state.recv_behavior(self.port_wire).0;
         let stbd_thrust = state.recv_behavior(self.stbd_wire).0;
         let (port_thrust, stbd_thrust) =
@@ -173,11 +185,12 @@ impl PuzzleEval for LanderEval {
             self.current_altitude.max(0.0).min(INIT_ALTITUDE);
 
         self.current_velocity -= GRAVITY;
-        self.current_velocity += ((port_thrust + stbd_thrust) as f64) *
-            ACCEL_PER_THRUST *
-            (self.current_angle as f64).to_radians().sin();
-        self.current_velocity -= AIR_RESISTANCE * self.current_velocity *
-            self.current_velocity.abs();
+        self.current_velocity += ((port_thrust + stbd_thrust) as f64)
+            * ACCEL_PER_THRUST
+            * (self.current_angle as f64).to_radians().sin();
+        self.current_velocity -= AIR_RESISTANCE
+            * self.current_velocity
+            * self.current_velocity.abs();
 
         self.current_angle += (port_thrust as i32) - (stbd_thrust as i32);
         self.current_angle += current_wind;
@@ -186,30 +199,24 @@ impl PuzzleEval for LanderEval {
         let mut errors = Vec::new();
         if self.current_altitude <= 0.0 {
             if -self.current_velocity > MAX_LANDING_SPEED {
-                let message = format!("Landed at too high a speed ({} d/t is \
-                                       above the safe limit of {} d/t).",
-                                      self.current_velocity.abs().ceil(),
-                                      MAX_LANDING_SPEED.floor());
-                let error = EvalError {
-                    time_step,
-                    port: None,
-                    message,
-                };
+                let message = format!(
+                    "Landed at too high a speed ({} d/t is \
+                     above the safe limit of {} d/t).",
+                    self.current_velocity.abs().ceil(),
+                    MAX_LANDING_SPEED.floor()
+                );
+                let error = EvalError { time_step, port: None, message };
                 errors.push(error);
             }
-            if self.current_angle < MIN_LANDING_ANGLE ||
-                self.current_angle > MAX_LANDING_ANGLE
+            if self.current_angle < MIN_LANDING_ANGLE
+                || self.current_angle > MAX_LANDING_ANGLE
             {
-                let message = format!("Landed at too shallow an angle ({}° is \
-                                       not in the safe range of {}° to {}°).",
-                                      self.current_angle,
-                                      MIN_LANDING_ANGLE,
-                                      MAX_LANDING_ANGLE);
-                let error = EvalError {
-                    time_step,
-                    port: None,
-                    message,
-                };
+                let message = format!(
+                    "Landed at too shallow an angle ({}° is \
+                     not in the safe range of {}° to {}°).",
+                    self.current_angle, MIN_LANDING_ANGLE, MAX_LANDING_ANGLE
+                );
+                let error = EvalError { time_step, port: None, message };
                 errors.push(error);
             }
         }
@@ -217,8 +224,11 @@ impl PuzzleEval for LanderEval {
     }
 }
 
-fn limit_thrust(mut port_thrust: u32, mut stbd_thrust: u32, fuel: u32)
-                -> (u32, u32) {
+fn limit_thrust(
+    mut port_thrust: u32,
+    mut stbd_thrust: u32,
+    fuel: u32,
+) -> (u32, u32) {
     if port_thrust + stbd_thrust > fuel {
         let mut shortfall = port_thrust + stbd_thrust - fuel;
         let common = port_thrust.min(stbd_thrust).min(shortfall / 2);

@@ -20,10 +20,10 @@
 use super::super::button::HoverPulse;
 use super::super::tooltip::Tooltip;
 use super::tutorial::TutorialBubble;
+use crate::tachy::geom::{AsFloat, Color4, Rect, RectSize};
+use crate::tachy::gui::{Cursor, Event, Resources, Sound, Ui};
+use crate::tachy::save::{Hotkey, Prefs, Puzzle};
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{AsFloat, Color4, Rect, RectSize};
-use tachy::gui::{Cursor, Event, Resources, Sound, Ui};
-use tachy::save::{Hotkey, Prefs, Puzzle};
 
 //===========================================================================//
 
@@ -34,26 +34,30 @@ const BUTTON_SPACING: i32 = 8;
 const TRAY_MARGIN: i32 = 12;
 const TRAY_HEIGHT: i32 = 2 * TRAY_MARGIN + BUTTON_HEIGHT;
 
-const TOOLTIP_RESET: &str = "\
-    $*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
-    Resets the simulation back to the beginning and returns to edit mode.";
+const TOOLTIP_RESET: &str =
+    "\
+     $*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
+     Resets the simulation back to the beginning and returns to edit mode.";
 const TOOLTIP_RUN_PAUSE: &str = "\
-    $*Run/pause$* $>$G$*$[EvalRunPause]$*$D$<\n\
-    Runs or pauses the simulation.";
-const TOOLTIP_STEP_SUBCYCLE: &str = "\
-    $*Step forward one subcycle$* $>$G$*$[EvalStepSubcycle]$*$D$<\n\
-    Runs the simulation forward by a single subcycle, then pauses.  This \
-    allows you to see how data is flowing through your circuit, one chip at \
-    a time.";
-const TOOLTIP_STEP_CYCLE: &str = "\
-    $*Step forward one cycle$* $>$G$*$[EvalStepCycle]$*$D$<\n\
-    Runs the simulation forward until the end of the current cycle, then \
-    pauses.  This allows you to see event loops in your circuit, running \
-    one iteration at a time.";
-const TOOLTIP_STEP_TIME: &str = "\
-    $*Step forward one time step$* $>$G$*$[EvalStepTime]$*$D$<\n\
-    Runs the simulation forward until the end of the current time step, \
-    then pauses.";
+                                 $*Run/pause$* $>$G$*$[EvalRunPause]$*$D$<\n\
+                                 Runs or pauses the simulation.";
+const TOOLTIP_STEP_SUBCYCLE: &str =
+    "\
+     $*Step forward one subcycle$* $>$G$*$[EvalStepSubcycle]$*$D$<\n\
+     Runs the simulation forward by a single subcycle, then pauses.  This \
+     allows you to see how data is flowing through your circuit, one chip at \
+     a time.";
+const TOOLTIP_STEP_CYCLE: &str =
+    "\
+     $*Step forward one cycle$* $>$G$*$[EvalStepCycle]$*$D$<\n\
+     Runs the simulation forward until the end of the current cycle, then \
+     pauses.  This allows you to see event loops in your circuit, running \
+     one iteration at a time.";
+const TOOLTIP_STEP_TIME: &str =
+    "\
+     $*Step forward one time step$* $>$G$*$[EvalStepTime]$*$D$<\n\
+     Runs the simulation forward until the end of the current time step, \
+     then pauses.";
 
 //===========================================================================//
 
@@ -112,56 +116,63 @@ pub struct ControlsTray {
 }
 
 impl ControlsTray {
-    pub fn new(window_size: RectSize<i32>, current_puzzle: Puzzle,
-               tutorial_bubble: Option<TutorialBubble>)
-               -> ControlsTray {
-        let mut actions =
-            vec![
-                (ControlsAction::Reset, Hotkey::EvalReset),
-                (ControlsAction::RunOrPause, Hotkey::EvalRunPause),
-                (ControlsAction::StepSubcycle, Hotkey::EvalStepSubcycle),
-            ];
+    pub fn new(
+        window_size: RectSize<i32>,
+        current_puzzle: Puzzle,
+        tutorial_bubble: Option<TutorialBubble>,
+    ) -> ControlsTray {
+        let mut actions = vec![
+            (ControlsAction::Reset, Hotkey::EvalReset),
+            (ControlsAction::RunOrPause, Hotkey::EvalRunPause),
+            (ControlsAction::StepSubcycle, Hotkey::EvalStepSubcycle),
+        ];
         if current_puzzle.allows_events() {
             actions.push((ControlsAction::StepCycle, Hotkey::EvalStepCycle));
         }
         actions.push((ControlsAction::StepTime, Hotkey::EvalStepTime));
-        let width = 2 * TRAY_MARGIN +
-            (actions.len() as i32) * (BUTTON_WIDTH + BUTTON_SPACING) -
-            BUTTON_SPACING;
-        let rect = Rect::new((window_size.width - width) / 2,
-                             window_size.height - TRAY_HEIGHT,
-                             width,
-                             TRAY_HEIGHT);
+        let width = 2 * TRAY_MARGIN
+            + (actions.len() as i32) * (BUTTON_WIDTH + BUTTON_SPACING)
+            - BUTTON_SPACING;
+        let rect = Rect::new(
+            (window_size.width - width) / 2,
+            window_size.height - TRAY_HEIGHT,
+            width,
+            TRAY_HEIGHT,
+        );
         let buttons = actions
             .into_iter()
             .enumerate()
             .map(|(index, (action, hotkey))| {
-                let rect = Rect::new(rect.x + TRAY_MARGIN +
-                                         (BUTTON_WIDTH + BUTTON_SPACING) *
-                                             (index as i32),
-                                     rect.y + TRAY_MARGIN,
-                                     BUTTON_WIDTH,
-                                     BUTTON_HEIGHT);
+                let rect = Rect::new(
+                    rect.x
+                        + TRAY_MARGIN
+                        + (BUTTON_WIDTH + BUTTON_SPACING) * (index as i32),
+                    rect.y + TRAY_MARGIN,
+                    BUTTON_WIDTH,
+                    BUTTON_HEIGHT,
+                );
                 ControlsButton::new(action, rect, hotkey)
             })
             .collect::<Vec<ControlsButton>>();
         let tooltip = Tooltip::new(window_size);
-        ControlsTray {
-            rect,
-            buttons,
-            tutorial_bubble,
-            tooltip,
-        }
+        ControlsTray { rect, buttons, tutorial_bubble, tooltip }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                status: ControlsStatus, has_errors: bool) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        status: ControlsStatus,
+        has_errors: bool,
+    ) {
         let ui = resources.shaders().ui();
-        ui.draw_box2(matrix,
-                     &self.rect.as_f32(),
-                     &Color4::ORANGE2,
-                     &Color4::CYAN2,
-                     &Color4::PURPLE0_TRANSLUCENT);
+        ui.draw_box2(
+            matrix,
+            &self.rect.as_f32(),
+            &Color4::ORANGE2,
+            &Color4::CYAN2,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
         for button in self.buttons.iter() {
             button.draw(resources, matrix, status, has_errors);
         }
@@ -172,17 +183,23 @@ impl ControlsTray {
         self.tooltip.draw(resources, matrix);
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    status: ControlsStatus, has_errors: bool, prefs: &Prefs)
-                    -> Option<Option<ControlsAction>> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        status: ControlsStatus,
+        has_errors: bool,
+        prefs: &Prefs,
+    ) -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
-            let opt_action =
-                button.on_event(event,
-                                ui,
-                                status,
-                                has_errors,
-                                prefs,
-                                &mut self.tooltip);
+            let opt_action = button.on_event(
+                event,
+                ui,
+                status,
+                has_errors,
+                prefs,
+                &mut self.tooltip,
+            );
             if opt_action.is_some() {
                 return Some(opt_action);
             }
@@ -196,8 +213,7 @@ impl ControlsTray {
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
                 return Some(None);
             }
-            Event::MouseMove(mouse) |
-            Event::MouseUp(mouse) => {
+            Event::MouseMove(mouse) | Event::MouseUp(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
                     ui.cursor().request(Cursor::default());
                 }
@@ -221,14 +237,12 @@ struct ControlsButton {
 }
 
 impl ControlsButton {
-    pub fn new(action: ControlsAction, rect: Rect<i32>, hotkey: Hotkey)
-               -> ControlsButton {
-        ControlsButton {
-            action,
-            rect,
-            hotkey,
-            hover_pulse: HoverPulse::new(),
-        }
+    pub fn new(
+        action: ControlsAction,
+        rect: Rect<i32>,
+        hotkey: Hotkey,
+    ) -> ControlsButton {
+        ControlsButton { action, rect, hotkey, hover_pulse: HoverPulse::new() }
     }
 
     fn is_enabled(&self, status: ControlsStatus) -> bool {
@@ -236,14 +250,19 @@ impl ControlsButton {
             ControlsAction::Reset => status != ControlsStatus::Stopped,
             ControlsAction::RunOrPause => status != ControlsStatus::Finished,
             _ => {
-                status != ControlsStatus::Running &&
-                    status != ControlsStatus::Finished
+                status != ControlsStatus::Running
+                    && status != ControlsStatus::Finished
             }
         }
     }
 
-    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                status: ControlsStatus, has_errors: bool) {
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        status: ControlsStatus,
+        has_errors: bool,
+    ) {
         let ui = resources.shaders().ui();
         let enabled = !has_errors && self.is_enabled(status);
 
@@ -251,48 +270,64 @@ impl ControlsButton {
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
         } else {
-            Color4::PURPLE0_TRANSLUCENT.mix(Color4::PURPLE3_TRANSLUCENT,
-                                            self.hover_pulse.brightness())
+            Color4::PURPLE0_TRANSLUCENT.mix(
+                Color4::PURPLE3_TRANSLUCENT,
+                self.hover_pulse.brightness(),
+            )
         };
-        ui.draw_box4(matrix,
-                     &rect,
-                     &Color4::ORANGE4,
-                     &Color4::CYAN3,
-                     &bg_color);
+        ui.draw_box4(
+            matrix,
+            &rect,
+            &Color4::ORANGE4,
+            &Color4::CYAN3,
+            &bg_color,
+        );
 
-        let icon_rect = Rect::new(rect.x + 0.5 * (rect.width - rect.height),
-                                  rect.y,
-                                  rect.height,
-                                  rect.height);
+        let icon_rect = Rect::new(
+            rect.x + 0.5 * (rect.width - rect.height),
+            rect.y,
+            rect.height,
+            rect.height,
+        );
         let icon_index = self.action.icon_index(status);
         if enabled {
-            ui.draw_icon(matrix,
-                         &icon_rect,
-                         icon_index,
-                         &Color4::ORANGE4,
-                         &Color4::ORANGE3,
-                         &Color4::ORANGE2);
+            ui.draw_icon(
+                matrix,
+                &icon_rect,
+                icon_index,
+                &Color4::ORANGE4,
+                &Color4::ORANGE3,
+                &Color4::ORANGE2,
+            );
         } else {
-            ui.draw_icon(matrix,
-                         &icon_rect,
-                         icon_index,
-                         &Color4::new(0.8, 0.8, 0.8, 1.0),
-                         &Color4::new(0.6, 0.6, 0.6, 1.0),
-                         &Color4::new(0.4, 0.4, 0.4, 1.0));
+            ui.draw_icon(
+                matrix,
+                &icon_rect,
+                icon_index,
+                &Color4::new(0.8, 0.8, 0.8, 1.0),
+                &Color4::new(0.6, 0.6, 0.6, 1.0),
+                &Color4::new(0.4, 0.4, 0.4, 1.0),
+            );
         }
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui,
-                    status: ControlsStatus, has_errors: bool, prefs: &Prefs,
-                    tooltip: &mut Tooltip<ControlsAction>)
-                    -> Option<ControlsAction> {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        status: ControlsStatus,
+        has_errors: bool,
+        prefs: &Prefs,
+        tooltip: &mut Tooltip<ControlsAction>,
+    ) -> Option<ControlsAction> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::KeyDown(key) => {
-                if !has_errors && self.is_enabled(status) &&
-                    key.code == prefs.hotkey_code(self.hotkey)
+                if !has_errors
+                    && self.is_enabled(status)
+                    && key.code == prefs.hotkey_code(self.hotkey)
                 {
                     self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
@@ -300,8 +335,9 @@ impl ControlsButton {
                 }
             }
             Event::MouseDown(mouse) if mouse.left => {
-                if !has_errors && self.is_enabled(status) &&
-                    self.rect.contains_point(mouse.pt)
+                if !has_errors
+                    && self.is_enabled(status)
+                    && self.rect.contains_point(mouse.pt)
                 {
                     self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
@@ -315,8 +351,9 @@ impl ControlsButton {
                 } else {
                     tooltip.stop_hover(ui, &self.action);
                 }
-                if self.hover_pulse.set_hovering(hovering, ui) &&
-                    !has_errors && self.is_enabled(status)
+                if self.hover_pulse.set_hovering(hovering, ui)
+                    && !has_errors
+                    && self.is_enabled(status)
                 {
                     ui.audio().play_sound(Sound::ButtonHover);
                 }

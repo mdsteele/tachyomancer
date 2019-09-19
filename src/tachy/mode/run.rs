@@ -18,8 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::ModeChange;
-use tachy::gui::Window;
-use tachy::state::GameState;
+use crate::tachy::gui::Window;
+use crate::tachy::state::GameState;
 
 //===========================================================================//
 

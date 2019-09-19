@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use tachy::gui::WindowOptions;
+use crate::tachy::gui::WindowOptions;
 
 //===========================================================================//
 

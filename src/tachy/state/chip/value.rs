@@ -17,23 +17,18 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::data::{AbstractConstraint, AbstractPort, ChipData};
 use super::super::eval::{ChipEval, CircuitState};
-use tachy::geom::Direction;
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::data::{AbstractConstraint, AbstractPort, ChipData};
+use crate::tachy::geom::Direction;
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
 const CONST_PORTS: &[AbstractPort] =
-    &[
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
-    ];
+    &[(PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East)];
 
-const CONST_CHIP_DATA_1: &ChipData = &ChipData {
-    ports: CONST_PORTS,
-    constraints: &[],
-    dependencies: &[],
-};
+const CONST_CHIP_DATA_1: &ChipData =
+    &ChipData { ports: CONST_PORTS, constraints: &[], dependencies: &[] };
 
 const CONST_CHIP_DATA_2: &ChipData = &ChipData {
     ports: CONST_PORTS,
@@ -75,13 +70,13 @@ pub struct ConstChipEval {
 }
 
 impl ConstChipEval {
-    pub fn new_evals(value: u16, slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        value: u16,
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), const_chip_data(value).ports.len());
-        let chip_eval = ConstChipEval {
-            value: value.into(),
-            output: slots[0].0,
-        };
+        let chip_eval =
+            ConstChipEval { value: value.into(), output: slots[0].0 };
         vec![(0, Box::new(chip_eval))]
     }
 }
@@ -116,8 +111,9 @@ pub struct PackChipEval {
 }
 
 impl PackChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), PACK_CHIP_DATA.ports.len());
         let chip_eval = PackChipEval {
             input_size: slots[0].1,
@@ -164,8 +160,9 @@ pub struct UnpackChipEval {
 }
 
 impl UnpackChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), UNPACK_CHIP_DATA.ports.len());
         let chip_eval = UnpackChipEval {
             output_size: slots[2].1,

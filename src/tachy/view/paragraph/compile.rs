@@ -18,8 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 use super::types::{CompiledLine, CompiledPiece, ParserAlign, ParserPiece};
+use crate::tachy::geom::RectSize;
 use std::mem;
-use tachy::geom::RectSize;
 
 //===========================================================================//
 
@@ -30,7 +30,7 @@ pub struct Compiler {
     actual_width: f32,
     actual_height: f32,
     lines: Vec<CompiledLine>,
-    current_line_pieces: Vec<Box<CompiledPiece>>,
+    current_line_pieces: Vec<Box<dyn CompiledPiece>>,
     current_line_top: f32,
     current_line_height: f32,
     align_start: usize,
@@ -56,13 +56,15 @@ impl Compiler {
         }
     }
 
-    pub fn offset(&self) -> f32 { self.x_offset }
+    pub fn offset(&self) -> f32 {
+        self.x_offset
+    }
 
     pub fn current_line_is_empty(&self) -> bool {
         self.current_line_pieces.is_empty()
     }
 
-    pub fn push(&mut self, mut piece: Box<ParserPiece>) {
+    pub fn push(&mut self, mut piece: Box<dyn ParserPiece>) {
         self.total_millis += piece.num_millis();
         let piece_width = piece.width(self.font_size);
         let piece_height = piece.height(self.font_size);
@@ -78,8 +80,8 @@ impl Compiler {
             let y_offset = 0.5 * (self.current_line_height - piece_height);
             piece.add_y_offset(y_offset);
         }
-        let line_pieces = mem::replace(&mut self.current_line_pieces,
-                                       Vec::new());
+        let line_pieces =
+            mem::replace(&mut self.current_line_pieces, Vec::new());
         self.lines.push(CompiledLine::new(line_pieces));
         self.actual_width = self.actual_width.max(self.x_offset);
         self.actual_height = self.current_line_top + self.current_line_height;
@@ -110,7 +112,9 @@ impl Compiler {
         RectSize::new(self.actual_width, self.actual_height)
     }
 
-    pub fn total_millis(&self) -> usize { self.total_millis }
+    pub fn total_millis(&self) -> usize {
+        self.total_millis
+    }
 
     pub fn into_lines(mut self) -> Vec<CompiledLine> {
         while let Some(line) = self.lines.pop() {

@@ -24,9 +24,9 @@ mod orpheus;
 mod planetfall;
 mod types;
 
-pub use self::types::{ConversationBubble, Portrait};
 use self::types::ConversationBuilder;
-use tachy::save::{Conversation, Profile};
+pub use self::types::{ConversationBubble, Portrait};
+use crate::tachy::save::{Conversation, Profile};
 
 //===========================================================================//
 

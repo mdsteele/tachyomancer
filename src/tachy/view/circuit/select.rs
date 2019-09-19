@@ -19,14 +19,17 @@
 
 use super::super::chip::ChipModel;
 use super::super::wire::WireModel;
-use cgmath::{Matrix4, MetricSpace, Point2, Vector2, vec2};
+use crate::tachy::geom::{
+    AsFloat, AsInt, Color3, Color4, Coords, CoordsDelta, CoordsRect,
+    CoordsSize, Direction, MatrixExt, Orientation, Rect,
+};
+use crate::tachy::gui::{Clipboard, Resources, Sound, Ui};
+use crate::tachy::save::{ChipSet, ChipType, CircuitData, WireShape};
+use crate::tachy::state::{
+    ChipExt, EditGrid, GridChange, WireColor, WireSize,
+};
+use cgmath::{vec2, Matrix4, MetricSpace, Point2, Vector2};
 use std::collections::{HashMap, HashSet};
-use tachy::geom::{AsFloat, AsInt, Color3, Color4, Coords, CoordsDelta,
-                  CoordsRect, CoordsSize, Direction, MatrixExt, Orientation,
-                  Rect};
-use tachy::gui::{Clipboard, Resources, Sound, Ui};
-use tachy::save::{ChipSet, ChipType, CircuitData, WireShape};
-use tachy::state::{ChipExt, EditGrid, GridChange, WireColor, WireSize};
 
 //===========================================================================//
 
@@ -51,27 +54,27 @@ impl SelectingDrag {
         let coords = grid_pt.as_i32_round();
         let expanded =
             Rect::new(bounds.x, bounds.y, bounds.width + 1, bounds.height + 1);
-        expanded.contains_point(coords) &&
-            grid_pt.distance(coords.as_f32()) <= SELECTING_VERTEX_MAX_DIST
+        expanded.contains_point(coords)
+            && grid_pt.distance(coords.as_f32()) <= SELECTING_VERTEX_MAX_DIST
     }
 
     pub fn new(bounds: CoordsRect, start: Coords) -> SelectingDrag {
         let rect = Rect::new(start.x, start.y, 0, 0);
-        SelectingDrag {
-            bounds,
-            start,
-            rect,
-        }
+        SelectingDrag { bounds, start, rect }
     }
 
-    pub fn selected_rect(&self) -> CoordsRect { self.rect }
+    pub fn selected_rect(&self) -> CoordsRect {
+        self.rect
+    }
 
     pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui) {
         let coords = grid_pt.as_i32_round();
-        let new_rect = Rect::new(self.start.x.min(coords.x),
-                                 self.start.y.min(coords.y),
-                                 (self.start.x - coords.x).abs(),
-                                 (self.start.y - coords.y).abs());
+        let new_rect = Rect::new(
+            self.start.x.min(coords.x),
+            self.start.y.min(coords.y),
+            (self.start.x - coords.x).abs(),
+            (self.start.y - coords.y).abs(),
+        );
         let new_rect = new_rect.intersection(self.bounds);
         if self.rect != new_rect {
             self.rect = new_rect;
@@ -79,13 +82,19 @@ impl SelectingDrag {
         }
     }
 
-    pub fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>,
-                    grid_cell_size: f32) {
-        draw_selection_box(resources,
-                           matrix,
-                           self.rect,
-                           grid_cell_size,
-                           vec2(0.0, 0.0));
+    pub fn draw_box(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        grid_cell_size: f32,
+    ) {
+        draw_selection_box(
+            resources,
+            matrix,
+            self.rect,
+            grid_cell_size,
+            vec2(0.0, 0.0),
+        );
     }
 }
 
@@ -99,19 +108,18 @@ pub struct SelectionDrag {
 }
 
 impl SelectionDrag {
-    pub fn new(selection: Selection, grab_rel: Vector2<f32>,
-               grid_pt: Point2<f32>,
-               original_selected_rect: Option<CoordsRect>)
-               -> SelectionDrag {
-        SelectionDrag {
-            selection,
-            grab_rel,
-            grid_pt,
-            original_selected_rect,
-        }
+    pub fn new(
+        selection: Selection,
+        grab_rel: Vector2<f32>,
+        grid_pt: Point2<f32>,
+        original_selected_rect: Option<CoordsRect>,
+    ) -> SelectionDrag {
+        SelectionDrag { selection, grab_rel, grid_pt, original_selected_rect }
     }
 
-    fn top_left_grid_pt(&self) -> Point2<f32> { self.grid_pt - self.grab_rel }
+    fn top_left_grid_pt(&self) -> Point2<f32> {
+        self.grid_pt - self.grab_rel
+    }
 
     pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui) {
         self.grid_pt = grid_pt;
@@ -138,13 +146,18 @@ impl SelectionDrag {
         ui.request_redraw();
     }
 
-    pub fn draw_selection(&self, resources: &Resources,
-                          matrix: &Matrix4<f32>, grid_cell_size: f32) {
+    pub fn draw_selection(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        grid_cell_size: f32,
+    ) {
         let offset = self.top_left_grid_pt() - Point2::new(0.0, 0.0);
 
         {
-            let grid_matrix = matrix * Matrix4::from_scale(grid_cell_size) *
-                Matrix4::trans2v(offset);
+            let grid_matrix = matrix
+                * Matrix4::from_scale(grid_cell_size)
+                * Matrix4::trans2v(offset);
 
             // Draw wires:
             let color = WireColor::Unknown;
@@ -152,25 +165,29 @@ impl SelectionDrag {
             let hilight = &Color4::TRANSPARENT;
             for (&(delta, dir), &shape) in self.selection.wires.iter() {
                 let coords = Coords::new(0, 0) + delta;
-                WireModel::draw_fragment(resources,
-                                         &grid_matrix,
-                                         coords,
-                                         dir,
-                                         shape,
-                                         color,
-                                         size,
-                                         hilight);
+                WireModel::draw_fragment(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    dir,
+                    shape,
+                    color,
+                    size,
+                    hilight,
+                );
             }
 
             // Draw chips:
             for (&delta, &(ctype, orient)) in self.selection.chips.iter() {
                 let coords = Coords::new(0, 0) + delta;
-                ChipModel::draw_chip(resources,
-                                     &grid_matrix,
-                                     coords,
-                                     ctype,
-                                     orient,
-                                     None);
+                ChipModel::draw_chip(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    ctype,
+                    orient,
+                    None,
+                );
             }
         }
 
@@ -191,8 +208,11 @@ impl SelectionDrag {
         }
     }
 
-    pub fn finish(self, ui: &mut Ui, grid: &mut EditGrid)
-                  -> Option<CoordsRect> {
+    pub fn finish(
+        self,
+        ui: &mut Ui,
+        grid: &mut EditGrid,
+    ) -> Option<CoordsRect> {
         ui.request_redraw();
         let top_left_coords = self.top_left_grid_pt().as_i32_round();
         let changes =
@@ -221,10 +241,11 @@ pub struct Selection {
 }
 
 impl Selection {
-    fn new(rect: CoordsRect,
-           chips: &HashMap<Coords, (ChipType, Orientation)>,
-           wires: &HashMap<(Coords, Direction), WireShape>)
-           -> Selection {
+    fn new(
+        rect: CoordsRect,
+        chips: &HashMap<Coords, (ChipType, Orientation)>,
+        wires: &HashMap<(Coords, Direction), WireShape>,
+    ) -> Selection {
         let origin = rect.top_left();
         let chips = chips
             .iter()
@@ -234,37 +255,34 @@ impl Selection {
             .iter()
             .map(|(&(coords, dir), &shape)| ((coords - origin, dir), shape))
             .collect();
-        Selection {
-            size: rect.size(),
-            chips,
-            wires,
-        }
+        Selection { size: rect.size(), chips, wires }
     }
 
-    pub fn from_clipboard(clipboard: &Clipboard, allowed: &ChipSet)
-                          -> Option<Selection> {
+    pub fn from_clipboard(
+        clipboard: &Clipboard,
+        allowed: &ChipSet,
+    ) -> Option<Selection> {
         if let Some(text) = clipboard.get() {
             match CircuitData::deserialize_from_string(&text) {
                 Ok(data) => {
                     let origin = data.bounds.top_left();
-                    let chips = data.chips
+                    let chips = data
+                        .chips
                         .iter()
                         .filter(|&(_, ctype, _)| allowed.contains(ctype))
                         .map(|(coords, ctype, orient)| {
-                                 (coords - origin, (ctype, orient))
-                             })
+                            (coords - origin, (ctype, orient))
+                        })
                         .collect();
-                    let wires = data.wires
+                    let wires = data
+                        .wires
                         .iter()
                         .map(|(coords, dir, shape)| {
-                                 ((coords - origin, dir), shape)
-                             })
+                            ((coords - origin, dir), shape)
+                        })
                         .collect();
-                    let selection = Selection {
-                        size: data.bounds.size(),
-                        chips,
-                        wires,
-                    };
+                    let selection =
+                        Selection { size: data.bounds.size(), chips, wires };
                     return Some(selection);
                 }
                 Err(err) => {
@@ -275,35 +293,47 @@ impl Selection {
         return None;
     }
 
-    pub fn size(&self) -> CoordsSize { self.size }
+    pub fn size(&self) -> CoordsSize {
+        self.size
+    }
 
-    pub fn draw_box(resources: &Resources, matrix: &Matrix4<f32>,
-                    selected_rect: CoordsRect, grid_cell_size: f32) {
-        draw_selection_box(resources,
-                           matrix,
-                           selected_rect,
-                           grid_cell_size,
-                           vec2(0.0, 0.0));
+    pub fn draw_box(
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        selected_rect: CoordsRect,
+        grid_cell_size: f32,
+    ) {
+        draw_selection_box(
+            resources,
+            matrix,
+            selected_rect,
+            grid_cell_size,
+            vec2(0.0, 0.0),
+        );
     }
 
     fn reorient(&mut self, reorient: Orientation) {
         let new_size = reorient * self.size;
-        let new_chips = self.chips
+        let new_chips = self
+            .chips
             .iter()
             .map(|(&old_delta, &(ctype, old_orient))| {
                 let new_delta = reorient
-                    .transform_in_size(old_delta, self.size) -
-                    reorient.transform_in_size(vec2(0, 0),
-                                               old_orient * ctype.size());
+                    .transform_in_size(old_delta, self.size)
+                    - reorient.transform_in_size(
+                        vec2(0, 0),
+                        old_orient * ctype.size(),
+                    );
                 let new_orient = reorient * old_orient;
                 (new_delta, (ctype, new_orient))
             })
             .collect();
-        let new_wires = self.wires
+        let new_wires = self
+            .wires
             .iter()
             .map(|(&(old_delta, old_dir), &shape)| {
-                let new_delta = reorient
-                    .transform_in_size(old_delta, self.size);
+                let new_delta =
+                    reorient.transform_in_size(old_delta, self.size);
                 let new_dir = reorient * old_dir;
                 let new_shape = if reorient.is_mirrored() {
                     match shape {
@@ -326,10 +356,12 @@ impl Selection {
 
     fn to_clipboard_text(&self) -> Result<String, String> {
         let origin = Coords::new(0, 0);
-        let mut data = CircuitData::new(origin.x,
-                                        origin.y,
-                                        self.size.width,
-                                        self.size.height);
+        let mut data = CircuitData::new(
+            origin.x,
+            origin.y,
+            self.size.width,
+            self.size.height,
+        );
         for (&delta, &(ctype, orient)) in self.chips.iter() {
             data.chips.insert(origin + delta, ctype, orient);
         }
@@ -351,29 +383,41 @@ impl Selection {
 
 //===========================================================================//
 
-fn draw_selection_box(resources: &Resources, matrix: &Matrix4<f32>,
-                      selected_rect: CoordsRect, grid_cell_size: f32,
-                      delta: Vector2<f32>) {
+fn draw_selection_box(
+    resources: &Resources,
+    matrix: &Matrix4<f32>,
+    selected_rect: CoordsRect,
+    grid_cell_size: f32,
+    delta: Vector2<f32>,
+) {
     let ui = resources.shaders().ui();
-    let rect = (selected_rect.as_f32() * grid_cell_size).expand(4.0) +
-        delta * grid_cell_size;
-    ui.draw_selection_box(matrix,
-                          &rect,
-                          &SELECTION_BOX_COLOR1,
-                          &SELECTION_BOX_COLOR2,
-                          &SELECTION_BOX_COLOR3);
+    let rect = (selected_rect.as_f32() * grid_cell_size).expand(4.0)
+        + delta * grid_cell_size;
+    ui.draw_selection_box(
+        matrix,
+        &rect,
+        &SELECTION_BOX_COLOR1,
+        &SELECTION_BOX_COLOR2,
+        &SELECTION_BOX_COLOR3,
+    );
 }
 
 //===========================================================================//
 
-pub fn copy(grid: &EditGrid, selected_rect: CoordsRect,
-            clipboard: &mut Clipboard) {
+pub fn copy(
+    grid: &EditGrid,
+    selected_rect: CoordsRect,
+    clipboard: &mut Clipboard,
+) {
     let (_, selection) = changes_for_cut(grid, selected_rect);
     selection.copy_to_clipboard(clipboard);
 }
 
-pub fn cut(grid: &mut EditGrid, selected_rect: CoordsRect,
-           clipboard: &mut Clipboard) {
+pub fn cut(
+    grid: &mut EditGrid,
+    selected_rect: CoordsRect,
+    clipboard: &mut Clipboard,
+) {
     let (changes, selection) = changes_for_cut(grid, selected_rect);
     if !grid.try_mutate(changes) {
         debug_warn!("cut mutation failed");
@@ -398,8 +442,10 @@ pub fn delete_wire(grid: &mut EditGrid, wire_index: usize) {
     }
 }
 
-pub fn cut_provisionally(grid: &mut EditGrid, selected_rect: CoordsRect)
-                         -> Selection {
+pub fn cut_provisionally(
+    grid: &mut EditGrid,
+    selected_rect: CoordsRect,
+) -> Selection {
     let (changes, selection) = changes_for_cut(grid, selected_rect);
     if !grid.try_mutate_provisionally(changes) {
         debug_warn!("cut_provisionally mutation failed");
@@ -407,8 +453,10 @@ pub fn cut_provisionally(grid: &mut EditGrid, selected_rect: CoordsRect)
     selection
 }
 
-fn changes_for_cut(grid: &EditGrid, selected_rect: CoordsRect)
-                   -> (Vec<GridChange>, Selection) {
+fn changes_for_cut(
+    grid: &EditGrid,
+    selected_rect: CoordsRect,
+) -> (Vec<GridChange>, Selection) {
     let mut changes = Vec::<GridChange>::new();
     let mut chips = HashMap::<Coords, (ChipType, Orientation)>::new();
     let mut old_wires = HashMap::<(Coords, Direction), WireShape>::new();
@@ -420,9 +468,11 @@ fn changes_for_cut(grid: &EditGrid, selected_rect: CoordsRect)
                 let chip_size = orient * ctype.size();
                 let chip_rect = Rect::with_size(chip_coords, chip_size);
                 if selected_rect.contains_rect(chip_rect) {
-                    changes.push(GridChange::RemoveChip(chip_coords,
-                                                        ctype,
-                                                        orient));
+                    changes.push(GridChange::RemoveChip(
+                        chip_coords,
+                        ctype,
+                        orient,
+                    ));
                     chips.insert(chip_coords, (ctype, orient));
                 }
             }
@@ -432,8 +482,8 @@ fn changes_for_cut(grid: &EditGrid, selected_rect: CoordsRect)
                 if selected_rect.contains_point(coords + dir) {
                     selection_wires.insert((coords, dir), shape);
                     old_wires.insert((coords, dir), shape);
-                } else if grid.wire_shape_at(coords + dir, -dir) ==
-                           Some(WireShape::Stub)
+                } else if grid.wire_shape_at(coords + dir, -dir)
+                    == Some(WireShape::Stub)
                 {
                     selection_wires.insert((coords, dir), shape);
                     old_wires.insert((coords, dir), shape);
@@ -455,9 +505,11 @@ fn changes_for_cut(grid: &EditGrid, selected_rect: CoordsRect)
 
 //===========================================================================//
 
-fn changes_for_paste(grid: &EditGrid, selection: &Selection,
-                     top_left: Coords)
-                     -> Vec<GridChange> {
+fn changes_for_paste(
+    grid: &EditGrid,
+    selection: &Selection,
+    top_left: Coords,
+) -> Vec<GridChange> {
     let paste_rect = Rect::with_size(top_left, selection.size);
     let mut old_wires = HashMap::<(Coords, Direction), WireShape>::new();
     let mut new_wires = HashMap::<(Coords, Direction), WireShape>::new();
@@ -477,38 +529,30 @@ fn changes_for_paste(grid: &EditGrid, selection: &Selection,
                 WireShape::TurnRight => {
                     vec![(dir.rotate_ccw(), WireShape::TurnLeft)]
                 }
-                WireShape::SplitTee => {
-                    vec![
-                        (dir.rotate_ccw(), WireShape::SplitLeft),
-                        (dir.rotate_cw(), WireShape::SplitRight),
-                    ]
-                }
-                WireShape::SplitLeft => {
-                    vec![
-                        (dir.rotate_cw(), WireShape::SplitTee),
-                        (-dir, WireShape::SplitRight),
-                    ]
-                }
-                WireShape::SplitRight => {
-                    vec![
-                        (dir.rotate_ccw(), WireShape::SplitTee),
-                        (-dir, WireShape::SplitLeft),
-                    ]
-                }
-                WireShape::Cross => {
-                    vec![
-                        (dir.rotate_ccw(), WireShape::Cross),
-                        (-dir, WireShape::Cross),
-                        (dir.rotate_cw(), WireShape::Cross),
-                    ]
-                }
+                WireShape::SplitTee => vec![
+                    (dir.rotate_ccw(), WireShape::SplitLeft),
+                    (dir.rotate_cw(), WireShape::SplitRight),
+                ],
+                WireShape::SplitLeft => vec![
+                    (dir.rotate_cw(), WireShape::SplitTee),
+                    (-dir, WireShape::SplitRight),
+                ],
+                WireShape::SplitRight => vec![
+                    (dir.rotate_ccw(), WireShape::SplitTee),
+                    (-dir, WireShape::SplitLeft),
+                ],
+                WireShape::Cross => vec![
+                    (dir.rotate_ccw(), WireShape::Cross),
+                    (-dir, WireShape::Cross),
+                    (dir.rotate_cw(), WireShape::Cross),
+                ],
             };
             for (dir2, shape2) in others {
                 if !old_wires.contains_key(&(coords, dir2)) {
                     debug_assert!(!new_wires.contains_key(&(coords, dir2)));
                     old_wires.insert((coords, dir2), shape2);
-                    if grid.wire_shape_at(coords + dir2, -dir2) ==
-                        Some(WireShape::Stub)
+                    if grid.wire_shape_at(coords + dir2, -dir2)
+                        == Some(WireShape::Stub)
                     {
                         old_wires
                             .insert((coords + dir2, -dir2), WireShape::Stub);
@@ -519,8 +563,8 @@ fn changes_for_paste(grid: &EditGrid, selection: &Selection,
             }
         }
         new_wires.insert((coords, dir), shape);
-        if !paste_rect.contains_point(coords + dir) &&
-            grid.wire_shape_at(coords + dir, -dir).is_none()
+        if !paste_rect.contains_point(coords + dir)
+            && grid.wire_shape_at(coords + dir, -dir).is_none()
         {
             new_wires.insert((coords + dir, -dir), WireShape::Stub);
         }
@@ -542,9 +586,9 @@ fn changes_for_paste(grid: &EditGrid, selection: &Selection,
                         old_wires.insert((coords, dir), shape);
                     } else if shape != WireShape::Stub {
                         old_wires.insert((coords, dir), shape);
-                        if !ports.contains(&(coords, dir)) &&
-                            grid.wire_shape_at(coords + dir, -dir) ==
-                                Some(WireShape::Stub)
+                        if !ports.contains(&(coords, dir))
+                            && grid.wire_shape_at(coords + dir, -dir)
+                                == Some(WireShape::Stub)
                         {
                             old_wires
                                 .insert((coords + dir, -dir), WireShape::Stub);
@@ -572,47 +616,69 @@ fn changes_for_paste(grid: &EditGrid, selection: &Selection,
 
 #[cfg(test)]
 mod tests {
-    use super::{Selection, changes_for_cut, changes_for_paste};
+    use super::{changes_for_cut, changes_for_paste, Selection};
+    use crate::tachy::geom::{
+        Coords, CoordsRect, CoordsSize, Direction, Orientation,
+    };
+    use crate::tachy::save::{
+        ChipType, CircuitData, Profile, Puzzle, WireShape,
+    };
+    use crate::tachy::state::EditGrid;
     use cgmath::vec2;
     use std::collections::HashMap;
-    use tachy::geom::{Coords, CoordsRect, CoordsSize, Direction, Orientation};
-    use tachy::save::{ChipType, CircuitData, Profile, Puzzle, WireShape};
-    use tachy::state::EditGrid;
 
     #[test]
     fn cut_removes_edge_stub() {
         let mut data = CircuitData::new(0, 0, 10, 10);
         data.wires.insert(Coords::new(3, 5), Direction::East, WireShape::Stub);
         data.wires.insert(Coords::new(4, 5), Direction::West, WireShape::Stub);
-        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr,
-                                                   &Profile::for_testing(),
-                                                   &data);
-        assert_eq!(grid.wire_shape_at(Coords::new(3, 5), Direction::East),
-                   Some(WireShape::Stub));
+        let mut grid = EditGrid::from_circuit_data(
+            Puzzle::TutorialOr,
+            &Profile::for_testing(),
+            &data,
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(3, 5), Direction::East),
+            Some(WireShape::Stub)
+        );
         let rect = CoordsRect::new(4, 5, 1, 1);
         let (changes, selection) = changes_for_cut(&grid, rect);
         assert_eq!(selection.size, rect.size());
         assert!(grid.try_mutate(changes));
-        assert_eq!(grid.wire_shape_at(Coords::new(3, 5), Direction::East),
-                   None);
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(3, 5), Direction::East),
+            None
+        );
     }
 
     #[test]
     fn paste_splices_wires() {
         let mut data = CircuitData::new(0, 0, 10, 10);
         data.wires.insert(Coords::new(3, 5), Direction::East, WireShape::Stub);
-        data.wires
-            .insert(Coords::new(4, 5), Direction::West, WireShape::Straight);
-        data.wires
-            .insert(Coords::new(4, 5), Direction::East, WireShape::Straight);
+        data.wires.insert(
+            Coords::new(4, 5),
+            Direction::West,
+            WireShape::Straight,
+        );
+        data.wires.insert(
+            Coords::new(4, 5),
+            Direction::East,
+            WireShape::Straight,
+        );
         data.wires.insert(Coords::new(5, 5), Direction::West, WireShape::Stub);
-        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr,
-                                                   &Profile::for_testing(),
-                                                   &data);
-        assert_eq!(grid.wire_shape_at(Coords::new(4, 5), Direction::East),
-                   Some(WireShape::Straight));
-        assert_eq!(grid.wire_shape_at(Coords::new(5, 5), Direction::West),
-                   Some(WireShape::Stub));
+        let mut grid = EditGrid::from_circuit_data(
+            Puzzle::TutorialOr,
+            &Profile::for_testing(),
+            &data,
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(4, 5), Direction::East),
+            Some(WireShape::Straight)
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(5, 5), Direction::West),
+            Some(WireShape::Stub)
+        );
         let selection = Selection {
             size: CoordsSize::new(2, 1),
             chips: HashMap::new(),
@@ -620,33 +686,51 @@ mod tests {
                 ((vec2(0, 0), Direction::East), WireShape::Stub),
                 ((vec2(1, 0), Direction::West), WireShape::Straight),
                 ((vec2(1, 0), Direction::East), WireShape::Straight),
-            ].into_iter()
-                .collect(),
+            ]
+            .into_iter()
+            .collect(),
         };
         let changes = changes_for_paste(&grid, &selection, Coords::new(4, 5));
         assert!(grid.try_mutate(changes));
-        assert_eq!(grid.wire_shape_at(Coords::new(4, 5), Direction::East),
-                   Some(WireShape::Straight));
-        assert_eq!(grid.wire_shape_at(Coords::new(5, 5), Direction::West),
-                   Some(WireShape::Straight));
-        assert_eq!(grid.wire_shape_at(Coords::new(5, 5), Direction::East),
-                   Some(WireShape::Straight));
-        assert_eq!(grid.wire_shape_at(Coords::new(6, 5), Direction::West),
-                   Some(WireShape::Stub));
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(4, 5), Direction::East),
+            Some(WireShape::Straight)
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(5, 5), Direction::West),
+            Some(WireShape::Straight)
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(5, 5), Direction::East),
+            Some(WireShape::Straight)
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(6, 5), Direction::West),
+            Some(WireShape::Stub)
+        );
     }
 
     #[test]
     fn pasting_a_chip_removes_stubs_not_on_port() {
         let mut data = CircuitData::new(0, 0, 10, 10);
-        data.wires
-            .insert(Coords::new(1, 1), Direction::East, WireShape::TurnLeft);
-        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr,
-                                                   &Profile::for_testing(),
-                                                   &data);
-        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::East),
-                   Some(WireShape::TurnLeft));
-        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::South),
-                   Some(WireShape::TurnRight));
+        data.wires.insert(
+            Coords::new(1, 1),
+            Direction::East,
+            WireShape::TurnLeft,
+        );
+        let mut grid = EditGrid::from_circuit_data(
+            Puzzle::TutorialOr,
+            &Profile::for_testing(),
+            &data,
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(1, 1), Direction::East),
+            Some(WireShape::TurnLeft)
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(1, 1), Direction::South),
+            Some(WireShape::TurnRight)
+        );
         let selection = Selection {
             size: CoordsSize::new(1, 1),
             chips: vec![(vec2(0, 0), (ChipType::Not, Orientation::default()))]
@@ -656,39 +740,57 @@ mod tests {
         };
         let changes = changes_for_paste(&grid, &selection, Coords::new(1, 1));
         assert!(grid.try_mutate(changes));
-        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::East),
-                   Some(WireShape::Stub));
-        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::South),
-                   None);
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(1, 1), Direction::East),
+            Some(WireShape::Stub)
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(1, 1), Direction::South),
+            None
+        );
     }
 
     #[test]
     fn pasting_a_wire_removes_new_stubs() {
         let mut data = CircuitData::new(0, 0, 10, 10);
-        data.wires
-            .insert(Coords::new(1, 1), Direction::East, WireShape::TurnLeft);
-        let mut grid = EditGrid::from_circuit_data(Puzzle::TutorialOr,
-                                                   &Profile::for_testing(),
-                                                   &data);
-        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::East),
-                   Some(WireShape::TurnLeft));
-        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::South),
-                   Some(WireShape::TurnRight));
+        data.wires.insert(
+            Coords::new(1, 1),
+            Direction::East,
+            WireShape::TurnLeft,
+        );
+        let mut grid = EditGrid::from_circuit_data(
+            Puzzle::TutorialOr,
+            &Profile::for_testing(),
+            &data,
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(1, 1), Direction::East),
+            Some(WireShape::TurnLeft)
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(1, 1), Direction::South),
+            Some(WireShape::TurnRight)
+        );
         let selection = Selection {
             size: CoordsSize::new(1, 1),
             chips: HashMap::new(),
             wires: vec![
                 ((vec2(0, 0), Direction::West), WireShape::TurnRight),
                 ((vec2(0, 0), Direction::South), WireShape::TurnLeft),
-            ].into_iter()
-                .collect(),
+            ]
+            .into_iter()
+            .collect(),
         };
         let changes = changes_for_paste(&grid, &selection, Coords::new(1, 1));
         assert!(grid.try_mutate(changes));
-        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::South),
-                   Some(WireShape::TurnLeft));
-        assert_eq!(grid.wire_shape_at(Coords::new(1, 1), Direction::East),
-                   None);
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(1, 1), Direction::South),
+            Some(WireShape::TurnLeft)
+        );
+        assert_eq!(
+            grid.wire_shape_at(Coords::new(1, 1), Direction::East),
+            None
+        );
     }
 }
 

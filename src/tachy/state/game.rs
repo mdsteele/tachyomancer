@@ -19,9 +19,11 @@
 
 use super::cutscene::CutsceneScript;
 use super::edit::EditGrid;
+use crate::tachy::save::{
+    Chapter, Conversation, MenuSection, Prefs, Profile, ProfileNamesIter,
+    Puzzle, SaveDir,
+};
 use std::time::Duration;
-use tachy::save::{Chapter, Conversation, MenuSection, Prefs, Profile,
-                  ProfileNamesIter, Puzzle, SaveDir};
 use unicase;
 
 //===========================================================================//
@@ -67,10 +69,11 @@ impl GameState {
                 if grid.is_modified() {
                     let puzzle = profile.current_puzzle();
                     let circuit_data = grid.to_circuit_data();
-                    profile
-                        .save_circuit(puzzle,
-                                      &self.circuit_name,
-                                      &circuit_data)?;
+                    profile.save_circuit(
+                        puzzle,
+                        &self.circuit_name,
+                        &circuit_data,
+                    )?;
                     grid.mark_unmodified();
                 }
             }
@@ -82,16 +85,18 @@ impl GameState {
 
     pub fn maybe_autosave_circuit(&mut self) {
         if let Some(ref mut grid) = self.edit_grid {
-            if grid.has_been_modified_for_at_least(AUTOSAVE_DURATION) &&
-                !grid.has_provisional_changes()
+            if grid.has_been_modified_for_at_least(AUTOSAVE_DURATION)
+                && !grid.has_provisional_changes()
             {
                 grid.mark_unmodified();
                 if let Some(ref mut profile) = self.profile {
                     let puzzle = profile.current_puzzle();
                     let circuit_data = grid.to_circuit_data();
-                    match profile.save_circuit(puzzle,
-                                                 &self.circuit_name,
-                                                 &circuit_data) {
+                    match profile.save_circuit(
+                        puzzle,
+                        &self.circuit_name,
+                        &circuit_data,
+                    ) {
                         Ok(()) => return,
                         Err(err) => debug_log!("Failed to autosave: {}", err),
                     }
@@ -103,16 +108,21 @@ impl GameState {
         }
     }
 
-    pub fn prefs(&self) -> &Prefs { self.savedir.prefs() }
+    pub fn prefs(&self) -> &Prefs {
+        self.savedir.prefs()
+    }
 
-    pub fn prefs_mut(&mut self) -> &mut Prefs { self.savedir.prefs_mut() }
+    pub fn prefs_mut(&mut self) -> &mut Prefs {
+        self.savedir.prefs_mut()
+    }
 
     pub fn cutscene(&self) -> Option<&CutsceneScript> {
         self.cutscene.as_ref()
     }
 
-    pub fn cutscene_mut_and_prefs(&mut self)
-                                  -> Option<(&mut CutsceneScript, &Prefs)> {
+    pub fn cutscene_mut_and_prefs(
+        &mut self,
+    ) -> Option<(&mut CutsceneScript, &Prefs)> {
         if let Some(ref mut cutscene) = self.cutscene {
             Some((cutscene, self.savedir.prefs()))
         } else {
@@ -124,7 +134,9 @@ impl GameState {
         self.cutscene = Some(cutscene);
     }
 
-    pub fn clear_cutscene(&mut self) { self.cutscene = None; }
+    pub fn clear_cutscene(&mut self) {
+        self.cutscene = None;
+    }
 
     pub fn profile_names(&self) -> ProfileNamesIter {
         self.savedir.profile_names()
@@ -134,10 +146,14 @@ impl GameState {
         self.savedir.has_profile(name)
     }
 
-    pub fn profile(&self) -> Option<&Profile> { self.profile.as_ref() }
+    pub fn profile(&self) -> Option<&Profile> {
+        self.profile.as_ref()
+    }
 
-    pub fn create_or_load_profile(&mut self, name: String)
-                                  -> Result<(), String> {
+    pub fn create_or_load_profile(
+        &mut self,
+        name: String,
+    ) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
             profile.save()?;
         }
@@ -158,9 +174,8 @@ impl GameState {
         };
         self.profile = None;
         self.savedir.remove_profile(deleted_name);
-        if let Some(name) = self.profile_names()
-            .next()
-            .map(|name| name.to_string())
+        if let Some(name) =
+            self.profile_names().next().map(|name| name.to_string())
         {
             self.create_or_load_profile(name)?;
         }
@@ -175,7 +190,9 @@ impl GameState {
         Ok(())
     }
 
-    pub fn menu_section(&self) -> MenuSection { self.menu_section }
+    pub fn menu_section(&self) -> MenuSection {
+        self.menu_section
+    }
 
     pub fn set_menu_section(&mut self, section: MenuSection) {
         self.menu_section = section;
@@ -229,23 +246,29 @@ impl GameState {
         }
     }
 
-    pub fn set_current_conversation_choice(&mut self, key: String,
-                                           value: String) {
+    pub fn set_current_conversation_choice(
+        &mut self,
+        key: String,
+        value: String,
+    ) {
         if let Some(ref mut profile) = self.profile {
             let conv = profile.current_conversation();
-            debug_log!("Making conversation {:?} choice {:?} = {:?}",
-                       conv,
-                       key,
-                       value);
+            debug_log!(
+                "Making conversation {:?} choice {:?} = {:?}",
+                conv,
+                key,
+                value
+            );
             profile.set_conversation_choice(conv, key, value);
         }
     }
 
     pub fn chapter_order(&self) -> Vec<Chapter> {
         let orpheus_first = if let Some(ref profile) = self.profile {
-            profile.get_conversation_choice(Conversation::UnexpectedCompany,
-                                            "chapter") ==
-                Some("orpheus")
+            profile.get_conversation_choice(
+                Conversation::UnexpectedCompany,
+                "chapter",
+            ) == Some("orpheus")
         } else {
             false
         };
@@ -310,14 +333,19 @@ impl GameState {
         }
     }
 
-    pub fn record_current_puzzle_score(&mut self, area: i32, score: i32)
-                                       -> Result<(), String> {
+    pub fn record_current_puzzle_score(
+        &mut self,
+        area: i32,
+        score: i32,
+    ) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
             let puzzle = profile.current_puzzle();
-            debug_log!("Recording {:?} score (area={}, score={})",
-                       puzzle,
-                       area,
-                       score);
+            debug_log!(
+                "Recording {:?} score (area={}, score={})",
+                puzzle,
+                area,
+                score
+            );
             profile.record_puzzle_score(puzzle, area, score)?;
             debug_assert!(profile.is_puzzle_solved(puzzle));
             Ok(())
@@ -326,7 +354,9 @@ impl GameState {
         }
     }
 
-    pub fn circuit_name(&self) -> &str { &self.circuit_name }
+    pub fn circuit_name(&self) -> &str {
+        &self.circuit_name
+    }
 
     pub fn set_circuit_name(&mut self, name: String) {
         self.circuit_name = name;
@@ -376,8 +406,10 @@ impl GameState {
 
     /// Renames the current circuit to the given new name.  If there is no
     /// current circuit, creates a new circuit with the given name.
-    pub fn rename_current_circuit(&mut self, new_name: &str)
-                                  -> Result<(), String> {
+    pub fn rename_current_circuit(
+        &mut self,
+        new_name: &str,
+    ) -> Result<(), String> {
         let new_name = new_name.trim();
         if !self.is_valid_circuit_rename(new_name) {
             Err(format!("Invalid rename: {:?}", new_name))
@@ -388,7 +420,11 @@ impl GameState {
                 let circuit_data = edit_grid.to_circuit_data();
                 profile.save_circuit(puzzle, new_name, &circuit_data)?;
             } else {
-                profile.rename_circuit(puzzle, &self.circuit_name, new_name)?;
+                profile.rename_circuit(
+                    puzzle,
+                    &self.circuit_name,
+                    new_name,
+                )?;
             }
             self.circuit_name = new_name.to_string();
             Ok(())
@@ -397,10 +433,13 @@ impl GameState {
         }
     }
 
-    pub fn edit_grid(&self) -> Option<&EditGrid> { self.edit_grid.as_ref() }
+    pub fn edit_grid(&self) -> Option<&EditGrid> {
+        self.edit_grid.as_ref()
+    }
 
-    pub fn edit_grid_mut_and_prefs(&mut self)
-                                   -> Option<(&mut EditGrid, &Prefs)> {
+    pub fn edit_grid_mut_and_prefs(
+        &mut self,
+    ) -> Option<(&mut EditGrid, &Prefs)> {
         if let Some(ref mut grid) = self.edit_grid {
             Some((grid, self.savedir.prefs()))
         } else {
@@ -408,14 +447,16 @@ impl GameState {
         }
     }
 
-    pub fn clear_edit_grid(&mut self) { self.edit_grid = None; }
+    pub fn clear_edit_grid(&mut self) {
+        self.edit_grid = None;
+    }
 
     pub fn load_and_set_edit_grid(&mut self) -> Result<(), String> {
         if let Some(ref profile) = self.profile {
             let puzzle = profile.current_puzzle();
             if self.circuit_name.is_empty() {
-                self.circuit_name = profile
-                    .choose_new_circuit_name("Version ");
+                self.circuit_name =
+                    profile.choose_new_circuit_name("Version ");
                 debug_log!("Creating new circuit {:?}", self.circuit_name);
                 self.edit_grid = Some(EditGrid::new(puzzle, profile));
             } else {
@@ -429,8 +470,11 @@ impl GameState {
         }
     }
 
-    pub fn load_edit_grid(&self, puzzle: Puzzle, circuit_name: &str)
-                          -> Result<EditGrid, String> {
+    pub fn load_edit_grid(
+        &self,
+        puzzle: Puzzle,
+        circuit_name: &str,
+    ) -> Result<EditGrid, String> {
         if let Some(ref profile) = self.profile {
             if circuit_name.is_empty() {
                 Ok(EditGrid::new(puzzle, profile))

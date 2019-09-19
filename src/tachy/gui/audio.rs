@@ -17,14 +17,14 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::music;
+use crate::tachy::sound;
 use lewton::inside_ogg::OggStreamReader;
 use lewton::samples::InterleavedSamples;
 use sdl2;
 use sdl2::audio::AudioFormatNum;
 use std::io::Cursor;
 use std::sync::{Arc, Mutex};
-use tachy::music;
-use tachy::sound;
 
 // ========================================================================= //
 
@@ -82,9 +82,13 @@ impl AudioQueue {
         }
     }
 
-    pub fn play_sound(&mut self, sound: Sound) { self.sounds.push(sound); }
+    pub fn play_sound(&mut self, sound: Sound) {
+        self.sounds.push(sound);
+    }
 
-    pub fn play_music(&mut self, music: Music) { self.music = Some(music); }
+    pub fn play_music(&mut self, music: Music) {
+        self.music = Some(music);
+    }
 
     pub fn set_sound_volume_percent(&mut self, percent: i32) {
         self.sound_volume = Some(0.01 * (percent.max(0).min(100) as f32));
@@ -141,30 +145,32 @@ impl MusicStream {
         match OggStreamReader::new(cursor) {
             Ok(reader) => {
                 if reader.ident_hdr.audio_sample_rate != sound::AUDIO_RATE {
-                    return Err(format!("Sample rate of {:?} is {}, but \
-                                        expected {}",
-                                       music,
-                                       reader.ident_hdr.audio_sample_rate,
-                                       sound::AUDIO_RATE));
+                    return Err(format!(
+                        "Sample rate of {:?} is {}, but \
+                         expected {}",
+                        music,
+                        reader.ident_hdr.audio_sample_rate,
+                        sound::AUDIO_RATE
+                    ));
                 }
                 if reader.ident_hdr.audio_channels != DESIRED_NUM_CHANNELS {
-                    return Err(format!("Found {} channels in {:?}, but \
-                                        expected {}",
-                                       reader.ident_hdr.audio_channels,
-                                       music,
-                                       DESIRED_NUM_CHANNELS));
+                    return Err(format!(
+                        "Found {} channels in {:?}, but \
+                         expected {}",
+                        reader.ident_hdr.audio_channels,
+                        music,
+                        DESIRED_NUM_CHANNELS
+                    ));
                 }
-                let stream = MusicStream {
-                    music,
-                    samples: Vec::new(),
-                    reader,
-                };
+                let stream =
+                    MusicStream { music, samples: Vec::new(), reader };
                 return Ok(stream);
             }
             Err(error) => {
-                return Err(format!("Failed to decode {:?} header: {:?}",
-                                   music,
-                                   error));
+                return Err(format!(
+                    "Failed to decode {:?} header: {:?}",
+                    music, error
+                ));
             }
         }
     }
@@ -176,18 +182,23 @@ impl MusicStream {
 
     pub fn read(&mut self, out: &mut [f32]) -> Result<usize, String> {
         while self.samples.is_empty() {
-            match self.reader
-                .read_dec_packet_generic::<InterleavedSamples<f32>>() {
+            match self
+                .reader
+                .read_dec_packet_generic::<InterleavedSamples<f32>>()
+            {
                 Ok(Some(interleaved)) => {
-                    debug_assert_eq!(interleaved.channel_count,
-                                     DESIRED_NUM_CHANNELS.into());
+                    debug_assert_eq!(
+                        interleaved.channel_count,
+                        DESIRED_NUM_CHANNELS.into()
+                    );
                     self.samples = interleaved.samples;
                 }
                 Ok(None) => return Ok(0),
                 Err(error) => {
-                    return Err(format!("Failed to decode {:?} samples: {:?}",
-                                       self.music,
-                                       error));
+                    return Err(format!(
+                        "Failed to decode {:?} samples: {:?}",
+                        self.music, error
+                    ));
                 }
             }
         }
@@ -213,8 +224,10 @@ pub struct AudioMixer {
 }
 
 impl AudioMixer {
-    fn new(audio_queue: Arc<Mutex<AudioQueue>>, audio_data: AudioData)
-           -> AudioMixer {
+    fn new(
+        audio_queue: Arc<Mutex<AudioQueue>>,
+        audio_data: AudioData,
+    ) -> AudioMixer {
         let mut mixer = AudioMixer {
             audio_queue,
             audio_data,
@@ -230,33 +243,35 @@ impl AudioMixer {
 
     pub fn audio_device(
         audio_subsystem: &sdl2::AudioSubsystem,
-        audio_queue: Arc<Mutex<AudioQueue>>)
-        -> Result<sdl2::audio::AudioDevice<AudioMixer>, String> {
+        audio_queue: Arc<Mutex<AudioQueue>>,
+    ) -> Result<sdl2::audio::AudioDevice<AudioMixer>, String> {
         let audio_data = AudioData::new()?;
         let desired_spec = sdl2::audio::AudioSpecDesired {
             freq: Some(DESIRED_AUDIO_RATE),
             channels: Some(DESIRED_NUM_CHANNELS),
             samples: Some(DESIRED_BUFFER_SIZE),
         };
-        let device = audio_subsystem
-            .open_playback(None, &desired_spec, |_| {
+        let device =
+            audio_subsystem.open_playback(None, &desired_spec, |_| {
                 AudioMixer::new(audio_queue, audio_data)
             })?;
         {
             let actual_spec = device.spec();
-            if actual_spec.freq != DESIRED_AUDIO_RATE ||
-                actual_spec.format != f32::audio_format() ||
-                actual_spec.channels != DESIRED_NUM_CHANNELS
+            if actual_spec.freq != DESIRED_AUDIO_RATE
+                || actual_spec.format != f32::audio_format()
+                || actual_spec.channels != DESIRED_NUM_CHANNELS
             {
-                return Err(format!("Could not initialize a compatible audio \
-                                    device (desired: {{ freq: {}, \
-                                    format: {:?}, channels: {}, \
-                                    samples: {} }}, actual: {:?})",
-                                   DESIRED_AUDIO_RATE,
-                                   f32::audio_format(),
-                                   DESIRED_NUM_CHANNELS,
-                                   DESIRED_BUFFER_SIZE,
-                                   actual_spec));
+                return Err(format!(
+                    "Could not initialize a compatible audio \
+                     device (desired: {{ freq: {}, \
+                     format: {:?}, channels: {}, \
+                     samples: {} }}, actual: {:?})",
+                    DESIRED_AUDIO_RATE,
+                    f32::audio_format(),
+                    DESIRED_NUM_CHANNELS,
+                    DESIRED_BUFFER_SIZE,
+                    actual_spec
+                ));
             }
         }
         return Ok(device);
@@ -288,9 +303,11 @@ impl AudioMixer {
                 match MusicStream::new(new_music) {
                     Ok(stream) => self.current_music = Some(stream),
                     Err(error) => {
-                        debug_warn!("Failed to start {:?} music: {}",
-                                    new_music,
-                                    error);
+                        debug_warn!(
+                            "Failed to start {:?} music: {}",
+                            new_music,
+                            error
+                        );
                     }
                 }
             }
@@ -314,18 +331,18 @@ impl sdl2::audio::AudioCallback for AudioMixer {
             if let Some(ref mut music_stream) = self.current_music {
                 while start < out.len() {
                     match music_stream.read(&mut out[start..]) {
-                        Ok(0) => {
-                            match music_stream.restart() {
-                                Ok(()) => {}
-                                Err(error) => {
-                                    debug_warn!("Failed to restart music: {}",
-                                                error);
-                                    self.current_music = None;
-                                    self.next_music = None;
-                                    break;
-                                }
+                        Ok(0) => match music_stream.restart() {
+                            Ok(()) => {}
+                            Err(error) => {
+                                debug_warn!(
+                                    "Failed to restart music: {}",
+                                    error
+                                );
+                                self.current_music = None;
+                                self.next_music = None;
+                                break;
                             }
-                        }
+                        },
                         Ok(num_samples) => {
                             start += num_samples;
                         }
@@ -345,9 +362,9 @@ impl sdl2::audio::AudioCallback for AudioMixer {
             }
         }
         let fade = if let Some((music, old_fade)) = self.next_music {
-            let new_fade = old_fade -
-                (out.len() as f32) /
-                    ((DESIRED_AUDIO_RATE as f32) * MUSIC_FADE_OUT_SECONDS);
+            let new_fade = old_fade
+                - (out.len() as f32)
+                    / ((DESIRED_AUDIO_RATE as f32) * MUSIC_FADE_OUT_SECONDS);
             if new_fade > 0.0 {
                 self.next_music = Some((music, new_fade));
             } else {
@@ -357,9 +374,11 @@ impl sdl2::audio::AudioCallback for AudioMixer {
                         self.current_music = Some(music_stream);
                     }
                     Err(error) => {
-                        debug_warn!("Failed to start {:?} music: {}",
-                                    music,
-                                    error);
+                        debug_warn!(
+                            "Failed to start {:?} music: {}",
+                            music,
+                            error
+                        );
                         self.current_music = None;
                     }
                 }

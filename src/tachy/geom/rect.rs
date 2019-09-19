@@ -98,12 +98,7 @@ pub struct Rect<T> {
 
 impl<T: BaseNum> Rect<T> {
     pub fn new(x: T, y: T, width: T, height: T) -> Rect<T> {
-        Rect {
-            x,
-            y,
-            width,
-            height,
-        }
+        Rect { x, y, width, height }
     }
 
     pub fn with_size(top_left: Point2<T>, size: RectSize<T>) -> Rect<T> {
@@ -119,47 +114,64 @@ impl<T: BaseNum> Rect<T> {
         self.width <= T::zero() || self.height <= T::zero()
     }
 
-    pub fn top_left(&self) -> Point2<T> { Point2::new(self.x, self.y) }
+    pub fn top_left(&self) -> Point2<T> {
+        Point2::new(self.x, self.y)
+    }
 
-    pub fn right(&self) -> T { self.x + self.width }
+    pub fn right(&self) -> T {
+        self.x + self.width
+    }
 
-    pub fn bottom(&self) -> T { self.y + self.height }
+    pub fn bottom(&self) -> T {
+        self.y + self.height
+    }
 
     pub fn size(&self) -> RectSize<T> {
         RectSize::new(self.width, self.height)
     }
 
-    pub fn area(&self) -> T { self.width * self.height }
+    pub fn area(&self) -> T {
+        self.width * self.height
+    }
 
     pub fn contains_point(&self, pt: Point2<T>) -> bool {
-        pt.x >= self.x && pt.y >= self.y && pt.x < self.x + self.width &&
-            pt.y < self.y + self.height
+        pt.x >= self.x
+            && pt.y >= self.y
+            && pt.x < self.x + self.width
+            && pt.y < self.y + self.height
     }
 
     pub fn contains_rect(&self, rect: Rect<T>) -> bool {
-        rect.x >= self.x && rect.y >= self.y &&
-            rect.x + rect.width <= self.x + self.width &&
-            rect.y + rect.height <= self.y + self.height
+        rect.x >= self.x
+            && rect.y >= self.y
+            && rect.x + rect.width <= self.x + self.width
+            && rect.y + rect.height <= self.y + self.height
     }
 
     pub fn expand(&self, margin: T) -> Rect<T> {
         let margin2 = margin + margin;
-        Rect::new(self.x - margin,
-                  self.y - margin,
-                  self.width + margin2,
-                  self.height + margin2)
+        Rect::new(
+            self.x - margin,
+            self.y - margin,
+            self.width + margin2,
+            self.height + margin2,
+        )
     }
 
     pub fn expand2(&self, horz_margin: T, vert_margin: T) -> Rect<T> {
-        Rect::new(self.x - horz_margin,
-                  self.y - vert_margin,
-                  self.width + horz_margin + horz_margin,
-                  self.height + vert_margin + vert_margin)
+        Rect::new(
+            self.x - horz_margin,
+            self.y - vert_margin,
+            self.width + horz_margin + horz_margin,
+            self.height + vert_margin + vert_margin,
+        )
     }
 
     pub fn intersection(&self, other: Rect<T>) -> Rect<T> {
-        if self.x > other.right() || self.y > other.bottom() ||
-            self.right() < other.x || self.bottom() < other.y
+        if self.x > other.right()
+            || self.y > other.bottom()
+            || self.right() < other.x
+            || self.bottom() < other.y
         {
             return Rect::new(self.x, self.y, T::zero(), T::zero());
         }
@@ -183,10 +195,12 @@ impl AsFloat for Rect<i32> {
     type Output32 = Rect<f32>;
 
     fn as_f32(&self) -> Rect<f32> {
-        Rect::new(self.x as f32,
-                  self.y as f32,
-                  self.width as f32,
-                  self.height as f32)
+        Rect::new(
+            self.x as f32,
+            self.y as f32,
+            self.width as f32,
+            self.height as f32,
+        )
     }
 }
 
@@ -194,7 +208,9 @@ impl IntoIterator for Rect<i32> {
     type Item = Point2<i32>;
     type IntoIter = RectPointsIter<i32>;
 
-    fn into_iter(self) -> RectPointsIter<i32> { RectPointsIter::new(self) }
+    fn into_iter(self) -> RectPointsIter<i32> {
+        RectPointsIter::new(self)
+    }
 }
 
 impl<T: BaseNum> ops::Add<Vector2<T>> for Rect<T> {
@@ -209,10 +225,12 @@ impl<T: BaseNum> ops::Mul<T> for Rect<T> {
     type Output = Rect<T>;
 
     fn mul(self, other: T) -> Rect<T> {
-        Rect::new(self.x * other,
-                  self.y * other,
-                  self.width * other,
-                  self.height * other)
+        Rect::new(
+            self.x * other,
+            self.y * other,
+            self.width * other,
+            self.height * other,
+        )
     }
 }
 
@@ -230,12 +248,7 @@ impl<'d, T: serde::Deserialize<'d>> serde::Deserialize<'d> for Rect<T> {
         D: serde::Deserializer<'d>,
     {
         let (x, y, width, height) = <(T, T, T, T)>::deserialize(deserializer)?;
-        Ok(Rect {
-               x,
-               y,
-               width,
-               height,
-           })
+        Ok(Rect { x, y, width, height })
     }
 }
 
@@ -265,13 +278,7 @@ impl<T: BaseNum> RectPointsIter<T> {
         } else {
             (rect.right(), rect.bottom())
         };
-        RectPointsIter {
-            x: rect.x,
-            x_lo: rect.x,
-            x_hi,
-            y: rect.y,
-            y_hi,
-        }
+        RectPointsIter { x: rect.x, x_lo: rect.x, x_hi, y: rect.y, y_hi }
     }
 }
 
@@ -308,17 +315,21 @@ impl ExactSizeIterator for RectPointsIter<i32> {}
 
 #[cfg(test)]
 mod tests {
-    use super::{Rect, RectSize};
     use super::super::cast::AsFloat;
+    use super::{Rect, RectSize};
     use cgmath::Point2;
     use std::collections::HashMap;
 
     #[test]
     fn rect_size_as_float() {
-        assert_eq!(RectSize::<i32>::new(3, -4).as_f32(),
-                   RectSize::<f32>::new(3.0, -4.0));
-        assert_eq!(RectSize::<usize>::new(3, 4).as_f32(),
-                   RectSize::<f32>::new(3.0, 4.0));
+        assert_eq!(
+            RectSize::<i32>::new(3, -4).as_f32(),
+            RectSize::<f32>::new(3.0, -4.0)
+        );
+        assert_eq!(
+            RectSize::<usize>::new(3, 4).as_f32(),
+            RectSize::<f32>::new(3.0, 4.0)
+        );
     }
 
     #[test]
@@ -356,18 +367,30 @@ mod tests {
     #[test]
     fn rect_intersection() {
         let rect = Rect::new(1, 2, 3, 4);
-        assert_eq!(rect.intersection(Rect::new(2, 3, 3, 4)),
-                   Rect::new(2, 3, 2, 3));
-        assert_eq!(rect.intersection(Rect::new(-1, 4, 4, 4)),
-                   Rect::new(1, 4, 2, 2));
-        assert_eq!(rect.intersection(Rect::new(0, 1, 2, 2)),
-                   Rect::new(1, 2, 1, 1));
-        assert_eq!(rect.intersection(Rect::new(2, 1, 5, 3)),
-                   Rect::new(2, 2, 2, 2));
-        assert_eq!(rect.intersection(Rect::new(0, 0, 10, 10)),
-                   Rect::new(1, 2, 3, 4));
-        assert_eq!(rect.intersection(Rect::new(2, 3, 1, 1)),
-                   Rect::new(2, 3, 1, 1));
+        assert_eq!(
+            rect.intersection(Rect::new(2, 3, 3, 4)),
+            Rect::new(2, 3, 2, 3)
+        );
+        assert_eq!(
+            rect.intersection(Rect::new(-1, 4, 4, 4)),
+            Rect::new(1, 4, 2, 2)
+        );
+        assert_eq!(
+            rect.intersection(Rect::new(0, 1, 2, 2)),
+            Rect::new(1, 2, 1, 1)
+        );
+        assert_eq!(
+            rect.intersection(Rect::new(2, 1, 5, 3)),
+            Rect::new(2, 2, 2, 2)
+        );
+        assert_eq!(
+            rect.intersection(Rect::new(0, 0, 10, 10)),
+            Rect::new(1, 2, 3, 4)
+        );
+        assert_eq!(
+            rect.intersection(Rect::new(2, 3, 1, 1)),
+            Rect::new(2, 3, 1, 1)
+        );
         assert_eq!(rect.intersection(Rect::new(10, 20, 4, 4)).area(), 0);
         assert_eq!(rect.intersection(Rect::new(-10, -20, 4, 4)).area(), 0);
     }
@@ -377,8 +400,10 @@ mod tests {
         let rect = Rect::new(4, 1, 2, 3);
         let points: Vec<(i32, i32)> =
             rect.into_iter().map(|pt| (pt.x, pt.y)).collect();
-        assert_eq!(points,
-                   vec![(4, 1), (5, 1), (4, 2), (5, 2), (4, 3), (5, 3)]);
+        assert_eq!(
+            points,
+            vec![(4, 1), (5, 1), (4, 2), (5, 2), (4, 3), (5, 3)]
+        );
     }
 
     #[test]
@@ -416,8 +441,10 @@ mod tests {
         let mut map = HashMap::<String, Rect<i32>>::new();
         map.insert("foo".to_string(), Rect::new(-2, -1, 8, 5));
         let bytes = toml::to_vec(&map).unwrap();
-        assert_eq!(String::from_utf8(bytes).unwrap().as_str(),
-                   "foo = [-2, -1, 8, 5]\n");
+        assert_eq!(
+            String::from_utf8(bytes).unwrap().as_str(),
+            "foo = [-2, -1, 8, 5]\n"
+        );
     }
 
     #[test]

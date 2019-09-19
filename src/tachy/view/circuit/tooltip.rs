@@ -18,10 +18,10 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::chip::{chip_grid_rect, interface_grid_rect};
+use crate::tachy::geom::{AsInt, Coords, Direction, PolygonRef};
+use crate::tachy::save::{ChipType, WireShape};
+use crate::tachy::state::EditGrid;
 use cgmath::Point2;
-use tachy::geom::{AsInt, Coords, Direction, PolygonRef};
-use tachy::save::{ChipType, WireShape};
-use tachy::state::EditGrid;
 
 //===========================================================================//
 
@@ -33,8 +33,10 @@ pub enum GridTooltipTag {
 }
 
 impl GridTooltipTag {
-    pub fn for_grid_pt(grid: &EditGrid, grid_pt: Point2<f32>)
-                       -> Option<GridTooltipTag> {
+    pub fn for_grid_pt(
+        grid: &EditGrid,
+        grid_pt: Point2<f32>,
+    ) -> Option<GridTooltipTag> {
         let coords: Coords = grid_pt.as_i32_floor();
         if let Some((coords, ctype, orient)) = grid.chip_at(coords) {
             if chip_grid_rect(coords, ctype, orient).contains_point(grid_pt) {
@@ -47,29 +49,30 @@ impl GridTooltipTag {
             }
         }
 
-        let sub_pt = Point2::new(grid_pt.x - (coords.x as f32),
-                                 grid_pt.y - (coords.y as f32));
+        let sub_pt = Point2::new(
+            grid_pt.x - (coords.x as f32),
+            grid_pt.y - (coords.y as f32),
+        );
         let mut wire_dir: Option<Direction> = None;
         for dir in Direction::all() {
-            let contains = match (grid.wire_shape_at(coords, dir), dir) {
-                (Some(WireShape::Stub), _) => {
-                    STUB_POLYGON.contains_point(transform(sub_pt, dir))
-                }
-                (Some(WireShape::Straight), Direction::East) |
-                (Some(WireShape::Straight), Direction::North) => {
-                    STRAIGHT_POLYGON.contains_point(transform(sub_pt, dir))
-                }
-                (Some(WireShape::TurnLeft), _) => {
-                    TURN_LEFT_POLYGON.contains_point(transform(sub_pt, dir))
-                }
-                (Some(WireShape::SplitTee), _) => {
-                    SPLIT_TEE_POLYGON.contains_point(transform(sub_pt, dir))
-                }
-                (Some(WireShape::Cross), Direction::East) => {
-                    CROSS_POLYGON.contains_point(sub_pt)
-                }
-                _ => false,
-            };
+            let contains =
+                match (grid.wire_shape_at(coords, dir), dir) {
+                    (Some(WireShape::Stub), _) => {
+                        STUB_POLYGON.contains_point(transform(sub_pt, dir))
+                    }
+                    (Some(WireShape::Straight), Direction::East)
+                    | (Some(WireShape::Straight), Direction::North) => {
+                        STRAIGHT_POLYGON.contains_point(transform(sub_pt, dir))
+                    }
+                    (Some(WireShape::TurnLeft), _) => TURN_LEFT_POLYGON
+                        .contains_point(transform(sub_pt, dir)),
+                    (Some(WireShape::SplitTee), _) => SPLIT_TEE_POLYGON
+                        .contains_point(transform(sub_pt, dir)),
+                    (Some(WireShape::Cross), Direction::East) => {
+                        CROSS_POLYGON.contains_point(sub_pt)
+                    }
+                    _ => false,
+                };
             if contains {
                 wire_dir = Some(dir);
             }

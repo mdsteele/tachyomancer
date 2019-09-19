@@ -5,6 +5,7 @@ authors = ["Matthew D. Steele <mdsteele@alum.mit.edu>"]
 license = "GPL-3.0+"
 description = "A circuit-programming puzzle game."
 build = "build.rs"
+edition = "2018"
 
 [build-dependencies]
 icns = "0.3"

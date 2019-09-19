@@ -34,32 +34,35 @@ pub struct Ui<'a> {
 }
 
 impl<'a> Ui<'a> {
-    pub(super) fn new(audio: &'a mut AudioQueue,
-                      clipboard: &'a mut Clipboard,
-                      cursor: &'a mut NextCursor,
-                      event_pump: &'a sdl2::EventPump,
-                      redraw_requested: &'a mut bool)
-                      -> Ui<'a> {
-        Ui {
-            audio,
-            clipboard,
-            cursor,
-            event_pump,
-            redraw_requested,
-        }
+    pub(super) fn new(
+        audio: &'a mut AudioQueue,
+        clipboard: &'a mut Clipboard,
+        cursor: &'a mut NextCursor,
+        event_pump: &'a sdl2::EventPump,
+        redraw_requested: &'a mut bool,
+    ) -> Ui<'a> {
+        Ui { audio, clipboard, cursor, event_pump, redraw_requested }
     }
 
-    pub fn audio(&mut self) -> &mut AudioQueue { &mut self.audio }
+    pub fn audio(&mut self) -> &mut AudioQueue {
+        &mut self.audio
+    }
 
-    pub fn clipboard(&mut self) -> &mut Clipboard { self.clipboard }
+    pub fn clipboard(&mut self) -> &mut Clipboard {
+        self.clipboard
+    }
 
-    pub fn cursor(&mut self) -> &mut NextCursor { &mut self.cursor }
+    pub fn cursor(&mut self) -> &mut NextCursor {
+        &mut self.cursor
+    }
 
     pub fn keyboard(&self) -> Keyboard {
         Keyboard { state: self.event_pump.keyboard_state() }
     }
 
-    pub fn request_redraw(&mut self) { *self.redraw_requested = true; }
+    pub fn request_redraw(&mut self) {
+        *self.redraw_requested = true;
+    }
 }
 
 //===========================================================================//
@@ -70,8 +73,7 @@ pub struct Keyboard<'a> {
 
 impl<'a> Keyboard<'a> {
     pub fn is_held(&self, keycode: Keycode) -> bool {
-        if let Some(scancode) =
-            sdl2::keyboard::Scancode::from_keycode(keycode)
+        if let Some(scancode) = sdl2::keyboard::Scancode::from_keycode(keycode)
         {
             self.state.is_scancode_pressed(scancode)
         } else {

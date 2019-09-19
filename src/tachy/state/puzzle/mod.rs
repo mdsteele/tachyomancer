@@ -33,8 +33,9 @@ mod tutor_bvr;
 mod tutor_evt;
 
 pub use self::beacon::BeaconEval;
-pub use self::fabricate::{FabricateHalveEval, FabricateIncEval,
-                          FabricateMulEval, FabricateXorEval};
+pub use self::fabricate::{
+    FabricateHalveEval, FabricateIncEval, FabricateMulEval, FabricateXorEval,
+};
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::lander::LanderEval;
@@ -46,9 +47,11 @@ pub use self::tutor_bvr::{TutorialAddEval, TutorialMuxEval, TutorialOrEval};
 pub use self::tutor_evt::{TutorialDemuxEval, TutorialSumEval};
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
-use tachy::geom::{Coords, Direction};
-use tachy::save::{CHIP_CATEGORIES, ChipSet, ChipType, Conversation, Profile,
-                  Puzzle, PuzzleKind};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::save::{
+    ChipSet, ChipType, Conversation, Profile, Puzzle, PuzzleKind,
+    CHIP_CATEGORIES,
+};
 
 //===========================================================================//
 
@@ -57,8 +60,8 @@ pub trait PuzzleExt {
     fn allowed_chips(&self, profile: &Profile) -> ChipSet;
     fn interfaces(&self) -> &'static [Interface];
     fn tutorial_bubbles(
-        &self)
-        -> &'static [(TutorialBubblePosition, &'static str)];
+        &self,
+    ) -> &'static [(TutorialBubblePosition, &'static str)];
 }
 
 //===========================================================================//
@@ -112,8 +115,8 @@ impl PuzzleExt for Puzzle {
     }
 
     fn tutorial_bubbles(
-        &self)
-        -> &'static [(TutorialBubblePosition, &'static str)] {
+        &self,
+    ) -> &'static [(TutorialBubblePosition, &'static str)] {
         match self {
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_BUBBLES,
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_BUBBLES,
@@ -125,20 +128,22 @@ impl PuzzleExt for Puzzle {
     }
 }
 
-fn is_chip_allowed_in(ctype: ChipType, puzzle: Puzzle, profile: &Profile)
-                      -> bool {
+fn is_chip_allowed_in(
+    ctype: ChipType,
+    puzzle: Puzzle,
+    profile: &Profile,
+) -> bool {
     if !puzzle.allows_events() && ctype.uses_events() {
         return false;
     }
     match ctype.availibility() {
         ChipAvailability::Always => true,
-        ChipAvailability::InteractiveOnly => {
-            match puzzle.kind() {
-                PuzzleKind::Tutorial | PuzzleKind::Fabricate |
-                PuzzleKind::Automate => false,
-                PuzzleKind::Command | PuzzleKind::Sandbox => true,
-            }
-        }
+        ChipAvailability::InteractiveOnly => match puzzle.kind() {
+            PuzzleKind::Tutorial
+            | PuzzleKind::Fabricate
+            | PuzzleKind::Automate => false,
+            PuzzleKind::Command | PuzzleKind::Sandbox => true,
+        },
         ChipAvailability::OnlyIn(puzzles) => puzzles.contains(&puzzle),
         ChipAvailability::StartingWith(other_puzzle) => puzzle >= other_puzzle,
         ChipAvailability::UnlockedBy(other_puzzle) => {
@@ -147,12 +152,12 @@ fn is_chip_allowed_in(ctype: ChipType, puzzle: Puzzle, profile: &Profile)
     }
 }
 
-
 //===========================================================================//
 
-pub(super) fn new_puzzle_eval(puzzle: Puzzle,
-                              slots: Vec<Vec<((Coords, Direction), usize)>>)
-                              -> Box<PuzzleEval> {
+pub(super) fn new_puzzle_eval(
+    puzzle: Puzzle,
+    slots: Vec<Vec<((Coords, Direction), usize)>>,
+) -> Box<dyn PuzzleEval> {
     match puzzle {
         Puzzle::AutomateBeacon => {
             Box::new(self::beacon::BeaconEval::new(slots))

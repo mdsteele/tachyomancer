@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{BaseFloat, Matrix4, SquareMatrix, Vector2, vec3};
+use cgmath::{vec3, BaseFloat, Matrix4, SquareMatrix, Vector2};
 
 //===========================================================================//
 
@@ -29,7 +29,9 @@ where
 
     fn trans2(x: Self::Scalar, y: Self::Scalar) -> Self;
 
-    fn trans2v(v: Vector2<Self::Scalar>) -> Self { Self::trans2(v.x, v.y) }
+    fn trans2v(v: Vector2<Self::Scalar>) -> Self {
+        Self::trans2(v.x, v.y)
+    }
 }
 
 impl<S: BaseFloat> MatrixExt for Matrix4<S> {

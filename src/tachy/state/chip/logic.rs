@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::data::{AbstractConstraint, ChipData};
 use super::super::eval::{ChipEval, CircuitState};
-use tachy::geom::Direction;
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::data::{AbstractConstraint, ChipData};
+use crate::tachy::geom::Direction;
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -45,8 +45,9 @@ pub struct AndChipEval {
 }
 
 impl AndChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), AND_CHIP_DATA.ports.len());
         let chip_eval = AndChipEval {
             input1: slots[0].0,
@@ -93,8 +94,9 @@ pub struct MuxChipEval {
 }
 
 impl MuxChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), MUX_CHIP_DATA.ports.len());
         let chip_eval = MuxChipEval {
             input1: slots[0].0,
@@ -135,8 +137,9 @@ pub struct NotChipEval {
 }
 
 impl NotChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), NOT_CHIP_DATA.ports.len());
         let chip_eval = NotChipEval {
             size: slots[1].1,
@@ -165,8 +168,9 @@ pub struct OrChipEval {
 }
 
 impl OrChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), OR_CHIP_DATA.ports.len());
         let chip_eval = OrChipEval {
             input1: slots[0].0,
@@ -198,8 +202,9 @@ pub struct XorChipEval {
 }
 
 impl XorChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), XOR_CHIP_DATA.ports.len());
         let chip_eval = XorChipEval {
             input1: slots[0].0,
@@ -224,47 +229,42 @@ impl ChipEval for XorChipEval {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::eval::{
+        ChipEval, CircuitInteraction, NullPuzzleEval,
+    };
     use super::{AndChipEval, NotChipEval};
-    use super::super::super::eval::{ChipEval, CircuitInteraction,
-                                    NullPuzzleEval};
+    use crate::tachy::state::{CircuitEval, WireSize};
     use std::collections::HashSet;
-    use tachy::state::{CircuitEval, WireSize};
 
     #[test]
     fn evaluate_boolean_or_circuit() {
-        let chips: Vec<Vec<Box<ChipEval>>> = vec![
+        let chips: Vec<Vec<Box<dyn ChipEval>>> = vec![
             vec![
                 Box::new(NotChipEval {
-                             size: WireSize::One,
-                             input: 0,
-                             output: 2,
-                         }),
+                    size: WireSize::One,
+                    input: 0,
+                    output: 2,
+                }),
                 Box::new(NotChipEval {
-                             size: WireSize::One,
-                             input: 1,
-                             output: 3,
-                         }),
+                    size: WireSize::One,
+                    input: 1,
+                    output: 3,
+                }),
             ],
-            vec![
-                Box::new(AndChipEval {
-                             input1: 2,
-                             input2: 3,
-                             output: 4,
-                         }),
-            ],
-            vec![
-                Box::new(NotChipEval {
-                             size: WireSize::One,
-                             input: 4,
-                             output: 5,
-                         }),
-            ],
+            vec![Box::new(AndChipEval { input1: 2, input2: 3, output: 4 })],
+            vec![Box::new(NotChipEval {
+                size: WireSize::One,
+                input: 4,
+                output: 5,
+            })],
         ];
-        let mut eval = CircuitEval::new(6,
-                                        HashSet::new(),
-                                        chips,
-                                        Box::new(NullPuzzleEval()),
-                                        CircuitInteraction::new());
+        let mut eval = CircuitEval::new(
+            6,
+            HashSet::new(),
+            chips,
+            Box::new(NullPuzzleEval()),
+            CircuitInteraction::new(),
+        );
         for &inputs in &[(0, 0), (0, 1), (1, 0), (1, 1)] {
             eval.circuit_state_mut().send_behavior(0, inputs.0);
             eval.circuit_state_mut().send_behavior(1, inputs.1);

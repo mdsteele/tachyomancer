@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::PuzzleVerifyView;
+use crate::tachy::font::Align;
+use crate::tachy::geom::{Rect, RectSize};
+use crate::tachy::gui::Resources;
+use crate::tachy::state::{CircuitEval, SensorsEval};
 use cgmath::{Matrix4, Point2};
-use tachy::font::Align;
-use tachy::geom::{Rect, RectSize};
-use tachy::gui::Resources;
-use tachy::state::{CircuitEval, SensorsEval};
 
 //===========================================================================//
 
@@ -38,20 +38,28 @@ pub struct SensorsVerifyView {
 }
 
 impl SensorsVerifyView {
-    pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
-        let rect = Rect::new(right_bottom.x - VIEW_WIDTH,
-                             right_bottom.y - VIEW_HEIGHT,
-                             VIEW_WIDTH,
-                             VIEW_HEIGHT);
+    pub fn new(right_bottom: Point2<i32>) -> Box<dyn PuzzleVerifyView> {
+        let rect = Rect::new(
+            right_bottom.x - VIEW_WIDTH,
+            right_bottom.y - VIEW_HEIGHT,
+            VIEW_WIDTH,
+            VIEW_HEIGHT,
+        );
         Box::new(SensorsVerifyView { rect })
     }
 }
 
 impl PuzzleVerifyView for SensorsVerifyView {
-    fn size(&self) -> RectSize<i32> { RectSize::new(VIEW_WIDTH, VIEW_HEIGHT) }
+    fn size(&self) -> RectSize<i32> {
+        RectSize::new(VIEW_WIDTH, VIEW_HEIGHT)
+    }
 
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-            opt_circuit_eval: Option<&CircuitEval>) {
+    fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        opt_circuit_eval: Option<&CircuitEval>,
+    ) {
         let (lower, upper, num_found) = if let Some(eval) = opt_circuit_eval {
             let eval = eval.puzzle_eval::<SensorsEval>();
             (eval.lower_bound(), eval.upper_bound(), eval.num_goals_found())
@@ -63,21 +71,27 @@ impl PuzzleVerifyView for SensorsVerifyView {
         let left = self.rect.x as f32;
         let top = self.rect.y as f32;
         let font = resources.fonts().roman();
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top),
-                  &format!("Lower: {}", lower));
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top + 30.0),
-                  &format!("Upper: {}", upper));
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top + 60.0),
-                  &format!("Num found: {}", num_found));
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top),
+            &format!("Lower: {}", lower),
+        );
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top + 30.0),
+            &format!("Upper: {}", upper),
+        );
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top + 60.0),
+            &format!("Num found: {}", num_found),
+        );
     }
 }
 

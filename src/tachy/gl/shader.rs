@@ -52,24 +52,31 @@ pub struct Shader {
 }
 
 impl Shader {
-    pub fn new(shader_type: ShaderType, name: &str, code: &[u8])
-               -> Result<Shader, String> {
+    pub fn new(
+        shader_type: ShaderType,
+        name: &str,
+        code: &[u8],
+    ) -> Result<Shader, String> {
         let shader = unsafe {
             let shader = Shader {
                 id: gl::CreateShader(shader_type.to_gl_enum()),
                 phantom: PhantomData,
             };
-            gl::ShaderSource(shader.id,
-                             1,
-                             &(code.as_ptr() as *const GLchar),
-                             &(code.len() as GLint));
+            gl::ShaderSource(
+                shader.id,
+                1,
+                &(code.as_ptr() as *const GLchar),
+                &(code.len() as GLint),
+            );
             gl::CompileShader(shader.id);
             let mut result: GLint = 0;
             gl::GetShaderiv(shader.id, gl::COMPILE_STATUS, &mut result);
             if result != (gl::TRUE as GLint) {
-                return Err(format!("Error compiling {}:\n{}",
-                                   name,
-                                   shader.get_info_log()));
+                return Err(format!(
+                    "Error compiling {}:\n{}",
+                    name,
+                    shader.get_info_log()
+                ));
             }
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
             shader
@@ -92,10 +99,12 @@ impl Shader {
         if length > 0 {
             let mut buffer = vec![0u8; length as usize + 1];
             unsafe {
-                gl::GetShaderInfoLog(self.id,
-                                     buffer.len() as GLsizei,
-                                     ptr::null_mut(),
-                                     buffer.as_mut_ptr() as *mut GLchar);
+                gl::GetShaderInfoLog(
+                    self.id,
+                    buffer.len() as GLsizei,
+                    ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut GLchar,
+                );
                 debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
             }
             String::from_utf8_lossy(&buffer).to_string()

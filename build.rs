@@ -39,12 +39,16 @@ fn main() {
     converter.generate_chip_icons();
     converter.generate_list_icons();
     converter.generate_portraits_texture();
-    converter.svg_to_png(&PathBuf::from("src/tachy/gui/cursor.svg"),
-                         &PathBuf::from("texture/cursor.png"),
-                         icns::PixelFormat::RGBA);
-    converter.svg_to_png(&PathBuf::from("src/tachy/shader/ui.svg"),
-                         &PathBuf::from("texture/ui.png"),
-                         icns::PixelFormat::RGBA);
+    converter.svg_to_png(
+        &PathBuf::from("src/tachy/gui/cursor.svg"),
+        &PathBuf::from("texture/cursor.png"),
+        icns::PixelFormat::RGBA,
+    );
+    converter.svg_to_png(
+        &PathBuf::from("src/tachy/shader/ui.svg"),
+        &PathBuf::from("texture/ui.png"),
+        icns::PixelFormat::RGBA,
+    );
 
     let target = env::var("TARGET").unwrap();
     if target.ends_with("-apple-darwin") {
@@ -82,16 +86,13 @@ impl Converter {
         eprintln!("OUT_DIR={:?}", out_dir);
         let build_script_timestamp =
             fs::metadata("build.rs").unwrap().modified().unwrap();
-        Converter {
-            build_script_timestamp,
-            out_dir,
-        }
+        Converter { build_script_timestamp, out_dir }
     }
 
     fn font_to_texture(&self, font_name: &str) {
         // Check if the output PNG file is already up-to-date:
-        let font_path = PathBuf::from(format!("src/tachy/font/{}.ttf",
-                                              font_name));
+        let font_path =
+            PathBuf::from(format!("src/tachy/font/{}.ttf", font_name));
         let png_relpath = PathBuf::from(format!("font/{}.png", font_name));
         let png_path = self.out_dir.join(&png_relpath);
         if self.is_up_to_date(&png_path, &font_path) {
@@ -110,8 +111,8 @@ impl Converter {
             let glyph = font.glyph(rusttype::Codepoint(b'W' as u32));
             let scaled = glyph.scaled(rusttype::Scale::uniform(y));
             let bounds = scaled.exact_bounding_box().unwrap();
-            let x = ((vmetrics.ascent - vmetrics.descent) / bounds.width()) *
-                y;
+            let x =
+                ((vmetrics.ascent - vmetrics.descent) / bounds.width()) * y;
             rusttype::Scale { x, y }
         };
         let ascent = font.v_metrics(scale).ascent.ceil() as i32;
@@ -124,24 +125,27 @@ impl Converter {
             let positioned =
                 scaled.positioned(rusttype::Point { x: 0.0, y: 0.0 });
             if let Some(bounds) = positioned.pixel_bounding_box() {
-                let xoff = ((codepoint % 16) as i32) *
-                    (GLYPH_HIRES_SIZE as i32) +
-                    (DIST_SPREAD as i32) +
-                    ((GLYPH_HIRES_SIZE as i32) - 2 * (DIST_SPREAD as i32) -
-                         bounds.width()) / 2;
-                let yoff = ((codepoint / 16) as i32) *
-                    (GLYPH_HIRES_SIZE as i32) +
-                    (DIST_SPREAD as i32) +
-                    ascent + bounds.min.y;
+                let xoff = ((codepoint % 16) as i32)
+                    * (GLYPH_HIRES_SIZE as i32)
+                    + (DIST_SPREAD as i32)
+                    + ((GLYPH_HIRES_SIZE as i32)
+                        - 2 * (DIST_SPREAD as i32)
+                        - bounds.width())
+                        / 2;
+                let yoff = ((codepoint / 16) as i32)
+                    * (GLYPH_HIRES_SIZE as i32)
+                    + (DIST_SPREAD as i32)
+                    + ascent
+                    + bounds.min.y;
                 positioned.draw(|x, y, v| {
                     let value = (255.0 * v) as u8;
                     let x = xoff + (x as i32);
                     let y = yoff + (y as i32);
-                    if (x >= 0 && (x as usize) < 16 * GLYPH_HIRES_SIZE) &&
-                        (y >= 0 && (y as usize) < 16 * GLYPH_HIRES_SIZE)
+                    if (x >= 0 && (x as usize) < 16 * GLYPH_HIRES_SIZE)
+                        && (y >= 0 && (y as usize) < 16 * GLYPH_HIRES_SIZE)
                     {
-                        let index = (x as usize) +
-                            (y as usize) * 16 * GLYPH_HIRES_SIZE;
+                        let index = (x as usize)
+                            + (y as usize) * 16 * GLYPH_HIRES_SIZE;
                         hires[index] = value;
                     }
                 });
@@ -150,9 +154,11 @@ impl Converter {
 
         // Write the output PNG file:
         let png_file = File::create(&png_path).unwrap();
-        let mut encoder = png::Encoder::new(png_file,
-                                            16 * GLYPH_HIRES_SIZE as u32,
-                                            16 * GLYPH_HIRES_SIZE as u32);
+        let mut encoder = png::Encoder::new(
+            png_file,
+            16 * GLYPH_HIRES_SIZE as u32,
+            16 * GLYPH_HIRES_SIZE as u32,
+        );
         encoder.set(png::ColorType::Grayscale).set(png::BitDepth::Eight);
         let mut writer = encoder.write_header().unwrap();
         writer.write_image_data(&hires).unwrap();
@@ -171,23 +177,28 @@ impl Converter {
             let svg_name = svg_path.file_stem().unwrap();
             let png_relpath =
                 PathBuf::from("chip").join(svg_name).with_extension("png");
-            let png_path =
-                self.svg_to_png(&svg_path,
-                                &png_relpath,
-                                icns::PixelFormat::Alpha);
+            let png_path = self.svg_to_png(
+                &svg_path,
+                &png_relpath,
+                icns::PixelFormat::Alpha,
+            );
             png_paths.push(png_path);
             icon_names.push(capitalize(svg_name.to_str().unwrap()));
         }
         png_paths.sort();
 
         // Combine icon PNGs into a single texture PNG:
-        self.sprite_images((CHIP_ICON_SIZE, CHIP_ICON_SIZE),
-                           icns::PixelFormat::Alpha,
-                           &png_paths,
-                           (CHIP_ICON_SIZE * CHIP_TEXTURE_COLS,
-                            CHIP_ICON_SIZE * CHIP_TEXTURE_ROWS),
-                           icns::PixelFormat::Gray,
-                           &PathBuf::from("texture/chip_icons.png"));
+        self.sprite_images(
+            (CHIP_ICON_SIZE, CHIP_ICON_SIZE),
+            icns::PixelFormat::Alpha,
+            &png_paths,
+            (
+                CHIP_ICON_SIZE * CHIP_TEXTURE_COLS,
+                CHIP_ICON_SIZE * CHIP_TEXTURE_ROWS,
+            ),
+            icns::PixelFormat::Gray,
+            &PathBuf::from("texture/chip_icons.png"),
+        );
 
         // Generate ChipIcon enum:
         icon_names.sort();
@@ -217,23 +228,28 @@ impl Converter {
             let svg_name = svg_path.file_stem().unwrap();
             let png_relpath =
                 PathBuf::from("listicon").join(svg_name).with_extension("png");
-            let png_path =
-                self.svg_to_png(&svg_path,
-                                &png_relpath,
-                                icns::PixelFormat::Alpha);
+            let png_path = self.svg_to_png(
+                &svg_path,
+                &png_relpath,
+                icns::PixelFormat::Alpha,
+            );
             png_paths.push(png_path);
             icon_names.push(capitalize(svg_name.to_str().unwrap()));
         }
         png_paths.sort();
 
         // Combine icon PNGs into a single texture PNG:
-        self.sprite_images((LIST_ICON_SIZE, LIST_ICON_SIZE),
-                           icns::PixelFormat::Alpha,
-                           &png_paths,
-                           (LIST_ICON_SIZE * LIST_TEXTURE_COLS,
-                            LIST_ICON_SIZE * LIST_TEXTURE_ROWS),
-                           icns::PixelFormat::Gray,
-                           &PathBuf::from("texture/list_icons.png"));
+        self.sprite_images(
+            (LIST_ICON_SIZE, LIST_ICON_SIZE),
+            icns::PixelFormat::Alpha,
+            &png_paths,
+            (
+                LIST_ICON_SIZE * LIST_TEXTURE_COLS,
+                LIST_ICON_SIZE * LIST_TEXTURE_ROWS,
+            ),
+            icns::PixelFormat::Gray,
+            &PathBuf::from("texture/list_icons.png"),
+        );
 
         // Generate ListIcon enum:
         icon_names.sort();
@@ -260,20 +276,25 @@ impl Converter {
             png_paths.push(png_path);
         }
         png_paths.sort();
-        self.sprite_images((PORTRAIT_WIDTH, PORTRAIT_HEIGHT),
-                           icns::PixelFormat::Gray,
-                           &png_paths,
-                           (PORTRAITS_TEXTURE_WIDTH,
-                            PORTRAITS_TEXTURE_HEIGHT),
-                           icns::PixelFormat::Gray,
-                           &PathBuf::from("texture/portraits.png"));
+        self.sprite_images(
+            (PORTRAIT_WIDTH, PORTRAIT_HEIGHT),
+            icns::PixelFormat::Gray,
+            &png_paths,
+            (PORTRAITS_TEXTURE_WIDTH, PORTRAITS_TEXTURE_HEIGHT),
+            icns::PixelFormat::Gray,
+            &PathBuf::from("texture/portraits.png"),
+        );
     }
 
-    fn sprite_images(&self, (png_width, png_height): (usize, usize),
-                     png_format: icns::PixelFormat, png_paths: &[PathBuf],
-                     (texture_width, texture_height): (usize, usize),
-                     texture_format: icns::PixelFormat,
-                     texture_relpath: &Path) {
+    fn sprite_images(
+        &self,
+        (png_width, png_height): (usize, usize),
+        png_format: icns::PixelFormat,
+        png_paths: &[PathBuf],
+        (texture_width, texture_height): (usize, usize),
+        texture_format: icns::PixelFormat,
+        texture_relpath: &Path,
+    ) {
         // Find the latest input timestamp:
         let mut latest_timestamp = self.build_script_timestamp;
         for png_path in png_paths.iter() {
@@ -312,25 +333,30 @@ impl Converter {
             for y in 0..png_height {
                 let src_start = y * png_width;
                 let src_slice = &png_data[src_start..(src_start + png_width)];
-                let dst_start = texture_row * texture_width * png_height +
-                    texture_col * png_width +
-                    y * texture_width;
-                let dst_slice = &mut texture_data[dst_start..
-                                                      (dst_start + png_width)];
+                let dst_start = texture_row * texture_width * png_height
+                    + texture_col * png_width
+                    + y * texture_width;
+                let dst_slice =
+                    &mut texture_data[dst_start..(dst_start + png_width)];
                 dst_slice.copy_from_slice(src_slice);
             }
         }
-        let texture_image = icns::Image::from_data(texture_format,
-                                                   texture_width as u32,
-                                                   texture_height as u32,
-                                                   texture_data)
-            .unwrap();
+        let texture_image = icns::Image::from_data(
+            texture_format,
+            texture_width as u32,
+            texture_height as u32,
+            texture_data,
+        )
+        .unwrap();
         texture_image.write_png(File::create(texture_path).unwrap()).unwrap();
     }
 
-    fn svg_to_png(&self, svg_path: &Path, png_relpath: &Path,
-                  pixel_format: icns::PixelFormat)
-                  -> PathBuf {
+    fn svg_to_png(
+        &self,
+        svg_path: &Path,
+        png_relpath: &Path,
+        pixel_format: icns::PixelFormat,
+    ) -> PathBuf {
         // Check if the output PNG file is already up-to-date:
         let png_path = self.out_dir.join(png_relpath);
         if self.is_up_to_date(&png_path, svg_path) {
@@ -341,15 +367,17 @@ impl Converter {
         self.create_parent_dir(&png_path);
 
         // Convert the SVG to PNG:
-        let svg = nsvg::parse_file(svg_path, nsvg::Units::Pixel, 96.0)
-            .unwrap();
+        let svg =
+            nsvg::parse_file(svg_path, nsvg::Units::Pixel, 96.0).unwrap();
         let (width, height, rgba) = svg.rasterize_to_raw_rgba(1.0).unwrap();
 
-        let mut image = icns::Image::from_data(icns::PixelFormat::RGBA,
-                                               width,
-                                               height,
-                                               rgba)
-            .unwrap();
+        let mut image = icns::Image::from_data(
+            icns::PixelFormat::RGBA,
+            width,
+            height,
+            rgba,
+        )
+        .unwrap();
         if pixel_format != icns::PixelFormat::RGBA {
             image = image.convert_to(pixel_format);
         }

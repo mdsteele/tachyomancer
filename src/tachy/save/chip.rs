@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::CoordsSize;
 use std::collections::HashSet;
 use std::str;
-use tachy::geom::CoordsSize;
 
 //===========================================================================//
 
@@ -226,7 +226,9 @@ pub struct ChipSet {
 }
 
 impl ChipSet {
-    pub fn new() -> ChipSet { ChipSet { ctypes: HashSet::new() } }
+    pub fn new() -> ChipSet {
+        ChipSet { ctypes: HashSet::new() }
+    }
 
     pub fn contains(&self, ctype: ChipType) -> bool {
         match ctype {
@@ -257,7 +259,7 @@ impl ChipSet {
 
 #[cfg(test)]
 mod tests {
-    use super::{CHIP_CATEGORIES, ChipSet, ChipType};
+    use super::{ChipSet, ChipType, CHIP_CATEGORIES};
     use std::u16;
 
     #[test]

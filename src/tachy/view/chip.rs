@@ -17,14 +17,17 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::font::{Align, Font};
+use crate::tachy::geom::{
+    AsFloat, Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
+    Orientation, Rect,
+};
+use crate::tachy::gui::Resources;
+use crate::tachy::save::ChipType;
+use crate::tachy::state::{
+    ChipExt, EditGrid, Interface, PortColor, PortFlow, PortSpec, WireSize,
+};
 use cgmath::Matrix4;
-use tachy::font::{Align, Font};
-use tachy::geom::{AsFloat, Color3, Color4, Coords, CoordsSize, Direction,
-                  MatrixExt, Orientation, Rect};
-use tachy::gui::Resources;
-use tachy::save::ChipType;
-use tachy::state::{ChipExt, EditGrid, Interface, PortColor, PortFlow,
-                   PortSpec, WireSize};
 
 //===========================================================================//
 
@@ -35,16 +38,20 @@ const INTERFACE_LABEL_COLOR: Color4 = Color4::new(0.75, 0.75, 0.75, 1.0);
 /// The margin around chip rects, in grid cell units.
 pub const CHIP_MARGIN: f32 = 0.12;
 
-pub fn chip_grid_rect(chip_coords: Coords, ctype: ChipType,
-                      orient: Orientation)
-                      -> Rect<f32> {
+pub fn chip_grid_rect(
+    chip_coords: Coords,
+    ctype: ChipType,
+    orient: Orientation,
+) -> Rect<f32> {
     Rect::with_size(chip_coords, orient * ctype.size())
         .as_f32()
         .expand(-CHIP_MARGIN)
 }
 
-pub fn interface_grid_rect(iface_coords: Coords, interface: &Interface)
-                           -> Rect<f32> {
+pub fn interface_grid_rect(
+    iface_coords: Coords,
+    interface: &Interface,
+) -> Rect<f32> {
     Rect::with_size(iface_coords, interface.size())
         .as_f32()
         .expand(-CHIP_MARGIN)
@@ -61,8 +68,12 @@ include!(concat!(env!("OUT_DIR"), "/texture/chip_icons.rs"));
 pub struct ChipModel {}
 
 impl ChipModel {
-    pub fn draw_interface(resources: &Resources, grid_matrix: &Matrix4<f32>,
-                          coords: Coords, interface: &Interface) {
+    pub fn draw_interface(
+        resources: &Resources,
+        grid_matrix: &Matrix4<f32>,
+        coords: Coords,
+        interface: &Interface,
+    ) {
         // Draw ports:
         let ports = interface.ports_with_top_left(coords);
         for &(_, ref port) in ports.iter() {
@@ -72,29 +83,37 @@ impl ChipModel {
         // Draw body:
         let size = interface.size();
         let color = Color3::new(0.3, 0.3, 0.3);
-        let rect = Rect::new((coords.x as f32) + CHIP_MARGIN,
-                             (coords.y as f32) + CHIP_MARGIN,
-                             (size.width as f32) - 2.0 * CHIP_MARGIN,
-                             (size.height as f32) - 2.0 * CHIP_MARGIN);
+        let rect = Rect::new(
+            (coords.x as f32) + CHIP_MARGIN,
+            (coords.y as f32) + CHIP_MARGIN,
+            (size.width as f32) - 2.0 * CHIP_MARGIN,
+            (size.height as f32) - 2.0 * CHIP_MARGIN,
+        );
         resources.shaders().solid().fill_rect(grid_matrix, color, rect);
 
         // Draw port labels:
         let font = resources.fonts().roman();
         for &(name, ref port) in ports.iter() {
-            font.draw_style(grid_matrix,
-                            0.25,
-                            Align::MidCenter,
-                            (0.5 + (port.coords.x as f32),
-                             0.5 + (port.coords.y as f32)),
-                            &INTERFACE_LABEL_COLOR,
-                            0.0,
-                            name);
+            font.draw_style(
+                grid_matrix,
+                0.25,
+                Align::MidCenter,
+                (0.5 + (port.coords.x as f32), 0.5 + (port.coords.y as f32)),
+                &INTERFACE_LABEL_COLOR,
+                0.0,
+                name,
+            );
         }
     }
 
-    pub fn draw_chip(resources: &Resources, grid_matrix: &Matrix4<f32>,
-                     coords: Coords, ctype: ChipType, orient: Orientation,
-                     opt_grid: Option<&EditGrid>) {
+    pub fn draw_chip(
+        resources: &Resources,
+        grid_matrix: &Matrix4<f32>,
+        coords: Coords,
+        ctype: ChipType,
+        orient: Orientation,
+        opt_grid: Option<&EditGrid>,
+    ) {
         let size = orient * ctype.size();
 
         for port in ctype.ports(coords, orient) {
@@ -107,15 +126,17 @@ impl ChipModel {
         match ctype {
             ChipType::Const(value) => {
                 let label = value.to_string();
-                let font_size = 0.5 /
-                    ((label.len() as f32) * Font::Roman.ratio()).max(1.0);
-                draw_chip_string(resources,
-                                 &grid_matrix,
-                                 coords,
-                                 size,
-                                 font_size,
-                                 &Color4::ORANGE4,
-                                 &label);
+                let font_size = 0.5
+                    / ((label.len() as f32) * Font::Roman.ratio()).max(1.0);
+                draw_chip_string(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    size,
+                    font_size,
+                    &Color4::ORANGE4,
+                    &label,
+                );
             }
             ChipType::Display => {
                 let mut opt_value: Option<u32> = None;
@@ -127,32 +148,38 @@ impl ChipModel {
                     }
                 }
                 if let Some(value) = opt_value {
-                    draw_chip_string(resources,
-                                     &grid_matrix,
-                                     coords,
-                                     size,
-                                     0.3,
-                                     &Color4::WHITE,
-                                     &format!("{}", value));
+                    draw_chip_string(
+                        resources,
+                        &grid_matrix,
+                        coords,
+                        size,
+                        0.3,
+                        &Color4::WHITE,
+                        &format!("{}", value),
+                    );
                 } else {
-                    draw_chip_string(resources,
-                                     &grid_matrix,
-                                     coords,
-                                     size,
-                                     0.3,
-                                     &Color4::WHITE,
-                                     "Display");
+                    draw_chip_string(
+                        resources,
+                        &grid_matrix,
+                        coords,
+                        size,
+                        0.3,
+                        &Color4::WHITE,
+                        "Display",
+                    );
                 };
             }
             _ => {
                 if icon == ChipIcon::Blank {
-                    draw_chip_string(resources,
-                                     &grid_matrix,
-                                     coords,
-                                     size,
-                                     0.3,
-                                     &Color4::WHITE,
-                                     &format!("{:?}", ctype));
+                    draw_chip_string(
+                        resources,
+                        &grid_matrix,
+                        coords,
+                        size,
+                        0.3,
+                        &Color4::WHITE,
+                        &format!("{:?}", ctype),
+                    );
                 }
             }
         }
@@ -227,9 +254,15 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
 
 fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
     match chip_icon {
-        ChipIcon::Clock | ChipIcon::Delay | ChipIcon::Demux |
-        ChipIcon::Discard | ChipIcon::Filter | ChipIcon::Inc |
-        ChipIcon::Join | ChipIcon::Latest | ChipIcon::Sample => Color3::CYAN4,
+        ChipIcon::Clock
+        | ChipIcon::Delay
+        | ChipIcon::Demux
+        | ChipIcon::Discard
+        | ChipIcon::Filter
+        | ChipIcon::Inc
+        | ChipIcon::Join
+        | ChipIcon::Latest
+        | ChipIcon::Sample => Color3::CYAN4,
         _ => Color3::ORANGE4,
     }
 }
@@ -241,58 +274,78 @@ fn chip_icon_is_fixed(chip_icon: ChipIcon) -> bool {
     }
 }
 
-fn draw_chip_icon(resources: &Resources, grid_matrix: &Matrix4<f32>,
-                  coords: Coords, orient: Orientation, size: CoordsSize,
-                  icon: ChipIcon) {
+fn draw_chip_icon(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    coords: Coords,
+    orient: Orientation,
+    size: CoordsSize,
+    icon: ChipIcon,
+) {
     let width = size.width as f32 - 2.0 * CHIP_MARGIN;
     let height = size.height as f32 - 2.0 * CHIP_MARGIN;
-    let orient = if chip_icon_is_fixed(icon) {
-        Orientation::default()
-    } else {
-        orient
-    };
-    let matrix = grid_matrix *
-        Matrix4::trans2((coords.x as f32) + CHIP_MARGIN,
-                        (coords.y as f32) + CHIP_MARGIN) *
-        Matrix4::scale2(width, height) *
-        Matrix4::trans2(0.5, 0.5) * orient.matrix() *
-        Matrix4::trans2(-0.5, -0.5);
+    let orient =
+        if chip_icon_is_fixed(icon) { Orientation::default() } else { orient };
+    let matrix = grid_matrix
+        * Matrix4::trans2(
+            (coords.x as f32) + CHIP_MARGIN,
+            (coords.y as f32) + CHIP_MARGIN,
+        )
+        * Matrix4::scale2(width, height)
+        * Matrix4::trans2(0.5, 0.5)
+        * orient.matrix()
+        * Matrix4::trans2(-0.5, -0.5);
     let icon_index = icon as u32;
     let icon_color = chip_icon_color(icon);
-    resources.shaders().chip().draw_basic(&matrix,
-                                          icon_index,
-                                          icon_color,
-                                          resources.textures().chip_icons());
+    resources.shaders().chip().draw_basic(
+        &matrix,
+        icon_index,
+        icon_color,
+        resources.textures().chip_icons(),
+    );
 }
 
-fn draw_chip_string(resources: &Resources, grid_matrix: &Matrix4<f32>,
-                    coords: Coords, chip_size: CoordsSize, font_size: f32,
-                    color: &Color4, string: &str) {
+fn draw_chip_string(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    coords: Coords,
+    chip_size: CoordsSize,
+    font_size: f32,
+    color: &Color4,
+    string: &str,
+) {
     let (width, height) = (chip_size.width as f32, chip_size.height as f32);
     let font = resources.fonts().roman();
-    font.draw_style(grid_matrix,
-                    font_size,
-                    Align::MidCenter,
-                    ((coords.x as f32) + 0.5 * width,
-                     (coords.y as f32) + 0.5 * height),
-                    color,
-                    0.0,
-                    string);
+    font.draw_style(
+        grid_matrix,
+        font_size,
+        Align::MidCenter,
+        ((coords.x as f32) + 0.5 * width, (coords.y as f32) + 0.5 * height),
+        color,
+        0.0,
+        string,
+    );
 }
 
-fn draw_port(resources: &Resources, grid_matrix: &Matrix4<f32>,
-             port: &PortSpec) {
+fn draw_port(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    port: &PortSpec,
+) {
     let x = port.coords.x as f32 + 0.5;
     let y = port.coords.y as f32 + 0.5;
-    let matrix = grid_matrix * Matrix4::trans2(x, y) *
-        Matrix4::from_angle_z(port.dir.angle_from_east()) *
-        Matrix4::scale2(0.5, 0.3);
+    let matrix = grid_matrix
+        * Matrix4::trans2(x, y)
+        * Matrix4::from_angle_z(port.dir.angle_from_east())
+        * Matrix4::scale2(0.5, 0.3);
 
     let shader = resources.shaders().port();
     shader.bind();
     shader.set_mvp(&matrix);
-    shader.set_port_flow_and_color(port.flow == PortFlow::Send,
-                                   port.color == PortColor::Event);
+    shader.set_port_flow_and_color(
+        port.flow == PortFlow::Send,
+        port.color == PortColor::Event,
+    );
     shader.set_texture(resources.textures().brushed_metal());
     let width_scale = match port.max_size {
         WireSize::Zero => 0.25,

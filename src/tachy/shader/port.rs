@@ -17,10 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::tachy::geom::Color4;
+use crate::tachy::gl::{
+    Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
+    ShaderUniform, Texture2D, VertexArray, VertexBuffer,
+};
 use cgmath::Matrix4;
-use tachy::geom::Color4;
-use tachy::gl::{Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
-                ShaderUniform, Texture2D, VertexArray, VertexBuffer};
 
 //===========================================================================//
 
@@ -108,7 +110,9 @@ impl PortShader {
         self.port_varray.bind();
     }
 
-    pub fn set_mvp(&self, mvp: &Matrix4<f32>) { self.mvp.set(mvp); }
+    pub fn set_mvp(&self, mvp: &Matrix4<f32>) {
+        self.mvp.set(mvp);
+    }
 
     pub fn set_port_flow_and_color(&self, flow: bool, color: bool) {
         let mut value = 0;

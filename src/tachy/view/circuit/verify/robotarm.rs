@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::PuzzleVerifyView;
+use crate::tachy::font::Align;
+use crate::tachy::geom::{Rect, RectSize};
+use crate::tachy::gui::Resources;
+use crate::tachy::state::{CircuitEval, RobotArmEval};
 use cgmath::{Matrix4, Point2};
-use tachy::font::Align;
-use tachy::geom::{Rect, RectSize};
-use tachy::gui::Resources;
-use tachy::state::{CircuitEval, RobotArmEval};
 
 //===========================================================================//
 
@@ -38,25 +38,35 @@ pub struct RobotArmVerifyView {
 }
 
 impl RobotArmVerifyView {
-    pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
-        let rect = Rect::new(right_bottom.x - VIEW_WIDTH,
-                             right_bottom.y - VIEW_HEIGHT,
-                             VIEW_WIDTH,
-                             VIEW_HEIGHT);
+    pub fn new(right_bottom: Point2<i32>) -> Box<dyn PuzzleVerifyView> {
+        let rect = Rect::new(
+            right_bottom.x - VIEW_WIDTH,
+            right_bottom.y - VIEW_HEIGHT,
+            VIEW_WIDTH,
+            VIEW_HEIGHT,
+        );
         Box::new(RobotArmVerifyView { rect })
     }
 }
 
 impl PuzzleVerifyView for RobotArmVerifyView {
-    fn size(&self) -> RectSize<i32> { RectSize::new(VIEW_WIDTH, VIEW_HEIGHT) }
+    fn size(&self) -> RectSize<i32> {
+        RectSize::new(VIEW_WIDTH, VIEW_HEIGHT)
+    }
 
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-            circuit_eval: Option<&CircuitEval>) {
+    fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        circuit_eval: Option<&CircuitEval>,
+    ) {
         let (pos, deg, cmd) = if let Some(eval) = circuit_eval {
             let eval = eval.puzzle_eval::<RobotArmEval>();
-            (eval.current_position(),
-             eval.current_angle(),
-             eval.last_command())
+            (
+                eval.current_position(),
+                eval.current_angle(),
+                eval.last_command(),
+            )
         } else {
             (0, 0, 0)
         };
@@ -64,21 +74,27 @@ impl PuzzleVerifyView for RobotArmVerifyView {
         let left = self.rect.x as f32;
         let top = self.rect.y as f32;
         let font = resources.fonts().roman();
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top),
-                  &format!("Pos: {}", pos));
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top + 30.0),
-                  &format!("Deg: {}", deg));
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top + 60.0),
-                  &format!("Cmd: {}", cmd));
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top),
+            &format!("Pos: {}", pos),
+        );
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top + 30.0),
+            &format!("Deg: {}", deg),
+        );
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top + 60.0),
+            &format!("Cmd: {}", cmd),
+        );
     }
 }
 

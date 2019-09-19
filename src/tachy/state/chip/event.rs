@@ -17,10 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::data::{AbstractConstraint, ChipData};
 use super::super::eval::{ChipEval, CircuitState};
-use tachy::geom::Direction;
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::data::{AbstractConstraint, ChipData};
+use crate::tachy::geom::Direction;
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -44,8 +44,9 @@ pub struct ClockChipEval {
 }
 
 impl ClockChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), CLOCK_CHIP_DATA.ports.len());
         let chip_eval = ClockChipEval {
             input: slots[0].0,
@@ -96,8 +97,9 @@ pub struct DelayChipEval {
 }
 
 impl DelayChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), DELAY_CHIP_DATA.ports.len());
         let chip_eval = DelayChipEval {
             input: slots[0].0,
@@ -153,8 +155,9 @@ pub struct DemuxChipEval {
 }
 
 impl DemuxChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), DEMUX_CHIP_DATA.ports.len());
         let chip_eval = DemuxChipEval {
             input: slots[0].0,
@@ -198,13 +201,12 @@ pub struct DiscardChipEval {
 }
 
 impl DiscardChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), DISCARD_CHIP_DATA.ports.len());
-        let chip_eval = DiscardChipEval {
-            input: slots[0].0,
-            output: slots[1].0,
-        };
+        let chip_eval =
+            DiscardChipEval { input: slots[0].0, output: slots[1].0 };
         vec![(1, Box::new(chip_eval))]
     }
 }
@@ -239,8 +241,9 @@ pub struct FilterChipEval {
 }
 
 impl FilterChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), FILTER_CHIP_DATA.ports.len());
         let chip_eval = FilterChipEval {
             input: slots[0].0,
@@ -285,8 +288,9 @@ pub struct IncChipEval {
 }
 
 impl IncChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), INC_CHIP_DATA.ports.len());
         let chip_eval = IncChipEval {
             size: slots[2].1,
@@ -331,8 +335,9 @@ pub struct JoinChipEval {
 }
 
 impl JoinChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), JOIN_CHIP_DATA.ports.len());
         let chip_eval = JoinChipEval {
             input1: slots[0].0,
@@ -370,13 +375,12 @@ pub struct LatestChipEval {
 }
 
 impl LatestChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), LATEST_CHIP_DATA.ports.len());
-        let chip_eval = LatestChipEval {
-            input: slots[0].0,
-            output: slots[1].0,
-        };
+        let chip_eval =
+            LatestChipEval { input: slots[0].0, output: slots[1].0 };
         vec![(1, Box::new(chip_eval))]
     }
 }
@@ -411,8 +415,9 @@ pub struct SampleChipEval {
 }
 
 impl SampleChipEval {
-    pub fn new_evals(slots: &[(usize, WireSize)])
-                     -> Vec<(usize, Box<ChipEval>)> {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), SAMPLE_CHIP_DATA.ports.len());
         let chip_eval = SampleChipEval {
             input_e: slots[0].0,

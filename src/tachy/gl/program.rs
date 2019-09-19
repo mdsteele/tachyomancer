@@ -68,10 +68,12 @@ impl ShaderProgram {
         if length > 0 {
             let mut buffer = vec![0u8; length as usize + 1];
             unsafe {
-                gl::GetProgramInfoLog(self.id,
-                                      buffer.len() as GLsizei,
-                                      ptr::null_mut(),
-                                      buffer.as_mut_ptr() as *mut GLchar);
+                gl::GetProgramInfoLog(
+                    self.id,
+                    buffer.len() as GLsizei,
+                    ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut GLchar,
+                );
                 debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
             }
             String::from_utf8_lossy(&buffer).to_string()
@@ -88,8 +90,11 @@ impl ShaderProgram {
         }
     }
 
-    pub fn get_sampler<T>(&self, slot: GLuint, name: &str)
-                          -> Result<ShaderSampler<T>, String>
+    pub fn get_sampler<T>(
+        &self,
+        slot: GLuint,
+        name: &str,
+    ) -> Result<ShaderSampler<T>, String>
     where
         T: SamplerValue,
     {
@@ -98,19 +103,17 @@ impl ShaderProgram {
         Ok(ShaderSampler::new(uniform, slot))
     }
 
-    pub fn get_uniform<T>(&self, name: &str)
-                          -> Result<ShaderUniform<T>, String>
+    pub fn get_uniform<T>(
+        &self,
+        name: &str,
+    ) -> Result<ShaderUniform<T>, String>
     where
         T: UniformValue,
     {
         // Get the location for the uniform (and make sure it exists):
-        let cstring =
-            CString::new(name)
-                .map_err(|err| {
-                             format!("Invalid uniform name {:?}: {}",
-                                     name,
-                                     err)
-                         })?;
+        let cstring = CString::new(name).map_err(|err| {
+            format!("Invalid uniform name {:?}: {}", name, err)
+        })?;
         let loc = unsafe { gl::GetUniformLocation(self.id, cstring.as_ptr()) };
         if loc < 0 {
             return Err(format!("No uniform named {:?}", name));
@@ -123,26 +126,32 @@ impl ShaderProgram {
         unsafe {
             let mut index: GLuint = 0;
             gl::GetUniformIndices(self.id, 1, &cstring.as_ptr(), &mut index);
-            gl::GetActiveUniform(self.id,
-                                 index,
-                                 0,
-                                 ptr::null_mut(),
-                                 &mut array_size,
-                                 &mut gl_type,
-                                 ptr::null_mut());
+            gl::GetActiveUniform(
+                self.id,
+                index,
+                0,
+                ptr::null_mut(),
+                &mut array_size,
+                &mut gl_type,
+                ptr::null_mut(),
+            );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         if gl_type != T::gl_type() {
-            return Err(format!("Uniform {:?} actually has type {}, not {}",
-                               name,
-                               gl_type_name(gl_type),
-                               gl_type_name(T::gl_type())));
+            return Err(format!(
+                "Uniform {:?} actually has type {}, not {}",
+                name,
+                gl_type_name(gl_type),
+                gl_type_name(T::gl_type())
+            ));
         }
         if array_size != T::array_size() {
-            return Err(format!("Uniform {:?} actually has size {}, not {}",
-                               name,
-                               array_size,
-                               T::array_size()));
+            return Err(format!(
+                "Uniform {:?} actually has size {}, not {}",
+                name,
+                array_size,
+                T::array_size()
+            ));
         }
 
         return Ok(ShaderUniform::new(loc));

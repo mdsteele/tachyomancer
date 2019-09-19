@@ -17,12 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use cgmath::{InnerSpace, Point2, vec2};
+use crate::tachy::geom::{AsInt, Coords, DirDelta, Direction, Polygon};
+use crate::tachy::gui::{Sound, Ui};
+use crate::tachy::save::WireShape;
+use crate::tachy::state::{EditGrid, GridChange};
+use cgmath::{vec2, InnerSpace, Point2};
 use std::collections::HashMap;
-use tachy::geom::{AsInt, Coords, DirDelta, Direction, Polygon};
-use tachy::gui::{Sound, Ui};
-use tachy::save::WireShape;
-use tachy::state::{EditGrid, GridChange};
 
 //===========================================================================//
 
@@ -42,27 +42,24 @@ impl Zone {
         let coords: Coords = grid_pt.as_i32_floor();
         let x = grid_pt.x - (coords.x as f32) - 0.5;
         let y = grid_pt.y - (coords.y as f32) - 0.5;
-        if x.abs() <= ZONE_CENTER_SEMI_SIZE &&
-            y.abs() <= ZONE_CENTER_SEMI_SIZE
+        if x.abs() <= ZONE_CENTER_SEMI_SIZE && y.abs() <= ZONE_CENTER_SEMI_SIZE
         {
             Zone::Center(coords)
         } else if x.abs() > y.abs() {
-            Zone::East(if x > 0.0 {
-                           coords
-                       } else {
-                           coords + Direction::West
-                       })
+            Zone::East(if x > 0.0 { coords } else { coords + Direction::West })
         } else {
             Zone::South(if y > 0.0 {
-                            coords
-                        } else {
-                            coords + Direction::North
-                        })
+                coords
+            } else {
+                coords + Direction::North
+            })
         }
     }
 
-    fn along_line(start_grid_pt: Point2<f32>, end_grid_pt: Point2<f32>)
-                  -> Vec<Zone> {
+    fn along_line(
+        start_grid_pt: Point2<f32>,
+        end_grid_pt: Point2<f32>,
+    ) -> Vec<Zone> {
         let delta = end_grid_pt - start_grid_pt;
         let start_zone = Zone::from_grid_pt(start_grid_pt);
         let end_zone = Zone::from_grid_pt(end_grid_pt);
@@ -70,59 +67,55 @@ impl Zone {
         let mut current_zone = start_zone;
         while current_zone != end_zone {
             let polygon = current_zone.polygon();
-            let virtual_end_grid_pt = start_grid_pt +
-                delta.normalize() * (delta.magnitude() + 2.0);
+            let virtual_end_grid_pt =
+                start_grid_pt + delta.normalize() * (delta.magnitude() + 2.0);
             let intersection =
                 polygon.edge_intersection(virtual_end_grid_pt, start_grid_pt);
             let edge = match intersection {
                 Some((edge, _)) => edge,
                 None => {
-                    debug_warn!("no intersection for zone={:?} \
-                                 polygon={:?} start_grid_pt={:?} \
-                                 end_grid_pt={:?} start_zone={:?} \
-                                 end_zone={:?} so_far={:?}",
-                                current_zone,
-                                polygon,
-                                start_grid_pt,
-                                end_grid_pt,
-                                start_zone,
-                                end_zone,
-                                zones);
+                    debug_warn!(
+                        "no intersection for zone={:?} \
+                         polygon={:?} start_grid_pt={:?} \
+                         end_grid_pt={:?} start_zone={:?} \
+                         end_zone={:?} so_far={:?}",
+                        current_zone,
+                        polygon,
+                        start_grid_pt,
+                        end_grid_pt,
+                        start_zone,
+                        end_zone,
+                        zones
+                    );
                     return zones;
                 }
             };
             current_zone = match current_zone {
-                Zone::Center(coords) => {
-                    match edge {
-                        0 => Zone::East(coords),
-                        1 => Zone::South(coords),
-                        2 => Zone::East(coords + Direction::West),
-                        3 => Zone::South(coords + Direction::North),
-                        _ => unreachable!(),
-                    }
-                }
-                Zone::East(coords) => {
-                    match edge {
-                        0 => Zone::South(coords + vec2(1, -1)),
-                        1 => Zone::Center(coords + Direction::East),
-                        2 => Zone::South(coords + Direction::East),
-                        3 => Zone::South(coords),
-                        4 => Zone::Center(coords),
-                        5 => Zone::South(coords + Direction::North),
-                        _ => unreachable!(),
-                    }
-                }
-                Zone::South(coords) => {
-                    match edge {
-                        0 => Zone::East(coords + Direction::West),
-                        1 => Zone::Center(coords),
-                        2 => Zone::East(coords),
-                        3 => Zone::East(coords + Direction::South),
-                        4 => Zone::Center(coords + Direction::South),
-                        5 => Zone::East(coords + vec2(-1, 1)),
-                        _ => unreachable!(),
-                    }
-                }
+                Zone::Center(coords) => match edge {
+                    0 => Zone::East(coords),
+                    1 => Zone::South(coords),
+                    2 => Zone::East(coords + Direction::West),
+                    3 => Zone::South(coords + Direction::North),
+                    _ => unreachable!(),
+                },
+                Zone::East(coords) => match edge {
+                    0 => Zone::South(coords + vec2(1, -1)),
+                    1 => Zone::Center(coords + Direction::East),
+                    2 => Zone::South(coords + Direction::East),
+                    3 => Zone::South(coords),
+                    4 => Zone::Center(coords),
+                    5 => Zone::South(coords + Direction::North),
+                    _ => unreachable!(),
+                },
+                Zone::South(coords) => match edge {
+                    0 => Zone::East(coords + Direction::West),
+                    1 => Zone::Center(coords),
+                    2 => Zone::East(coords),
+                    3 => Zone::East(coords + Direction::South),
+                    4 => Zone::Center(coords + Direction::South),
+                    5 => Zone::East(coords + vec2(-1, 1)),
+                    _ => unreachable!(),
+                },
             };
             zones.push(current_zone);
         }
@@ -137,19 +130,19 @@ impl Zone {
                 Polygon::new(vec![
                     Point2::new(
                         cx + ZONE_CENTER_SEMI_SIZE,
-                        cy - ZONE_CENTER_SEMI_SIZE
+                        cy - ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(
                         cx + ZONE_CENTER_SEMI_SIZE,
-                        cy + ZONE_CENTER_SEMI_SIZE
+                        cy + ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(
                         cx - ZONE_CENTER_SEMI_SIZE,
-                        cy + ZONE_CENTER_SEMI_SIZE
+                        cy + ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(
                         cx - ZONE_CENTER_SEMI_SIZE,
-                        cy - ZONE_CENTER_SEMI_SIZE
+                        cy - ZONE_CENTER_SEMI_SIZE,
                     ),
                 ])
             }
@@ -160,20 +153,20 @@ impl Zone {
                     Point2::new(cx, cy - 0.5),
                     Point2::new(
                         cx + 0.5 - ZONE_CENTER_SEMI_SIZE,
-                        cy - ZONE_CENTER_SEMI_SIZE
+                        cy - ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(
                         cx + 0.5 - ZONE_CENTER_SEMI_SIZE,
-                        cy + ZONE_CENTER_SEMI_SIZE
+                        cy + ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(cx, cy + 0.5),
                     Point2::new(
                         cx - 0.5 + ZONE_CENTER_SEMI_SIZE,
-                        cy + ZONE_CENTER_SEMI_SIZE
+                        cy + ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(
                         cx - 0.5 + ZONE_CENTER_SEMI_SIZE,
-                        cy - ZONE_CENTER_SEMI_SIZE
+                        cy - ZONE_CENTER_SEMI_SIZE,
                     ),
                 ])
             }
@@ -184,20 +177,20 @@ impl Zone {
                     Point2::new(cx - 0.5, cy),
                     Point2::new(
                         cx - ZONE_CENTER_SEMI_SIZE,
-                        cy - 0.5 + ZONE_CENTER_SEMI_SIZE
+                        cy - 0.5 + ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(
                         cx + ZONE_CENTER_SEMI_SIZE,
-                        cy - 0.5 + ZONE_CENTER_SEMI_SIZE
+                        cy - 0.5 + ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(cx + 0.5, cy),
                     Point2::new(
                         cx + ZONE_CENTER_SEMI_SIZE,
-                        cy + 0.5 - ZONE_CENTER_SEMI_SIZE
+                        cy + 0.5 - ZONE_CENTER_SEMI_SIZE,
                     ),
                     Point2::new(
                         cx - ZONE_CENTER_SEMI_SIZE,
-                        cy + 0.5 - ZONE_CENTER_SEMI_SIZE
+                        cy + 0.5 - ZONE_CENTER_SEMI_SIZE,
                     ),
                 ])
             }
@@ -233,12 +226,7 @@ pub struct WireDrag {
 
 impl WireDrag {
     pub fn new() -> WireDrag {
-        WireDrag {
-            last_pt: None,
-            curr: None,
-            changed: false,
-            half_wire: None,
-        }
+        WireDrag { last_pt: None, curr: None, changed: false, half_wire: None }
     }
 
     pub fn half_wire(&self) -> Option<(Coords, Direction)> {
@@ -248,9 +236,12 @@ impl WireDrag {
         }
     }
 
-    pub fn move_to(&mut self, grid_pt: Point2<f32>, ui: &mut Ui,
-                   grid: &mut EditGrid)
-                   -> bool {
+    pub fn move_to(
+        &mut self,
+        grid_pt: Point2<f32>,
+        ui: &mut Ui,
+        grid: &mut EditGrid,
+    ) -> bool {
         let last_pt = self.last_pt;
         self.last_pt = Some(grid_pt);
         let mut drag_result = DragResult::Unchanged;
@@ -302,10 +293,12 @@ impl WireDrag {
                 } else if coords1 + Direction::East == coords2 {
                     self.fragment(coords2, Direction::West, true, grid)
                 } else {
-                    debug_warn!("Pattern (East, Center) does not match \
-                                {:?}, {:?}",
-                                self.curr,
-                                zone);
+                    debug_warn!(
+                        "Pattern (East, Center) does not match \
+                         {:?}, {:?}",
+                        self.curr,
+                        zone
+                    );
                     DragResult::Unchanged
                 }
             }
@@ -315,10 +308,12 @@ impl WireDrag {
                 } else if coords1 + Direction::South == coords2 {
                     self.fragment(coords2, Direction::North, true, grid)
                 } else {
-                    debug_warn!("Pattern (South, Center) does not match \
-                                {:?}, {:?}",
-                                self.curr,
-                                zone);
+                    debug_warn!(
+                        "Pattern (South, Center) does not match \
+                         {:?}, {:?}",
+                        self.curr,
+                        zone
+                    );
                     DragResult::Unchanged
                 }
             }
@@ -328,10 +323,12 @@ impl WireDrag {
                 } else if coords1 + Direction::West == coords2 {
                     self.fragment(coords1, Direction::West, false, grid)
                 } else {
-                    debug_log!("Pattern (Center, East) does not match \
-                                {:?}, {:?}",
-                               self.curr,
-                               zone);
+                    debug_log!(
+                        "Pattern (Center, East) does not match \
+                         {:?}, {:?}",
+                        self.curr,
+                        zone
+                    );
                     DragResult::Unchanged
                 }
             }
@@ -341,10 +338,12 @@ impl WireDrag {
                 } else if coords1 + Direction::North == coords2 {
                     self.fragment(coords1, Direction::North, false, grid)
                 } else {
-                    debug_log!("Pattern (Center, South) does not match \
-                                {:?}, {:?}",
-                               self.curr,
-                               zone);
+                    debug_log!(
+                        "Pattern (Center, South) does not match \
+                         {:?}, {:?}",
+                        self.curr,
+                        zone
+                    );
                     DragResult::Unchanged
                 }
             }
@@ -355,17 +354,21 @@ impl WireDrag {
                     self.turn_left(coords1, Direction::North, grid)
                 } else if coords1 + Direction::East == coords2 {
                     self.turn_left(coords2, Direction::South, grid)
-                } else if coords1 + Direction::East ==
-                           coords2 + Direction::South
+                } else if coords1 + Direction::East
+                    == coords2 + Direction::South
                 {
-                    self.turn_left(coords1 + Direction::East,
-                                   Direction::West,
-                                   grid)
+                    self.turn_left(
+                        coords1 + Direction::East,
+                        Direction::West,
+                        grid,
+                    )
                 } else {
-                    debug_log!("Pattern (East, South) does not match \
-                                {:?}, {:?}",
-                               self.curr,
-                               zone);
+                    debug_log!(
+                        "Pattern (East, South) does not match \
+                         {:?}, {:?}",
+                        self.curr,
+                        zone
+                    );
                     DragResult::Unchanged
                 }
             }
@@ -376,17 +379,21 @@ impl WireDrag {
                     self.turn_left(coords2, Direction::North, grid)
                 } else if coords1 + Direction::West == coords2 {
                     self.turn_left(coords1, Direction::South, grid)
-                } else if coords1 + Direction::South ==
-                           coords2 + Direction::East
+                } else if coords1 + Direction::South
+                    == coords2 + Direction::East
                 {
-                    self.turn_left(coords1 + Direction::South,
-                                   Direction::West,
-                                   grid)
+                    self.turn_left(
+                        coords1 + Direction::South,
+                        Direction::West,
+                        grid,
+                    )
                 } else {
-                    debug_log!("Pattern (South, East) does not match \
-                                {:?}, {:?}",
-                               self.curr,
-                               zone);
+                    debug_log!(
+                        "Pattern (South, East) does not match \
+                         {:?}, {:?}",
+                        self.curr,
+                        zone
+                    );
                     DragResult::Unchanged
                 }
             }
@@ -409,11 +416,13 @@ impl WireDrag {
             (_, Some(dir), Some(Zone::Center(coords))) => {
                 self.half_wire = None;
                 let side = dir.rotate_cw();
-                match (grid.wire_shape_at(coords, -dir),
-                         grid.wire_shape_at(coords, side)) {
-                    (_, Some(WireShape::Straight)) |
-                    (Some(WireShape::TurnLeft), _) |
-                    (Some(WireShape::TurnRight), _) => {
+                match (
+                    grid.wire_shape_at(coords, -dir),
+                    grid.wire_shape_at(coords, side),
+                ) {
+                    (_, Some(WireShape::Straight))
+                    | (Some(WireShape::TurnLeft), _)
+                    | (Some(WireShape::TurnRight), _) => {
                         let _ = self.fragment(coords, dir, false, grid);
                     }
                     (_, _) => {}
@@ -437,14 +446,14 @@ impl WireDrag {
         if !grid.bounds().contains_point(coords) || grid.has_chip_at(coords) {
             return DragResult::Stop;
         }
-        let (old_shape, new_shape) =
-            if grid.wire_shape_at(coords, Direction::East) ==
-                Some(WireShape::Cross)
-            {
-                (WireShape::Cross, WireShape::Straight)
-            } else {
-                (WireShape::Straight, WireShape::Cross)
-            };
+        let (old_shape, new_shape) = if grid
+            .wire_shape_at(coords, Direction::East)
+            == Some(WireShape::Cross)
+        {
+            (WireShape::Cross, WireShape::Straight)
+        } else {
+            (WireShape::Straight, WireShape::Cross)
+        };
         let mut old = HashMap::<(Coords, Direction), WireShape>::new();
         let mut new = HashMap::<(Coords, Direction), WireShape>::new();
         for dir in Direction::all() {
@@ -459,8 +468,11 @@ impl WireDrag {
         }
     }
 
-    fn start_stub(coords: Coords, dir: Direction, grid: &mut EditGrid)
-                  -> DragResult {
+    fn start_stub(
+        coords: Coords,
+        dir: Direction,
+        grid: &mut EditGrid,
+    ) -> DragResult {
         let mut new = HashMap::new();
         new.insert((coords, dir), WireShape::Stub);
         new.insert((coords + dir, -dir), WireShape::Stub);
@@ -472,8 +484,11 @@ impl WireDrag {
         }
     }
 
-    fn remove_stub(coords: Coords, dir: Direction, grid: &mut EditGrid)
-                   -> DragResult {
+    fn remove_stub(
+        coords: Coords,
+        dir: Direction,
+        grid: &mut EditGrid,
+    ) -> DragResult {
         let mut old = HashMap::new();
         old.insert((coords, dir), WireShape::Stub);
         old.insert((coords + dir, -dir), WireShape::Stub);
@@ -485,9 +500,12 @@ impl WireDrag {
         }
     }
 
-    fn turn_left(&mut self, coords: Coords, dir: Direction,
-                 grid: &mut EditGrid)
-                 -> DragResult {
+    fn turn_left(
+        &mut self,
+        coords: Coords,
+        dir: Direction,
+        grid: &mut EditGrid,
+    ) -> DragResult {
         let result1 = self.fragment(coords, dir, true, grid);
         if result1 == DragResult::Stop {
             return result1;
@@ -499,9 +517,13 @@ impl WireDrag {
         return result2;
     }
 
-    fn fragment(&mut self, coords: Coords, dir: Direction, inwards: bool,
-                grid: &mut EditGrid)
-                -> DragResult {
+    fn fragment(
+        &mut self,
+        coords: Coords,
+        dir: Direction,
+        inwards: bool,
+        grid: &mut EditGrid,
+    ) -> DragResult {
         if !grid.bounds().contains_point(coords) || grid.has_chip_at(coords) {
             return DragResult::Stop;
         }
@@ -511,19 +533,23 @@ impl WireDrag {
             debug_assert_eq!(self.half_wire, None);
             Flow::In
         } else if let Some(half) = self.half_wire {
-            debug_assert_eq!(grid.wire_shape_at(coords, half),
-                             Some(WireShape::Stub));
+            debug_assert_eq!(
+                grid.wire_shape_at(coords, half),
+                Some(WireShape::Stub)
+            );
             Flow::From(half - dir)
         } else {
             Flow::Out
         };
         let side = dir.rotate_cw();
-        match (flow,
-                 grid.wire_shape_at(coords, dir),
-                 grid.wire_shape_at(coords, -dir),
-                 grid.wire_shape_at(coords, side)) {
-            (_, None, Some(WireShape::SplitTee), _) |
-            (_, Some(WireShape::Stub), Some(WireShape::SplitTee), _) => {
+        match (
+            flow,
+            grid.wire_shape_at(coords, dir),
+            grid.wire_shape_at(coords, -dir),
+            grid.wire_shape_at(coords, side),
+        ) {
+            (_, None, Some(WireShape::SplitTee), _)
+            | (_, Some(WireShape::Stub), Some(WireShape::SplitTee), _) => {
                 debug_assert_eq!(self.half_wire, None);
                 old.insert((coords, -dir), WireShape::SplitTee);
                 old.insert((coords, side), WireShape::SplitLeft);
@@ -600,11 +626,13 @@ impl WireDrag {
                 new.insert((coords, -side), WireShape::Stub);
                 self.half_wire = Some(-side);
             }
-            (Flow::Out, None, Some(WireShape::TurnLeft), _) |
-            (Flow::Out,
-             Some(WireShape::Stub),
-             Some(WireShape::TurnLeft),
-             _) => {
+            (Flow::Out, None, Some(WireShape::TurnLeft), _)
+            | (
+                Flow::Out,
+                Some(WireShape::Stub),
+                Some(WireShape::TurnLeft),
+                _,
+            ) => {
                 old.insert((coords, -dir), WireShape::TurnLeft);
                 old.insert((coords, -side), WireShape::TurnRight);
                 new.insert((coords, dir), WireShape::SplitRight);
@@ -612,11 +640,13 @@ impl WireDrag {
                 new.insert((coords, -side), WireShape::SplitTee);
                 stub(coords + dir, -dir, grid, &mut old, &mut new);
             }
-            (Flow::Out, None, Some(WireShape::TurnRight), _) |
-            (Flow::Out,
-             Some(WireShape::Stub),
-             Some(WireShape::TurnRight),
-             _) => {
+            (Flow::Out, None, Some(WireShape::TurnRight), _)
+            | (
+                Flow::Out,
+                Some(WireShape::Stub),
+                Some(WireShape::TurnRight),
+                _,
+            ) => {
                 old.insert((coords, -dir), WireShape::TurnRight);
                 old.insert((coords, side), WireShape::TurnLeft);
                 new.insert((coords, dir), WireShape::SplitLeft);
@@ -624,11 +654,13 @@ impl WireDrag {
                 new.insert((coords, side), WireShape::SplitTee);
                 stub(coords + dir, -dir, grid, &mut old, &mut new);
             }
-            (Flow::Out, None, _, Some(WireShape::Straight)) |
-            (Flow::Out,
-             Some(WireShape::Stub),
-             _,
-             Some(WireShape::Straight)) => {
+            (Flow::Out, None, _, Some(WireShape::Straight))
+            | (
+                Flow::Out,
+                Some(WireShape::Stub),
+                _,
+                Some(WireShape::Straight),
+            ) => {
                 old.insert((coords, side), WireShape::Straight);
                 old.insert((coords, -side), WireShape::Straight);
                 new.insert((coords, dir), WireShape::SplitTee);
@@ -663,8 +695,8 @@ impl WireDrag {
             }
             (Flow::From(DirDelta::Same), _, _, _) => {
                 self.half_wire = None;
-                if grid.wire_shape_at(coords + dir, -dir) ==
-                    Some(WireShape::Stub)
+                if grid.wire_shape_at(coords + dir, -dir)
+                    == Some(WireShape::Stub)
                 {
                     old.insert((coords, dir), WireShape::Stub);
                     old.insert((coords + dir, -dir), WireShape::Stub);
@@ -672,34 +704,37 @@ impl WireDrag {
                     return DragResult::Changed;
                 }
             }
-            (Flow::From(DirDelta::Opposite), None, _, _) |
-            (Flow::From(DirDelta::Opposite), Some(WireShape::Stub), _, _) => {
+            (Flow::From(DirDelta::Opposite), None, _, _)
+            | (Flow::From(DirDelta::Opposite), Some(WireShape::Stub), _, _) => {
                 self.half_wire = None;
                 new.insert((coords, dir), WireShape::Straight);
                 new.insert((coords, -dir), WireShape::Straight);
                 stub(coords + dir, -dir, grid, &mut old, &mut new);
                 stub(coords - dir, dir, grid, &mut old, &mut new);
             }
-            (Flow::From(DirDelta::RotateCw), None, _, _) |
-            (Flow::From(DirDelta::RotateCw), Some(WireShape::Stub), _, _) => {
+            (Flow::From(DirDelta::RotateCw), None, _, _)
+            | (Flow::From(DirDelta::RotateCw), Some(WireShape::Stub), _, _) => {
                 self.half_wire = None;
                 new.insert((coords, dir), WireShape::TurnLeft);
                 new.insert((coords, side), WireShape::TurnRight);
                 stub(coords + dir, -dir, grid, &mut old, &mut new);
                 stub(coords + side, -side, grid, &mut old, &mut new);
             }
-            (Flow::From(DirDelta::RotateCcw), None, _, _) |
-            (Flow::From(DirDelta::RotateCcw), Some(WireShape::Stub), _, _) => {
+            (Flow::From(DirDelta::RotateCcw), None, _, _)
+            | (Flow::From(DirDelta::RotateCcw), Some(WireShape::Stub), _, _) =>
+            {
                 self.half_wire = None;
                 new.insert((coords, dir), WireShape::TurnRight);
                 new.insert((coords, -side), WireShape::TurnLeft);
                 stub(coords + dir, -dir, grid, &mut old, &mut new);
                 stub(coords - side, side, grid, &mut old, &mut new);
             }
-            (Flow::From(DirDelta::Opposite),
-             Some(WireShape::TurnLeft),
-             _,
-             _) => {
+            (
+                Flow::From(DirDelta::Opposite),
+                Some(WireShape::TurnLeft),
+                _,
+                _,
+            ) => {
                 self.half_wire = None;
                 old.insert((coords, dir), WireShape::TurnLeft);
                 old.insert((coords, side), WireShape::TurnRight);
@@ -708,10 +743,12 @@ impl WireDrag {
                 new.insert((coords, side), WireShape::SplitTee);
                 new.insert((coords, -dir), WireShape::SplitRight);
             }
-            (Flow::From(DirDelta::Opposite),
-             Some(WireShape::TurnRight),
-             _,
-             _) => {
+            (
+                Flow::From(DirDelta::Opposite),
+                Some(WireShape::TurnRight),
+                _,
+                _,
+            ) => {
                 self.half_wire = None;
                 old.insert((coords, dir), WireShape::TurnRight);
                 old.insert((coords, -side), WireShape::TurnLeft);
@@ -727,18 +764,24 @@ impl WireDrag {
         if grid.try_mutate_provisionally(changes) {
             return DragResult::Changed;
         } else {
-            debug_warn!("WireDrag::split failed: coords={:?}, dir={:?}",
-                        coords,
-                        dir);
+            debug_warn!(
+                "WireDrag::split failed: coords={:?}, dir={:?}",
+                coords,
+                dir
+            );
             self.half_wire = None;
             return DragResult::Stop;
         }
     }
 }
 
-fn stub(coords: Coords, dir: Direction, grid: &EditGrid,
-        old_wires: &mut HashMap<(Coords, Direction), WireShape>,
-        new_wires: &mut HashMap<(Coords, Direction), WireShape>) {
+fn stub(
+    coords: Coords,
+    dir: Direction,
+    grid: &EditGrid,
+    old_wires: &mut HashMap<(Coords, Direction), WireShape>,
+    new_wires: &mut HashMap<(Coords, Direction), WireShape>,
+) {
     if grid.wire_shape_at(coords + dir, -dir) == Some(WireShape::Stub) {
         old_wires.insert((coords + dir, -dir), WireShape::Stub);
     } else {
@@ -751,8 +794,8 @@ fn stub(coords: Coords, dir: Direction, grid: &EditGrid,
 #[cfg(test)]
 mod tests {
     use super::Zone;
+    use crate::tachy::geom::Coords;
     use cgmath::Point2;
-    use tachy::geom::Coords;
 
     #[test]
     fn zone_from_grid_pt_polygon() {
@@ -769,9 +812,10 @@ mod tests {
 
     #[test]
     fn zones_along_line_basic() {
-        assert_eq!(Zone::along_line(Point2::new(2.4, 6.5),
-                                    Point2::new(2.6, 6.5)),
-                   vec![Zone::Center(Coords::new(2, 6))]);
+        assert_eq!(
+            Zone::along_line(Point2::new(2.4, 6.5), Point2::new(2.6, 6.5)),
+            vec![Zone::Center(Coords::new(2, 6))]
+        );
         assert_eq!(
             Zone::along_line(Point2::new(2.4, 6.5), Point2::new(3.6, 6.5)),
             vec![

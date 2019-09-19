@@ -17,56 +17,50 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::super::eval::{CircuitState, EvalScore, PuzzleEval};
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
+use super::iface::{Interface, InterfacePort, InterfacePosition};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
-pub const BEHAVIOR_INTERFACES: &[Interface] = &[
-    Interface {
-        name: "Timer Interface",
-        description: "Connected to a digital timer.",
-        side: Direction::West,
-        pos: InterfacePosition::Right(0),
-        ports: &[
-            InterfacePort {
-                name: "Time",
-                description: "Outputs the current time step.",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Eight,
-            },
-        ],
-    },
-];
+pub const BEHAVIOR_INTERFACES: &[Interface] = &[Interface {
+    name: "Timer Interface",
+    description: "Connected to a digital timer.",
+    side: Direction::West,
+    pos: InterfacePosition::Right(0),
+    ports: &[InterfacePort {
+        name: "Time",
+        description: "Outputs the current time step.",
+        flow: PortFlow::Send,
+        color: PortColor::Behavior,
+        size: WireSize::Eight,
+    }],
+}];
 
-pub const EVENT_INTERFACES: &[Interface] = &[
-    Interface {
-        name: "Timer Interface",
-        description: "Connected to a digital timer.",
-        side: Direction::West,
-        pos: InterfacePosition::Right(0),
-        ports: &[
-            InterfacePort {
-                name: "Time",
-                description: "Outputs the current time step.",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Eight,
-            },
-            InterfacePort {
-                name: "Tick",
-                description: "\
-                    Sends an event at the beginning of each time step.",
-                flow: PortFlow::Send,
-                color: PortColor::Event,
-                size: WireSize::Zero,
-            },
-        ],
-    },
-];
+pub const EVENT_INTERFACES: &[Interface] = &[Interface {
+    name: "Timer Interface",
+    description: "Connected to a digital timer.",
+    side: Direction::West,
+    pos: InterfacePosition::Right(0),
+    ports: &[
+        InterfacePort {
+            name: "Time",
+            description: "Outputs the current time step.",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Eight,
+        },
+        InterfacePort {
+            name: "Tick",
+            description: "\
+                          Sends an event at the beginning of each time step.",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Zero,
+        },
+    ],
+}];
 
 //===========================================================================//
 
@@ -75,8 +69,9 @@ pub struct SandboxBehaviorEval {
 }
 
 impl SandboxBehaviorEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> SandboxBehaviorEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> SandboxBehaviorEval {
         debug_assert_eq!(slots.len(), 1);
         debug_assert_eq!(slots[0].len(), 1);
         SandboxBehaviorEval { timer: slots[0][0].1 }
@@ -84,8 +79,11 @@ impl SandboxBehaviorEval {
 }
 
 impl PuzzleEval for SandboxBehaviorEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         state.send_behavior(self.timer, time_step & 0xff);
         None
     }
@@ -99,20 +97,21 @@ pub struct SandboxEventEval {
 }
 
 impl SandboxEventEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> SandboxEventEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> SandboxEventEval {
         debug_assert_eq!(slots.len(), 1);
         debug_assert_eq!(slots[0].len(), 2);
-        SandboxEventEval {
-            metronome: slots[0][1].1,
-            timer: slots[0][0].1,
-        }
+        SandboxEventEval { metronome: slots[0][1].1, timer: slots[0][0].1 }
     }
 }
 
 impl PuzzleEval for SandboxEventEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         state.send_event(self.metronome, 0);
         state.send_behavior(self.timer, time_step & 0xff);
         None

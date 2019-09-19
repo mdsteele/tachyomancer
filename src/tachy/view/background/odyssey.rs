@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::BackgroundView;
-use cgmath::{self, Deg, Matrix4, Point3, SquareMatrix, Vector3, vec3};
+use crate::tachy::geom::{Color3, RectSize};
+use crate::tachy::gl::{Depth, Model, ModelBuilder};
+use crate::tachy::gui::{Event, Resources, Ui};
+use cgmath::{self, vec3, Deg, Matrix4, Point3, SquareMatrix, Vector3};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tachy::geom::{Color3, RectSize};
-use tachy::gl::{Depth, Model, ModelBuilder};
-use tachy::gui::{Event, Resources, Ui};
 
 //===========================================================================//
 
@@ -45,16 +45,20 @@ impl OdysseyBackgroundView {
         let p_matrix = cgmath::perspective(Deg(45.0), aspect, 0.1, 1000.0);
 
         let mut planet = ModelBuilder::new();
-        planet.sphere(Point3::new(0.0, 0.0, 0.0),
-                      PLANET_RADIUS,
-                      24,
-                      Color3::WHITE);
+        planet.sphere(
+            Point3::new(0.0, 0.0, 0.0),
+            PLANET_RADIUS,
+            24,
+            Color3::WHITE,
+        );
 
         let mut starfield = ModelBuilder::new();
-        starfield.plane(Point3::new(0.0, 0.0, -100.0),
-                        RectSize::new(300.0, 300.0),
-                        Vector3::unit_z(),
-                        Color3::WHITE);
+        starfield.plane(
+            Point3::new(0.0, 0.0, -100.0),
+            RectSize::new(300.0, 300.0),
+            Vector3::unit_z(),
+            Color3::WHITE,
+        );
 
         OdysseyBackgroundView {
             p_matrix,
@@ -68,28 +72,34 @@ impl OdysseyBackgroundView {
 impl BackgroundView for OdysseyBackgroundView {
     fn draw(&self, resources: &Resources) {
         let _depth = Depth::new();
-        let v_matrix = Matrix4::look_at(Point3::new(0.0, 0.0, 100.0),
-                                        Point3::new(0.0, 0.0, 0.0),
-                                        Vector3::unit_y());
+        let v_matrix = Matrix4::look_at(
+            Point3::new(0.0, 0.0, 100.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Vector3::unit_y(),
+        );
         let light_dir_world_space = Vector3::new(-3.0, 3.0, 10.0);
 
-        let m_matrix = Matrix4::from_translation(vec3(-38.0, -34.0, 0.0)) *
-            Matrix4::from_angle_x(PLANET_TILT_X) *
-            Matrix4::from_angle_z(PLANET_TILT_Z) *
-            Matrix4::from_angle_y(Deg(-0.1) * (self.planet_rotation as f32));
-        resources.shaders().scene().render(&self.p_matrix,
-                                           &v_matrix,
-                                           light_dir_world_space,
-                                           &m_matrix,
-                                           resources.textures().red_planet(),
-                                           &self.planet_model);
+        let m_matrix = Matrix4::from_translation(vec3(-38.0, -34.0, 0.0))
+            * Matrix4::from_angle_x(PLANET_TILT_X)
+            * Matrix4::from_angle_z(PLANET_TILT_Z)
+            * Matrix4::from_angle_y(Deg(-0.1) * (self.planet_rotation as f32));
+        resources.shaders().scene().render(
+            &self.p_matrix,
+            &v_matrix,
+            light_dir_world_space,
+            &m_matrix,
+            resources.textures().red_planet(),
+            &self.planet_model,
+        );
 
-        resources.shaders().scene().render(&self.p_matrix,
-                                           &v_matrix,
-                                           light_dir_world_space,
-                                           &Matrix4::identity(),
-                                           resources.textures().starfield(),
-                                           &self.starfield_model);
+        resources.shaders().scene().render(
+            &self.p_matrix,
+            &v_matrix,
+            light_dir_world_space,
+            &Matrix4::identity(),
+            resources.textures().starfield(),
+            &self.starfield_model,
+        );
     }
 
     fn on_event(&mut self, event: &Event, ui: &mut Ui) {

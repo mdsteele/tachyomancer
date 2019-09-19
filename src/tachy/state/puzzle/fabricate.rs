@@ -17,14 +17,15 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::eval::{
+    CircuitState, EvalError, EvalScore, FabricationEval, PuzzleEval,
+};
 use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::shared;
-use super::super::eval::{CircuitState, EvalError, EvalScore, FabricationEval,
-                         PuzzleEval};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 use std::u32;
 use std::u64;
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -34,47 +35,41 @@ pub const XOR_INTERFACES: &[Interface] = &[
         description: "First input (0 or 1).",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In1",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In1",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "In2",
         description: "Second input (0 or 1).",
         side: Direction::South,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In2",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In2",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "Out",
         description: "\
-            Should be 1 if exactly one input is 1.\n\
-            Should be 0 if the inputs are both 0 or both 1.",
+                      Should be 1 if exactly one input is 1.\n\
+                      Should be 0 if the inputs are both 0 or both 1.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
 ];
 
@@ -87,8 +82,9 @@ pub struct FabricateXorEval {
 }
 
 impl FabricateXorEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> FabricateXorEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> FabricateXorEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -104,10 +100,15 @@ impl FabricateXorEval {
 }
 
 impl PuzzleEval for FabricateXorEval {
-    fn seconds_per_time_step(&self) -> f64 { 0.2 }
+    fn seconds_per_time_step(&self) -> f64 {
+        0.2
+    }
 
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         if time_step >= 4 {
             Some(EvalScore::WireLength)
         } else {
@@ -117,8 +118,11 @@ impl PuzzleEval for FabricateXorEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let input1 = state.recv_behavior(self.input1_wire).0;
         let input2 = state.recv_behavior(self.input2_wire).0;
         let expected = input1 ^ input2;
@@ -128,12 +132,11 @@ impl PuzzleEval for FabricateXorEval {
             let error = EvalError {
                 time_step,
                 port: Some(self.output_port),
-                message: format!("Expected output {} for inputs {} and {}, \
-                                  but output was {}",
-                                 expected,
-                                 input1,
-                                 input2,
-                                 actual),
+                message: format!(
+                    "Expected output {} for inputs {} and {}, \
+                     but output was {}",
+                    expected, input1, input2, actual
+                ),
             };
             vec![error]
         } else {
@@ -151,7 +154,9 @@ impl FabricationEval for FabricateXorEval {
         &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//
@@ -215,8 +220,9 @@ pub struct FabricateMulEval {
 }
 
 impl FabricateMulEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> FabricateMulEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> FabricateMulEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -232,8 +238,11 @@ impl FabricateMulEval {
 }
 
 impl PuzzleEval for FabricateMulEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         let expected = FabricateMulEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected.len() {
@@ -246,8 +255,11 @@ impl PuzzleEval for FabricateMulEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let input1 = state.recv_behavior(self.input1_wire).0;
         let input2 = state.recv_behavior(self.input2_wire).0;
         let expected = input1 * input2;
@@ -257,12 +269,11 @@ impl PuzzleEval for FabricateMulEval {
             let error = EvalError {
                 time_step,
                 port: Some(self.output_port),
-                message: format!("Expected output {} for inputs {} and {}, \
-                                  but output was {}",
-                                 expected,
-                                 input1,
-                                 input2,
-                                 actual),
+                message: format!(
+                    "Expected output {} for inputs {} and {}, \
+                     but output was {}",
+                    expected, input1, input2, actual
+                ),
             };
             vec![error]
         } else {
@@ -292,7 +303,9 @@ impl FabricationEval for FabricateMulEval {
         ]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//
@@ -303,30 +316,26 @@ pub const HALVE_INTERFACES: &[Interface] = &[
         description: "Input (from 0 to 15).",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
     Interface {
         name: "Out",
         description: "Should be half the value of the input, rounded down.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
 ];
 
@@ -338,8 +347,9 @@ pub struct FabricateHalveEval {
 }
 
 impl FabricateHalveEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> FabricateHalveEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> FabricateHalveEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -353,8 +363,11 @@ impl FabricateHalveEval {
 }
 
 impl PuzzleEval for FabricateHalveEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         let expected = FabricateHalveEval::expected_table_values();
         let start = (time_step as usize) * 2;
         if start >= expected.len() {
@@ -365,8 +378,11 @@ impl PuzzleEval for FabricateHalveEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let input = state.recv_behavior(self.input_wire).0;
         let expected = input >> 1;
         let actual = state.recv_behavior(self.output_wire).0;
@@ -375,11 +391,11 @@ impl PuzzleEval for FabricateHalveEval {
             let error = EvalError {
                 time_step,
                 port: Some(self.output_port),
-                message: format!("Expected output {} for input {}, but output \
-                                  was {}",
-                                 expected,
-                                 input,
-                                 actual),
+                message: format!(
+                    "Expected output {} for input {}, but output \
+                     was {}",
+                    expected, input, actual
+                ),
             };
             vec![error]
         } else {
@@ -389,7 +405,9 @@ impl PuzzleEval for FabricateHalveEval {
 }
 
 impl FabricationEval for FabricateHalveEval {
-    fn table_column_names() -> &'static [&'static str] { &["In", "Out"] }
+    fn table_column_names() -> &'static [&'static str] {
+        &["In", "Out"]
+    }
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn expected_table_values() -> &'static [u64] {
@@ -397,7 +415,9 @@ impl FabricationEval for FabricateHalveEval {
           8, 4, 9, 4, 10, 5, 11, 5, 12, 6, 13, 6, 14, 7, 15, 7]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//
@@ -408,47 +428,42 @@ pub const INC_INTERFACES: &[Interface] = &[
         description: "Input events arrive here.",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "InE",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Event,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "InE",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Four,
+        }],
     },
     Interface {
         name: "InB",
         description: "Provides the value that should be added to each event.",
         side: Direction::South,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "InB",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "InB",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
     Interface {
         name: "Out",
-        description: "\
-            Whenever an input event arrives, send an event here with the sum \
-            of the two input values.",
+        description:
+            "\
+             Whenever an input event arrives, send an event here with the sum \
+             of the two input values.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Event,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Event,
+            size: WireSize::Four,
+        }],
     },
 ];
 
@@ -462,8 +477,9 @@ pub struct FabricateIncEval {
 }
 
 impl FabricateIncEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> FabricateIncEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> FabricateIncEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -480,8 +496,11 @@ impl FabricateIncEval {
 }
 
 impl PuzzleEval for FabricateIncEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         self.has_received_output_event = false;
         let expected = FabricateIncEval::expected_table_values();
         let start = (time_step as usize) * 3;
@@ -497,8 +516,11 @@ impl PuzzleEval for FabricateIncEval {
         }
     }
 
-    fn end_cycle(&mut self, time_step: u32, state: &CircuitState)
-                 -> Vec<EvalError> {
+    fn end_cycle(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let expected_table = FabricateIncEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected_table.len() {
@@ -512,14 +534,21 @@ impl PuzzleEval for FabricateIncEval {
 
         let mut errors = Vec::new();
         shared::end_cycle_check_event_output(
-            opt_actual_output, expected_output,
-            &mut self.has_received_output_event, self.output_port, time_step,
-            &mut errors);
+            opt_actual_output,
+            expected_output,
+            &mut self.has_received_output_event,
+            self.output_port,
+            time_step,
+            &mut errors,
+        );
         return errors;
     }
 
-    fn end_time_step(&mut self, time_step: u32, _state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        _state: &CircuitState,
+    ) -> Vec<EvalError> {
         let expected_table = FabricateIncEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected_table.len() {
@@ -529,8 +558,12 @@ impl PuzzleEval for FabricateIncEval {
 
         let mut errors = Vec::new();
         shared::end_time_step_check_event_output(
-            expected_output, self.has_received_output_event, self.output_port,
-            time_step, &mut errors);
+            expected_output,
+            self.has_received_output_event,
+            self.output_port,
+            time_step,
+            &mut errors,
+        );
         return errors;
     }
 }
@@ -554,7 +587,9 @@ impl FabricationEval for FabricateIncEval {
         ]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//

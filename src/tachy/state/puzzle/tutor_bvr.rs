@@ -17,14 +17,15 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::eval::{
+    CircuitState, EvalError, EvalScore, FabricationEval, PuzzleEval,
+};
 use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::shared::TutorialBubblePosition;
-use super::super::eval::{CircuitState, EvalError, EvalScore, FabricationEval,
-                         PuzzleEval};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 use std::u32;
 use std::u64;
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
@@ -34,59 +35,58 @@ pub const OR_INTERFACES: &[Interface] = &[
         description: "First input (0 or 1).",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In1",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In1",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "In2",
         description: "Second input (0 or 1).",
         side: Direction::South,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In2",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In2",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "Out",
         description: "\
-            Should be 1 if either input is 1.\n\
-            Should be 0 if both inputs are 0.",
+                      Should be 1 if either input is 1.\n\
+                      Should be 0 if both inputs are 0.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
 ];
 
-pub const OR_BUBBLES: &[(TutorialBubblePosition, &str)] =
-    &[
-        (TutorialBubblePosition::PartsTray,
-         "Drag chips from the parts\ntray onto the board."),
-        (TutorialBubblePosition::Bounds(Direction::North),
-         "Drag between board squares to\ncreate wires between chip ports."),
-        (TutorialBubblePosition::ControlsTray,
-         "When you're ready, press\nthe play button to test\nyour design."),
-    ];
+pub const OR_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
+    (
+        TutorialBubblePosition::PartsTray,
+        "Drag chips from the parts\ntray onto the board.",
+    ),
+    (
+        TutorialBubblePosition::Bounds(Direction::North),
+        "Drag between board squares to\ncreate wires between chip ports.",
+    ),
+    (
+        TutorialBubblePosition::ControlsTray,
+        "When you're ready, press\nthe play button to test\nyour design.",
+    ),
+];
 
 pub struct TutorialOrEval {
     table_values: Vec<u64>,
@@ -97,8 +97,9 @@ pub struct TutorialOrEval {
 }
 
 impl TutorialOrEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> TutorialOrEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> TutorialOrEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -114,10 +115,15 @@ impl TutorialOrEval {
 }
 
 impl PuzzleEval for TutorialOrEval {
-    fn seconds_per_time_step(&self) -> f64 { 0.2 }
+    fn seconds_per_time_step(&self) -> f64 {
+        0.2
+    }
 
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         if time_step >= 4 {
             Some(EvalScore::WireLength)
         } else {
@@ -127,8 +133,11 @@ impl PuzzleEval for TutorialOrEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let input1 = state.recv_behavior(self.input1_wire).0;
         let input2 = state.recv_behavior(self.input2_wire).0;
         let expected = input1 | input2;
@@ -138,12 +147,11 @@ impl PuzzleEval for TutorialOrEval {
             let error = EvalError {
                 time_step,
                 port: Some(self.output_port),
-                message: format!("Expected output {} for inputs {} and {}, \
-                                  but output was {}",
-                                 expected,
-                                 input1,
-                                 input2,
-                                 actual),
+                message: format!(
+                    "Expected output {} for inputs {} and {}, \
+                     but output was {}",
+                    expected, input1, input2, actual
+                ),
             };
             vec![error]
         } else {
@@ -161,7 +169,9 @@ impl FabricationEval for TutorialOrEval {
         &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//
@@ -172,45 +182,39 @@ pub const MUX_INTERFACES: &[Interface] = &[
         description: "The input to use when the control value is 0.",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In0",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In0",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "In1",
         description: "The input to use when the control value is 1.",
         side: Direction::South,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In1",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In1",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "Ctrl",
         description: "Indicates which input should be sent to the output.",
         side: Direction::North,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Ctrl",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Ctrl",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
     Interface {
         name: "Out",
@@ -218,26 +222,27 @@ pub const MUX_INTERFACES: &[Interface] = &[
                       of $*In1$* if $*Ctrl$* is 1.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::One,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
     },
 ];
 
-pub const MUX_BUBBLES: &[(TutorialBubblePosition, &str)] =
-    &[
-        (TutorialBubblePosition::Bounds(Direction::North),
-         "Drag sideways from a wire to split it."),
-        (TutorialBubblePosition::Bounds(Direction::South),
-         "Perpendicular wires can cross over each other.  Click on a \
-          crossing to toggle whether the wires are connected."),
-    ];
+pub const MUX_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
+    (
+        TutorialBubblePosition::Bounds(Direction::North),
+        "Drag sideways from a wire to split it.",
+    ),
+    (
+        TutorialBubblePosition::Bounds(Direction::South),
+        "Perpendicular wires can cross over each other.  Click on a \
+         crossing to toggle whether the wires are connected.",
+    ),
+];
 
 pub struct TutorialMuxEval {
     table_values: Vec<u64>,
@@ -249,8 +254,9 @@ pub struct TutorialMuxEval {
 }
 
 impl TutorialMuxEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> TutorialMuxEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> TutorialMuxEval {
         debug_assert_eq!(slots.len(), 4);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -268,8 +274,11 @@ impl TutorialMuxEval {
 }
 
 impl PuzzleEval for TutorialMuxEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         let expected = TutorialMuxEval::expected_table_values();
         let start = (time_step as usize) * 4;
         if start >= expected.len() {
@@ -283,8 +292,11 @@ impl PuzzleEval for TutorialMuxEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let input0 = state.recv_behavior(self.input0_wire).0;
         let input1 = state.recv_behavior(self.input1_wire).0;
         let control = state.recv_behavior(self.control_wire).0;
@@ -295,13 +307,11 @@ impl PuzzleEval for TutorialMuxEval {
             let error = EvalError {
                 time_step,
                 port: Some(self.output_port),
-                message: format!("Expected output {} for inputs {} and {} \
-                                  with control {}, but output was {}",
-                                 expected,
-                                 input0,
-                                 input1,
-                                 control,
-                                 actual),
+                message: format!(
+                    "Expected output {} for inputs {} and {} \
+                     with control {}, but output was {}",
+                    expected, input0, input1, control, actual
+                ),
             };
             vec![error]
         } else {
@@ -329,7 +339,9 @@ impl FabricationEval for TutorialMuxEval {
         ]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//
@@ -340,58 +352,56 @@ pub const ADD_INTERFACES: &[Interface] = &[
         description: "First input (from 0 to 15).",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In1",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In1",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
     Interface {
         name: "In2",
         description: "Second input (from 0 to 15).",
         side: Direction::South,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In2",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In2",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
     Interface {
         name: "Out",
-        description: "\
-            Should be the sum of the two inputs (which will never be more \
-            than 15 for this task).",
+        description:
+            "\
+             Should be the sum of the two inputs (which will never be more \
+             than 15 for this task).",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::Four,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::Four,
+        }],
     },
 ];
 
-pub const ADD_BUBBLES: &[(TutorialBubblePosition, &str)] =
-    &[
-        (TutorialBubblePosition::Bounds(Direction::North),
-         "Drag the edges of the board to resize it."),
-        (TutorialBubblePosition::Bounds(Direction::South),
-         "Drag from any grid cell corner in the board to select part of the \
-          circuit and cut/copy/paste."),
-    ];
+pub const ADD_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
+    (
+        TutorialBubblePosition::Bounds(Direction::North),
+        "Drag the edges of the board to resize it.",
+    ),
+    (
+        TutorialBubblePosition::Bounds(Direction::South),
+        "Drag from any grid cell corner in the board to select part of the \
+         circuit and cut/copy/paste.",
+    ),
+];
 
 pub struct TutorialAddEval {
     table_values: Vec<u64>,
@@ -402,8 +412,9 @@ pub struct TutorialAddEval {
 }
 
 impl TutorialAddEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>)
-               -> TutorialAddEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> TutorialAddEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
@@ -419,8 +430,11 @@ impl TutorialAddEval {
 }
 
 impl PuzzleEval for TutorialAddEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         let expected = TutorialAddEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected.len() {
@@ -433,8 +447,11 @@ impl PuzzleEval for TutorialAddEval {
         }
     }
 
-    fn end_time_step(&mut self, time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
         let input1 = state.recv_behavior(self.input1_wire).0;
         let input2 = state.recv_behavior(self.input2_wire).0;
         let expected = input1 + input2;
@@ -444,12 +461,11 @@ impl PuzzleEval for TutorialAddEval {
             let error = EvalError {
                 time_step,
                 port: Some(self.output_port),
-                message: format!("Expected output {} for inputs {} and {}, \
-                                  but output was {}",
-                                 expected,
-                                 input1,
-                                 input2,
-                                 actual),
+                message: format!(
+                    "Expected output {} for inputs {} and {}, \
+                     but output was {}",
+                    expected, input1, input2, actual
+                ),
             };
             vec![error]
         } else {
@@ -478,7 +494,9 @@ impl FabricationEval for TutorialAddEval {
         ]
     }
 
-    fn table_values(&self) -> &[u64] { &self.table_values }
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
 }
 
 //===========================================================================//

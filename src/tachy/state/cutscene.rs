@@ -18,10 +18,10 @@
 // +--------------------------------------------------------------------------+
 
 use super::converse::Portrait;
+use crate::tachy::geom::Color3;
+use crate::tachy::gui::Sound;
 use std::collections::VecDeque;
 use std::mem;
-use tachy::geom::Color3;
-use tachy::gui::Sound;
 
 //===========================================================================//
 
@@ -70,8 +70,12 @@ fn intro_cutscene() -> CutsceneScript {
 //===========================================================================//
 
 pub trait Theater {
-    fn add_talk(&mut self, portrait: Portrait, pos: (i32, i32), format: &str)
-                -> i32;
+    fn add_talk(
+        &mut self,
+        portrait: Portrait,
+        pos: (i32, i32),
+        format: &str,
+    ) -> i32;
 
     fn talk_is_done(&self, tag: i32) -> bool;
 
@@ -89,11 +93,17 @@ pub struct CutsceneScript {
 }
 
 impl CutsceneScript {
-    fn new(node: SceneNode) -> CutsceneScript { CutsceneScript { node } }
+    fn new(node: SceneNode) -> CutsceneScript {
+        CutsceneScript { node }
+    }
 
-    pub fn is_paused(&self) -> bool { self.node.is_paused() }
+    pub fn is_paused(&self) -> bool {
+        self.node.is_paused()
+    }
 
-    pub fn unpause(&mut self) { self.node.unpause() }
+    pub fn unpause(&mut self) {
+        self.node.unpause()
+    }
 
     pub fn skip<T: Theater>(&mut self, theater: &mut T) {
         self.node.skip(theater);
@@ -107,10 +117,10 @@ impl CutsceneScript {
 //===========================================================================//
 
 mod sn {
-    use super::{SceneNode, TalkPhase};
     use super::super::converse::Portrait;
-    use tachy::geom::Color3;
-    use tachy::gui::Sound;
+    use super::{SceneNode, TalkPhase};
+    use crate::tachy::geom::Color3;
+    use crate::tachy::gui::Sound;
 
     pub(super) fn seq(nodes: Vec<SceneNode>) -> SceneNode {
         SceneNode::Seq(nodes.into())
@@ -128,13 +138,17 @@ mod sn {
         SceneNode::Sound(sound, false)
     }
 
-    pub(super) fn talk(portrait: Portrait, pos: (i32, i32),
-                       format: &'static str)
-                       -> SceneNode {
+    pub(super) fn talk(
+        portrait: Portrait,
+        pos: (i32, i32),
+        format: &'static str,
+    ) -> SceneNode {
         SceneNode::Talk(TalkPhase::Unstarted(portrait, pos, format))
     }
 
-    pub(super) fn wait(seconds: f64) -> SceneNode { SceneNode::Wait(seconds) }
+    pub(super) fn wait(seconds: f64) -> SceneNode {
+        SceneNode::Wait(seconds)
+    }
 }
 
 //===========================================================================//
@@ -216,9 +230,9 @@ impl SceneNode {
             }
             &mut SceneNode::Talk(ref mut phase) => {
                 match *phase {
-                    TalkPhase::Active(tag) |
-                    TalkPhase::Paused(tag) |
-                    TalkPhase::Cleanup(tag) => theater.remove_talk(tag),
+                    TalkPhase::Active(tag)
+                    | TalkPhase::Paused(tag)
+                    | TalkPhase::Cleanup(tag) => theater.remove_talk(tag),
                     _ => {}
                 }
                 *phase = TalkPhase::Finished;
@@ -229,16 +243,17 @@ impl SceneNode {
         }
     }
 
-    fn tick<T: Theater>(&mut self, elapsed: f64, theater: &mut T)
-                        -> Option<f64> {
+    fn tick<T: Theater>(
+        &mut self,
+        elapsed: f64,
+        theater: &mut T,
+    ) -> Option<f64> {
         match self {
             &mut SceneNode::Seq(ref mut nodes) => {
                 let mut remaining = elapsed;
                 while !nodes.is_empty() {
-                    if let Some(remain) = nodes
-                        .front_mut()
-                        .unwrap()
-                        .tick(remaining, theater)
+                    if let Some(remain) =
+                        nodes.front_mut().unwrap().tick(remaining, theater)
                     {
                         remaining = remain;
                         nodes.pop_front();
@@ -274,28 +289,26 @@ impl SceneNode {
                 }
                 Some(elapsed)
             }
-            &mut SceneNode::Talk(ref mut phase) => {
-                match *phase {
-                    TalkPhase::Unstarted(portrait, pos, format) => {
-                        let tag = theater.add_talk(portrait, pos, format);
-                        *phase = TalkPhase::Active(tag);
-                        None
-                    }
-                    TalkPhase::Active(tag) => {
-                        if theater.talk_is_done(tag) {
-                            *phase = TalkPhase::Paused(tag);
-                        }
-                        None
-                    }
-                    TalkPhase::Paused(_) => None,
-                    TalkPhase::Cleanup(tag) => {
-                        theater.remove_talk(tag);
-                        *phase = TalkPhase::Finished;
-                        Some(elapsed)
-                    }
-                    TalkPhase::Finished => Some(elapsed),
+            &mut SceneNode::Talk(ref mut phase) => match *phase {
+                TalkPhase::Unstarted(portrait, pos, format) => {
+                    let tag = theater.add_talk(portrait, pos, format);
+                    *phase = TalkPhase::Active(tag);
+                    None
                 }
-            }
+                TalkPhase::Active(tag) => {
+                    if theater.talk_is_done(tag) {
+                        *phase = TalkPhase::Paused(tag);
+                    }
+                    None
+                }
+                TalkPhase::Paused(_) => None,
+                TalkPhase::Cleanup(tag) => {
+                    theater.remove_talk(tag);
+                    *phase = TalkPhase::Finished;
+                    Some(elapsed)
+                }
+                TalkPhase::Finished => Some(elapsed),
+            },
             &mut SceneNode::Wait(ref mut duration) => {
                 if *duration > elapsed {
                     *duration -= elapsed;

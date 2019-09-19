@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::PuzzleVerifyView;
+use crate::tachy::font::Align;
+use crate::tachy::geom::{Rect, RectSize};
+use crate::tachy::gui::Resources;
+use crate::tachy::state::{CircuitEval, LanderEval};
 use cgmath::{Matrix4, Point2};
-use tachy::font::Align;
-use tachy::geom::{Rect, RectSize};
-use tachy::gui::Resources;
-use tachy::state::{CircuitEval, LanderEval};
 
 //===========================================================================//
 
@@ -38,25 +38,35 @@ pub struct LanderVerifyView {
 }
 
 impl LanderVerifyView {
-    pub fn new(right_bottom: Point2<i32>) -> Box<PuzzleVerifyView> {
-        let rect = Rect::new(right_bottom.x - VIEW_WIDTH,
-                             right_bottom.y - VIEW_HEIGHT,
-                             VIEW_WIDTH,
-                             VIEW_HEIGHT);
+    pub fn new(right_bottom: Point2<i32>) -> Box<dyn PuzzleVerifyView> {
+        let rect = Rect::new(
+            right_bottom.x - VIEW_WIDTH,
+            right_bottom.y - VIEW_HEIGHT,
+            VIEW_WIDTH,
+            VIEW_HEIGHT,
+        );
         Box::new(LanderVerifyView { rect })
     }
 }
 
 impl PuzzleVerifyView for LanderVerifyView {
-    fn size(&self) -> RectSize<i32> { RectSize::new(VIEW_WIDTH, VIEW_HEIGHT) }
+    fn size(&self) -> RectSize<i32> {
+        RectSize::new(VIEW_WIDTH, VIEW_HEIGHT)
+    }
 
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>,
-            opt_circuit_eval: Option<&CircuitEval>) {
+    fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        opt_circuit_eval: Option<&CircuitEval>,
+    ) {
         let (alt, angle, fuel) = if let Some(eval) = opt_circuit_eval {
             let eval = eval.puzzle_eval::<LanderEval>();
-            (eval.current_altitude(),
-             eval.current_angle(),
-             eval.current_fuel())
+            (
+                eval.current_altitude(),
+                eval.current_angle(),
+                eval.current_fuel(),
+            )
         } else {
             (250, 90, 250)
         };
@@ -64,21 +74,27 @@ impl PuzzleVerifyView for LanderVerifyView {
         let left = self.rect.x as f32;
         let top = self.rect.y as f32;
         let font = resources.fonts().roman();
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top),
-                  &format!("Altitude: {}", alt));
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top + 30.0),
-                  &format!("Angle: {}°", angle));
-        font.draw(matrix,
-                  FONT_SIZE,
-                  Align::TopLeft,
-                  (left, top + 60.0),
-                  &format!("Fuel: {}", fuel));
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top),
+            &format!("Altitude: {}", alt),
+        );
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top + 30.0),
+            &format!("Angle: {}°", angle),
+        );
+        font.draw(
+            matrix,
+            FONT_SIZE,
+            Align::TopLeft,
+            (left, top + 60.0),
+            &format!("Fuel: {}", fuel),
+        );
     }
 }
 

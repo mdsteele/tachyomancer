@@ -17,23 +17,24 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use super::iface::{Interface, InterfacePort, InterfacePosition};
 use super::rng::SimpleRng;
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use crate::tachy::geom::{Coords, Direction};
+use crate::tachy::state::{PortColor, PortFlow, WireSize};
 use cgmath::Point2;
 use num_integer::Roots;
-use tachy::geom::{Coords, Direction};
-use tachy::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
 pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Sensor Interface",
-        description: "\
-            Connects to a subspace sensor array that determines the ideal \
-            position for the beacon dish.  Use the motor interface to move \
-            the dish to this position.",
+        description:
+            "\
+             Connects to a subspace sensor array that determines the ideal \
+             position for the beacon dish.  Use the motor interface to move \
+             the dish to this position.",
         side: Direction::South,
         pos: InterfacePosition::Left(0),
         ports: &[
@@ -55,9 +56,10 @@ pub const INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Motor Interface",
-        description: "\
-            Connects to a stepper motor that controls the position of the \
-            beacon mirror.",
+        description:
+            "\
+             Connects to a stepper motor that controls the position of the \
+             beacon mirror.",
         side: Direction::South,
         pos: InterfacePosition::Right(0),
         ports: &[
@@ -78,12 +80,12 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Motor",
                 description: "\
-                    Receives motor commands.\n    \
-                    Send 8 to move up.\n    \
-                    Send 4 to move down.\n    \
-                    Send 2 to move left.\n    \
-                    Send 1 to move right.\n  \
-                    Send any other value to not move.",
+                              Receives motor commands.\n    \
+                              Send 8 to move up.\n    \
+                              Send 4 to move down.\n    \
+                              Send 2 to move left.\n    \
+                              Send 1 to move right.\n  \
+                              Send any other value to not move.",
                 flow: PortFlow::Recv,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
@@ -124,16 +126,25 @@ impl BeaconEval {
         }
     }
 
-    pub fn current_energy(&self) -> u32 { self.energy }
+    pub fn current_energy(&self) -> u32 {
+        self.energy
+    }
 
-    pub fn current_optimum(&self) -> Point2<u32> { self.current_opt }
+    pub fn current_optimum(&self) -> Point2<u32> {
+        self.current_opt
+    }
 
-    pub fn current_position(&self) -> Point2<u32> { self.current_pos }
+    pub fn current_position(&self) -> Point2<u32> {
+        self.current_pos
+    }
 }
 
 impl PuzzleEval for BeaconEval {
-    fn begin_time_step(&mut self, time_step: u32, state: &mut CircuitState)
-                       -> Option<EvalScore> {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
         if (time_step % 20) == 0 {
             let x = self.rng.rand_u4();
             let y = self.rng.rand_u4();
@@ -150,11 +161,16 @@ impl PuzzleEval for BeaconEval {
         }
     }
 
-    fn end_time_step(&mut self, _time_step: u32, state: &CircuitState)
-                     -> Vec<EvalError> {
-        let delta = 10 *
-            Point2::new(self.current_pos.x as i32 - self.current_opt.x as i32,
-                        self.current_pos.y as i32 - self.current_opt.y as i32);
+    fn end_time_step(
+        &mut self,
+        _time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
+        let delta = 10
+            * Point2::new(
+                self.current_pos.x as i32 - self.current_opt.x as i32,
+                self.current_pos.y as i32 - self.current_opt.y as i32,
+            );
         let dist = (delta.x * delta.x + delta.y * delta.y).sqrt() as u32;
         self.energy += 85;
         self.energy = self.energy.saturating_sub(dist);

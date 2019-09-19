@@ -39,20 +39,20 @@ impl<A: IndexAtom> IndexBuffer<A> {
         unsafe {
             gl::GenBuffers(1, &mut name);
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, name);
-            gl::BufferData(gl::ELEMENT_ARRAY_BUFFER,
-                           (mem::size_of::<A>() * data.len()) as GLsizeiptr,
-                           data.as_ptr() as *const c_void,
-                           gl::STATIC_DRAW);
+            gl::BufferData(
+                gl::ELEMENT_ARRAY_BUFFER,
+                (mem::size_of::<A>() * data.len()) as GLsizeiptr,
+                data.as_ptr() as *const c_void,
+                gl::STATIC_DRAW,
+            );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
-        IndexBuffer {
-            name,
-            len: data.len(),
-            phantom: PhantomData,
-        }
+        IndexBuffer { name, len: data.len(), phantom: PhantomData }
     }
 
-    pub fn len(&self) -> usize { self.len }
+    pub fn len(&self) -> usize {
+        self.len
+    }
 
     pub(super) fn bind(&self) {
         unsafe {
@@ -79,15 +79,21 @@ pub trait IndexAtom {
 }
 
 impl IndexAtom for u8 {
-    fn gl_type() -> GLenum { gl::UNSIGNED_BYTE }
+    fn gl_type() -> GLenum {
+        gl::UNSIGNED_BYTE
+    }
 }
 
 impl IndexAtom for u16 {
-    fn gl_type() -> GLenum { gl::UNSIGNED_SHORT }
+    fn gl_type() -> GLenum {
+        gl::UNSIGNED_SHORT
+    }
 }
 
 impl IndexAtom for u32 {
-    fn gl_type() -> GLenum { gl::UNSIGNED_INT }
+    fn gl_type() -> GLenum {
+        gl::UNSIGNED_INT
+    }
 }
 
 //===========================================================================//

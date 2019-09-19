@@ -18,9 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::eval::EvalError;
+use crate::tachy::geom::{Coords, Direction};
 use std::u32;
 use std::u64;
-use tachy::geom::{Coords, Direction};
 
 //===========================================================================/
 
@@ -51,30 +51,35 @@ pub fn opt_u32_to_u64(opt_value: Option<u32>) -> u64 {
 
 //===========================================================================//
 
-pub fn end_cycle_check_event_output(opt_actual: Option<u32>,
-                                    opt_expected: u64,
-                                    has_received: &mut bool,
-                                    port: (Coords, Direction),
-                                    time_step: u32,
-                                    errors_out: &mut Vec<EvalError>) {
+pub fn end_cycle_check_event_output(
+    opt_actual: Option<u32>,
+    opt_expected: u64,
+    has_received: &mut bool,
+    port: (Coords, Direction),
+    time_step: u32,
+    errors_out: &mut Vec<EvalError>,
+) {
     if let Some(actual) = opt_actual {
         if let Some(expected) = u64_to_opt_u32(opt_expected) {
             if *has_received {
                 let error = EvalError {
                     time_step,
                     port: Some(port),
-                    message: format!("Expected only one output event, \
-                                      but got more than one"),
+                    message: format!(
+                        "Expected only one output event, \
+                         but got more than one"
+                    ),
                 };
                 errors_out.push(error);
             } else if actual != expected {
                 let error = EvalError {
                     time_step,
                     port: Some(port),
-                    message: format!("Expected output event value of {}, \
-                                      but got output event value of {}",
-                                     expected,
-                                     actual),
+                    message: format!(
+                        "Expected output event value of {}, \
+                         but got output event value of {}",
+                        expected, actual
+                    ),
                 };
                 errors_out.push(error);
             }
@@ -82,9 +87,11 @@ pub fn end_cycle_check_event_output(opt_actual: Option<u32>,
             let error = EvalError {
                 time_step,
                 port: Some(port),
-                message: format!("No output event expected, but got \
-                                  output event value of {}",
-                                 actual),
+                message: format!(
+                    "No output event expected, but got \
+                     output event value of {}",
+                    actual
+                ),
             };
             errors_out.push(error);
         }
@@ -92,19 +99,23 @@ pub fn end_cycle_check_event_output(opt_actual: Option<u32>,
     }
 }
 
-pub fn end_time_step_check_event_output(opt_expected: u64,
-                                        has_received: bool,
-                                        port: (Coords, Direction),
-                                        time_step: u32,
-                                        errors_out: &mut Vec<EvalError>) {
+pub fn end_time_step_check_event_output(
+    opt_expected: u64,
+    has_received: bool,
+    port: (Coords, Direction),
+    time_step: u32,
+    errors_out: &mut Vec<EvalError>,
+) {
     if !has_received {
         if let Some(expected) = u64_to_opt_u32(opt_expected) {
             let error = EvalError {
                 time_step,
                 port: Some(port),
-                message: format!("Expected output event value of {}, but \
-                                  got no output event",
-                                 expected),
+                message: format!(
+                    "Expected output event value of {}, but \
+                     got no output event",
+                    expected
+                ),
             };
             errors_out.push(error);
         }

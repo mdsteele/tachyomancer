@@ -35,7 +35,7 @@ use std::collections::HashSet;
 use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Ui,
                  Window, WindowOptions};
-use tachy::save::{CIRCUIT_NAME_MAX_WIDTH, Chapter, Conversation, MenuSection,
+use tachy::save::{CIRCUIT_NAME_MAX_CHARS, Chapter, Conversation, MenuSection,
                   Puzzle};
 use tachy::state::{Cutscene, GameState};
 
@@ -387,7 +387,7 @@ impl MenuView {
                                                state.prefs(),
                                                "Choose new circuit name:",
                                                state.circuit_name(),
-                                               CIRCUIT_NAME_MAX_WIDTH);
+                                               CIRCUIT_NAME_MAX_CHARS);
                         self.rename_dialog = Some(dialog);
                         return None;
                     }

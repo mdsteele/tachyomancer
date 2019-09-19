@@ -22,18 +22,19 @@ use tachy::font::{Align, Font};
 use tachy::geom::{AsFloat, Color3, Color4, Rect};
 use tachy::gui::{ClockEventData, Cursor, Event, Keycode, Resources, Sound, Ui};
 use tachy::save::Hotkey;
-use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
 const CHECKBOX_BOX_SIZE: i32 = 28;
 const CHECKBOX_BOX_SPACING: i32 = 8;
+const CHECKBOX_FONT: Font = Font::Roman;
 const CHECKBOX_FONT_SIZE: f32 = 20.0;
 
 const HOTKEY_BOX_HEIGHT: i32 = 28;
 const HOTKEY_BOX_WIDTH: i32 = 68;
 const HOTKEY_BOX_SPACING: i32 = 8;
 const HOTKEY_BOX_FONT_SIZE: f32 = 20.0;
+const HOTKEY_FONT: Font = Font::Roman;
 const HOTKEY_LABEL_FONT_SIZE: f32 = 20.0;
 
 const HOVER_PULSE_CLICK: f64 = 1.0;
@@ -60,7 +61,7 @@ impl Checkbox {
     pub fn new(mid_left: Point2<i32>, label: &str) -> Checkbox {
         let top = mid_left.y - CHECKBOX_BOX_SIZE / 2;
         let width = CHECKBOX_BOX_SIZE + CHECKBOX_BOX_SPACING +
-            (0.5 * CHECKBOX_FONT_SIZE * (label.width() as f32)).ceil() as i32;
+            CHECKBOX_FONT.str_width(CHECKBOX_FONT_SIZE, label).ceil() as i32;
         Checkbox {
             rect: Rect::new(mid_left.x, top, width, CHECKBOX_BOX_SIZE),
             label: label.to_string(),
@@ -87,7 +88,7 @@ impl Checkbox {
                          &Color4::CYAN5,
                          &bg_color,
                          checked);
-        let font = resources.fonts().roman();
+        let font = resources.fonts().get(CHECKBOX_FONT);
         font.draw(&matrix,
                   CHECKBOX_FONT_SIZE,
                   Align::MidLeft,
@@ -144,8 +145,8 @@ impl HotkeyBox {
     pub fn new(mid_left: Point2<i32>, hotkey: Hotkey) -> HotkeyBox {
         let top = mid_left.y - HOTKEY_BOX_HEIGHT / 2;
         let width = HOTKEY_BOX_WIDTH + HOTKEY_BOX_SPACING +
-            (0.5 * HOTKEY_LABEL_FONT_SIZE *
-                (hotkey.name().width() as f32))
+            HOTKEY_FONT
+                .str_width(HOTKEY_LABEL_FONT_SIZE, hotkey.name())
                 .ceil() as i32;
         HotkeyBox {
             rect: Rect::new(mid_left.x, top, width, HOTKEY_BOX_HEIGHT),
@@ -175,7 +176,7 @@ impl HotkeyBox {
                               &Color4::ORANGE4,
                               &Color4::CYAN5,
                               &bg_color);
-        let font = resources.fonts().roman();
+        let font = resources.fonts().get(HOTKEY_FONT);
         if !self.listening {
             font.draw(&matrix,
                       HOTKEY_BOX_FONT_SIZE,
@@ -624,7 +625,7 @@ impl TextBox {
             string: initial.to_string(),
             max_len,
             cursor_byte: initial.len(),
-            cursor_char: initial.width(),
+            cursor_char: initial.chars().count(),
             cursor_blink: 0.0,
         }
     }
@@ -703,7 +704,7 @@ impl TextBox {
                     Keycode::Down | Keycode::PageDown | Keycode::End => {
                         if self.cursor_byte < self.string.len() {
                             self.cursor_byte = self.string.len();
-                            self.cursor_char = self.string.width();
+                            self.cursor_char = self.string.chars().count();
                             self.cursor_blink = 0.0;
                             ui.request_redraw();
                         }
@@ -739,7 +740,7 @@ impl TextBox {
                               (TEXT_BOX_FONT.ratio() * TEXT_BOX_FONT_SIZE))
                              .round()
                              .max(0.0) as usize)
-                            .min(self.string.width());
+                            .min(self.string.chars().count());
                     self.cursor_byte = self.string
                         .chars()
                         .take(char_index)
@@ -758,7 +759,7 @@ impl TextBox {
             }
             Event::TextInput(text) => {
                 for chr in text.chars() {
-                    if self.string.width() >= self.max_len {
+                    if self.string.chars().count() >= self.max_len {
                         break;
                     }
                     if (chr >= ' ' && chr <= '~') ||

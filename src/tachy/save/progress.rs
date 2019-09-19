@@ -25,17 +25,22 @@ use std::i64;
 use std::io;
 use std::path::{Path, PathBuf};
 use unicase::UniCase;
-use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
-/// Maximum permitted unicode width of a circuit name.
-pub const CIRCUIT_NAME_MAX_WIDTH: usize = 20;
+/// Maximum permitted number of characters in a circuit name.
+pub const CIRCUIT_NAME_MAX_CHARS: usize = 20;
 
 // Note: this file name needs to have a period (or other special character) in
 // the non-extension part to ensure that it cannot conflict with any encoded
 // circuit name.
 const DATA_FILE_NAME: &str = "puzzle.progress.toml";
+
+//===========================================================================//
+
+pub fn is_valid_circuit_name(name: &str) -> bool {
+    !name.is_empty() && name.chars().count() <= CIRCUIT_NAME_MAX_CHARS
+}
 
 //===========================================================================//
 
@@ -129,9 +134,7 @@ impl PuzzleProgress {
             }
             if let Some(encoded) = entry_path.file_stem() {
                 let circuit_name = decode_name(encoded);
-                if !circuit_name.is_empty() &&
-                    circuit_name.width() <= CIRCUIT_NAME_MAX_WIDTH
-                {
+                if is_valid_circuit_name(&circuit_name) {
                     circuit_names.insert(UniCase::new(circuit_name));
                 }
             }
@@ -214,9 +217,7 @@ impl PuzzleProgress {
     pub fn save_circuit(&mut self, circuit_name: &str,
                         circuit_data: &CircuitData)
                         -> Result<(), String> {
-        if circuit_name.is_empty() ||
-            circuit_name.width() > CIRCUIT_NAME_MAX_WIDTH
-        {
+        if !is_valid_circuit_name(circuit_name) {
             return Err(format!("Invalid circuit name: {:?}", circuit_name));
         }
         let circuit_name_uni = UniCase::new(circuit_name.to_string());
@@ -237,7 +238,7 @@ impl PuzzleProgress {
             Some(name) => self.circuit_path(&name),
             None => return Err(format!("No such circuit: {:?}", old_name)),
         };
-        if new_name.is_empty() || new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
+        if !is_valid_circuit_name(new_name) {
             return Err(format!("Invalid circuit name: {:?}", new_name));
         }
         let new_name_uni = UniCase::new(new_name.to_string());
@@ -290,7 +291,7 @@ impl PuzzleProgress {
         if new_name == old_name {
             return Ok(());
         }
-        if new_name.is_empty() || new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
+        if !is_valid_circuit_name(new_name) {
             return Err(format!("Invalid circuit name: {:?}", new_name));
         }
         let new_name_uni = UniCase::new(new_name.to_string());

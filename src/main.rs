@@ -39,7 +39,6 @@ extern crate strum;
 extern crate strum_macros;
 extern crate toml;
 extern crate unicase;
-extern crate unicode_width;
 
 mod tachy;
 

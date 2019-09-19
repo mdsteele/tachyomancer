@@ -92,6 +92,10 @@ impl FontData {
 
     pub fn ratio(&self) -> f32 { self.ratio }
 
+    pub fn str_width(&self, height: f32, text: &str) -> f32 {
+        Font::str_width_for_ratio(self.ratio(), height, text)
+    }
+
     pub fn draw(&self, matrix: &Matrix4<f32>, height: f32, align: Align,
                 start: (f32, f32), text: &str) {
         let color = &Color4::WHITE;

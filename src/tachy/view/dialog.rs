@@ -24,7 +24,6 @@ use cgmath::Matrix4;
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::gui::{Cursor, Event, Keycode, Resources, Ui};
 use tachy::save::Prefs;
-use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
@@ -68,9 +67,9 @@ impl<T: Clone> ButtonDialogBox<T> {
             buttons
                 .iter()
                 .map(|&(label, ref value, key)| {
-                    let label_width = TEXT_BUTTON_FONT.ratio() *
-                        TEXT_BUTTON_FONT_SIZE *
-                        (label.width() as f32);
+                    let label_width =
+                        TEXT_BUTTON_FONT
+                            .str_width(TEXT_BUTTON_FONT_SIZE, label);
                     let button_width = BUTTON_MIN_WIDTH
                         .max((label_width.ceil() as i32) +
                                  2 * BUTTON_INNER_MARGIN);

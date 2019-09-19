@@ -25,7 +25,6 @@ use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
 use tachy::gui::{Event, Keycode, Resources, Sound, Ui};
 use tachy::save::Prefs;
 use tachy::state::{CutsceneScript, Portrait, Theater};
-use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
@@ -123,8 +122,7 @@ impl CutsceneView {
         let font = resources.fonts().roman();
         let bubble_height = MESSAGE_FONT_SIZE.ceil() +
             2.0 * MESSAGE_INNER_MARGIN_VERT;
-        let bubble_width = (MESSAGE_FONT_SIZE * font.ratio()).ceil() *
-            (message.width() as f32) +
+        let bubble_width = font.str_width(MESSAGE_FONT_SIZE, message).ceil() +
             2.0 * MESSAGE_INNER_MARGIN_HORZ;
         let bubble_rect = Rect::new(0.5 * (self.size.width - bubble_width),
                                     y_center - 0.5 * bubble_height,

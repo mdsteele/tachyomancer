@@ -19,14 +19,12 @@
 
 use super::circuit::CircuitData;
 use super::converse::{Conversation, ConversationProgress, Prereq};
-use super::progress::{CIRCUIT_NAME_MAX_WIDTH, CircuitNamesIter,
-                      PuzzleProgress};
+use super::progress::{CircuitNamesIter, PuzzleProgress, is_valid_circuit_name};
 use super::puzzle::Puzzle;
 use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use unicode_width::UnicodeWidthStr;
 
 //===========================================================================//
 
@@ -346,7 +344,7 @@ impl Profile {
             }
             num += 1;
         }
-        if new_name.width() > CIRCUIT_NAME_MAX_WIDTH {
+        if !is_valid_circuit_name(&new_name) {
             num = 1;
             loop {
                 new_name = format!("Version {}", num);

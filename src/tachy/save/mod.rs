@@ -39,7 +39,7 @@ pub use self::hotkey::{Hotkey, HotkeyIter};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
 pub use self::profile::Profile;
-pub use self::progress::{CIRCUIT_NAME_MAX_WIDTH, CircuitNamesIter};
+pub use self::progress::{CIRCUIT_NAME_MAX_CHARS, CircuitNamesIter};
 pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
 pub use self::wire::WireShape;
 

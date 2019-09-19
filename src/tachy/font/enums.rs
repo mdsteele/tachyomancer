@@ -60,6 +60,15 @@ impl Font {
         }
     }
 
+    pub fn str_width(&self, height: f32, text: &str) -> f32 {
+        Font::str_width_for_ratio(self.ratio(), height, text)
+    }
+
+    pub(super) fn str_width_for_ratio(ratio: f32, height: f32, text: &str)
+                                      -> f32 {
+        ratio * height * (text.chars().count() as f32)
+    }
+
     pub(super) fn png_name_and_data(self) -> (&'static str, &'static [u8]) {
         match self {
             Font::Alien => ("font/galactico", GALACTICO_PNG_DATA),

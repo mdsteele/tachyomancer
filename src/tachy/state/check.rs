@@ -131,7 +131,7 @@ pub fn group_wires(all_ports: &HashMap<(Coords, Direction),
             for &loc in next.iter() {
                 if let Some(&(shape, _)) = all_fragments.get(&loc) {
                     if wire_fragments.insert(loc) {
-                        starts.remove(&loc);
+                        starts.swap_remove(&loc);
                         stack.push((loc, shape));
                     }
                 }

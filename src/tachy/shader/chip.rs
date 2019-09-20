@@ -102,7 +102,7 @@ impl ChipShader {
         basic_vbuffer.attribf(0, 3, 5, 0);
         basic_vbuffer.attribf(1, 2, 5, 3);
 
-        let shader = ChipShader {
+        Ok(ChipShader {
             program,
             mvp,
             tex_rect,
@@ -111,8 +111,7 @@ impl ChipShader {
             basic_ibuffer,
             _basic_vbuffer: basic_vbuffer,
             basic_varray,
-        };
-        Ok(shader)
+        })
     }
 
     pub fn draw_basic(

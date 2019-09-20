@@ -166,7 +166,7 @@ impl WireShader {
         vbuffer.attribf(0, 2, 3, 0);
         vbuffer.attribf(1, 1, 3, 2);
 
-        let shader = WireShader {
+        Ok(WireShader {
             program,
             mvp,
             wire_color,
@@ -174,8 +174,7 @@ impl WireShader {
             wire_texture,
             varray,
             _vbuffer: vbuffer,
-        };
-        Ok(shader)
+        })
     }
 
     fn bind(

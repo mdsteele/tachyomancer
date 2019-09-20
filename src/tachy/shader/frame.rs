@@ -61,7 +61,7 @@ impl FrameBufferShader {
         varray.bind();
         vbuffer.attribi(0, 2, 0, 0);
 
-        let shader = FrameBufferShader {
+        Ok(FrameBufferShader {
             program,
             mvp,
             frame_size,
@@ -70,8 +70,7 @@ impl FrameBufferShader {
             texture,
             varray,
             _vbuffer: vbuffer,
-        };
-        Ok(shader)
+        })
     }
 
     pub fn draw(

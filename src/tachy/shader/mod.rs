@@ -59,7 +59,7 @@ pub struct Shaders {
 
 impl Shaders {
     pub fn new() -> Result<Shaders, String> {
-        let shaders = Shaders {
+        Ok(Shaders {
             board: BoardShader::new()?,
             chip: ChipShader::new()?,
             frame: FrameBufferShader::new()?,
@@ -71,8 +71,7 @@ impl Shaders {
             solid: SolidShader::new()?,
             ui: UiShader::new()?,
             wire: WireShader::new()?,
-        };
-        Ok(shaders)
+        })
     }
 
     pub fn board(&self) -> &BoardShader {

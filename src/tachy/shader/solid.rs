@@ -55,14 +55,13 @@ impl SolidShader {
         rect_varray.bind();
         rect_vbuffer.attribf(0, 3, 0, 0);
 
-        let shader = SolidShader {
+        Ok(SolidShader {
             program,
             color,
             mvp,
             rect_varray,
             _rect_vbuffer: rect_vbuffer,
-        };
-        Ok(shader)
+        })
     }
 
     pub fn fill_rect(

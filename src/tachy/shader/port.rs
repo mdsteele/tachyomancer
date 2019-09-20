@@ -91,7 +91,7 @@ impl PortShader {
         port_vbuffer.attribf(0, 2, 0, 0);
         port_edge_vbuffer.attribi(1, 1, 0, 0);
 
-        let shader = PortShader {
+        Ok(PortShader {
             program,
             mvp,
             flow_and_color,
@@ -101,8 +101,7 @@ impl PortShader {
             port_varray,
             _port_vbuffer: port_vbuffer,
             _port_edge_vbuffer: port_edge_vbuffer,
-        };
-        Ok(shader)
+        })
     }
 
     pub fn bind(&self) {

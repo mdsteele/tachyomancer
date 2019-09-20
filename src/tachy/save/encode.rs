@@ -126,10 +126,7 @@ mod tests {
             OsString::from(",2f,Users,2f,janedoe,2f,,2a,")
         );
         assert_eq!(
-            decode_name(&OsString::from(
-                ",2f,Users,2f,janedoe\
-                 ,2f,,2a,"
-            )),
+            decode_name(&OsString::from(",2f,Users,2f,janedoe,2f,,2a,")),
             "/Users/janedoe/*".to_string()
         );
 

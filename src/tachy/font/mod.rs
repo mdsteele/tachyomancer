@@ -197,7 +197,7 @@ impl TextShader {
         vbuffer.attribi(0, 2, 3, 0);
         vbuffer.attribi(1, 1, 3, 2);
 
-        let shader = TextShader {
+        Ok(TextShader {
             program,
             color,
             mvp,
@@ -206,8 +206,7 @@ impl TextShader {
             font,
             varray,
             _vbuffer: vbuffer,
-        };
-        Ok(shader)
+        })
     }
 
     fn draw(

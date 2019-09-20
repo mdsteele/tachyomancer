@@ -52,15 +52,14 @@ impl GameState {
                 circuit_name = name.to_string();
             }
         }
-        let state = GameState {
+        Ok(GameState {
             savedir,
             menu_section,
             profile: opt_profile,
             circuit_name,
             edit_grid: None,
             cutscene: None,
-        };
-        Ok(state)
+        })
     }
 
     pub fn save(&mut self) -> Result<(), String> {

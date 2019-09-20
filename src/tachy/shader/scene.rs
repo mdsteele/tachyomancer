@@ -55,7 +55,7 @@ impl SceneShader {
         let light_dir_cam_space = program.get_uniform("LightDirCamSpace")?;
         let texture = program.get_sampler(0, "Texture")?;
 
-        let shader = SceneShader {
+        Ok(SceneShader {
             program,
             mv,
             p,
@@ -63,8 +63,7 @@ impl SceneShader {
             diffuse_light,
             light_dir_cam_space,
             texture,
-        };
-        Ok(shader)
+        })
     }
 
     pub fn render(

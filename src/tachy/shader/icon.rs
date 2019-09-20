@@ -54,7 +54,7 @@ impl IconShader {
         let mvp = program.get_uniform("MVP")?;
         let varray = VertexArray::new(1);
         let rect_vbuffer = VertexBuffer::new(&[0, 0, 1, 0, 0, 1, 1, 1]);
-        let shader = IconShader {
+        Ok(IconShader {
             program,
             color,
             icon_index,
@@ -62,8 +62,7 @@ impl IconShader {
             mvp,
             varray,
             rect_vbuffer,
-        };
-        Ok(shader)
+        })
     }
 
     pub fn draw(

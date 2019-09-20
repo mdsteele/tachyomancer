@@ -63,15 +63,14 @@ impl PortraitShader {
         varray.bind();
         vbuffer.attribi(0, 2, 0, 0);
 
-        let shader = PortraitShader {
+        Ok(PortraitShader {
             program,
             mvp,
             portrait_index,
             texture,
             varray,
             _vbuffer: vbuffer,
-        };
-        Ok(shader)
+        })
     }
 
     pub fn draw(

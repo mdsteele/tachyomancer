@@ -244,7 +244,7 @@ impl UiShader {
         let (tray_varray_2, tray_vbuffer_2) =
             make_vertices(&corners_vbuffer, TRAY_DATA_2);
 
-        let shader = UiShader {
+        Ok(UiShader {
             program,
             texture,
             mvp,
@@ -272,8 +272,7 @@ impl UiShader {
             tray_varray_1,
             _tray_vbuffer_2: tray_vbuffer_2,
             tray_varray_2,
-        };
-        Ok(shader)
+        })
     }
 
     fn bind(

@@ -210,12 +210,7 @@ impl ConversationProgress {
             ConversationProgressData::default()
         };
 
-        let progress = ConversationProgress {
-            path: path.to_path_buf(),
-            data,
-            needs_save,
-        };
-        Ok(progress)
+        Ok(ConversationProgress { path: path.to_path_buf(), data, needs_save })
     }
 
     pub fn save(&mut self) -> Result<(), String> {

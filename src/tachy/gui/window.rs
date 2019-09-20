@@ -143,7 +143,7 @@ impl<'a> Window<'a> {
         possible_resolutions.retain(|res| {
             res.width >= WINDOW_MIN_WIDTH && res.height >= WINDOW_MIN_HEIGHT
         });
-        let window = Window {
+        Ok(Window {
             gui_context,
             sdl_window,
             _gl_context: gl_context,
@@ -156,8 +156,7 @@ impl<'a> Window<'a> {
             last_event_was_clock_tick: false,
             redraw_requested: true,
             debug_counter: 0,
-        };
-        Ok(window)
+        })
     }
 
     pub fn size(&self) -> RectSize<i32> {

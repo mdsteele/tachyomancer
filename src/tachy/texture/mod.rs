@@ -343,7 +343,7 @@ impl Textures {
         )?;
         let white = Texture2D::new_rgba(1, 1, &[255, 255, 255, 255])?;
         let wire = Texture1D::new_rgba(WIRE_TEXTURE1D_DATA)?;
-        let textures = Textures {
+        Ok(Textures {
             brushed_metal,
             chip_icons,
             list_icons,
@@ -354,8 +354,7 @@ impl Textures {
             valley_heightmap,
             white,
             wire,
-        };
-        Ok(textures)
+        })
     }
 
     pub fn brushed_metal(&self) -> &Texture2D {

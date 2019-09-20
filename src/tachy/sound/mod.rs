@@ -153,8 +153,7 @@ fn decode_flac(name: &str, data: &[u8]) -> Result<Vec<f32>, String> {
     }
     if samples.len() != num_samples {
         return Err(format!(
-            "Wrong number of samples for {} \
-             (expected {}, but was {})",
+            "Wrong number of samples for {} (expected {}, but was {})",
             name,
             num_samples,
             samples.len()

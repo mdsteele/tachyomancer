@@ -68,7 +68,7 @@ impl HeightmapShader {
         let light_dir_cam_space = program.get_uniform("LightDirCamSpace")?;
         let texture = program.get_sampler(0, "Texture")?;
 
-        let shader = HeightmapShader {
+        Ok(HeightmapShader {
             program,
             mv,
             p,
@@ -79,8 +79,7 @@ impl HeightmapShader {
             heightmap_rect,
             texture,
             texture_rect,
-        };
-        Ok(shader)
+        })
     }
 
     pub fn render(

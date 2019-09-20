@@ -1,0 +1,17 @@
+[package]
+name = "tachy"
+version = "0.1.0"
+authors = ["Matthew D. Steele <mdsteele@alum.mit.edu>"]
+license = "GPL-3.0+"
+
+[dependencies]
+cgmath = "0.17"
+downcast-rs = "1"
+indexmap = "1"
+num-integer = "0.1"
+pathfinding = "1.1"
+serde = "1"
+serde_derive = "1"
+strum = "0.16"
+strum_macros = "0.16"
+toml = "0.5"

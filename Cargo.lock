@@ -528,22 +528,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "tachy"
+version = "0.1.0"
+dependencies = [
+ "cgmath 0.17.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "downcast-rs 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "indexmap 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pathfinding 1.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum_macros 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "toml 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "tachyomancer"
 version = "0.1.0"
 dependencies = [
  "app_dirs 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cgmath 0.17.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "claxon 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "downcast-rs 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "gl 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "icns 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "indexmap 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "jpeg-decoder 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "lewton 0.9.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "nsvg 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
- "pathfinding 1.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "png 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rusttype 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.32.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -551,6 +564,7 @@ dependencies = [
  "serde_derive 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
  "strum 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "strum_macros 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tachy 0.1.0",
  "toml 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicase 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

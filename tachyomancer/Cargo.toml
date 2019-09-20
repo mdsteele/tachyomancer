@@ -1,0 +1,33 @@
+[package]
+name = "tachyomancer"
+version = "0.1.0"
+authors = ["Matthew D. Steele <mdsteele@alum.mit.edu>"]
+license = "GPL-3.0+"
+description = "A circuit-programming puzzle game."
+build = "build.rs"
+edition = "2018"
+
+[build-dependencies]
+icns = "0.3"
+png = "0.13"
+nsvg = { version = "0.5", default-features = false }
+rusttype = "0.8"
+
+[dependencies]
+app_dirs = "1.2"
+cgmath = "0.17"
+claxon = "0.4"
+getopts = "0.2"
+gl = "0.13"
+jpeg-decoder = { version = "0.1", default-features = false }
+lewton = "0.9"
+num-integer = "0.1"
+png = "0.13"
+sdl2 = { version = "0.32", features = ["use_mac_framework"] }
+serde = "1"
+serde_derive = "1"
+strum = "0.16"
+strum_macros = "0.16"
+tachy = { path = "../tachy" }
+toml = "0.5"
+unicase = "2"

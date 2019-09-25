@@ -26,6 +26,7 @@ use std::rc::Rc;
 
 //===========================================================================//
 
+#[derive(Debug)]
 #[must_use = "non-`Continue` values must be handled"]
 pub enum EvalResult {
     Continue,
@@ -41,6 +42,7 @@ pub struct EvalError {
     pub message: String,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EvalScore {
     /// Score is equal to the supplied value.
     Value(i32),

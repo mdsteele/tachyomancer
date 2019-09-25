@@ -1,0 +1,15 @@
+bounds = [-2, -1, 3, 3]
+
+[chips]
+m1p0 = "f0-And"
+m1p1 = "f3-Not"
+m2p0 = "f0-Not"
+p0p0 = "f0-Not"
+
+[wires]
+m1p0e = "Stub"
+m1p0s = "Stub"
+m1p1s = "Stub"
+m2p0e = "Stub"
+m3p0e = "Stub"
+p0p0e = "Stub"

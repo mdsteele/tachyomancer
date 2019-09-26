@@ -1,18 +1,18 @@
-bounds = [-2, -1, 4, 3]
+size = [4, 3]
 
 [chips]
-m1m1 = "f2-Not"
-m2p0 = "t0-And"
 p0p1 = "t0-And"
-p1p0 = "f0-Or"
+p1p0 = "f2-Not"
+p2p2 = "t0-And"
+p3p1 = "f0-Or"
 
 [wires]
-m1p0e = "Straight"
-m1p1e = "TurnLeft"
-m2m1e = "TurnLeft"
-m3p0e = "Stub"
-p0m1w = "SplitTee"
-p0p0e = "Straight"
-p0p0s = "Straight"
-p1p0e = "Stub"
-p1p1w = "TurnLeft"
+m1p1e = "Stub"
+p0p0e = "TurnLeft"
+p1p1e = "Straight"
+p1p2e = "TurnLeft"
+p2p0w = "SplitTee"
+p2p1e = "Straight"
+p2p1s = "Straight"
+p3p1e = "Stub"
+p3p2w = "TurnLeft"

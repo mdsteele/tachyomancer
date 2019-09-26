@@ -25,7 +25,7 @@ use crate::mancer::font::Font;
 use crate::mancer::save::{Hotkey, Prefs};
 use std::mem;
 use std::str::FromStr;
-use tachy::geom::{Color4, Coords, Orientation, RectSize};
+use tachy::geom::{Color4, CoordsDelta, Orientation, RectSize};
 use tachy::save::{ChipType, CircuitData};
 
 //===========================================================================//
@@ -134,8 +134,8 @@ impl Parser {
             }
         };
         let size = orient * ctype.size();
-        let mut data = CircuitData::new(0, 0, size.width, size.height);
-        data.chips.insert(Coords::new(0, 0), ctype, orient);
+        let mut data = CircuitData::new(size.width, size.height);
+        data.chips.insert(CoordsDelta::new(0, 0), ctype, orient);
         self.push_circuit_data(data);
     }
 

@@ -96,10 +96,11 @@ impl EditGrid {
         solved_puzzles: &HashSet<Puzzle>,
         data: &CircuitData,
     ) -> EditGrid {
+        let origin = Coords::new(0, 0);
         let mut grid = EditGrid {
             puzzle,
             allowed_chips: puzzle.allowed_chips(solved_puzzles),
-            bounds: data.bounds,
+            bounds: CoordsRect::with_size(origin, data.size),
             interfaces: puzzle.interfaces(),
             fragments: HashMap::new(),
             chips: HashMap::new(),
@@ -115,15 +116,16 @@ impl EditGrid {
         };
 
         // Chips:
-        for (coords, ctype, orient) in data.chips.iter() {
-            let change = GridChange::AddChip(coords, ctype, orient);
+        for (delta, ctype, orient) in data.chips.iter() {
+            let change = GridChange::AddChip(origin + delta, ctype, orient);
             if !grid.mutate_one(&change) {
                 debug_log!("from_circuit_data: {:?} had no effect", change);
             }
         }
 
         // Wires:
-        for (coords, dir, shape) in data.wires.iter() {
+        for (delta, dir, shape) in data.wires.iter() {
+            let coords = origin + delta;
             if grid.has_frag(coords, dir) {
                 continue;
             }
@@ -214,14 +216,10 @@ impl EditGrid {
     }
 
     pub fn to_circuit_data(&self) -> CircuitData {
-        let mut data = CircuitData::new(
-            self.bounds.x,
-            self.bounds.y,
-            self.bounds.width,
-            self.bounds.height,
-        );
+        let mut data = CircuitData::new(self.bounds.width, self.bounds.height);
+        let origin = self.bounds.top_left();
         for (coords, ctype, orient) in self.chips() {
-            data.chips.insert(coords, ctype, orient);
+            data.chips.insert(coords - origin, ctype, orient);
         }
         for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
             match (shape, dir) {
@@ -248,7 +246,7 @@ impl EditGrid {
                 | (WireShape::SplitRight, _)
                 | (WireShape::Cross, _) => continue,
             }
-            data.wires.insert(coords, dir, shape);
+            data.wires.insert(coords - origin, dir, shape);
         }
         data
     }

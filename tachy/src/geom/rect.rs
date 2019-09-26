@@ -86,6 +86,25 @@ impl<T: BaseNum> ops::Mul<T> for RectSize<T> {
     }
 }
 
+impl<'d, T: serde::Deserialize<'d>> serde::Deserialize<'d> for RectSize<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'d>,
+    {
+        let (width, height) = <(T, T)>::deserialize(deserializer)?;
+        Ok(RectSize { width, height })
+    }
+}
+
+impl<T: serde::Serialize> serde::Serialize for RectSize<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        (&self.width, &self.height).serialize(serializer)
+    }
+}
+
 //===========================================================================//
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

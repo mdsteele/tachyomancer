@@ -19,7 +19,7 @@
 
 use super::chip::ChipType;
 use super::wire::WireShape;
-use crate::geom::{Coords, CoordsRect, Direction, Orientation};
+use crate::geom::{CoordsDelta, CoordsSize, Direction, Orientation};
 use serde::de::Error;
 use std::collections::{hash_map, BTreeMap, HashMap};
 use std::fs;
@@ -31,15 +31,15 @@ use toml;
 
 #[derive(Deserialize, Serialize)]
 pub struct CircuitData {
-    pub bounds: CoordsRect,
+    pub size: CoordsSize,
     pub chips: CircuitChipData,
     pub wires: CircuitWireData,
 }
 
 impl CircuitData {
-    pub fn new(x: i32, y: i32, width: i32, height: i32) -> CircuitData {
+    pub fn new(width: i32, height: i32) -> CircuitData {
         CircuitData {
-            bounds: CoordsRect::new(x, y, width, height),
+            size: CoordsSize::new(width, height),
             chips: CircuitChipData(HashMap::new()),
             wires: CircuitWireData(HashMap::new()),
         }
@@ -81,16 +81,16 @@ impl CircuitData {
 
 //===========================================================================//
 
-pub struct CircuitChipData(HashMap<Coords, (ChipType, Orientation)>);
+pub struct CircuitChipData(HashMap<CoordsDelta, (ChipType, Orientation)>);
 
 impl CircuitChipData {
     pub fn insert(
         &mut self,
-        coords: Coords,
+        delta: CoordsDelta,
         ctype: ChipType,
         orient: Orientation,
     ) {
-        self.0.insert(coords, (ctype, orient));
+        self.0.insert(delta, (ctype, orient));
     }
 
     pub fn iter(&self) -> CircuitChipDataIter {
@@ -106,7 +106,7 @@ impl<'d> serde::Deserialize<'d> for CircuitChipData {
         let map = BTreeMap::<&str, &str>::deserialize(deserializer)?;
         let mut chips = HashMap::with_capacity(map.len());
         for (key, chip_str) in map.into_iter() {
-            let coords = key_string_coords(key).ok_or_else(|| {
+            let coords = key_string_delta(key).ok_or_else(|| {
                 D::Error::custom(format!("Invalid coords key: {:?}", key))
             })?;
             let mut items = chip_str.splitn(2, '-');
@@ -142,7 +142,7 @@ impl serde::Serialize for CircuitChipData {
         self.0
             .iter()
             .map(|(&coords, &(ctype, orient))| {
-                (coords_key_string(coords), format!("{}-{:?}", orient, ctype))
+                (delta_key_string(coords), format!("{}-{:?}", orient, ctype))
             })
             .collect::<BTreeMap<String, String>>()
             .serialize(serializer)
@@ -150,16 +150,16 @@ impl serde::Serialize for CircuitChipData {
 }
 
 pub struct CircuitChipDataIter<'a> {
-    inner: hash_map::Iter<'a, Coords, (ChipType, Orientation)>,
+    inner: hash_map::Iter<'a, CoordsDelta, (ChipType, Orientation)>,
 }
 
 impl<'a> Iterator for CircuitChipDataIter<'a> {
-    type Item = (Coords, ChipType, Orientation);
+    type Item = (CoordsDelta, ChipType, Orientation);
 
-    fn next(&mut self) -> Option<(Coords, ChipType, Orientation)> {
+    fn next(&mut self) -> Option<(CoordsDelta, ChipType, Orientation)> {
         self.inner
             .next()
-            .map(|(&coords, &(ctype, orient))| (coords, ctype, orient))
+            .map(|(&delta, &(ctype, orient))| (delta, ctype, orient))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -169,16 +169,16 @@ impl<'a> Iterator for CircuitChipDataIter<'a> {
 
 //===========================================================================//
 
-pub struct CircuitWireData(HashMap<(Coords, Direction), WireShape>);
+pub struct CircuitWireData(HashMap<(CoordsDelta, Direction), WireShape>);
 
 impl CircuitWireData {
     pub fn insert(
         &mut self,
-        coords: Coords,
+        delta: CoordsDelta,
         dir: Direction,
         shape: WireShape,
     ) {
-        self.0.insert((coords, dir), shape);
+        self.0.insert((delta, dir), shape);
     }
 
     pub fn iter(&self) -> CircuitWireDataIter {
@@ -219,14 +219,14 @@ impl serde::Serialize for CircuitWireData {
 }
 
 pub struct CircuitWireDataIter<'a> {
-    inner: hash_map::Iter<'a, (Coords, Direction), WireShape>,
+    inner: hash_map::Iter<'a, (CoordsDelta, Direction), WireShape>,
 }
 
 impl<'a> Iterator for CircuitWireDataIter<'a> {
-    type Item = (Coords, Direction, WireShape);
+    type Item = (CoordsDelta, Direction, WireShape);
 
-    fn next(&mut self) -> Option<(Coords, Direction, WireShape)> {
-        self.inner.next().map(|(&(coords, dir), &shape)| (coords, dir, shape))
+    fn next(&mut self) -> Option<(CoordsDelta, Direction, WireShape)> {
+        self.inner.next().map(|(&(delta, dir), &shape)| (delta, dir, shape))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -236,13 +236,13 @@ impl<'a> Iterator for CircuitWireDataIter<'a> {
 
 //===========================================================================//
 
-fn coords_key_string(coords: Coords) -> String {
-    let xsign = if coords.x < 0 { 'm' } else { 'p' };
-    let ysign = if coords.y < 0 { 'm' } else { 'p' };
-    format!("{}{}{}{}", xsign, coords.x.abs(), ysign, coords.y.abs())
+fn delta_key_string(delta: CoordsDelta) -> String {
+    let xsign = if delta.x < 0 { 'm' } else { 'p' };
+    let ysign = if delta.y < 0 { 'm' } else { 'p' };
+    format!("{}{}{}{}", xsign, delta.x.abs(), ysign, delta.y.abs())
 }
 
-fn key_string_coords(key: &str) -> Option<Coords> {
+fn key_string_delta(key: &str) -> Option<CoordsDelta> {
     let mut chars = key.chars();
     let xsign_chr = chars.next();
     let xsign: i32 = match xsign_chr {
@@ -279,20 +279,20 @@ fn key_string_coords(key: &str) -> Option<Coords> {
             return None;
         }
     }
-    return Some(Coords::new(xsign * (x as i32), ysign * (y as i32)));
+    return Some(CoordsDelta::new(xsign * (x as i32), ysign * (y as i32)));
 }
 
-fn location_key_string(coords: Coords, dir: Direction) -> String {
+fn location_key_string(delta: CoordsDelta, dir: Direction) -> String {
     let dir_chr = match dir {
         Direction::East => 'e',
         Direction::South => 's',
         Direction::West => 'w',
         Direction::North => 'n',
     };
-    format!("{}{}", coords_key_string(coords), dir_chr)
+    format!("{}{}", delta_key_string(delta), dir_chr)
 }
 
-fn key_string_location(key: &str) -> Option<(Coords, Direction)> {
+fn key_string_location(key: &str) -> Option<(CoordsDelta, Direction)> {
     let mut string = key.to_string();
     let dir = match string.pop() {
         Some('e') => Direction::East,
@@ -301,8 +301,8 @@ fn key_string_location(key: &str) -> Option<(Coords, Direction)> {
         Some('n') => Direction::North,
         _ => return None,
     };
-    if let Some(coords) = key_string_coords(&string) {
-        Some((coords, dir))
+    if let Some(delta) = key_string_delta(&string) {
+        Some((delta, dir))
     } else {
         None
     }
@@ -313,61 +313,65 @@ fn key_string_location(key: &str) -> Option<(Coords, Direction)> {
 #[cfg(test)]
 mod tests {
     use super::{ChipType, CircuitData, WireShape};
-    use crate::geom::{Coords, Direction, Orientation, Rect};
+    use crate::geom::{CoordsDelta, CoordsSize, Direction, Orientation};
     use toml;
 
     #[test]
     fn serialize_circuit_data() {
-        let mut data = CircuitData::new(-2, -1, 8, 5);
+        let mut data = CircuitData::new(8, 5);
         data.chips.insert(
-            Coords::new(0, 2),
+            CoordsDelta::new(2, 3),
             ChipType::Break,
             Orientation::default().flip_vert(),
         );
         data.chips.insert(
-            Coords::new(-1, 2),
+            CoordsDelta::new(1, 3),
             ChipType::Button,
             Orientation::default(),
         );
         data.wires.insert(
-            Coords::new(-1, 2),
+            CoordsDelta::new(1, 3),
             Direction::East,
             WireShape::Stub,
         );
-        data.wires.insert(Coords::new(0, 2), Direction::West, WireShape::Stub);
+        data.wires.insert(
+            CoordsDelta::new(2, 3),
+            Direction::West,
+            WireShape::Stub,
+        );
         let bytes = data.serialize_toml().unwrap();
         assert_eq!(
             String::from_utf8(bytes).unwrap().as_str(),
-            "bounds = [-2, -1, 8, 5]\n\n\
+            "size = [8, 5]\n\n\
              [chips]\n\
-             m1p2 = \"f0-Button\"\n\
-             p0p2 = \"t0-Break\"\n\n\
+             p1p3 = \"f0-Button\"\n\
+             p2p3 = \"t0-Break\"\n\n\
              [wires]\n\
-             m1p2e = \"Stub\"\n\
-             p0p2w = \"Stub\"\n"
+             p1p3e = \"Stub\"\n\
+             p2p3w = \"Stub\"\n"
         );
     }
 
     #[test]
     fn deserialize_circuit_data() {
-        let toml = "bounds = [-2, -1, 8, 5]\n\n\
+        let toml = "size = [8, 5]\n\n\
                     [chips]\n\
-                    m1p2 = \"f0-Button\"\n\
-                    p0p2 = \"t0-Break\"\n\n\
+                    p1p3 = \"f0-Button\"\n\
+                    p2p3 = \"t0-Break\"\n\n\
                     [wires]\n\
-                    m1p2e = \"Stub\"\n\
-                    p0p2w = \"Stub\"\n";
+                    p1p3e = \"Stub\"\n\
+                    p2p3w = \"Stub\"\n";
         let data: CircuitData = toml::from_slice(toml.as_bytes()).unwrap();
-        assert_eq!(data.bounds, Rect::new(-2, -1, 8, 5));
+        assert_eq!(data.size, CoordsSize::new(8, 5));
         assert_eq!(
             data.chips.0,
             vec![
                 (
-                    Coords::new(-1, 2),
+                    CoordsDelta::new(1, 3),
                     (ChipType::Button, Orientation::default())
                 ),
                 (
-                    Coords::new(0, 2),
+                    CoordsDelta::new(2, 3),
                     (ChipType::Break, Orientation::default().flip_vert())
                 ),
             ]
@@ -377,8 +381,8 @@ mod tests {
         assert_eq!(
             data.wires.0,
             vec![
-                ((Coords::new(-1, 2), Direction::East), WireShape::Stub),
-                ((Coords::new(0, 2), Direction::West), WireShape::Stub),
+                ((CoordsDelta::new(1, 3), Direction::East), WireShape::Stub),
+                ((CoordsDelta::new(2, 3), Direction::West), WireShape::Stub),
             ]
             .into_iter()
             .collect()

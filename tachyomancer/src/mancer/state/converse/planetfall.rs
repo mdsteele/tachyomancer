@@ -29,7 +29,7 @@ pub(super) fn advanced_circuits(profile: &Profile,
                                 -> Result<(), ()> {
     builder.esra("Time to learn about event wires.\n\n\
                   You can use them in a circuit like this:\n\
-                  $=$#bounds=[0,0,3,1]\n\
+                  $=$#size=[3,1]\n\
                   [chips]\n\
                   p1p0='t0-Filter'\n\
                   [wires]\n\

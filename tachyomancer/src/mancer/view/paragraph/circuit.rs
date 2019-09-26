@@ -56,12 +56,12 @@ impl ParserPiece for ParserCircuitPiece {
     }
 
     fn width(&self, _font_size: f32) -> f32 {
-        (self.data.bounds.width as f32) * CIRCUIT_GRID_CELL_SIZE
+        (self.data.size.width as f32) * CIRCUIT_GRID_CELL_SIZE
             + 2.0 * CIRCUIT_MARGIN_HORZ
     }
 
     fn height(&self, _font_size: f32) -> f32 {
-        (self.data.bounds.height as f32) * CIRCUIT_GRID_CELL_SIZE
+        (self.data.size.height as f32) * CIRCUIT_GRID_CELL_SIZE
     }
 
     fn num_millis(&self) -> usize {
@@ -85,19 +85,19 @@ impl ParserPiece for ParserCircuitPiece {
         x_offset: f32,
         y_offset: f32,
     ) -> Box<dyn CompiledPiece> {
-        let delta = Coords::new(0, 0) - self.data.bounds.top_left();
+        let origin = Coords::new(0, 0);
         let chips: HashMap<Coords, (ChipType, Orientation)> = self
             .data
             .chips
             .iter()
-            .map(|(coords, ctype, orient)| (coords + delta, (ctype, orient)))
+            .map(|(delta, ctype, orient)| (origin + delta, (ctype, orient)))
             .collect();
         let mut fragments: HashMap<(Coords, Direction), (WireShape, usize)> =
             self.data
                 .wires
                 .iter()
-                .map(|(coords, dir, shape)| {
-                    ((coords, dir), (shape, usize::MAX))
+                .map(|(delta, dir, shape)| {
+                    ((origin + delta, dir), (shape, usize::MAX))
                 })
                 .collect();
         // TODO: Perform fragment repair, like in EditGrid::from_circuit_data,
@@ -128,7 +128,7 @@ impl ParserPiece for ParserCircuitPiece {
         let piece = CompiledCircuitPiece {
             offset: Vector2::new(x_offset + CIRCUIT_MARGIN_HORZ, y_offset),
             num_millis: self.num_millis,
-            size: self.data.bounds.size(),
+            size: self.data.size,
             chips,
             fragments,
             wires,

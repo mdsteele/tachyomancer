@@ -263,24 +263,19 @@ impl Selection {
         if let Some(text) = clipboard.get() {
             match CircuitData::deserialize_from_string(&text) {
                 Ok(data) => {
-                    let origin = data.bounds.top_left();
                     let chips = data
                         .chips
                         .iter()
                         .filter(|&(_, ctype, _)| allowed.contains(ctype))
-                        .map(|(coords, ctype, orient)| {
-                            (coords - origin, (ctype, orient))
-                        })
+                        .map(|(delta, ctype, orient)| (delta, (ctype, orient)))
                         .collect();
                     let wires = data
                         .wires
                         .iter()
-                        .map(|(coords, dir, shape)| {
-                            ((coords - origin, dir), shape)
-                        })
+                        .map(|(delta, dir, shape)| ((delta, dir), shape))
                         .collect();
                     let selection =
-                        Selection { size: data.bounds.size(), chips, wires };
+                        Selection { size: data.size, chips, wires };
                     return Some(selection);
                 }
                 Err(err) => {
@@ -353,18 +348,12 @@ impl Selection {
     }
 
     fn to_clipboard_text(&self) -> Result<String, String> {
-        let origin = Coords::new(0, 0);
-        let mut data = CircuitData::new(
-            origin.x,
-            origin.y,
-            self.size.width,
-            self.size.height,
-        );
+        let mut data = CircuitData::new(self.size.width, self.size.height);
         for (&delta, &(ctype, orient)) in self.chips.iter() {
-            data.chips.insert(origin + delta, ctype, orient);
+            data.chips.insert(delta, ctype, orient);
         }
         for (&(delta, dir), &shape) in self.wires.iter() {
-            data.wires.insert(origin + delta, dir, shape);
+            data.wires.insert(delta, dir, shape);
         }
         data.serialize_to_string()
     }
@@ -618,16 +607,24 @@ mod tests {
     use cgmath::vec2;
     use std::collections::{HashMap, HashSet};
     use tachy::geom::{
-        Coords, CoordsRect, CoordsSize, Direction, Orientation,
+        Coords, CoordsDelta, CoordsRect, CoordsSize, Direction, Orientation,
     };
     use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
     use tachy::state::EditGrid;
 
     #[test]
     fn cut_removes_edge_stub() {
-        let mut data = CircuitData::new(0, 0, 10, 10);
-        data.wires.insert(Coords::new(3, 5), Direction::East, WireShape::Stub);
-        data.wires.insert(Coords::new(4, 5), Direction::West, WireShape::Stub);
+        let mut data = CircuitData::new(10, 10);
+        data.wires.insert(
+            CoordsDelta::new(3, 5),
+            Direction::East,
+            WireShape::Stub,
+        );
+        data.wires.insert(
+            CoordsDelta::new(4, 5),
+            Direction::West,
+            WireShape::Stub,
+        );
         let mut grid = EditGrid::from_circuit_data(
             Puzzle::TutorialOr,
             &HashSet::new(),
@@ -649,19 +646,27 @@ mod tests {
 
     #[test]
     fn paste_splices_wires() {
-        let mut data = CircuitData::new(0, 0, 10, 10);
-        data.wires.insert(Coords::new(3, 5), Direction::East, WireShape::Stub);
+        let mut data = CircuitData::new(10, 10);
         data.wires.insert(
-            Coords::new(4, 5),
+            CoordsDelta::new(3, 5),
+            Direction::East,
+            WireShape::Stub,
+        );
+        data.wires.insert(
+            CoordsDelta::new(4, 5),
             Direction::West,
             WireShape::Straight,
         );
         data.wires.insert(
-            Coords::new(4, 5),
+            CoordsDelta::new(4, 5),
             Direction::East,
             WireShape::Straight,
         );
-        data.wires.insert(Coords::new(5, 5), Direction::West, WireShape::Stub);
+        data.wires.insert(
+            CoordsDelta::new(5, 5),
+            Direction::West,
+            WireShape::Stub,
+        );
         let mut grid = EditGrid::from_circuit_data(
             Puzzle::TutorialOr,
             &HashSet::new(),
@@ -708,9 +713,9 @@ mod tests {
 
     #[test]
     fn pasting_a_chip_removes_stubs_not_on_port() {
-        let mut data = CircuitData::new(0, 0, 10, 10);
+        let mut data = CircuitData::new(10, 10);
         data.wires.insert(
-            Coords::new(1, 1),
+            CoordsDelta::new(1, 1),
             Direction::East,
             WireShape::TurnLeft,
         );
@@ -748,9 +753,9 @@ mod tests {
 
     #[test]
     fn pasting_a_wire_removes_new_stubs() {
-        let mut data = CircuitData::new(0, 0, 10, 10);
+        let mut data = CircuitData::new(10, 10);
         data.wires.insert(
-            Coords::new(1, 1),
+            CoordsDelta::new(1, 1),
             Direction::East,
             WireShape::TurnLeft,
         );

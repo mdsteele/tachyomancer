@@ -1,0 +1,20 @@
+size = [4, 3]
+
+[chips]
+p1p0 = "f0-And"
+p2p0 = "f0-Not"
+p2p1 = "f0-Or"
+p3p1 = "t0-And"
+
+[wires]
+p0p0e = "TurnLeft"
+p0p1w = "SplitTee"
+p0p2n = "TurnLeft"
+p1p0e = "Stub"
+p1p1e = "SplitTee"
+p1p2e = "Straight"
+p1p2s = "Straight"
+p2p1e = "Stub"
+p2p2w = "TurnLeft"
+p3p0s = "TurnLeft"
+p3p1e = "Stub"

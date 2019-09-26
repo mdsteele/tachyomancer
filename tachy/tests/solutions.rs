@@ -5,13 +5,53 @@ use tachy::save::{CircuitData, Puzzle};
 use tachy::state::{EditGrid, EvalResult};
 
 #[test]
-fn tutorial_or() {
-    test_solution(Puzzle::TutorialOr, "tutorial_or", 4);
+fn automate_heliostat_fast() {
+    test_solution(Puzzle::AutomateHeliostat, "automate_heliostat_fast", 88);
+}
+
+#[test]
+fn automate_heliostat_small() {
+    test_solution(Puzzle::AutomateHeliostat, "automate_heliostat_small", 135);
+}
+
+#[test]
+fn automate_sensors_fast() {
+    test_solution(Puzzle::AutomateSensors, "automate_sensors_fast", 47);
+}
+
+#[test]
+fn automate_sensors_small() {
+    test_solution(Puzzle::AutomateSensors, "automate_sensors_small", 79);
+}
+
+#[test]
+fn fabricate_halve() {
+    test_solution(Puzzle::FabricateHalve, "fabricate_halve", 16);
+}
+
+#[test]
+fn fabricate_mul() {
+    test_solution(Puzzle::FabricateMul, "fabricate_mul", 10);
+}
+
+#[test]
+fn fabricate_xor() {
+    test_solution(Puzzle::FabricateXor, "fabricate_xor", 4);
+}
+
+#[test]
+fn tutorial_add() {
+    test_solution(Puzzle::TutorialAdd, "tutorial_add", 9);
 }
 
 #[test]
 fn tutorial_mux() {
     test_solution(Puzzle::TutorialMux, "tutorial_mux", 8);
+}
+
+#[test]
+fn tutorial_or() {
+    test_solution(Puzzle::TutorialOr, "tutorial_or", 4);
 }
 
 fn test_solution(puzzle: Puzzle, name: &str, num_time_steps: u32) {

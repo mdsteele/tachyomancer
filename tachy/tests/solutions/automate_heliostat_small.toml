@@ -1,0 +1,18 @@
+size = [4, 3]
+
+[chips]
+p1p1 = "f2-Cmp"
+p2p0 = "t0-Cmp"
+p2p2 = "f0-Pack"
+
+[wires]
+p0p0s = "SplitTee"
+p0p1n = "TurnLeft"
+p1p0e = "Straight"
+p1p2n = "TurnLeft"
+p2p1e = "Straight"
+p2p1s = "Straight"
+p3p0s = "SplitTee"
+p3p1e = "TurnLeft"
+p3p1w = "TurnLeft"
+p3p2w = "TurnLeft"

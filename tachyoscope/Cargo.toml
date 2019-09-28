@@ -1,0 +1,13 @@
+[package]
+name = "tachyoscope"
+version = "0.1.0"
+authors = ["Matthew D. Steele <mdsteele@alum.mit.edu>"]
+license = "GPL-3.0+"
+description = "Score server for Tachyomancer"
+edition = "2018"
+
+[dependencies]
+getopts = "0.2"
+iron = "0.6"
+router = "0.6"
+tachy = { path = "../tachy" }

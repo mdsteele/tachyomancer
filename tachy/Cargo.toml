@@ -3,6 +3,8 @@ name = "tachy"
 version = "0.1.0"
 authors = ["Matthew D. Steele <mdsteele@alum.mit.edu>"]
 license = "GPL-3.0+"
+description = "Shared core library for Tachyomancer-related binaries"
+edition = "2018"
 
 [dependencies]
 cgmath = "0.17"

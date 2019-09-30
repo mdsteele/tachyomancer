@@ -1,6 +1,11 @@
+puzzle = "FabricateHalve"
+score = 34
+time_steps = 16
+
+[circuit]
 size = [6, 3]
 
-[chips]
+[circuit.chips]
 p0p1 = "f0-Unpack"
 p1p1 = "t0-Unpack"
 p2p1 = "f1-Unpack"
@@ -8,7 +13,7 @@ p2p2 = "f0-Pack"
 p3p1 = "f0-Pack"
 p4p2 = "f0-Pack"
 
-[wires]
+[circuit.wires]
 m1p1e = "Stub"
 p0p0e = "TurnLeft"
 p0p1e = "Stub"

@@ -1,12 +1,17 @@
+puzzle = "TutorialMux"
+score = 30
+time_steps = 8
+
+[circuit]
 size = [4, 3]
 
-[chips]
+[circuit.chips]
 p0p1 = "t0-And"
 p1p0 = "f2-Not"
 p2p2 = "t0-And"
 p3p1 = "f0-Or"
 
-[wires]
+[circuit.wires]
 m1p1e = "Stub"
 p0p0e = "TurnLeft"
 p1p1e = "Straight"

@@ -1,12 +1,17 @@
+puzzle = "FabricateXor"
+score = 32
+time_steps = 4
+
+[circuit]
 size = [4, 3]
 
-[chips]
+[circuit.chips]
 p1p0 = "f0-And"
 p2p0 = "f0-Not"
 p2p1 = "f0-Or"
 p3p1 = "t0-And"
 
-[wires]
+[circuit.wires]
 p0p0e = "TurnLeft"
 p0p1w = "SplitTee"
 p0p2n = "TurnLeft"

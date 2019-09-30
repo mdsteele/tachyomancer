@@ -1,11 +1,16 @@
+puzzle = "AutomateHeliostat"
+score = 135
+time_steps = 135
+
+[circuit]
 size = [4, 3]
 
-[chips]
+[circuit.chips]
 p1p1 = "f2-Cmp"
 p2p0 = "t0-Cmp"
 p2p2 = "f0-Pack"
 
-[wires]
+[circuit.wires]
 p0p0s = "SplitTee"
 p0p1n = "TurnLeft"
 p1p0e = "Straight"

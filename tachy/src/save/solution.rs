@@ -19,6 +19,8 @@
 
 use super::circuit::CircuitData;
 use super::puzzle::Puzzle;
+use std::fs;
+use std::path::Path;
 use toml;
 
 //===========================================================================//
@@ -32,6 +34,14 @@ pub struct SolutionData {
 }
 
 impl SolutionData {
+    pub fn load(path: &Path) -> Result<SolutionData, String> {
+        let bytes = fs::read(path).map_err(|err| {
+            format!("Could not read solution file from {:?}: {}", path, err)
+        })?;
+        toml::from_slice(&bytes)
+            .map_err(|err| format!("Could not deserialize solution: {}", err))
+    }
+
     pub fn deserialize_from_string(
         string: &str,
     ) -> Result<SolutionData, String> {

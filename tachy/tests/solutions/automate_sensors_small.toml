@@ -1,6 +1,11 @@
+puzzle = "AutomateSensors"
+score = 79
+time_steps = 79
+
+[circuit]
 size = [5, 5]
 
-[chips]
+[circuit.chips]
 p1p0 = "f0-Sub"
 p1p4 = "f0-Const(1)"
 p2p1 = "f0-Add"
@@ -11,7 +16,7 @@ p3p4 = "t0-And"
 p4p0 = "f2-Const(1)"
 p4p4 = "f0-Eq"
 
-[wires]
+[circuit.wires]
 p0p0s = "SplitTee"
 p0p1s = "Straight"
 p0p2n = "TurnLeft"

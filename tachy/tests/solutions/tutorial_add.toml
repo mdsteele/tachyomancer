@@ -1,6 +1,11 @@
+puzzle = "TutorialAdd"
+score = 34
+time_steps = 9
+
+[circuit]
 size = [5, 3]
 
-[chips]
+[circuit.chips]
 p0p1 = "f0-Unpack"
 p1p0 = "f0-Add2Bit"
 p2p0 = "f0-Add2Bit"
@@ -8,7 +13,7 @@ p2p1 = "f0-Add2Bit"
 p2p2 = "f3-Unpack"
 p3p1 = "f0-Pack"
 
-[wires]
+[circuit.wires]
 m1p1e = "Stub"
 p0p0e = "TurnLeft"
 p1p0e = "Stub"

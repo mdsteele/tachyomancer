@@ -25,6 +25,7 @@ mod eval;
 mod port;
 mod puzzle;
 mod size;
+mod verify;
 
 pub use self::change::GridChange;
 pub use self::check::{
@@ -41,5 +42,6 @@ pub use self::port::{
 };
 pub use self::puzzle::*;
 pub use self::size::{WireSize, WireSizeInterval};
+pub use self::verify::verify_solution;
 
 //===========================================================================//

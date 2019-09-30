@@ -1,12 +1,17 @@
+puzzle = "TutorialOr"
+score = 12
+time_steps = 4
+
+[circuit]
 size = [3, 3]
 
-[chips]
+[circuit.chips]
 p0p1 = "f0-Not"
 p1p1 = "f0-And"
 p1p2 = "f3-Not"
 p2p1 = "f0-Not"
 
-[wires]
+[circuit.wires]
 m1p1e = "Stub"
 p0p1e = "Stub"
 p1p1e = "Stub"

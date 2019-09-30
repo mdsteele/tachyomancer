@@ -1,6 +1,11 @@
+puzzle = "AutomateSensors"
+score = 47
+time_steps = 47
+
+[circuit]
 size = [5, 6]
 
-[chips]
+[circuit.chips]
 p1p0 = "f0-Sub"
 p2p1 = "f1-Halve"
 p2p2 = "t0-Add"
@@ -12,7 +17,7 @@ p3p5 = "t0-And"
 p4p0 = "f2-Const(1)"
 p4p5 = "f0-Eq"
 
-[wires]
+[circuit.wires]
 p0p0s = "SplitTee"
 p0p1s = "Straight"
 p0p2s = "Straight"

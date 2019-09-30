@@ -1,6 +1,11 @@
+puzzle = "FabricateMul"
+score = 68
+time_steps = 10
+
+[circuit]
 size = [6, 5]
 
-[chips]
+[circuit.chips]
 p0p2 = "f0-Unpack"
 p2p0 = "f0-Mul4Bit"
 p2p3 = "f0-Unpack"
@@ -10,7 +15,7 @@ p4p1 = "t3-Add"
 p4p2 = "f0-Mul4Bit"
 p5p2 = "f0-Pack"
 
-[wires]
+[circuit.wires]
 m1p2e = "Stub"
 p0p1e = "TurnLeft"
 p1p0e = "TurnLeft"

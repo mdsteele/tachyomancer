@@ -28,8 +28,8 @@ use iron::{Iron, IronError, IronResult, Request, Response};
 use router::Router;
 use std::io::{self, Read};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use tachy::save::{Puzzle, SolutionData};
-use tachy::state::{EditGrid, EvalResult, EvalScore, WireError};
+use tachy::save::SolutionData;
+use tachy::state::verify_solution;
 
 // ========================================================================= //
 
@@ -113,82 +113,7 @@ fn submit_solution(request: &mut Request) -> IronResult<Response> {
         data.circuit.size
     );
 
-    let mut grid = EditGrid::from_circuit_data(
-        data.puzzle,
-        &Puzzle::all().collect(),
-        &data.circuit,
-    );
-    let wire_length = grid.wire_fragments().len();
-    let mut errors = Vec::<String>::new();
-    if !grid.start_eval() {
-        for error in grid.errors() {
-            errors.push(match error {
-                WireError::MultipleSenders(idx) => {
-                    format!("Wire {} has multiple senders", idx)
-                }
-                WireError::PortColorMismatch(idx) => {
-                    format!("Wire {} has a color mismatch", idx)
-                }
-                WireError::NoValidSize(idx) => {
-                    format!("Wire {} has a size mismatch", idx)
-                }
-                WireError::UnbrokenLoop(idxs, _) => {
-                    format!("Wires {:?} form a loop", idxs)
-                }
-            });
-        }
-        errors.push("Circuit had errors".to_string());
-    } else {
-        let eval = grid.eval_mut().unwrap();
-        for time_step in 0..(data.time_steps + 1) {
-            match eval.step_time() {
-                EvalResult::Continue if time_step < data.time_steps => {}
-                EvalResult::Continue => {
-                    errors.push(format!(
-                        "Evaluation did not end at time step {}",
-                        time_step
-                    ));
-                    break;
-                }
-                EvalResult::Breakpoint(_) => {
-                    // TODO: We should just ignore breakpoints.
-                    errors.push(format!(
-                        "Breakpoint at time step {}",
-                        time_step
-                    ));
-                    break;
-                }
-                EvalResult::Failure => {
-                    errors.extend(
-                        eval.errors()
-                            .iter()
-                            .map(|error| error.message.clone()),
-                    );
-                    break;
-                }
-                EvalResult::Victory(score) if time_step < data.time_steps => {
-                    errors.push(format!(
-                        "Unexpected victory at time step {}: {:?}",
-                        time_step, score
-                    ));
-                    break;
-                }
-                EvalResult::Victory(score) => {
-                    let score = match score {
-                        EvalScore::Value(value) => value as u32,
-                        EvalScore::WireLength => wire_length as u32,
-                    };
-                    if score != data.score {
-                        errors.push(format!(
-                            "Actual score was {}, but expected {}",
-                            score, data.score
-                        ));
-                    }
-                }
-            }
-        }
-    }
-
+    let errors = verify_solution(&data);
     if errors.is_empty() {
         Ok(Response::with((status::Ok, "ok\n")))
     } else {

@@ -1,6 +1,11 @@
+puzzle = "AutomateHeliostat"
+score = 88
+time_steps = 88
+
+[circuit]
 size = [6, 6]
 
-[chips]
+[circuit.chips]
 p0p0 = "f0-Not"
 p1p0 = "f0-Add"
 p1p1 = "f3-Const(1)"
@@ -13,7 +18,7 @@ p4p4 = "f3-Mux"
 p4p5 = "f3-Const(1)"
 p5p4 = "f2-Const(2)"
 
-[wires]
+[circuit.wires]
 m1p0e = "Stub"
 p0p0e = "Stub"
 p1p0s = "Stub"

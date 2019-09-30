@@ -17,20 +17,60 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-mod chip;
-mod circuit;
-mod converse;
-mod puzzle;
-mod solution;
-mod wire;
+use super::circuit::CircuitData;
+use super::puzzle::Puzzle;
+use toml;
 
-pub use self::chip::{ChipSet, ChipType, CHIP_CATEGORIES};
-pub use self::circuit::CircuitData;
-pub use self::converse::{
-    Chapter, Conversation, ConversationIter, ConversationProgress, Prereq,
-};
-pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
-pub use self::solution::SolutionData;
-pub use self::wire::WireShape;
+//===========================================================================//
+
+#[derive(Deserialize, Serialize)]
+pub struct SolutionData {
+    pub puzzle: Puzzle,
+    pub score: u32,
+    pub time_steps: u32,
+    pub circuit: CircuitData,
+}
+
+impl SolutionData {
+    pub fn deserialize_from_string(
+        string: &str,
+    ) -> Result<SolutionData, String> {
+        toml::from_str(string)
+            .map_err(|err| format!("Could not deserialize solution: {}", err))
+    }
+
+    pub fn serialize_to_string(&self) -> Result<String, String> {
+        toml::to_string(self)
+            .map_err(|err| format!("Could not serialize solution: {}", err))
+    }
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::{CircuitData, Puzzle, SolutionData};
+
+    #[test]
+    fn serialize_solution_data() {
+        let solution = SolutionData {
+            puzzle: Puzzle::TutorialOr,
+            score: 14,
+            time_steps: 4,
+            circuit: CircuitData::new(4, 3),
+        };
+        let string = solution.serialize_to_string().unwrap();
+        assert_eq!(
+            string.as_str(),
+            "puzzle = \"TutorialOr\"\n\
+             score = 14\n\
+             time_steps = 4\n\n\
+             [circuit]\n\
+             size = [4, 3]\n\n\
+             [circuit.chips]\n\n\
+             [circuit.wires]\n"
+        );
+    }
+}
 
 //===========================================================================//

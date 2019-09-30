@@ -346,6 +346,10 @@ impl EditGrid {
         !self.errors.is_empty()
     }
 
+    pub fn errors(&self) -> &[WireError] {
+        &self.errors
+    }
+
     pub fn has_chip_at(&self, coords: Coords) -> bool {
         self.chips.contains_key(&coords)
     }

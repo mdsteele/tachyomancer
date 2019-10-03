@@ -30,6 +30,7 @@ use std::mem;
 use std::os::raw::c_void;
 use std::time::Instant;
 use tachy::geom::{AsFloat, Color4, RectSize};
+use tachy::save::SolutionData;
 
 //===========================================================================//
 
@@ -137,7 +138,8 @@ impl<'a> Window<'a> {
             gl::DepthFunc(gl::LESS);
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
-        let resources = Resources::new()?;
+        let resources =
+            Resources::new(gui_context.score_client.global_scores().clone())?;
         let mut possible_resolutions =
             gui_context.get_possible_resolutions()?;
         possible_resolutions.retain(|res| {
@@ -260,6 +262,10 @@ impl<'a> Window<'a> {
             self.debug_counter = (self.debug_counter + 1) % 1000;
         }
         self.sdl_window.gl_swap_window();
+    }
+
+    pub fn submit_solution(&self, solution: SolutionData) {
+        self.gui_context.score_client.submit_solution(solution);
     }
 }
 

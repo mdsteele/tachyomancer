@@ -32,3 +32,4 @@ strum_macros = "0.16"
 tachy = { path = "../tachy" }
 toml = "0.5"
 unicase = "2"
+ureq = "0.11"

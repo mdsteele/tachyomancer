@@ -21,6 +21,7 @@ use super::audio::{AudioMixer, AudioQueue};
 use super::clipboard::Clipboard;
 use super::cursor::Cursors;
 use super::debug::StdinReader;
+use super::score::ScoreClient;
 use sdl2;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
@@ -37,6 +38,7 @@ pub struct GuiContext {
     _audio_device: sdl2::audio::AudioDevice<AudioMixer>,
     pub(super) audio_queue: Arc<Mutex<AudioQueue>>,
     pub(super) cursors: Cursors,
+    pub(super) score_client: ScoreClient,
     pub(super) stdin_reader: StdinReader,
 }
 
@@ -44,6 +46,7 @@ impl GuiContext {
     pub fn init(
         init_sound_volume_percent: i32,
         init_music_volume_percent: i32,
+        server_addr: &str,
     ) -> Result<GuiContext, String> {
         let sdl_context = sdl2::init()?;
         if cfg!(any(target_os = "ios", target_os = "macos")) {
@@ -72,6 +75,7 @@ impl GuiContext {
             _audio_device: audio_device,
             audio_queue,
             cursors,
+            score_client: ScoreClient::start(server_addr),
             stdin_reader: StdinReader::start(),
         })
     }

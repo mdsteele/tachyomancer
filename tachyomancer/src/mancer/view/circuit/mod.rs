@@ -42,7 +42,7 @@ use crate::mancer::save::Prefs;
 use cgmath;
 use std::u16;
 use tachy::geom::{Coords, Direction, RectSize};
-use tachy::save::ChipType;
+use tachy::save::{ChipType, SolutionData};
 use tachy::state::{
     EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
     TutorialBubblePosition,
@@ -50,10 +50,15 @@ use tachy::state::{
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug)]
 pub enum CircuitAction {
     BackToMenu,
-    Victory(i32, i32),
+    Victory(SolutionData),
+}
+
+#[derive(Clone, Copy)]
+enum VictoryDialogAction {
+    BackToMenu,
+    ContinueEditing,
 }
 
 //===========================================================================//
@@ -69,7 +74,7 @@ pub struct CircuitView {
     seconds_since_time_step: f64,
     controls_status: ControlsStatus,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
-    victory_dialog: Option<ButtonDialogBox<Option<CircuitAction>>>,
+    victory_dialog: Option<ButtonDialogBox<VictoryDialogAction>>,
 }
 
 impl CircuitView {
@@ -179,8 +184,10 @@ impl CircuitView {
 
         if let Some(mut dialog) = self.victory_dialog.take() {
             match dialog.on_event(event, ui) {
-                Some(Some(action)) => return Some(action),
-                Some(None) => {}
+                Some(VictoryDialogAction::BackToMenu) => {
+                    return Some(CircuitAction::BackToMenu);
+                }
+                Some(VictoryDialogAction::ContinueEditing) => {}
                 None => self.victory_dialog = Some(dialog),
             }
             return None;
@@ -374,11 +381,13 @@ impl CircuitView {
             EvalResult::Victory(score) => {
                 let area = grid.bounds().area();
                 let score = match score {
-                    EvalScore::Value(value) => value,
+                    EvalScore::Value(value) => value as u32,
                     EvalScore::WireLength => {
-                        grid.wire_fragments().len() as i32
+                        grid.wire_fragments().len() as u32
                     }
                 };
+                // TODO: It would be nice to not have this unwrap() here.
+                let time_steps = grid.eval().unwrap().time_step();
                 debug_log!("Victory!  area={}, score={}", area, score);
                 grid.stop_eval();
                 let size =
@@ -388,10 +397,14 @@ impl CircuitView {
                 let format =
                     format!("Victory!\nArea: {}\nScore: {}", area, score);
                 let buttons = &[
-                    ("Continue editing", None, Some(Keycode::Escape)),
+                    (
+                        "Continue editing",
+                        VictoryDialogAction::ContinueEditing,
+                        Some(Keycode::Escape),
+                    ),
                     (
                         "Back to menu",
-                        Some(CircuitAction::BackToMenu),
+                        VictoryDialogAction::BackToMenu,
                         Some(Keycode::Return),
                     ),
                 ];
@@ -400,7 +413,12 @@ impl CircuitView {
                 // TODO: Unfocus other views
                 self.controls_status = ControlsStatus::Stopped;
                 ui.request_redraw();
-                Some(CircuitAction::Victory(area, score))
+                Some(CircuitAction::Victory(SolutionData {
+                    puzzle: grid.puzzle(),
+                    score,
+                    time_steps,
+                    circuit: grid.to_circuit_data(),
+                }))
             }
             EvalResult::Failure => {
                 debug_log!("Failure!");

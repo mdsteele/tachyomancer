@@ -507,7 +507,6 @@ mod tests {
         assert_eq!(WireSizeInterval::exactly(WireSize::Four), wires[0].size);
         assert_eq!(WireSizeInterval::exactly(WireSize::Two), wires[1].size);
     }
-
 }
 
 //===========================================================================//

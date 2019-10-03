@@ -37,6 +37,7 @@ extern crate strum_macros;
 extern crate tachy;
 extern crate toml;
 extern crate unicase;
+extern crate ureq;
 
 mod mancer;
 
@@ -47,7 +48,12 @@ use self::mancer::state::GameState;
 use std::path::PathBuf;
 use tachy::geom::RectSize;
 
-// ========================================================================= //
+//===========================================================================//
+
+// TODO: Change this once we have a real score server.
+const DEFAULT_SCORE_SERVER_ADDR: &str = "http://127.0.0.1:8080";
+
+//===========================================================================//
 
 fn main() {
     match run_game(&parse_flags()) {
@@ -88,6 +94,7 @@ struct StartupFlags {
     fullscreen: Option<bool>,
     resolution: Option<RectSize<i32>>,
     save_dir: Option<PathBuf>,
+    score_server_addr: Option<String>,
 }
 
 fn parse_flags() -> StartupFlags {
@@ -102,6 +109,7 @@ fn parse_flags() -> StartupFlags {
     opts.optflagopt("", "fullscreen", "override fullscreen setting", "BOOL");
     opts.optopt("", "resolution", "override window/screen resolution", "WxH");
     opts.optopt("", "save_dir", "override save dir path", "PATH");
+    opts.optopt("", "score_server", "override score server address", "ADDR");
 
     let args: Vec<String> = std::env::args().collect();
     let matches = opts.parse(&args[1..]).unwrap_or_else(|failure| {
@@ -133,7 +141,14 @@ fn parse_flags() -> StartupFlags {
         })
     });
     let save_dir = matches.opt_str("save_dir").map(PathBuf::from);
-    StartupFlags { antialiasing, fullscreen, resolution, save_dir }
+    let score_server_addr = matches.opt_str("score_server");
+    StartupFlags {
+        antialiasing,
+        fullscreen,
+        resolution,
+        save_dir,
+        score_server_addr,
+    }
 }
 
 //===========================================================================//
@@ -144,6 +159,11 @@ fn run_game(flags: &StartupFlags) -> Result<(), String> {
     let mut gui_context = GuiContext::init(
         state.prefs().sound_volume_percent(),
         state.prefs().music_volume_percent(),
+        flags
+            .score_server_addr
+            .as_ref()
+            .map(String::as_str)
+            .unwrap_or(DEFAULT_SCORE_SERVER_ADDR),
     )?;
     let mut window_options =
         Some(initial_window_options(flags, state.prefs())?);

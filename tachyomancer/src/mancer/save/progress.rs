@@ -20,10 +20,9 @@
 use super::encode::{decode_name, encode_name};
 use std::collections::{btree_set, BTreeSet};
 use std::fs;
-use std::i64;
 use std::io;
 use std::path::{Path, PathBuf};
-use tachy::save::CircuitData;
+use tachy::save::{CircuitData, ScoreCurve};
 use unicase::UniCase;
 
 //===========================================================================//
@@ -46,7 +45,7 @@ pub fn is_valid_circuit_name(name: &str) -> bool {
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct PuzzleProgressData {
-    graph: Option<Vec<(i32, i32)>>,
+    graph: Option<ScoreCurve>,
 }
 
 impl PuzzleProgressData {
@@ -90,12 +89,7 @@ impl PuzzleProgress {
         let data_path = base_path.join(DATA_FILE_NAME);
         let data = if data_path.exists() {
             match PuzzleProgressData::try_load(&data_path) {
-                Ok(mut data) => {
-                    if let Some(ref mut points) = data.graph {
-                        fix_graph_data(points);
-                    }
-                    data
-                }
+                Ok(data) => data,
                 Err(err) => {
                     debug_log!(
                         "Could not read puzzle progress \
@@ -168,24 +162,19 @@ impl PuzzleProgress {
     }
 
     pub fn is_solved(&self) -> bool {
-        !self.scores().is_empty()
+        !self.local_scores().map_or(true, ScoreCurve::is_empty)
     }
 
-    pub fn scores(&self) -> &[(i32, i32)] {
-        if let Some(ref points) = self.data.graph {
-            points.as_slice()
-        } else {
-            &[]
-        }
+    pub fn local_scores(&self) -> Option<&ScoreCurve> {
+        self.data.graph.as_ref()
     }
 
     pub fn record_score(&mut self, area: i32, score: i32) {
-        if self.data.graph.is_none() {
-            self.data.graph = Some(vec![]);
+        if let Some(ref mut graph) = self.data.graph {
+            graph.insert((area, score));
+        } else {
+            self.data.graph = Some(ScoreCurve::new(vec![(area, score)]));
         }
-        let points = self.data.graph.as_mut().unwrap();
-        points.push((area, score));
-        fix_graph_data(points);
         self.needs_save = true;
     }
 
@@ -349,20 +338,6 @@ impl PuzzleProgress {
     }
 }
 
-fn fix_graph_data(points: &mut Vec<(i32, i32)>) {
-    points.sort();
-    let mut best_score = i64::MAX;
-    points.retain(|&(_, score)| {
-        let score = score as i64;
-        if score < best_score {
-            best_score = score;
-            true
-        } else {
-            false
-        }
-    });
-}
-
 //===========================================================================//
 
 pub struct CircuitNamesIter<'a> {
@@ -388,62 +363,6 @@ impl<'a> Iterator for CircuitNamesIter<'a> {
         } else {
             None
         }
-    }
-}
-
-//===========================================================================//
-
-#[cfg(test)]
-mod tests {
-    use super::fix_graph_data;
-
-    #[test]
-    fn fix_empty_graph_data() {
-        let mut scores = vec![];
-        fix_graph_data(&mut scores);
-        assert_eq!(scores, vec![]);
-    }
-
-    #[test]
-    fn fix_graph_data_with_one_score() {
-        let mut scores = vec![(20, 30)];
-        fix_graph_data(&mut scores);
-        assert_eq!(scores, vec![(20, 30)]);
-    }
-
-    #[test]
-    fn fix_unsorted_graph_data() {
-        let mut scores = vec![(16, 35), (9, 50), (20, 30), (12, 40)];
-        fix_graph_data(&mut scores);
-        assert_eq!(scores, vec![(9, 50), (12, 40), (16, 35), (20, 30)]);
-    }
-
-    #[test]
-    fn fix_repeated_scores() {
-        let mut scores = vec![(9, 50), (16, 35), (16, 35), (9, 50)];
-        fix_graph_data(&mut scores);
-        assert_eq!(scores, vec![(9, 50), (16, 35)]);
-    }
-
-    #[test]
-    fn fix_dominated_scores_with_same_area() {
-        let mut scores = vec![(9, 60), (9, 50), (16, 35), (16, 40)];
-        fix_graph_data(&mut scores);
-        assert_eq!(scores, vec![(9, 50), (16, 35)]);
-    }
-
-    #[test]
-    fn fix_dominated_scores_with_same_score() {
-        let mut scores = vec![(9, 60), (16, 60), (20, 30)];
-        fix_graph_data(&mut scores);
-        assert_eq!(scores, vec![(9, 60), (20, 30)]);
-    }
-
-    #[test]
-    fn fix_fully_dominated_scores() {
-        let mut scores = vec![(9, 60), (20, 70), (16, 75)];
-        fix_graph_data(&mut scores);
-        assert_eq!(scores, vec![(9, 60)]);
     }
 }
 

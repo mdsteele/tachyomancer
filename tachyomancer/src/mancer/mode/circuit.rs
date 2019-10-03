@@ -21,6 +21,7 @@ use super::shared::ModeChange;
 use crate::mancer::gui::{Event, Window};
 use crate::mancer::state::GameState;
 use crate::mancer::view::{CircuitAction, CircuitView};
+use tachy::save::SolutionData;
 
 //===========================================================================//
 
@@ -57,8 +58,8 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                             }
                         }
                     }
-                    Some(CircuitAction::Victory(area, score)) => {
-                        record_score(state, area, score);
+                    Some(CircuitAction::Victory(solution)) => {
+                        record_score(state, window, solution);
                     }
                     None => {}
                 }
@@ -69,7 +70,14 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     }
 }
 
-fn record_score(state: &mut GameState, area: i32, score: i32) {
+fn record_score(
+    state: &mut GameState,
+    window: &Window,
+    solution: SolutionData,
+) {
+    let score = solution.score as i32;
+    let area = solution.circuit.size.area();
+    window.submit_solution(solution);
     match state.record_current_puzzle_score(area, score) {
         Ok(()) => {}
         Err(err) => {

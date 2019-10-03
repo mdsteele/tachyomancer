@@ -30,7 +30,7 @@ use crate::mancer::state::GameState;
 use cgmath::{vec2, Deg, Matrix4};
 use std::cell::RefCell;
 use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect, RectSize};
-use tachy::save::{Conversation, Puzzle, PuzzleKind};
+use tachy::save::{Conversation, Puzzle, PuzzleKind, ScoreCurve};
 use tachy::state::{EditGrid, PuzzleExt, WireColor};
 
 //===========================================================================//
@@ -46,8 +46,8 @@ const DESCRIPTION_INNER_MARGIN_VERT: f32 = 10.0;
 const DESCRIPTION_LINE_HEIGHT: f32 = 22.0;
 
 const GRAPH_LABEL_FONT_SIZE: f32 = 14.0;
-const GRAPH_INNER_MARGIN: i32 = 10;
-const GRAPH_LABEL_MARGIN: i32 = 18;
+const GRAPH_INNER_MARGIN: f32 = 10.0;
+const GRAPH_LABEL_MARGIN: f32 = 18.0;
 const GRAPH_TICK_STEP: i32 = 10;
 const GRAPH_TICK_LENGTH: f32 = 4.0;
 const GRAPH_TICK_THICKNESS: f32 = 2.0;
@@ -154,7 +154,7 @@ impl PuzzlesView {
                 state.circuit_name(),
             ),
             description: DescriptionView::new(description_rect),
-            graph: GraphView::new(graph_rect),
+            graph: GraphView::new(window_size, graph_rect),
             preview: CircuitPreviewView::new(window_size, preview_rect),
             edit_button,
             rename_button,
@@ -178,8 +178,7 @@ impl PuzzlesView {
         self.puzzle_list.draw(resources, matrix, &puzzle);
         self.description.draw(resources, matrix, puzzle, state.prefs());
         self.back_button.draw(resources, matrix, true);
-        let scores = state.puzzle_scores(puzzle);
-        self.graph.draw(resources, matrix, puzzle, scores);
+        self.graph.draw(resources, matrix, state);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
         self.preview.draw(resources, matrix, state);
         self.edit_button.draw(resources, matrix, true);
@@ -347,58 +346,160 @@ impl DescriptionView {
 //===========================================================================//
 
 struct GraphView {
-    rect: Rect<i32>,
+    window_size: RectSize<i32>,
+    rect: Rect<f32>,
+    cache: RefCell<Option<(Option<String>, Puzzle, FrameBuffer)>>,
 }
 
 impl GraphView {
-    pub fn new(rect: Rect<i32>) -> GraphView {
-        GraphView { rect }
+    pub fn new(window_size: RectSize<i32>, rect: Rect<i32>) -> GraphView {
+        GraphView {
+            window_size,
+            rect: rect.as_f32(),
+            cache: RefCell::new(None),
+        }
     }
 
     pub fn draw(
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
-        puzzle: Puzzle,
-        points: &[(i32, i32)],
+        state: &GameState,
     ) {
-        let color = Color3::new(0.1, 0.7, 0.4);
-        let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        let profile_name = state.profile().map(|profile| profile.name());
+        let puzzle = state.current_puzzle();
 
-        // If the puzzle hasn't been solved yet, don't draw a graph.
-        let font = resources.fonts().roman();
-        if points.is_empty() {
-            font.draw(
-                matrix,
-                20.0,
-                Align::MidCenter,
-                (rect.x + 0.5 * rect.width, rect.y + 0.5 * rect.height - 12.0),
-                "COMPLETE THIS TASK TO",
-            );
-            font.draw(
-                matrix,
-                20.0,
-                Align::MidCenter,
-                (rect.x + 0.5 * rect.width, rect.y + 0.5 * rect.height + 12.0),
-                "VIEW OPTIMIZATION GRAPH",
-            );
-            return;
+        let color = Color3::new(0.1, 0.7, 0.4);
+        resources.shaders().solid().fill_rect(&matrix, color, self.rect);
+
+        let mut cached = self.cache.borrow_mut();
+        match cached.as_ref() {
+            Some(&(ref pname, puzz, ref fbo))
+                if pname.as_ref().map(String::as_str) == profile_name
+                    && puzz == puzzle =>
+            {
+                self.draw_fbo(resources, matrix, fbo);
+                return;
+            }
+            _ => {}
         }
+
+        let fbo =
+            self.generate_fbo(resources, puzzle, state.local_scores(puzzle));
+        self.draw_fbo(resources, matrix, &fbo);
+        *cached = Some((profile_name.map(str::to_string), puzzle, fbo));
+    }
+
+    fn draw_fbo(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        fbo: &FrameBuffer,
+    ) {
+        let left_top = self.rect.top_left()
+            + vec2(GRAPH_INNER_MARGIN, GRAPH_INNER_MARGIN);
+        let grayscale = false;
+        resources.shaders().frame().draw(matrix, fbo, left_top, grayscale);
+    }
+
+    fn generate_fbo(
+        &self,
+        resources: &Resources,
+        puzzle: Puzzle,
+        local_scores: Option<&ScoreCurve>,
+    ) -> FrameBuffer {
+        debug_log!("Regenerating preview image");
+        let fbo_size = self.rect.size().expand(-GRAPH_INNER_MARGIN);
+        let fbo = FrameBuffer::new(
+            fbo_size.width as usize,
+            fbo_size.height as usize,
+        );
+        fbo.bind();
+        if puzzle.kind() == PuzzleKind::Sandbox {
+            GraphView::draw_sandbox_message(resources, fbo_size);
+        } else if let Some(scores) = local_scores {
+            GraphView::draw_graph(resources, fbo_size, puzzle, scores);
+        } else {
+            GraphView::draw_no_solutions_message(resources, fbo_size);
+        }
+        fbo.unbind(self.window_size);
+        fbo
+    }
+
+    fn draw_sandbox_message(resources: &Resources, fbo_size: RectSize<f32>) {
+        let matrix = GraphView::fbo_matrix(fbo_size);
+        let mid_x = (0.5 * fbo_size.width).round();
+        let mid_y = (0.5 * fbo_size.height).round();
+        let font = resources.fonts().roman();
+        font.draw(
+            &matrix,
+            20.0,
+            Align::MidCenter,
+            (mid_x, mid_y),
+            "NO GRAPH FOR SANDBOX",
+        );
+    }
+
+    fn draw_no_solutions_message(
+        resources: &Resources,
+        fbo_size: RectSize<f32>,
+    ) {
+        let matrix = GraphView::fbo_matrix(fbo_size);
+        let mid_x = (0.5 * fbo_size.width).round();
+        let mid_y = (0.5 * fbo_size.height).round();
+        let font = resources.fonts().roman();
+        font.draw(
+            &matrix,
+            20.0,
+            Align::MidCenter,
+            (mid_x, mid_y - 12.0),
+            "COMPLETE THIS TASK TO",
+        );
+        font.draw(
+            &matrix,
+            20.0,
+            Align::MidCenter,
+            (mid_x, mid_y + 12.0),
+            "VIEW OPTIMIZATION GRAPH",
+        );
+    }
+
+    fn draw_graph(
+        resources: &Resources,
+        fbo_size: RectSize<f32>,
+        puzzle: Puzzle,
+        local_scores: &ScoreCurve,
+    ) {
+        let matrix = GraphView::fbo_matrix(fbo_size);
 
         // Draw the graph data:
         let graph_rect = Rect::new(
-            self.rect.x + GRAPH_INNER_MARGIN,
-            self.rect.y + GRAPH_INNER_MARGIN,
-            self.rect.width - 2 * GRAPH_INNER_MARGIN - GRAPH_LABEL_MARGIN,
-            self.rect.height - 2 * GRAPH_INNER_MARGIN - GRAPH_LABEL_MARGIN,
+            0.0,
+            0.0,
+            fbo_size.width - GRAPH_LABEL_MARGIN,
+            fbo_size.height - GRAPH_LABEL_MARGIN,
         );
-        let graph_rect = graph_rect.as_f32();
         let color = Color3::new(0.1, 0.1, 0.1);
         resources.shaders().solid().fill_rect(&matrix, color, graph_rect);
         let graph_bounds = puzzle.graph_bounds();
+
+        let color = Color3::new(0.1, 0.1, 0.9);
+        for (pt_x, pt_y) in resources.global_scores().scores_for(puzzle) {
+            let rel_x =
+                graph_rect.width * ((pt_x as f32) / (graph_bounds.0 as f32));
+            let rel_y =
+                graph_rect.height * ((pt_y as f32) / (graph_bounds.1 as f32));
+            let point_rect = Rect::new(
+                graph_rect.x + rel_x,
+                graph_rect.y,
+                graph_rect.width - rel_x,
+                graph_rect.height - rel_y,
+            );
+            resources.shaders().solid().fill_rect(&matrix, color, point_rect);
+        }
+
         let color = Color3::new(0.9, 0.1, 0.1);
-        for &(pt_x, pt_y) in points.iter() {
+        for &(pt_x, pt_y) in local_scores.scores().iter() {
             let rel_x =
                 graph_rect.width * ((pt_x as f32) / (graph_bounds.0 as f32));
             let rel_y =
@@ -444,8 +545,9 @@ impl GraphView {
         }
 
         // Draw axis labels:
+        let font = resources.fonts().roman();
         font.draw(
-            matrix,
+            &matrix,
             GRAPH_LABEL_FONT_SIZE,
             Align::BottomCenter,
             (
@@ -465,6 +567,10 @@ impl GraphView {
             puzzle.score_units(),
         );
     }
+
+    fn fbo_matrix(fbo_size: RectSize<f32>) -> Matrix4<f32> {
+        cgmath::ortho(0.0, fbo_size.width, 0.0, fbo_size.height, -10.0, 10.0)
+    }
 }
 
 //===========================================================================//
@@ -472,7 +578,7 @@ impl GraphView {
 struct CircuitPreviewView {
     window_size: RectSize<i32>,
     rect: Rect<f32>,
-    cache: RefCell<Option<(Puzzle, String, FrameBuffer)>>,
+    cache: RefCell<Option<(Option<String>, Puzzle, String, FrameBuffer)>>,
 }
 
 impl CircuitPreviewView {
@@ -500,13 +606,16 @@ impl CircuitPreviewView {
             &Color4::CYAN2,
             &Color4::PURPLE0_TRANSLUCENT,
         );
+        let profile_name = state.profile().map(|profile| profile.name());
         let puzzle = state.current_puzzle();
         let circuit_name = state.circuit_name();
 
         let mut cached = self.cache.borrow_mut();
         match cached.as_ref() {
-            Some(&(puzz, ref name, ref fbo))
-                if puzz == puzzle && name == circuit_name =>
+            Some(&(ref pname, puzz, ref cname, ref fbo))
+                if pname.as_ref().map(String::as_str) == profile_name
+                    && puzz == puzzle
+                    && cname == circuit_name =>
             {
                 self.draw_fbo(resources, matrix, fbo);
                 return;
@@ -516,7 +625,12 @@ impl CircuitPreviewView {
 
         let fbo = self.generate_fbo(resources, state, puzzle, circuit_name);
         self.draw_fbo(resources, matrix, &fbo);
-        *cached = Some((puzzle, circuit_name.to_string(), fbo));
+        *cached = Some((
+            profile_name.map(str::to_string),
+            puzzle,
+            circuit_name.to_string(),
+            fbo,
+        ));
     }
 
     fn draw_fbo(
@@ -546,9 +660,11 @@ impl CircuitPreviewView {
         );
         fbo.bind();
         match state.load_edit_grid(puzzle, circuit_name) {
-            Ok(grid) => self.draw_edit_grid(resources, fbo_size, &grid),
+            Ok(grid) => {
+                CircuitPreviewView::draw_edit_grid(resources, fbo_size, &grid)
+            }
             Err(error) => {
-                self.draw_error_paragraph(
+                CircuitPreviewView::draw_error_paragraph(
                     resources,
                     fbo_size,
                     &error,
@@ -561,7 +677,6 @@ impl CircuitPreviewView {
     }
 
     fn draw_error_paragraph(
-        &self,
         resources: &Resources,
         fbo_size: RectSize<f32>,
         error: &str,
@@ -587,12 +702,11 @@ impl CircuitPreviewView {
     }
 
     fn draw_edit_grid(
-        &self,
         resources: &Resources,
         fbo_size: RectSize<f32>,
         grid: &EditGrid,
     ) {
-        let grid_matrix = self.grid_matrix(fbo_size, grid);
+        let grid_matrix = CircuitPreviewView::grid_matrix(fbo_size, grid);
         let board_rect = grid.bounds().as_f32().expand(0.25);
         resources.shaders().solid().fill_rect(
             &grid_matrix,
@@ -633,11 +747,7 @@ impl CircuitPreviewView {
         }
     }
 
-    fn grid_matrix(
-        &self,
-        fbo_size: RectSize<f32>,
-        grid: &EditGrid,
-    ) -> Matrix4<f32> {
+    fn grid_matrix(fbo_size: RectSize<f32>, grid: &EditGrid) -> Matrix4<f32> {
         let board_bounds = grid.bounds().as_f32().expand(1.0);
         let board_aspect_ratio = board_bounds.width / board_bounds.height;
         let fbo_aspect_ratio = fbo_size.width / fbo_size.height;

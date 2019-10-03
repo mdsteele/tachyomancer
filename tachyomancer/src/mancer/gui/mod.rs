@@ -24,6 +24,7 @@ mod cursor;
 mod debug;
 mod event;
 mod resource;
+mod score;
 mod ui;
 mod window;
 
@@ -36,6 +37,7 @@ pub use self::event::{
     MultitouchEventData, ScrollEventData,
 };
 pub use self::resource::Resources;
+pub use self::score::GlobalScores;
 pub use self::ui::{Keyboard, Ui};
 pub use self::window::{Window, WindowOptions};
 

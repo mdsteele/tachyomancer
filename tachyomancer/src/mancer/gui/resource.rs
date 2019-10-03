@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::score::GlobalScores;
 use crate::mancer::font::Fonts;
 use crate::mancer::shader::Shaders;
 use crate::mancer::texture::Textures;
@@ -25,20 +26,25 @@ use crate::mancer::texture::Textures;
 
 pub struct Resources {
     fonts: Fonts,
+    scores: GlobalScores,
     shaders: Shaders,
     textures: Textures,
 }
 
 impl Resources {
-    pub(super) fn new() -> Result<Resources, String> {
+    pub(super) fn new(scores: GlobalScores) -> Result<Resources, String> {
         let fonts = Fonts::new()?;
         let shaders = Shaders::new()?;
         let textures = Textures::new()?;
-        Ok(Resources { fonts, shaders, textures })
+        Ok(Resources { fonts, scores, shaders, textures })
     }
 
     pub fn fonts(&self) -> &Fonts {
         &self.fonts
+    }
+
+    pub fn global_scores(&self) -> &GlobalScores {
+        &self.scores
     }
 
     pub fn shaders(&self) -> &Shaders {

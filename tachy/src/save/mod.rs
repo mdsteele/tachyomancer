@@ -21,6 +21,7 @@ mod chip;
 mod circuit;
 mod converse;
 mod puzzle;
+mod score;
 mod solution;
 mod wire;
 
@@ -30,6 +31,7 @@ pub use self::converse::{
     Chapter, Conversation, ConversationIter, ConversationProgress, Prereq,
 };
 pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
+pub use self::score::{ScoreCurve, ScoreCurveMap};
 pub use self::solution::SolutionData;
 pub use self::wire::WireShape;
 

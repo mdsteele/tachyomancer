@@ -28,7 +28,7 @@ use iron::{Iron, IronError, IronResult, Request, Response};
 use router::Router;
 use std::io::{self, Read};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use tachy::save::SolutionData;
+use tachy::save::{Puzzle, ScoreCurve, ScoreCurveMap, SolutionData};
 use tachy::state::verify_solution;
 
 // ========================================================================= //
@@ -82,6 +82,7 @@ fn run_server(flags: &StartupFlags) -> Result<(), String> {
 fn make_router() -> Router {
     let mut router = Router::new();
     router.get("/", hello_world, "hello_world");
+    router.get("/scores", get_scores, "scores");
     router.post("/submit_solution", submit_solution, "submit_solution");
     router
 }
@@ -90,6 +91,20 @@ fn make_router() -> Router {
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "Hello, world!\n")))
+}
+
+fn get_scores(_: &mut Request) -> IronResult<Response> {
+    let mut scores = ScoreCurveMap::new();
+    // TODO: Populate with real scores.
+    scores.set(Puzzle::TutorialOr, ScoreCurve::new(vec![(8, 16), (9, 12)]));
+    scores.set(Puzzle::TutorialMux, ScoreCurve::new(vec![(12, 30)]));
+    let response = scores.serialize_to_string().map_err(|err| {
+        debug_warn!("{}", err);
+        let msg = format!("{}\n", err);
+        let io_err = io::Error::new(io::ErrorKind::Other, err);
+        IronError::new(io_err, (status::InternalServerError, msg))
+    })?;
+    Ok(Response::with((status::Ok, response)))
 }
 
 fn submit_solution(request: &mut Request) -> IronResult<Response> {

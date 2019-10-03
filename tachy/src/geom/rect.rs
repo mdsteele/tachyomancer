@@ -38,6 +38,10 @@ impl<T: BaseNum> RectSize<T> {
         self.width <= T::zero() || self.height <= T::zero()
     }
 
+    pub fn area(&self) -> T {
+        self.width * self.height
+    }
+
     pub fn expand(&self, margin: T) -> RectSize<T> {
         let margin2 = margin + margin;
         RectSize::new(self.width + margin2, self.height + margin2)

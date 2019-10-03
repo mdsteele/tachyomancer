@@ -26,6 +26,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use tachy::save::{
     CircuitData, Conversation, ConversationProgress, Prereq, Puzzle,
+    PuzzleKind, ScoreCurve,
 };
 
 //===========================================================================//
@@ -296,18 +297,22 @@ impl Profile {
     }
 
     pub fn is_puzzle_solved(&self, puzzle: Puzzle) -> bool {
-        self.puzzles.get(&puzzle).map_or(false, PuzzleProgress::is_solved)
+        puzzle.kind() == PuzzleKind::Sandbox
+            || self
+                .puzzles
+                .get(&puzzle)
+                .map_or(false, PuzzleProgress::is_solved)
     }
 
     pub fn solved_puzzles(&self) -> HashSet<Puzzle> {
         Puzzle::all().filter(|&puzzle| self.is_puzzle_solved(puzzle)).collect()
     }
 
-    pub fn puzzle_scores(&self, puzzle: Puzzle) -> &[(i32, i32)] {
+    pub fn local_scores(&self, puzzle: Puzzle) -> Option<&ScoreCurve> {
         if let Some(ref progress) = self.puzzles.get(&puzzle) {
-            progress.scores()
+            progress.local_scores()
         } else {
-            &[]
+            None
         }
     }
 

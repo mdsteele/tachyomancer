@@ -22,7 +22,7 @@ use crate::mancer::save::{
     MenuSection, Prefs, Profile, ProfileNamesIter, SaveDir,
 };
 use std::time::Duration;
-use tachy::save::{Chapter, Conversation, Puzzle};
+use tachy::save::{Chapter, Conversation, Puzzle, ScoreCurve};
 use tachy::state::EditGrid;
 use unicase;
 
@@ -324,11 +324,11 @@ impl GameState {
             .map_or(false, |profile| profile.is_puzzle_solved(puzzle))
     }
 
-    pub fn puzzle_scores(&self, puzzle: Puzzle) -> &[(i32, i32)] {
+    pub fn local_scores(&self, puzzle: Puzzle) -> Option<&ScoreCurve> {
         if let Some(ref profile) = self.profile {
-            profile.puzzle_scores(puzzle)
+            profile.local_scores(puzzle)
         } else {
-            &[]
+            None
         }
     }
 

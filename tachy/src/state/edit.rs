@@ -66,29 +66,9 @@ pub struct EditGrid {
 
 impl EditGrid {
     pub fn new(puzzle: Puzzle, solved_puzzles: &HashSet<Puzzle>) -> EditGrid {
-        // TODO: Define this in terms of EditGrid::from_circuit_data().
-        let mut grid = EditGrid {
-            puzzle,
-            allowed_chips: puzzle.allowed_chips(solved_puzzles),
-            bounds: CoordsRect::with_size(
-                Coords::new(0, 0),
-                puzzle.initial_board_size(),
-            ),
-            interfaces: puzzle.interfaces(),
-            fragments: HashMap::new(),
-            chips: HashMap::new(),
-            wires: Vec::new(),
-            wires_for_ports: HashMap::new(),
-            wire_groups: Vec::new(),
-            errors: Vec::new(),
-            eval: None,
-            undo_stack: Vec::new(),
-            redo_stack: Vec::new(),
-            provisional_changes: Vec::new(),
-            modified_since: None,
-        };
-        grid.typecheck_wires();
-        grid
+        let size = puzzle.initial_board_size();
+        let data = CircuitData::new(size.width, size.height);
+        EditGrid::from_circuit_data(puzzle, solved_puzzles, &data)
     }
 
     pub fn from_circuit_data(

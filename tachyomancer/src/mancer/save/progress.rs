@@ -169,7 +169,7 @@ impl PuzzleProgress {
         self.data.graph.as_ref()
     }
 
-    pub fn record_score(&mut self, area: i32, score: i32) {
+    pub fn record_score(&mut self, area: i32, score: u32) {
         if let Some(ref mut graph) = self.data.graph {
             graph.insert((area, score));
         } else {

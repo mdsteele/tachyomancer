@@ -28,8 +28,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Upper",
         description:
-            "\
-             Indicates the current upper bound of the scan range (inclusive).",
+            "Indicates the current upper bound of the scan range (inclusive).",
         side: Direction::West,
         pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
@@ -43,8 +42,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Lower",
         description:
-            "\
-             Indicates the current lower bound of the scan range (inclusive).",
+            "Indicates the current lower bound of the scan range (inclusive).",
         side: Direction::West,
         pos: InterfacePosition::Right(0),
         ports: &[InterfacePort {
@@ -121,7 +119,7 @@ impl PuzzleEval for SensorsEval {
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         if self.num_goals_found >= GOALS.len() {
-            Some(EvalScore::Value(time_step as i32))
+            Some(EvalScore::Value(time_step))
         } else {
             state.send_behavior(self.upper_wire, self.current_upper);
             state.send_behavior(self.lower_wire, self.current_lower);

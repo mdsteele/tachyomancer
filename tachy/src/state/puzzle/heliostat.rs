@@ -181,7 +181,7 @@ impl PuzzleEval for HeliostatEval {
         state.send_behavior(self.efficiency_wire, self.current_efficiency);
         state.send_behavior(self.pos_wire, self.current_pos);
         if self.energy >= ENERGY_NEEDED_FOR_VICTORY {
-            Some(EvalScore::Value(time_step as i32))
+            Some(EvalScore::Value(time_step))
         } else {
             None
         }

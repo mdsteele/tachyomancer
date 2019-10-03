@@ -320,7 +320,7 @@ impl Profile {
         &mut self,
         puzzle: Puzzle,
         area: i32,
-        score: i32,
+        score: u32,
     ) -> Result<(), String> {
         if !self.puzzles.contains_key(&puzzle) {
             let puzzle_path = self.base_path.join(format!("{:?}", puzzle));

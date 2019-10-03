@@ -155,7 +155,7 @@ impl PuzzleEval for BeaconEval {
         state.send_behavior(self.pos_x_wire, self.current_pos.x);
         state.send_behavior(self.pos_y_wire, self.current_pos.y);
         if self.energy >= 5000 {
-            Some(EvalScore::Value(time_step as i32))
+            Some(EvalScore::Value(time_step))
         } else {
             None
         }

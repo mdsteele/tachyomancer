@@ -164,7 +164,7 @@ impl PuzzleEval for MiningRobotEval {
             state.send_event(self.found_wire, ore);
         }
         if self.ore_at_base >= ORE_NEEDED_AT_BASE {
-            Some(EvalScore::Value(time_step as i32))
+            Some(EvalScore::Value(time_step))
         } else {
             None
         }

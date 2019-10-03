@@ -482,36 +482,23 @@ impl GraphView {
         let color = Color3::new(0.1, 0.1, 0.1);
         resources.shaders().solid().fill_rect(&matrix, color, graph_rect);
         let graph_bounds = puzzle.graph_bounds();
-
-        let color = Color3::new(0.1, 0.1, 0.9);
-        for (pt_x, pt_y) in resources.global_scores().scores_for(puzzle) {
-            let rel_x =
-                graph_rect.width * ((pt_x as f32) / (graph_bounds.0 as f32));
-            let rel_y =
-                graph_rect.height * ((pt_y as f32) / (graph_bounds.1 as f32));
-            let point_rect = Rect::new(
-                graph_rect.x + rel_x,
-                graph_rect.y,
-                graph_rect.width - rel_x,
-                graph_rect.height - rel_y,
-            );
-            resources.shaders().solid().fill_rect(&matrix, color, point_rect);
-        }
-
-        let color = Color3::new(0.9, 0.1, 0.1);
-        for &(pt_x, pt_y) in local_scores.scores().iter() {
-            let rel_x =
-                graph_rect.width * ((pt_x as f32) / (graph_bounds.0 as f32));
-            let rel_y =
-                graph_rect.height * ((pt_y as f32) / (graph_bounds.1 as f32));
-            let point_rect = Rect::new(
-                graph_rect.x + rel_x,
-                graph_rect.y,
-                graph_rect.width - rel_x,
-                graph_rect.height - rel_y,
-            );
-            resources.shaders().solid().fill_rect(&matrix, color, point_rect);
-        }
+        let global_scores = resources.global_scores().scores_for(puzzle);
+        GraphView::draw_score_curve(
+            resources,
+            &matrix,
+            graph_rect,
+            graph_bounds,
+            &global_scores,
+            Color3::new(0.1, 0.1, 0.9),
+        );
+        GraphView::draw_score_curve(
+            resources,
+            &matrix,
+            graph_rect,
+            graph_bounds,
+            local_scores,
+            Color3::new(0.9, 0.1, 0.1),
+        );
 
         // Draw axis ticks:
         let color = Color3::new(0.1, 0.1, 0.1);
@@ -566,6 +553,29 @@ impl GraphView {
             (0.5 * graph_rect.height, GRAPH_LABEL_MARGIN as f32),
             puzzle.score_units(),
         );
+    }
+
+    fn draw_score_curve(
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        graph_rect: Rect<f32>,
+        graph_bounds: (i32, i32),
+        scores: &ScoreCurve,
+        color: Color3,
+    ) {
+        for &(pt_x, pt_y) in scores.scores().iter() {
+            let rel_x =
+                graph_rect.width * ((pt_x as f32) / (graph_bounds.0 as f32));
+            let rel_y =
+                graph_rect.height * ((pt_y as f32) / (graph_bounds.1 as f32));
+            let point_rect = Rect::new(
+                graph_rect.x + rel_x,
+                graph_rect.y,
+                graph_rect.width - rel_x,
+                graph_rect.height - rel_y,
+            );
+            resources.shaders().solid().fill_rect(&matrix, color, point_rect);
+        }
     }
 
     fn fbo_matrix(fbo_size: RectSize<f32>) -> Matrix4<f32> {

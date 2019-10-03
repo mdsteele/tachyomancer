@@ -162,7 +162,7 @@ impl PuzzleEval for LanderEval {
         if altitude > 0 {
             None
         } else {
-            Some(EvalScore::Value(time_step as i32))
+            Some(EvalScore::Value(time_step))
         }
     }
 

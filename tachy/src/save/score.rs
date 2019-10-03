@@ -28,12 +28,13 @@ use std::str::FromStr;
 // TODO: Once const fn Vec::new is stabilized, make a public constant for an
 //   empty ScoreCurve so we can return &ScoreCurve in various places instead of
 //   Option<&ScoreCurve>, and not require ScoreCurveMap to store empty curves.
+#[derive(Clone)]
 pub struct ScoreCurve {
-    scores: Vec<(i32, i32)>,
+    scores: Vec<(i32, u32)>,
 }
 
 impl ScoreCurve {
-    pub fn new(mut scores: Vec<(i32, i32)>) -> ScoreCurve {
+    pub fn new(mut scores: Vec<(i32, u32)>) -> ScoreCurve {
         ScoreCurve::fix(&mut scores);
         ScoreCurve { scores }
     }
@@ -42,16 +43,16 @@ impl ScoreCurve {
         self.scores.is_empty()
     }
 
-    pub fn scores(&self) -> &[(i32, i32)] {
+    pub fn scores(&self) -> &[(i32, u32)] {
         &self.scores
     }
 
-    pub fn insert(&mut self, score: (i32, i32)) {
+    pub fn insert(&mut self, score: (i32, u32)) {
         self.scores.push(score);
         ScoreCurve::fix(&mut self.scores);
     }
 
-    fn fix(points: &mut Vec<(i32, i32)>) {
+    fn fix(points: &mut Vec<(i32, u32)>) {
         points.sort();
         let mut best_score = i64::MAX;
         points.retain(|&(_, score)| {
@@ -71,7 +72,7 @@ impl<'d> serde::Deserialize<'d> for ScoreCurve {
     where
         D: serde::Deserializer<'d>,
     {
-        let scores = Vec::<(i32, i32)>::deserialize(deserializer)?;
+        let scores = Vec::<(i32, u32)>::deserialize(deserializer)?;
         Ok(ScoreCurve::new(scores))
     }
 }

@@ -75,7 +75,7 @@ fn record_score(
     window: &Window,
     solution: SolutionData,
 ) {
-    let score = solution.score as i32;
+    let score = solution.score;
     let area = solution.circuit.size.area();
     window.submit_solution(solution);
     match state.record_current_puzzle_score(area, score) {

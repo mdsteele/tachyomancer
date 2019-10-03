@@ -151,7 +151,7 @@ impl PuzzleEval for AutomateReactorEval {
         state.send_behavior(self.target_wire, self.current_target);
 
         if self.num_targets_held >= TARGETS.len() {
-            Some(EvalScore::Value(time_step as i32))
+            Some(EvalScore::Value(time_step))
         } else {
             None
         }

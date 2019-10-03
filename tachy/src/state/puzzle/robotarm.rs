@@ -198,7 +198,7 @@ impl PuzzleEval for RobotArmEval {
             self.time_to_next_command = None;
             self.num_completed_commands += 1;
             if self.num_completed_commands >= NUM_COMMANDS_FOR_VICTORY {
-                return Some(EvalScore::Value(time_step as i32));
+                return Some(EvalScore::Value(time_step));
             }
             let quarter = NUM_POSITIONS / 4;
             self.last_command = (self.last_command

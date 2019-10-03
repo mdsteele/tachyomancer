@@ -20,7 +20,7 @@
 use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use tachy::save::{Puzzle, ScoreCurveMap, SolutionData};
+use tachy::save::{Puzzle, ScoreCurve, ScoreCurveMap, SolutionData};
 use toml;
 use ureq;
 
@@ -43,8 +43,8 @@ impl GlobalScores {
         GlobalScores { scores: Arc::new(Mutex::new(ScoreCurveMap::new())) }
     }
 
-    pub fn scores_for(&self, puzzle: Puzzle) -> Vec<(i32, i32)> {
-        self.scores.lock().unwrap().get(puzzle).scores().to_vec()
+    pub fn scores_for(&self, puzzle: Puzzle) -> ScoreCurve {
+        self.scores.lock().unwrap().get(puzzle).clone()
     }
 
     fn replace_with(&self, scores: ScoreCurveMap) {

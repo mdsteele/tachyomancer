@@ -45,7 +45,7 @@ pub struct EvalError {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EvalScore {
     /// Score is equal to the supplied value.
-    Value(i32),
+    Value(u32),
     /// Score is equal to the number of wire fragments in the circuit.
     WireLength,
 }

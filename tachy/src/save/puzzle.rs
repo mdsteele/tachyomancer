@@ -91,7 +91,7 @@ impl Puzzle {
         self.data().score_units
     }
 
-    pub fn graph_bounds(self) -> (i32, i32) {
+    pub fn graph_bounds(self) -> (i32, u32) {
         self.data().graph_bounds
     }
 
@@ -472,7 +472,7 @@ struct PuzzleData {
     allow_events: bool,
     init_size: (i32, i32),
     score_units: &'static str,
-    graph_bounds: (i32, i32),
+    graph_bounds: (i32, u32),
     description: &'static str,
     instructions: &'static str,
 }

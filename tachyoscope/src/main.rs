@@ -110,12 +110,14 @@ fn get_scores(_: &mut Request) -> IronResult<Response> {
 fn submit_solution(request: &mut Request) -> IronResult<Response> {
     debug_log!("Received submission from {:?}", request.remote_addr);
 
+    // Read the serialized solution from the client:
     let mut body = String::new();
     request.body.read_to_string(&mut body).map_err(|err| {
         let msg = format!("{}\n", err);
         IronError::new(err, (status::BadRequest, msg))
     })?;
 
+    // Deserialize the SolutionData:
     let data =
         SolutionData::deserialize_from_string(&body).map_err(|err| {
             let msg = format!("{}\n", err);
@@ -128,15 +130,27 @@ fn submit_solution(request: &mut Request) -> IronResult<Response> {
         data.circuit.size
     );
 
+    // Ignore solutions that fall outside graph bounds:
+    let (max_area, max_score) = data.puzzle.graph_bounds();
+    if data.score > max_score || data.circuit.size.area() > max_area {
+        let response = "Solution is not within graph bounds.".to_string();
+        return Ok(Response::with((status::Ok, response)));
+    }
+
+    // TODO: Hash solution; ignore if we already have a score in the database
+    // for that hash.
+
+    // Verify that the solution is valid:
     let errors = verify_solution(&data);
     if errors.is_empty() {
-        Ok(Response::with((status::Ok, "ok\n")))
+        // TODO: Solution is valid; store in database.
+        return Ok(Response::with((status::Ok, "ok\n")));
     } else {
         let mut response = "Circuit had errors:\n".to_string();
         for error in errors.iter() {
             response.push_str(&format!("- {}\n", error));
         }
-        Ok(Response::with((status::Ok, response)))
+        return Ok(Response::with((status::Ok, response)));
     }
 }
 

@@ -48,7 +48,8 @@ const DESCRIPTION_LINE_HEIGHT: f32 = 22.0;
 const GRAPH_LABEL_FONT_SIZE: f32 = 14.0;
 const GRAPH_INNER_MARGIN: f32 = 10.0;
 const GRAPH_LABEL_MARGIN: f32 = 18.0;
-const GRAPH_TICK_STEP: i32 = 10;
+const GRAPH_TICK_STEP_HORZ: i32 = 10;
+const GRAPH_TICK_STEP_VERT: u32 = 10;
 const GRAPH_TICK_LENGTH: f32 = 4.0;
 const GRAPH_TICK_THICKNESS: f32 = 2.0;
 
@@ -513,11 +514,11 @@ impl GraphView {
                 GRAPH_TICK_LENGTH,
             );
             resources.shaders().solid().fill_rect(&matrix, color, tick_rect);
-            tick += GRAPH_TICK_STEP;
+            tick += GRAPH_TICK_STEP_HORZ;
         }
         let unit_span = (graph_rect.height - GRAPH_TICK_THICKNESS)
             / (graph_bounds.1 as f32);
-        tick = 0;
+        let mut tick = 0;
         while tick <= graph_bounds.1 {
             let tick_rect = Rect::new(
                 graph_rect.right(),
@@ -528,7 +529,7 @@ impl GraphView {
                 GRAPH_TICK_THICKNESS,
             );
             resources.shaders().solid().fill_rect(&matrix, color, tick_rect);
-            tick += GRAPH_TICK_STEP;
+            tick += GRAPH_TICK_STEP_VERT;
         }
 
         // Draw axis labels:
@@ -559,7 +560,7 @@ impl GraphView {
         resources: &Resources,
         matrix: &Matrix4<f32>,
         graph_rect: Rect<f32>,
-        graph_bounds: (i32, i32),
+        graph_bounds: (i32, u32),
         scores: &ScoreCurve,
         color: Color3,
     ) {

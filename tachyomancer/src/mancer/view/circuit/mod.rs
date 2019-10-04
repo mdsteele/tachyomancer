@@ -414,6 +414,7 @@ impl CircuitView {
                 self.controls_status = ControlsStatus::Stopped;
                 ui.request_redraw();
                 Some(CircuitAction::Victory(SolutionData {
+                    install_id: prefs.install_id(),
                     puzzle: grid.puzzle(),
                     score,
                     time_steps,

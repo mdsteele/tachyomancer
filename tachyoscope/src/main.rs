@@ -125,7 +125,8 @@ fn submit_solution(request: &mut Request) -> IronResult<Response> {
             IronError::new(io_err, (status::BadRequest, msg))
         })?;
     debug_log!(
-        "Got solution data for {:?} with size: {:?}",
+        "Got solution data from ID={:?} for {:?} with size: {:?}",
+        data.install_id,
         data.puzzle,
         data.circuit.size
     );

@@ -27,6 +27,7 @@ use toml;
 
 #[derive(Deserialize, Serialize)]
 pub struct SolutionData {
+    pub install_id: Option<u64>,
     pub puzzle: Puzzle,
     pub score: u32,
     pub time_steps: u32,
@@ -64,6 +65,7 @@ mod tests {
     #[test]
     fn serialize_solution_data() {
         let solution = SolutionData {
+            install_id: None,
             puzzle: Puzzle::TutorialOr,
             score: 14,
             time_steps: 4,

@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::hotkey::{Hotkey, HotkeyCodes, Keycode};
+use rand::{self, Rng};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -33,8 +34,9 @@ const DEFAULT_MUSIC_VOLUME_PERCENT: i32 = 80;
 
 #[derive(Default, Deserialize, Serialize)]
 struct PrefsData {
-    antialiasing: Option<bool>,
+    id: Option<u64>,
     current_profile: Option<String>,
+    antialiasing: Option<bool>,
     fullscreen: Option<bool>,
     resolution: Option<(i32, i32)>,
     sound_volume: Option<i32>,
@@ -61,7 +63,7 @@ pub struct Prefs {
 impl Prefs {
     pub fn create_or_load(path: &Path) -> Result<Prefs, String> {
         let mut needs_save = false;
-        let data = if path.exists() {
+        let mut data = if path.exists() {
             match PrefsData::try_load(path) {
                 Ok(prefs) => prefs,
                 Err(err) => {
@@ -73,6 +75,14 @@ impl Prefs {
             needs_save = true;
             PrefsData::default()
         };
+        if data.id.is_none() {
+            if let Ok(mut rng) = rand::rngs::OsRng::new() {
+                let id = rng.gen();
+                debug_log!("Assigning id={} to this install", id);
+                data.id = Some(id);
+                needs_save = true;
+            }
+        }
         let mut prefs = Prefs { path: path.to_path_buf(), data, needs_save };
         prefs.save()?;
         Ok(prefs)
@@ -89,6 +99,10 @@ impl Prefs {
             .map_err(|err| format!("Could not write prefs file: {}", err))?;
         self.needs_save = false;
         return Ok(());
+    }
+
+    pub fn install_id(&self) -> Option<u64> {
+        self.data.id
     }
 
     pub fn antialiasing(&self) -> bool {

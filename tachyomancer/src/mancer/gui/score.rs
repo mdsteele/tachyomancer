@@ -64,6 +64,9 @@ impl ScoreClient {
         let client = ScoreClient { global_scores: global_scores.clone() };
         let server_addr_string = server_addr.to_string();
         thread::spawn(move || {
+            // TODO: First, load saved cache of global scores, if present.
+            //   That way we can work offline.  Replace them with real scores
+            //   if the fetch succeeds.
             let scores_map = match fetch_global_scores(&server_addr_string) {
                 Ok(scores) => scores,
                 Err(error) => {
@@ -86,6 +89,7 @@ impl ScoreClient {
             solution.puzzle,
             solution.score
         );
+        // TODO: Insert score into global_scores cache
         // TODO: Queue solution to be sent to score server.
     }
 }

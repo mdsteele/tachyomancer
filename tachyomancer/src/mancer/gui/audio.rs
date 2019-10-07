@@ -26,7 +26,7 @@ use sdl2::audio::AudioFormatNum;
 use std::io::Cursor;
 use std::sync::{Arc, Mutex};
 
-// ========================================================================= //
+//===========================================================================//
 
 const DESIRED_AUDIO_RATE: i32 = sound::AUDIO_RATE as i32;
 const DESIRED_BUFFER_SIZE: u16 = 1024; // num samples

@@ -31,7 +31,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tachy::save::{Puzzle, ScoreCurve, ScoreCurveMap, SolutionData};
 use tachy::state::verify_solution;
 
-// ========================================================================= //
+//===========================================================================//
 
 fn main() -> Result<(), String> {
     run_server(&parse_flags()?)

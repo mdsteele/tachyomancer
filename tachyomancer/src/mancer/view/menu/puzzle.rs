@@ -483,7 +483,7 @@ impl GraphView {
         let color = Color3::new(0.1, 0.1, 0.1);
         resources.shaders().solid().fill_rect(&matrix, color, graph_rect);
         let graph_bounds = puzzle.graph_bounds();
-        let global_scores = resources.global_scores().scores_for(puzzle);
+        let global_scores = resources.global_scores_for(puzzle);
         GraphView::draw_score_curve(
             resources,
             &matrix,

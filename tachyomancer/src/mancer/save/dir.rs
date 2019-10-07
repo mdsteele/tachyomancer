@@ -20,6 +20,7 @@
 use super::encode::{decode_name, encode_name};
 use super::prefs::Prefs;
 use super::profile::Profile;
+use super::score::GlobalScoresDir;
 use app_dirs::{self, AppDataType, AppDirsError, AppInfo};
 use std::collections::{btree_set, BTreeSet};
 use std::fs;
@@ -28,6 +29,7 @@ use unicase::UniCase;
 
 //===========================================================================//
 
+const GLOBAL_SCORES_DIR_NAME: &str = "global_scores";
 const PREFS_FILE_NAME: &str = "prefs.toml";
 
 //===========================================================================//
@@ -159,6 +161,13 @@ impl SaveDir {
             self.prefs.set_current_profile(None);
         }
         self.profile_names.remove(&UniCase::new(name));
+    }
+
+    pub fn create_or_load_global_scores(
+        &mut self,
+    ) -> Result<GlobalScoresDir, String> {
+        let path = self.base_path.join(GLOBAL_SCORES_DIR_NAME);
+        GlobalScoresDir::create_or_load(&path)
     }
 }
 

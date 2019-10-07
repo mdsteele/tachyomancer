@@ -61,6 +61,7 @@ impl SolutionData {
 #[cfg(test)]
 mod tests {
     use super::{CircuitData, Puzzle, SolutionData};
+    use crate::geom::RectSize;
 
     #[test]
     fn serialize_solution_data() {
@@ -82,6 +83,23 @@ mod tests {
              [circuit.chips]\n\n\
              [circuit.wires]\n"
         );
+    }
+
+    #[test]
+    fn deserialize_solution_data() {
+        let toml = "puzzle = \"TutorialOr\"\n\
+                    score = 14\n\
+                    time_steps = 4\n\n\
+                    [circuit]\n\
+                    size = [4, 3]\n\n\
+                    [circuit.chips]\n\n\
+                    [circuit.wires]\n";
+        let solution = SolutionData::deserialize_from_string(toml).unwrap();
+        assert_eq!(solution.install_id, None);
+        assert_eq!(solution.puzzle, Puzzle::TutorialOr);
+        assert_eq!(solution.score, 14);
+        assert_eq!(solution.time_steps, 4);
+        assert_eq!(solution.circuit.size, RectSize::new(4, 3));
     }
 }
 

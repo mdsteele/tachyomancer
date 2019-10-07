@@ -22,6 +22,7 @@ use super::clipboard::Clipboard;
 use super::cursor::Cursors;
 use super::debug::StdinReader;
 use super::score::ScoreClient;
+use crate::mancer::save::GlobalScoresDir;
 use sdl2;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
@@ -47,6 +48,7 @@ impl GuiContext {
         init_sound_volume_percent: i32,
         init_music_volume_percent: i32,
         server_addr: &str,
+        scores_dir: GlobalScoresDir,
     ) -> Result<GuiContext, String> {
         let sdl_context = sdl2::init()?;
         if cfg!(any(target_os = "ios", target_os = "macos")) {
@@ -75,7 +77,7 @@ impl GuiContext {
             _audio_device: audio_device,
             audio_queue,
             cursors,
-            score_client: ScoreClient::start(server_addr),
+            score_client: ScoreClient::start(server_addr, scores_dir),
             stdin_reader: StdinReader::start(),
         })
     }

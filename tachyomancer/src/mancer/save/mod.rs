@@ -24,6 +24,7 @@ mod menu;
 mod prefs;
 mod profile;
 mod progress;
+mod score;
 
 pub use self::dir::{ProfileNamesIter, SaveDir};
 pub use self::hotkey::{Hotkey, HotkeyIter};
@@ -31,5 +32,6 @@ pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
 pub use self::profile::Profile;
 pub use self::progress::{CircuitNamesIter, CIRCUIT_NAME_MAX_CHARS};
+pub use self::score::GlobalScoresDir;
 
 //===========================================================================//

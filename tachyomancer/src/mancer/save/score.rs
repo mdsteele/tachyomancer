@@ -17,45 +17,53 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use crate::mancer::font::Fonts;
-use crate::mancer::shader::Shaders;
-use crate::mancer::texture::Textures;
-use std::sync::{Arc, Mutex};
-use tachy::save::{Puzzle, ScoreCurve, ScoreCurveMap};
+use std::fs;
+use std::path::{Path, PathBuf};
+use tachy::save::ScoreCurveMap;
 
 //===========================================================================//
 
-pub struct Resources {
-    fonts: Fonts,
-    global_scores: Arc<Mutex<ScoreCurveMap>>,
-    shaders: Shaders,
-    textures: Textures,
+const CACHE_FILE_NAME: &str = "cache.toml";
+
+//===========================================================================//
+
+pub struct GlobalScoresDir {
+    base_path: PathBuf,
 }
 
-impl Resources {
-    pub(super) fn new(
-        global_scores: Arc<Mutex<ScoreCurveMap>>,
-    ) -> Result<Resources, String> {
-        let fonts = Fonts::new()?;
-        let shaders = Shaders::new()?;
-        let textures = Textures::new()?;
-        Ok(Resources { fonts, global_scores, shaders, textures })
+impl GlobalScoresDir {
+    pub(super) fn create_or_load(
+        base_path: &Path,
+    ) -> Result<GlobalScoresDir, String> {
+        // Create directory if needed:
+        if !base_path.exists() {
+            debug_log!("Creating global scores directory at {:?}", base_path);
+            fs::create_dir_all(&base_path).map_err(|err| {
+                format!(
+                    "Could not create global scores directory at {:?}: {}",
+                    base_path, err
+                )
+            })?;
+        } else {
+            debug_log!("Loading global scores directory from {:?}", base_path);
+        }
+
+        Ok(GlobalScoresDir { base_path: base_path.to_path_buf() })
     }
 
-    pub fn fonts(&self) -> &Fonts {
-        &self.fonts
-    }
-
-    pub fn global_scores_for(&self, puzzle: Puzzle) -> ScoreCurve {
-        self.global_scores.lock().unwrap().get(puzzle).clone()
-    }
-
-    pub fn shaders(&self) -> &Shaders {
-        &self.shaders
-    }
-
-    pub fn textures(&self) -> &Textures {
-        &self.textures
+    pub fn load_global_score_cache(&self) -> Result<ScoreCurveMap, String> {
+        let path = self.base_path.join(CACHE_FILE_NAME);
+        if path.exists() {
+            let serialized = fs::read_to_string(&path).map_err(|err| {
+                format!(
+                    "Could not read global scores cache from {:?}: {}",
+                    path, err
+                )
+            })?;
+            ScoreCurveMap::deserialize_from_string(&serialized)
+        } else {
+            Ok(ScoreCurveMap::new())
+        }
     }
 }
 

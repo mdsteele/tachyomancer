@@ -154,8 +154,9 @@ fn parse_flags() -> StartupFlags {
 //===========================================================================//
 
 fn run_game(flags: &StartupFlags) -> Result<(), String> {
-    let savedir = SaveDir::create_or_load(&flags.save_dir)?;
-    let mut state = GameState::new(savedir)?;
+    let mut save_dir = SaveDir::create_or_load(&flags.save_dir)?;
+    let scores_dir = save_dir.create_or_load_global_scores()?;
+    let mut state = GameState::new(save_dir)?;
     let mut gui_context = GuiContext::init(
         state.prefs().sound_volume_percent(),
         state.prefs().music_volume_percent(),
@@ -164,6 +165,7 @@ fn run_game(flags: &StartupFlags) -> Result<(), String> {
             .as_ref()
             .map(String::as_str)
             .unwrap_or(DEFAULT_SCORE_SERVER_ADDR),
+        scores_dir,
     )?;
     let mut window_options =
         Some(initial_window_options(flags, state.prefs())?);
@@ -185,7 +187,7 @@ fn initial_window_options(
     Ok(WindowOptions { antialiasing, fullscreen, resolution })
 }
 
-// ========================================================================= //
+//===========================================================================//
 
 fn boot_window(
     state: &mut GameState,

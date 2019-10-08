@@ -143,19 +143,33 @@ pub const RAM_CHIP_DATA: &ChipData = &ChipData {
         AbstractConstraint::AtLeast(1, WireSize::One),
         AbstractConstraint::AtLeast(4, WireSize::One),
         AbstractConstraint::Equal(0, 3),
-        AbstractConstraint::Equal(1, 4),
-        AbstractConstraint::Equal(2, 5),
         AbstractConstraint::Equal(1, 2),
+        AbstractConstraint::Equal(1, 4),
+        AbstractConstraint::Equal(1, 5),
+        AbstractConstraint::Equal(2, 4),
+        AbstractConstraint::Equal(2, 5),
         AbstractConstraint::Equal(4, 5),
     ],
-    dependencies: &[(0, 2), (1, 2), (3, 5), (4, 5), (1, 5), (4, 2)],
+    dependencies: &[
+        (0, 2),
+        (1, 2),
+        (3, 2),
+        (4, 2),
+        (0, 5),
+        (1, 5),
+        (3, 5),
+        (4, 5),
+    ],
 };
 
 pub struct RamChipEval {
-    input_b: usize,
-    input_e: usize,
-    output: usize,
-    storage: Rc<RefCell<Vec<u32>>>,
+    input_b1: usize,
+    input_e1: usize,
+    output1: usize,
+    input_b2: usize,
+    input_e2: usize,
+    output2: usize,
+    values: Vec<u32>,
 }
 
 impl RamChipEval {
@@ -165,31 +179,31 @@ impl RamChipEval {
         debug_assert_eq!(slots.len(), RAM_CHIP_DATA.ports.len());
         let addr_size = slots[0].1;
         let num_addrs = 1usize << addr_size.num_bits();
-        let storage = Rc::new(RefCell::new(vec![0u32; num_addrs]));
-        let chip_eval_1 = RamChipEval {
-            input_b: slots[0].0,
-            input_e: slots[1].0,
-            output: slots[2].0,
-            storage: storage.clone(),
+        let chip_eval = RamChipEval {
+            input_b1: slots[0].0,
+            input_e1: slots[1].0,
+            output1: slots[2].0,
+            input_b2: slots[3].0,
+            input_e2: slots[4].0,
+            output2: slots[5].0,
+            values: vec![0u32; num_addrs],
         };
-        let chip_eval_2 = RamChipEval {
-            input_b: slots[3].0,
-            input_e: slots[4].0,
-            output: slots[5].0,
-            storage,
-        };
-        vec![(2, Box::new(chip_eval_1)), (5, Box::new(chip_eval_2))]
+        vec![(2, Box::new(chip_eval))]
     }
 }
 
 impl ChipEval for RamChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let mut storage = self.storage.borrow_mut();
-        let (addr, _) = state.recv_behavior(self.input_b);
-        if let Some(value) = state.recv_event(self.input_e) {
-            storage[addr as usize] = value;
+        let addr1 = state.recv_behavior(self.input_b1).0 as usize;
+        let addr2 = state.recv_behavior(self.input_b2).0 as usize;
+        if let Some(value1) = state.recv_event(self.input_e1) {
+            self.values[addr1] = value1;
         }
-        state.send_behavior(self.output, storage[addr as usize]);
+        if let Some(value2) = state.recv_event(self.input_e2) {
+            self.values[addr2] = value2;
+        }
+        state.send_behavior(self.output1, self.values[addr1]);
+        state.send_behavior(self.output2, self.values[addr2]);
     }
 }
 

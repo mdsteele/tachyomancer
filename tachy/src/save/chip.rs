@@ -23,6 +23,10 @@ use std::str;
 
 //===========================================================================//
 
+pub const MAX_COMMENT_CHARS: usize = 5;
+
+//===========================================================================//
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChipType {
     Add,
@@ -33,6 +37,7 @@ pub enum ChipType {
     Clock,
     Cmp,
     CmpEq,
+    Comment([u8; MAX_COMMENT_CHARS]),
     Const(u16),
     Delay,
     Demux,
@@ -100,6 +105,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Ram,
     ]),
     ("Debug", &[
+        ChipType::Comment(*b"//   "),
         ChipType::Display,
         ChipType::Toggle(false),
         ChipType::Break,
@@ -149,8 +155,24 @@ impl str::FromStr for ChipType {
                     if let Ok(value) = inner.parse() {
                         return Ok(ChipType::Const(value));
                     }
+                } else if string.starts_with("Comment([")
+                    && string.ends_with("])")
+                {
+                    let inner = &string[9..(string.len() - 2)];
+                    let parts: Vec<&str> = inner.split(", ").collect();
+                    if parts.len() <= MAX_COMMENT_CHARS {
+                        let mut bytes = [b' '; MAX_COMMENT_CHARS];
+                        for (index, part) in parts.into_iter().enumerate() {
+                            if let Ok(byte) = part.parse() {
+                                bytes[index] = byte;
+                            } else {
+                                return Err(string.to_string());
+                            }
+                        }
+                        return Ok(ChipType::Comment(bytes));
+                    }
                 }
-                Err(string.to_string())
+                return Err(string.to_string());
             }
         }
     }
@@ -169,19 +191,26 @@ impl ChipType {
     pub fn tooltip_format(self) -> String {
         let name = match self {
             ChipType::Add2Bit => "2-Bit Add".to_string(),
-            ChipType::And => "Bitwise AND".to_string(),
+            ChipType::Comment(_) => "Comment".to_string(),
             ChipType::Const(_) => "Constant".to_string(),
             ChipType::Mul4Bit => "4-Bit Mul".to_string(),
-            ChipType::Not => "Bitwise NOT".to_string(),
-            ChipType::Or => "Bitwise OR".to_string(),
             ChipType::Toggle(_) => "Toggle Switch".to_string(),
-            ChipType::Xor => "Bitwise XOR".to_string(),
             other => format!("{:?}", other),
         };
         let description = match self {
+            ChipType::Add => {
+                "Outputs the sum of the two inputs.  If the sum is too large \
+                 for the wire size, the value will wrap around (for example, \
+                 5 + 12 on a 4-bit wire will result in 1 instead of 17)."
+            }
             ChipType::And => {
                 "For each bit in the wire, the output is 1 if both inputs \
                  are 1, or 0 if either input is 0."
+            }
+            ChipType::Comment(_) => {
+                "Visually annotates part of the circuit with a short label, \
+                 but has no effect while the circuit is running.\n\
+                 $'Right-click' to change the comment text."
             }
             ChipType::Const(_) => {
                 "Outputs a constant value.\n\
@@ -190,6 +219,13 @@ impl ChipType {
             ChipType::Discard => {
                 "Transforms value-carrying events into 0-bit events by \
                  discarding the value."
+            }
+            ChipType::Halve => "Outputs half the input, rounded down.",
+            ChipType::Mul => {
+                "Outputs the product of the two inputs.  If the product is \
+                 too large for the wire size, the value will wrap around (for \
+                 example, 3 \u{d7} 6 on a 4-bit wire will result in 2 instead \
+                 of 18)."
             }
             ChipType::Not => {
                 "Inverts bits.  Each 0 bit in the input becomes a 1 bit in \
@@ -203,6 +239,16 @@ impl ChipType {
                 "Joins two input wires into a single output wire with twice \
                  as many bits.  One input wire becomes the low bits of the \
                  output, and the other becomes the high bits."
+            }
+            ChipType::Sub => {
+                "Outputs the difference between the two inputs.  The result \
+                 is always positive (for example, if the inputs are 3 and 5, \
+                 the output will be 2, regardless of which input is which)."
+            }
+            ChipType::Toggle(_) => {
+                "Outputs 0 or 1.  Can be toggled manually while the circuit \
+                 is running.\n\
+                 $'Right-click' to change the initial switch position."
             }
             ChipType::Unpack => {
                 "Splits the input wire into two output wires, each with half \
@@ -232,6 +278,9 @@ impl ChipSet {
 
     pub fn contains(&self, ctype: ChipType) -> bool {
         match ctype {
+            ChipType::Comment(_) => {
+                self.ctypes.contains(&ChipType::Comment(*b"     "))
+            }
             ChipType::Const(_) => self.ctypes.contains(&ChipType::Const(0)),
             ChipType::Toggle(_) => {
                 self.ctypes.contains(&ChipType::Toggle(false))
@@ -242,6 +291,9 @@ impl ChipSet {
 
     pub fn insert(&mut self, ctype: ChipType) {
         match ctype {
+            ChipType::Comment(_) => {
+                self.ctypes.insert(ChipType::Comment(*b"     "));
+            }
             ChipType::Const(_) => {
                 self.ctypes.insert(ChipType::Const(0));
             }
@@ -265,6 +317,7 @@ mod tests {
     #[test]
     fn chip_type_to_and_from_string() {
         let mut chip_types = vec![
+            ChipType::Comment(*b"Blarg"),
             ChipType::Const(0),
             ChipType::Const(13),
             ChipType::Const(u16::MAX),
@@ -293,6 +346,10 @@ mod tests {
         assert!(!set.contains(ChipType::Toggle(true)));
         set.insert(ChipType::Toggle(false));
         assert!(set.contains(ChipType::Toggle(true)));
+
+        assert!(!set.contains(ChipType::Comment(*b"foo  ")));
+        set.insert(ChipType::Comment(*b"bar  "));
+        assert!(set.contains(ChipType::Comment(*b"foo  ")));
     }
 }
 

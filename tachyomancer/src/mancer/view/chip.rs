@@ -124,6 +124,19 @@ impl ChipModel {
         draw_chip_icon(resources, grid_matrix, coords, orient, size, icon);
 
         match ctype {
+            ChipType::Comment(bytes) => {
+                let string: String =
+                    bytes.iter().map(|&b| char::from(b)).collect();
+                draw_chip_string(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    size,
+                    0.25,
+                    &Color4::WHITE,
+                    string.trim_end(),
+                );
+            }
             ChipType::Const(value) => {
                 let label = value.to_string();
                 let font_size = 0.5

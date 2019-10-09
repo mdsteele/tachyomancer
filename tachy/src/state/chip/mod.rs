@@ -79,10 +79,11 @@ impl ChipExt for ChipType {
 
     fn availibility(&self) -> ChipAvailability {
         match *self {
-            ChipType::Const(_)
+            ChipType::And
+            | ChipType::Comment(_)
+            | ChipType::Const(_)
             | ChipType::Display
-            | ChipType::Not
-            | ChipType::And => ChipAvailability::Always,
+            | ChipType::Not => ChipAvailability::Always,
             ChipType::Or => ChipAvailability::UnlockedBy(Puzzle::TutorialOr),
             ChipType::Xor => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateXor)
@@ -216,6 +217,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Clock => self::event::CLOCK_CHIP_DATA,
         ChipType::Cmp => self::compare::CMP_CHIP_DATA,
         ChipType::CmpEq => self::compare::CMPEQ_CHIP_DATA,
+        ChipType::Comment(_) => self::special::COMMENT_CHIP_DATA,
         ChipType::Const(value) => self::value::const_chip_data(value),
         ChipType::Delay => self::event::DELAY_CHIP_DATA,
         ChipType::Demux => self::event::DEMUX_CHIP_DATA,
@@ -266,6 +268,7 @@ pub(super) fn new_chip_evals(
         ChipType::Clock => self::event::ClockChipEval::new_evals(slots),
         ChipType::Cmp => self::compare::CmpChipEval::new_evals(slots),
         ChipType::CmpEq => self::compare::CmpEqChipEval::new_evals(slots),
+        ChipType::Comment(_) => vec![],
         ChipType::Const(value) => {
             self::value::ConstChipEval::new_evals(value, slots)
         }

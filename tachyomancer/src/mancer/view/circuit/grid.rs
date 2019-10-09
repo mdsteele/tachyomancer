@@ -63,6 +63,7 @@ const ZOOM_PER_KEYDOWN: f32 = 1.415; // slightly more than sqrt(2)
 //===========================================================================//
 
 pub enum EditGridAction {
+    EditComment(Coords, String),
     EditConst(Coords, u16),
 }
 
@@ -742,6 +743,14 @@ impl EditGridView {
                 }
                 let coords = self.coords_for_screen_pt(mouse.pt);
                 match grid.chip_at(coords) {
+                    Some((_, ChipType::Comment(bytes), _)) => {
+                        let string: String =
+                            bytes.iter().map(|&b| char::from(b)).collect();
+                        let string = string.trim().to_string();
+                        return Some(EditGridAction::EditComment(
+                            coords, string,
+                        ));
+                    }
                     Some((_, ChipType::Const(value), _)) => {
                         return Some(EditGridAction::EditConst(coords, value));
                     }

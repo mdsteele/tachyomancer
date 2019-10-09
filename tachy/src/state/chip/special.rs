@@ -120,6 +120,11 @@ impl ChipEval for ButtonChipEval {
 
 //===========================================================================//
 
+pub const COMMENT_CHIP_DATA: &ChipData =
+    &ChipData { ports: &[], constraints: &[], dependencies: &[] };
+
+//===========================================================================//
+
 pub const DISPLAY_CHIP_DATA: &ChipData = &ChipData {
     ports: &[(PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West)],
     constraints: &[],

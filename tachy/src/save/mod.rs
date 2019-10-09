@@ -25,7 +25,7 @@ mod score;
 mod solution;
 mod wire;
 
-pub use self::chip::{ChipSet, ChipType, CHIP_CATEGORIES};
+pub use self::chip::{ChipSet, ChipType, CHIP_CATEGORIES, MAX_COMMENT_CHARS};
 pub use self::circuit::CircuitData;
 pub use self::converse::{
     Chapter, Conversation, ConversationIter, ConversationProgress, Prereq,

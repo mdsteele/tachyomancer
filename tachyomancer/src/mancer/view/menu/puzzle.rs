@@ -23,7 +23,7 @@ use super::super::paragraph::Paragraph;
 use super::super::wire::WireModel;
 use super::list::{ListIcon, ListView};
 use crate::mancer::font::Align;
-use crate::mancer::gl::FrameBuffer;
+use crate::mancer::gl::{Depth, FrameBuffer};
 use crate::mancer::gui::{Event, Resources, Ui};
 use crate::mancer::save::Prefs;
 use crate::mancer::state::GameState;
@@ -414,6 +414,7 @@ impl GraphView {
         let fbo = FrameBuffer::new(
             fbo_size.width as usize,
             fbo_size.height as usize,
+            false,
         );
         fbo.bind();
         if puzzle.kind() == PuzzleKind::Sandbox {
@@ -668,6 +669,7 @@ impl CircuitPreviewView {
         let fbo = FrameBuffer::new(
             fbo_size.width as usize,
             fbo_size.height as usize,
+            true,
         );
         fbo.bind();
         match state.load_edit_grid(puzzle, circuit_name) {
@@ -724,6 +726,26 @@ impl CircuitPreviewView {
             Color3::PURPLE1,
             board_rect,
         );
+        let depth = Depth::enable_with_face_culling(false);
+        for (coords, ctype, orient) in grid.chips() {
+            ChipModel::draw_chip(
+                resources,
+                &grid_matrix,
+                coords,
+                ctype,
+                orient,
+                None,
+            );
+        }
+        for interface in grid.interfaces() {
+            let coords = interface.top_left(grid.bounds());
+            ChipModel::draw_interface(
+                resources,
+                &grid_matrix,
+                coords,
+                interface,
+            );
+        }
         for (coords, dir, shape, size, color, error) in grid.wire_fragments() {
             let color = if error { WireColor::Ambiguous } else { color };
             WireModel::draw_fragment(
@@ -737,25 +759,7 @@ impl CircuitPreviewView {
                 &Color4::TRANSPARENT,
             );
         }
-        for interface in grid.interfaces() {
-            let coords = interface.top_left(grid.bounds());
-            ChipModel::draw_interface(
-                resources,
-                &grid_matrix,
-                coords,
-                interface,
-            );
-        }
-        for (coords, ctype, orient) in grid.chips() {
-            ChipModel::draw_chip(
-                resources,
-                &grid_matrix,
-                coords,
-                ctype,
-                orient,
-                None,
-            );
-        }
+        depth.disable();
     }
 
     fn grid_matrix(fbo_size: RectSize<f32>, grid: &EditGrid) -> Matrix4<f32> {

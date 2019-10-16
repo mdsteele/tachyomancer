@@ -112,6 +112,7 @@ impl ChipDrag {
         let new_rect = CoordsRect::with_size(new_coords, new_size);
         if !grid.can_place_chip(new_rect) {
             grid.roll_back_provisional_changes();
+            ui.request_redraw();
             return;
         }
         let new_ports: HashSet<(Coords, Direction)> = self

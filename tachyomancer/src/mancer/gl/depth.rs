@@ -29,18 +29,22 @@ pub struct Depth {
 }
 
 impl Depth {
-    /// Clears the depth buffer, and enables the depth test and face culling
-    /// until the returned object is dropped.  At most one `Depth` object
-    /// should exist at once.
-    pub fn new() -> Depth {
+    /// Clears the depth buffer, and enables the depth test and optional face
+    /// culling until the returned object is dropped.  At most one `Depth`
+    /// object should exist at once.
+    pub fn enable_with_face_culling(cull: bool) -> Depth {
         unsafe {
             gl::Clear(gl::DEPTH_BUFFER_BIT);
             gl::Enable(gl::DEPTH_TEST);
-            gl::Enable(gl::CULL_FACE);
+            if cull {
+                gl::Enable(gl::CULL_FACE);
+            }
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
         Depth { phantom: PhantomData }
     }
+
+    pub fn disable(self) {}
 }
 
 /// Disables the depth test and face culling when dropped.

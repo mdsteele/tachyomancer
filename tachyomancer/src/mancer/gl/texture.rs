@@ -26,6 +26,12 @@ use std::os::raw::c_void;
 
 //===========================================================================//
 
+// The number of samples to use for multisample textures.  If you change this,
+// be sure to update the frame.frag shader code as well.
+const MULTISAMPLE_NUM_SAMPLES: GLsizei = 4;
+
+//===========================================================================//
+
 pub struct Texture1D {
     id: GLuint,
     // This PhantomData ensures that this struct is not Send or Sync, which
@@ -289,7 +295,7 @@ impl Texture2DMultisample {
             gl::BindTexture(gl::TEXTURE_2D_MULTISAMPLE, id);
             gl::TexImage2DMultisample(
                 gl::TEXTURE_2D_MULTISAMPLE,
-                4,
+                MULTISAMPLE_NUM_SAMPLES,
                 internal_format,
                 width as GLsizei,
                 height as GLsizei,

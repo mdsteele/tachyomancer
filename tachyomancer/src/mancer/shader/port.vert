@@ -27,7 +27,7 @@ void main() {
     }
     x += 0.06 * delta;
   }
-  gl_Position = MVP * vec4(x, y * WidthScale, 0, 1);
+  gl_Position = MVP * vec4(x, y * WidthScale, 0.05, 1);
 
   float u = 0.5 * (y + 1);
   float v = x;

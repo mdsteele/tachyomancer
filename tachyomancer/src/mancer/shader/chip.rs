@@ -22,7 +22,7 @@ use crate::mancer::gl::{
     ShaderUniform, Texture2D, VertexArray, VertexBuffer,
 };
 use cgmath::Matrix4;
-use tachy::geom::{Color3, Rect};
+use tachy::geom::{Color3, Rect, RectSize};
 
 //===========================================================================//
 
@@ -43,28 +43,36 @@ const CHIP_FRAG_CODE: &[u8] = include_bytes!("chip.frag");
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const BASIC_INDEX_DATA: &[u8] = &[
-    2, 1, 0,  5, 4, 3,  8, 7, 6,  11, 10, 9, // corners
-    1, 2, 3,  3, 2, 5, // top edge
-    4, 5, 8,  4, 8, 6, // right edge
-    7, 8, 9,  9, 8, 11, // bottom edge
-    0, 2, 10,  2, 10, 11, // left edge
-    2, 11, 5,  5, 11, 8, // face
+    2, 1, 0,   5, 4, 3,  8, 7, 6,  11, 10, 9, // corners
+    1, 2, 3,   3, 2, 5,   // top edge
+    4, 5, 8,   4, 8, 6,   // right edge
+    7, 8, 9,   9, 8, 11,  // bottom edge
+    0, 10, 2,  2, 10, 11, // left edge
+    2, 11, 5,  5, 11, 8,  // face
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const BASIC_VERTEX_DATA: &[f32] = &[
-    0.00, 0.08, 0.00,  0.001, 0.001,
-    0.08, 0.00, 0.00,  0.001, 0.001,
-    0.08, 0.08, 0.05,  0.001, 0.001,
-    0.92, 0.00, 0.00,  0.999, 0.001,
-    1.00, 0.08, 0.00,  0.999, 0.001,
-    0.92, 0.08, 0.05,  0.999, 0.001,
-    1.00, 0.92, 0.00,  0.999, 0.999,
-    0.92, 1.00, 0.00,  0.999, 0.999,
-    0.92, 0.92, 0.05,  0.999, 0.999,
-    0.08, 1.00, 0.00,  0.001, 0.999,
-    0.00, 0.92, 0.00,  0.001, 0.999,
-    0.08, 0.92, 0.05,  0.001, 0.999,
+     0.00,  0.06, 0.05,  0.001, 0.001,
+     0.06,  0.00, 0.05,  0.001, 0.001,
+     0.06,  0.06, 0.10,  0.001, 0.001,
+    -0.06,  0.00, 0.05,  0.999, 0.001,
+     0.00,  0.06, 0.05,  0.999, 0.001,
+    -0.06,  0.06, 0.10,  0.999, 0.001,
+     0.00, -0.06, 0.05,  0.999, 0.999,
+    -0.06,  0.00, 0.05,  0.999, 0.999,
+    -0.06, -0.06, 0.10,  0.999, 0.999,
+     0.06,  0.00, 0.05,  0.001, 0.999,
+     0.00, -0.06, 0.05,  0.001, 0.999,
+     0.06, -0.06, 0.10,  0.001, 0.999,
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const BASIC_CORNER_DATA: &[u8] = &[
+    0, 0,  0, 0,  0, 0,
+    1, 0,  1, 0,  1, 0,
+    1, 1,  1, 1,  1, 1,
+    0, 1,  0, 1,  0, 1,
 ];
 
 //===========================================================================//
@@ -72,11 +80,13 @@ const BASIC_VERTEX_DATA: &[f32] = &[
 pub struct ChipShader {
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
+    chip_size: ShaderUniform<RectSize<f32>>,
     tex_rect: ShaderUniform<Rect<f32>>,
     icon_color: ShaderUniform<Color3>,
     icon_texture: ShaderSampler<Texture2D>,
     basic_ibuffer: IndexBuffer<u8>,
-    _basic_vbuffer: VertexBuffer<f32>,
+    _basic_vertex_vbuffer: VertexBuffer<f32>,
+    _basic_corner_vbuffer: VertexBuffer<u8>,
     basic_varray: VertexArray,
 }
 
@@ -91,32 +101,39 @@ impl ChipShader {
         let program = ShaderProgram::new(&[&vert, &geom, &frag])?;
 
         let mvp = program.get_uniform("MVP")?;
+        let chip_size = program.get_uniform("ChipSize")?;
         let tex_rect = program.get_uniform("TexRect")?;
         let icon_color = program.get_uniform("IconColor")?;
         let icon_texture = program.get_sampler(0, "IconTexture")?;
 
         let basic_ibuffer = IndexBuffer::new(BASIC_INDEX_DATA);
-        let basic_vbuffer = VertexBuffer::new(BASIC_VERTEX_DATA);
-        let basic_varray = VertexArray::new(2);
+        let basic_vertex_vbuffer = VertexBuffer::new(BASIC_VERTEX_DATA);
+        let basic_corner_vbuffer = VertexBuffer::new(BASIC_CORNER_DATA);
+        let basic_varray = VertexArray::new(3);
         basic_varray.bind();
-        basic_vbuffer.attribf(0, 3, 5, 0);
-        basic_vbuffer.attribf(1, 2, 5, 3);
+        basic_vertex_vbuffer.attribf(0, 3, 5, 0);
+        basic_vertex_vbuffer.attribf(1, 2, 5, 3);
+        basic_corner_vbuffer.attribi(2, 2, 0, 0);
 
         Ok(ChipShader {
             program,
             mvp,
+            chip_size,
             tex_rect,
             icon_color,
             icon_texture,
             basic_ibuffer,
-            _basic_vbuffer: basic_vbuffer,
+            _basic_vertex_vbuffer: basic_vertex_vbuffer,
+            _basic_corner_vbuffer: basic_corner_vbuffer,
             basic_varray,
         })
     }
 
+    /// The matrix should place the origin at the center of the chip.
     pub fn draw_basic(
         &self,
         matrix: &Matrix4<f32>,
+        size: RectSize<f32>,
         icon_index: u32,
         icon_color: Color3,
         icon_texture: &Texture2D,
@@ -130,6 +147,7 @@ impl ChipShader {
         );
         self.program.bind();
         self.mvp.set(matrix);
+        self.chip_size.set(&size);
         self.tex_rect.set(&tex_rect);
         self.icon_color.set(&icon_color);
         self.icon_texture.set(&icon_texture);

@@ -66,7 +66,8 @@ impl PlanetfallBackgroundView {
 
 impl BackgroundView for PlanetfallBackgroundView {
     fn draw(&self, resources: &Resources) {
-        let _depth = Depth::new();
+        let depth = Depth::enable_with_face_culling(true);
+
         let v_matrix = Matrix4::look_at(
             Point3::new(0.0, 15.0, 90.0),
             Point3::new(0.0, self.look_y, 0.0),
@@ -111,6 +112,8 @@ impl BackgroundView for PlanetfallBackgroundView {
             resources.textures().starfield(),
             &self.sky_model,
         );
+
+        depth.disable();
     }
 
     fn on_event(&mut self, event: &Event, ui: &mut Ui) {

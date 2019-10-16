@@ -19,7 +19,7 @@
 
 use super::texture::Texture2DMultisample;
 use gl;
-use gl::types::GLuint;
+use gl::types::{GLsizei, GLuint};
 use std::marker::PhantomData;
 use tachy::geom::RectSize;
 
@@ -30,20 +30,30 @@ pub struct FrameBuffer {
     size: RectSize<usize>,
     texture_size: RectSize<usize>,
     texture: Texture2DMultisample,
+    _depth_texture: Option<Texture2DMultisample>,
     // This PhantomData ensures that this struct is not Send or Sync, which
     // helps ensure that we keep all our OpenGL stuff on the main thread.
     phantom: PhantomData<*mut ()>,
 }
 
 impl FrameBuffer {
-    pub fn new(width: usize, height: usize) -> FrameBuffer {
+    pub fn new(width: usize, height: usize, depth: bool) -> FrameBuffer {
         let texture_width = width.next_power_of_two();
         let texture_height = height.next_power_of_two();
-        let texture = Texture2DMultisample::new(
+        let color_texture = Texture2DMultisample::new(
             texture_width,
             texture_height,
             gl::RGBA8,
         );
+        let depth_texture = if depth {
+            Some(Texture2DMultisample::new(
+                texture_width,
+                texture_height,
+                gl::DEPTH_COMPONENT,
+            ))
+        } else {
+            None
+        };
         let mut id: GLuint = 0;
         unsafe {
             gl::GenFramebuffers(1, &mut id);
@@ -52,10 +62,19 @@ impl FrameBuffer {
                 gl::FRAMEBUFFER,
                 gl::COLOR_ATTACHMENT0,
                 gl::TEXTURE_2D_MULTISAMPLE,
-                texture.id(),
+                color_texture.id(),
                 0,
             );
-            assert_eq!(
+            if let Some(ref texture) = depth_texture {
+                gl::FramebufferTexture2D(
+                    gl::FRAMEBUFFER,
+                    gl::DEPTH_ATTACHMENT,
+                    gl::TEXTURE_2D_MULTISAMPLE,
+                    texture.id(),
+                    0,
+                );
+            }
+            debug_assert_eq!(
                 gl::CheckFramebufferStatus(gl::FRAMEBUFFER),
                 gl::FRAMEBUFFER_COMPLETE
             );
@@ -67,7 +86,8 @@ impl FrameBuffer {
             id,
             size: RectSize::new(width, height),
             texture_size: RectSize::new(texture_width, texture_height),
-            texture,
+            texture: color_texture,
+            _depth_texture: depth_texture,
             phantom: PhantomData,
         }
     }
@@ -90,8 +110,8 @@ impl FrameBuffer {
             gl::Viewport(
                 0,
                 0,
-                self.size.width as i32,
-                self.size.height as i32,
+                self.size.width as GLsizei,
+                self.size.height as GLsizei,
             );
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }

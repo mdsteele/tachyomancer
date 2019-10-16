@@ -71,7 +71,8 @@ impl OdysseyBackgroundView {
 
 impl BackgroundView for OdysseyBackgroundView {
     fn draw(&self, resources: &Resources) {
-        let _depth = Depth::new();
+        let depth = Depth::enable_with_face_culling(true);
+
         let v_matrix = Matrix4::look_at(
             Point3::new(0.0, 0.0, 100.0),
             Point3::new(0.0, 0.0, 0.0),
@@ -100,6 +101,8 @@ impl BackgroundView for OdysseyBackgroundView {
             resources.textures().starfield(),
             &self.starfield_model,
         );
+
+        depth.disable();
     }
 
     fn on_event(&mut self, event: &Event, ui: &mut Ui) {

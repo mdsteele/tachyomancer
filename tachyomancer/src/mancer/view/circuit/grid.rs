@@ -28,6 +28,7 @@ use super::select::{self, SelectingDrag, Selection, SelectionDrag};
 use super::tooltip::GridTooltipTag;
 use super::tutorial::TutorialBubble;
 use super::wiredrag::WireDrag;
+use crate::mancer::gl::Depth;
 use crate::mancer::gui::{
     ClockEventData, Cursor, Event, Keycode, NextCursor, Resources, Sound, Ui,
 };
@@ -179,6 +180,31 @@ impl EditGridView {
         }
     }
 
+    fn draw_chips(
+        &self,
+        resources: &Resources,
+        grid_matrix: &Matrix4<f32>,
+        grid: &EditGrid,
+    ) {
+        let dragged_chip_coords = match self.interaction {
+            Interaction::DraggingChip(ref drag) => drag.old_coords(),
+            _ => None,
+        };
+        for (coords, ctype, orient) in grid.chips() {
+            if Some(coords) == dragged_chip_coords {
+                continue;
+            }
+            ChipModel::draw_chip(
+                resources,
+                &grid_matrix,
+                coords,
+                ctype,
+                orient,
+                Some(grid),
+            );
+        }
+    }
+
     fn draw_interfaces(
         &self,
         resources: &Resources,
@@ -200,11 +226,12 @@ impl EditGridView {
         }
     }
 
-    pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
-        self.draw_background_grid(resources);
-        self.draw_bounds(resources, grid);
-        self.draw_tutorial_bubbles(resources, grid);
-
+    fn draw_wires(
+        &self,
+        resources: &Resources,
+        grid_matrix: &Matrix4<f32>,
+        grid: &EditGrid,
+    ) {
         let subcycle_wires: HashSet<usize> = if let Some(eval) = grid.eval() {
             if eval.subcycle() > 0 {
                 grid.wire_index_group(eval.subcycle() - 1)
@@ -218,10 +245,6 @@ impl EditGridView {
         } else {
             HashSet::new()
         };
-
-        // Draw wires:
-        let matrix = self.vp_matrix();
-        let grid_matrix = matrix * Matrix4::from_scale(GRID_CELL_SIZE as f32);
         let half_wire =
             if let Interaction::DraggingWires(ref drag) = self.interaction {
                 drag.half_wire()
@@ -266,29 +289,9 @@ impl EditGridView {
                 );
             }
         }
+    }
 
-        self.draw_interfaces(resources, &grid_matrix, grid);
-
-        // Draw chips (except the one being dragged, if any):
-        let dragged_chip_coords = match self.interaction {
-            Interaction::DraggingChip(ref drag) => drag.old_coords(),
-            _ => None,
-        };
-        for (coords, ctype, orient) in grid.chips() {
-            if Some(coords) == dragged_chip_coords {
-                continue;
-            }
-            ChipModel::draw_chip(
-                resources,
-                &grid_matrix,
-                coords,
-                ctype,
-                orient,
-                Some(grid),
-            );
-        }
-
-        // Draw selection box (if any):
+    fn draw_selection_box_if_any(&self, resources: &Resources) {
         match self.interaction {
             Interaction::SelectingRect(ref drag) => {
                 drag.draw_box(
@@ -316,12 +319,29 @@ impl EditGridView {
         }
     }
 
+    pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
+        self.draw_background_grid(resources);
+        self.draw_bounds(resources, grid);
+        self.draw_tutorial_bubbles(resources, grid);
+
+        let depth = Depth::enable_with_face_culling(false);
+        let grid_matrix =
+            self.vp_matrix() * Matrix4::from_scale(GRID_CELL_SIZE as f32);
+        self.draw_chips(resources, &grid_matrix, grid);
+        self.draw_interfaces(resources, &grid_matrix, grid);
+        self.draw_wires(resources, &grid_matrix, grid);
+        depth.disable();
+
+        self.draw_selection_box_if_any(resources);
+    }
+
     pub fn draw_dragged(&self, resources: &Resources) {
         if let Interaction::DraggingChip(ref drag) = self.interaction {
             let pt = drag.chip_topleft();
             let grid_matrix = self.vp_matrix()
                 * Matrix4::from_scale(GRID_CELL_SIZE as f32)
                 * Matrix4::trans2(pt.x, pt.y);
+            let depth = Depth::enable_with_face_culling(false);
             ChipModel::draw_chip(
                 resources,
                 &grid_matrix,
@@ -330,6 +350,7 @@ impl EditGridView {
                 drag.new_orient(),
                 None,
             );
+            depth.disable();
         }
     }
 

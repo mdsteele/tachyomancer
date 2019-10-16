@@ -19,7 +19,7 @@
 
 use crate::mancer::font::{Align, Font};
 use crate::mancer::gui::Resources;
-use cgmath::Matrix4;
+use cgmath::{vec3, Matrix4};
 use tachy::geom::{
     AsFloat, Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
     Orientation, Rect,
@@ -74,33 +74,31 @@ impl ChipModel {
         coords: Coords,
         interface: &Interface,
     ) {
+        // Draw body:
+        draw_chip_icon(
+            resources,
+            grid_matrix,
+            coords,
+            Orientation::default(),
+            interface.size(),
+            ChipIcon::Blank,
+        );
+
         // Draw ports:
         let ports = interface.ports_with_top_left(coords);
         for &(_, ref port) in ports.iter() {
             draw_port(resources, grid_matrix, port);
         }
 
-        // Draw body:
-        let size = interface.size();
-        let color = Color3::new(0.3, 0.3, 0.3);
-        let rect = Rect::new(
-            (coords.x as f32) + CHIP_MARGIN,
-            (coords.y as f32) + CHIP_MARGIN,
-            (size.width as f32) - 2.0 * CHIP_MARGIN,
-            (size.height as f32) - 2.0 * CHIP_MARGIN,
-        );
-        resources.shaders().solid().fill_rect(grid_matrix, color, rect);
-
         // Draw port labels:
-        let font = resources.fonts().roman();
         for &(name, ref port) in ports.iter() {
-            font.draw_style(
+            draw_chip_string(
+                resources,
                 grid_matrix,
+                port.coords,
+                CoordsSize::new(1, 1),
                 0.25,
-                Align::MidCenter,
-                (0.5 + (port.coords.x as f32), 0.5 + (port.coords.y as f32)),
                 &INTERFACE_LABEL_COLOR,
-                0.0,
                 name,
             );
         }
@@ -114,14 +112,22 @@ impl ChipModel {
         orient: Orientation,
         opt_grid: Option<&EditGrid>,
     ) {
-        let size = orient * ctype.size();
+        let chip_size = ctype.size();
+        let oriented_size = orient * chip_size;
+
+        let icon = chip_icon(ctype, orient);
+        draw_chip_icon(
+            resources,
+            grid_matrix,
+            coords,
+            orient,
+            chip_size,
+            icon,
+        );
 
         for port in ctype.ports(coords, orient) {
             draw_port(resources, grid_matrix, &port);
         }
-
-        let icon = chip_icon(ctype, orient);
-        draw_chip_icon(resources, grid_matrix, coords, orient, size, icon);
 
         match ctype {
             ChipType::Comment(bytes) => {
@@ -131,7 +137,7 @@ impl ChipModel {
                     resources,
                     &grid_matrix,
                     coords,
-                    size,
+                    oriented_size,
                     0.25,
                     &Color4::WHITE,
                     string.trim_end(),
@@ -145,7 +151,7 @@ impl ChipModel {
                     resources,
                     &grid_matrix,
                     coords,
-                    size,
+                    oriented_size,
                     font_size,
                     &Color4::ORANGE4,
                     &label,
@@ -165,7 +171,7 @@ impl ChipModel {
                         resources,
                         &grid_matrix,
                         coords,
-                        size,
+                        oriented_size,
                         0.3,
                         &Color4::WHITE,
                         &format!("{}", value),
@@ -175,7 +181,7 @@ impl ChipModel {
                         resources,
                         &grid_matrix,
                         coords,
-                        size,
+                        oriented_size,
                         0.3,
                         &Color4::WHITE,
                         "Display",
@@ -188,7 +194,7 @@ impl ChipModel {
                         resources,
                         &grid_matrix,
                         coords,
-                        size,
+                        oriented_size,
                         0.3,
                         &Color4::WHITE,
                         &format!("{:?}", ctype),
@@ -292,26 +298,27 @@ fn draw_chip_icon(
     grid_matrix: &Matrix4<f32>,
     coords: Coords,
     orient: Orientation,
-    size: CoordsSize,
+    chip_size: CoordsSize,
     icon: ChipIcon,
 ) {
-    let width = size.width as f32 - 2.0 * CHIP_MARGIN;
-    let height = size.height as f32 - 2.0 * CHIP_MARGIN;
-    let orient =
-        if chip_icon_is_fixed(icon) { Orientation::default() } else { orient };
+    let oriented_size = orient * chip_size;
+    let orient = if chip_icon_is_fixed(icon) {
+        debug_assert_eq!(chip_size, CoordsSize::new(1, 1));
+        Orientation::default()
+    } else {
+        orient
+    };
     let matrix = grid_matrix
         * Matrix4::trans2(
-            (coords.x as f32) + CHIP_MARGIN,
-            (coords.y as f32) + CHIP_MARGIN,
+            (coords.x as f32) + 0.5 * (oriented_size.width as f32),
+            (coords.y as f32) + 0.5 * (oriented_size.height as f32),
         )
-        * Matrix4::scale2(width, height)
-        * Matrix4::trans2(0.5, 0.5)
-        * orient.matrix()
-        * Matrix4::trans2(-0.5, -0.5);
+        * orient.matrix();
     let icon_index = icon as u32;
     let icon_color = chip_icon_color(icon);
     resources.shaders().chip().draw_basic(
         &matrix,
+        chip_size.as_f32().expand(-CHIP_MARGIN),
         icon_index,
         icon_color,
         resources.textures().chip_icons(),
@@ -327,10 +334,12 @@ fn draw_chip_string(
     color: &Color4,
     string: &str,
 ) {
+    let matrix =
+        grid_matrix * Matrix4::from_translation(vec3(0.0, 0.0, 0.101));
     let (width, height) = (chip_size.width as f32, chip_size.height as f32);
     let font = resources.fonts().roman();
     font.draw_style(
-        grid_matrix,
+        &matrix,
         font_size,
         Align::MidCenter,
         ((coords.x as f32) + 0.5 * width, (coords.y as f32) + 0.5 * height),

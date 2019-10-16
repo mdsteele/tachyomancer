@@ -55,12 +55,12 @@ fn generate_wire_vertex_buffer() -> VertexBuffer<f32> {
         data.extend_from_slice(&[
             28./32., 0.0,       inner,
             1.0,     0.0,       inner,
-            1.0,     st,        outer,
-            28./32., st,        outer,
-            24./32., 0.5 * st,  outer,
-            24./32., -0.5 * st, outer,
-            28./32., -st,       outer,
             1.0,     -st,       outer,
+            28./32., -st,       outer,
+            24./32., -0.5 * st, outer,
+            24./32., 0.5 * st,  outer,
+            28./32., st,        outer,
+            1.0,     st,        outer,
             1.0,     0.0,       inner,
         ]);
         // Straight (horz):

@@ -23,7 +23,7 @@ use super::super::tooltip::Tooltip;
 use super::tray::TraySlide;
 use super::tutorial::TutorialBubble;
 use crate::mancer::font::Align;
-use crate::mancer::gl::{FrameBuffer, Stencil};
+use crate::mancer::gl::{Depth, FrameBuffer, Stencil};
 use crate::mancer::gui::{Cursor, Event, Resources, Ui, Window};
 use crate::mancer::save::Prefs;
 use crate::mancer::shader::UiShader;
@@ -135,7 +135,8 @@ impl PartsTray {
         }
 
         let fbo_height = top + TRAY_INNER_MARGIN;
-        let fbo = FrameBuffer::new(fbo_width as usize, fbo_height as usize);
+        let fbo =
+            FrameBuffer::new(fbo_width as usize, fbo_height as usize, true);
         fbo.bind();
         {
             let resources = window.resources();
@@ -156,6 +157,7 @@ impl PartsTray {
                     text,
                 );
             }
+            let depth = Depth::enable_with_face_culling(false);
             for &(part_rect, ctype) in parts.iter() {
                 let chip_size = ctype.size();
                 let chip_dim = chip_size.width.max(chip_size.height) as f32;
@@ -172,6 +174,7 @@ impl PartsTray {
                     None,
                 );
             }
+            depth.disable();
         }
         fbo.unbind(window.size());
 

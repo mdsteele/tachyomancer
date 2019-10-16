@@ -20,6 +20,7 @@
 use super::super::chip::ChipModel;
 use super::super::wire::WireModel;
 use super::types::{CompiledPiece, ParserPiece, ParserPieceSplit};
+use crate::mancer::gl::Depth;
 use crate::mancer::gui::Resources;
 use cgmath::{Matrix4, Vector2};
 use std::collections::HashMap;
@@ -175,6 +176,18 @@ impl CompiledPiece for CompiledCircuitPiece {
         let grid_matrix = paragraph_matrix
             * Matrix4::trans2v(self.offset)
             * Matrix4::from_scale(CIRCUIT_GRID_CELL_SIZE);
+        let depth = Depth::enable_with_face_culling(false);
+        // Draw chips:
+        for (&coords, &(ctype, orient)) in self.chips.iter() {
+            ChipModel::draw_chip(
+                resources,
+                &grid_matrix,
+                coords,
+                ctype,
+                orient,
+                None,
+            );
+        }
         // Draw wires:
         for (&(coords, dir), &(shape, index)) in self.fragments.iter() {
             let info = &self.wires[index];
@@ -190,17 +203,7 @@ impl CompiledPiece for CompiledCircuitPiece {
                 &Color4::TRANSPARENT,
             );
         }
-        // Draw chips:
-        for (&coords, &(ctype, orient)) in self.chips.iter() {
-            ChipModel::draw_chip(
-                resources,
-                &grid_matrix,
-                coords,
-                ctype,
-                orient,
-                None,
-            );
-        }
+        depth.disable();
         return true;
     }
 

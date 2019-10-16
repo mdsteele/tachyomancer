@@ -29,7 +29,10 @@ use unicase::UniCase;
 
 //===========================================================================//
 
-const GLOBAL_SCORES_DIR_NAME: &str = "global_scores";
+// Note: this dir name needs to have a period (or other special character) to
+// ensure that it cannot conflict with any encoded profile name.
+const GLOBAL_SCORES_DIR_NAME: &str = "global.scores";
+
 const PREFS_FILE_NAME: &str = "prefs.toml";
 
 //===========================================================================//
@@ -73,7 +76,11 @@ impl SaveDir {
                     err
                 )
             })?;
-            if !entry.path().is_dir() {
+            let entry_path = entry.path();
+            if !entry_path.is_dir()
+                || entry_path.file_name()
+                    == Some(GLOBAL_SCORES_DIR_NAME.as_ref())
+            {
                 continue;
             }
             let profile_name = decode_name(&entry.file_name());

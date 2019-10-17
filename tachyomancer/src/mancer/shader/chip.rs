@@ -30,6 +30,9 @@ const CHIP_VERT_CODE: &[u8] = include_bytes!("chip.vert");
 const CHIP_GEOM_CODE: &[u8] = include_bytes!("chip.geom");
 const CHIP_FRAG_CODE: &[u8] = include_bytes!("chip.frag");
 
+const TEX_MIN: f32 = 1.0 / 128.0;
+const TEX_MAX: f32 = 127.0 / 128.0;
+
 //===========================================================================//
 
 //    1----3
@@ -53,18 +56,18 @@ const BASIC_INDEX_DATA: &[u8] = &[
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const BASIC_VERTEX_DATA: &[f32] = &[
-     0.00,  0.06, 0.05,  0.001, 0.001,
-     0.06,  0.00, 0.05,  0.001, 0.001,
-     0.06,  0.06, 0.10,  0.001, 0.001,
-    -0.06,  0.00, 0.05,  0.999, 0.001,
-     0.00,  0.06, 0.05,  0.999, 0.001,
-    -0.06,  0.06, 0.10,  0.999, 0.001,
-     0.00, -0.06, 0.05,  0.999, 0.999,
-    -0.06,  0.00, 0.05,  0.999, 0.999,
-    -0.06, -0.06, 0.10,  0.999, 0.999,
-     0.06,  0.00, 0.05,  0.001, 0.999,
-     0.00, -0.06, 0.05,  0.001, 0.999,
-     0.06, -0.06, 0.10,  0.001, 0.999,
+     0.00,  0.06, 0.05,  TEX_MIN, TEX_MIN,
+     0.06,  0.00, 0.05,  TEX_MIN, TEX_MIN,
+     0.06,  0.06, 0.10,  TEX_MIN, TEX_MIN,
+    -0.06,  0.00, 0.05,  TEX_MAX, TEX_MIN,
+     0.00,  0.06, 0.05,  TEX_MAX, TEX_MIN,
+    -0.06,  0.06, 0.10,  TEX_MAX, TEX_MIN,
+     0.00, -0.06, 0.05,  TEX_MAX, TEX_MAX,
+    -0.06,  0.00, 0.05,  TEX_MAX, TEX_MAX,
+    -0.06, -0.06, 0.10,  TEX_MAX, TEX_MAX,
+     0.06,  0.00, 0.05,  TEX_MIN, TEX_MAX,
+     0.00, -0.06, 0.05,  TEX_MIN, TEX_MAX,
+     0.06, -0.06, 0.10,  TEX_MIN, TEX_MAX,
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -90,10 +93,10 @@ const COMMENT_INDEX_DATA: &[u8] = &[
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const COMMENT_VERTEX_DATA: &[f32] = &[
-    0.00,  0.00, 0.01,  0.001, 0.001,
-    0.00,  0.00, 0.01,  0.001, 0.999,
-    0.00,  0.00, 0.01,  0.999, 0.999,
-    0.00,  0.00, 0.01,  0.999, 0.001,
+    0.00,  0.00, 0.01,  TEX_MIN, TEX_MIN,
+    0.00,  0.00, 0.01,  TEX_MIN, TEX_MAX,
+    0.00,  0.00, 0.01,  TEX_MAX, TEX_MAX,
+    0.00,  0.00, 0.01,  TEX_MAX, TEX_MIN,
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]

@@ -22,7 +22,7 @@ use crate::mancer::gui::Resources;
 use cgmath::{vec3, Matrix4};
 use tachy::geom::{
     AsFloat, Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
-    Orientation, Rect,
+    Orientation, Rect, RectSize,
 };
 use tachy::save::ChipType;
 use tachy::state::{
@@ -115,15 +115,33 @@ impl ChipModel {
         let chip_size = ctype.size();
         let oriented_size = orient * chip_size;
 
-        let icon = chip_icon(ctype, orient);
-        draw_chip_icon(
-            resources,
-            grid_matrix,
-            coords,
-            orient,
-            chip_size,
-            icon,
-        );
+        match ctype {
+            ChipType::Comment(_) => {
+                draw_comment_chip(resources, grid_matrix, coords, orient);
+            }
+            _ => {
+                let icon = chip_icon(ctype, orient);
+                draw_chip_icon(
+                    resources,
+                    grid_matrix,
+                    coords,
+                    orient,
+                    chip_size,
+                    icon,
+                );
+                if icon == ChipIcon::Blank {
+                    draw_chip_string(
+                        resources,
+                        &grid_matrix,
+                        coords,
+                        oriented_size,
+                        0.3,
+                        &Color4::WHITE,
+                        &format!("{:?}", ctype),
+                    );
+                }
+            }
+        }
 
         for port in ctype.ports(coords, orient) {
             draw_port(resources, grid_matrix, &port);
@@ -188,19 +206,7 @@ impl ChipModel {
                     );
                 };
             }
-            _ => {
-                if icon == ChipIcon::Blank {
-                    draw_chip_string(
-                        resources,
-                        &grid_matrix,
-                        coords,
-                        oriented_size,
-                        0.3,
-                        &Color4::WHITE,
-                        &format!("{:?}", ctype),
-                    );
-                }
-            }
+            _ => {}
         }
     }
 }
@@ -229,6 +235,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
                 ChipIcon::Cmpeq1
             }
         }
+        ChipType::Comment(_) => ChipIcon::Comment,
         ChipType::Const(_) => ChipIcon::Const,
         ChipType::Delay => ChipIcon::Delay,
         ChipType::Demux => ChipIcon::Demux,
@@ -291,6 +298,24 @@ fn chip_icon_is_fixed(chip_icon: ChipIcon) -> bool {
         ChipIcon::Halve | ChipIcon::Sub => true,
         _ => false,
     }
+}
+
+fn draw_comment_chip(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    coords: Coords,
+    orient: Orientation,
+) {
+    let matrix = grid_matrix
+        * Matrix4::trans2((coords.x as f32) + 0.5, (coords.y as f32) + 0.5)
+        * orient.matrix();
+    resources.shaders().chip().draw_comment(
+        &matrix,
+        RectSize::new(0.9, 0.9),
+        ChipIcon::Comment as u32,
+        Color3::PURPLE5,
+        resources.textures().chip_icons(),
+    );
 }
 
 fn draw_chip_icon(

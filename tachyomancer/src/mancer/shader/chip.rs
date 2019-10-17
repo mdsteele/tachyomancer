@@ -22,7 +22,7 @@ use crate::mancer::gl::{
     ShaderUniform, Texture2D, VertexArray, VertexBuffer,
 };
 use cgmath::Matrix4;
-use tachy::geom::{Color3, Rect, RectSize};
+use tachy::geom::{Color3, Color4, Rect, RectSize};
 
 //===========================================================================//
 
@@ -75,6 +75,72 @@ const BASIC_CORNER_DATA: &[u8] = &[
     0, 1,  0, 1,  0, 1,
 ];
 
+const BASIC_PLASTIC_COLOR: Color4 = Color4::new(0.4, 0.4, 0.4, 1.0);
+
+//===========================================================================//
+
+// 0--3
+// |  |
+// 1--2
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const COMMENT_INDEX_DATA: &[u8] = &[
+    0, 1, 2,  2, 3, 0,
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const COMMENT_VERTEX_DATA: &[f32] = &[
+    0.00,  0.00, 0.01,  0.001, 0.001,
+    0.00,  0.00, 0.01,  0.001, 0.999,
+    0.00,  0.00, 0.01,  0.999, 0.999,
+    0.00,  0.00, 0.01,  0.999, 0.001,
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const COMMENT_CORNER_DATA: &[u8] = &[
+    0, 0,
+    0, 1,
+    1, 1,
+    1, 0,
+];
+
+//===========================================================================//
+
+struct ChipModel {
+    ibuffer: IndexBuffer<u8>,
+    _vertex_vbuffer: VertexBuffer<f32>,
+    _corner_vbuffer: VertexBuffer<u8>,
+    varray: VertexArray,
+}
+
+impl ChipModel {
+    fn new(
+        index_data: &[u8],
+        vertex_data: &[f32],
+        corner_data: &[u8],
+    ) -> ChipModel {
+        let ibuffer = IndexBuffer::new(index_data);
+        let vertex_vbuffer = VertexBuffer::new(vertex_data);
+        let corner_vbuffer = VertexBuffer::new(corner_data);
+        let varray = VertexArray::new(3);
+        varray.bind();
+        vertex_vbuffer.attribf(0, 3, 5, 0);
+        vertex_vbuffer.attribf(1, 2, 5, 3);
+        corner_vbuffer.attribi(2, 2, 0, 0);
+        ChipModel {
+            ibuffer,
+            _vertex_vbuffer: vertex_vbuffer,
+            _corner_vbuffer: corner_vbuffer,
+            varray,
+        }
+    }
+
+    fn draw(&self) {
+        self.varray.bind();
+        self.varray.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+}
+
 //===========================================================================//
 
 pub struct ChipShader {
@@ -82,12 +148,11 @@ pub struct ChipShader {
     mvp: ShaderUniform<Matrix4<f32>>,
     chip_size: ShaderUniform<RectSize<f32>>,
     tex_rect: ShaderUniform<Rect<f32>>,
+    plastic_color: ShaderUniform<Color4>,
     icon_color: ShaderUniform<Color3>,
     icon_texture: ShaderSampler<Texture2D>,
-    basic_ibuffer: IndexBuffer<u8>,
-    _basic_vertex_vbuffer: VertexBuffer<f32>,
-    _basic_corner_vbuffer: VertexBuffer<u8>,
-    basic_varray: VertexArray,
+    basic_model: ChipModel,
+    comment_model: ChipModel,
 }
 
 impl ChipShader {
@@ -103,29 +168,28 @@ impl ChipShader {
         let mvp = program.get_uniform("MVP")?;
         let chip_size = program.get_uniform("ChipSize")?;
         let tex_rect = program.get_uniform("TexRect")?;
+        let plastic_color = program.get_uniform("PlasticColor")?;
         let icon_color = program.get_uniform("IconColor")?;
         let icon_texture = program.get_sampler(0, "IconTexture")?;
-
-        let basic_ibuffer = IndexBuffer::new(BASIC_INDEX_DATA);
-        let basic_vertex_vbuffer = VertexBuffer::new(BASIC_VERTEX_DATA);
-        let basic_corner_vbuffer = VertexBuffer::new(BASIC_CORNER_DATA);
-        let basic_varray = VertexArray::new(3);
-        basic_varray.bind();
-        basic_vertex_vbuffer.attribf(0, 3, 5, 0);
-        basic_vertex_vbuffer.attribf(1, 2, 5, 3);
-        basic_corner_vbuffer.attribi(2, 2, 0, 0);
 
         Ok(ChipShader {
             program,
             mvp,
             chip_size,
             tex_rect,
+            plastic_color,
             icon_color,
             icon_texture,
-            basic_ibuffer,
-            _basic_vertex_vbuffer: basic_vertex_vbuffer,
-            _basic_corner_vbuffer: basic_corner_vbuffer,
-            basic_varray,
+            basic_model: ChipModel::new(
+                BASIC_INDEX_DATA,
+                BASIC_VERTEX_DATA,
+                BASIC_CORNER_DATA,
+            ),
+            comment_model: ChipModel::new(
+                COMMENT_INDEX_DATA,
+                COMMENT_VERTEX_DATA,
+                COMMENT_CORNER_DATA,
+            ),
         })
     }
 
@@ -138,6 +202,46 @@ impl ChipShader {
         icon_color: Color3,
         icon_texture: &Texture2D,
     ) {
+        self.bind(
+            matrix,
+            &size,
+            &BASIC_PLASTIC_COLOR,
+            icon_index,
+            &icon_color,
+            icon_texture,
+        );
+        self.basic_model.draw();
+    }
+
+    /// The matrix should place the origin at the center of the chip.
+    pub fn draw_comment(
+        &self,
+        matrix: &Matrix4<f32>,
+        size: RectSize<f32>,
+        icon_index: u32,
+        icon_color: Color3,
+        icon_texture: &Texture2D,
+    ) {
+        self.bind(
+            matrix,
+            &size,
+            &Color4::TRANSPARENT,
+            icon_index,
+            &icon_color,
+            icon_texture,
+        );
+        self.comment_model.draw();
+    }
+
+    fn bind(
+        &self,
+        matrix: &Matrix4<f32>,
+        size: &RectSize<f32>,
+        plastic_color: &Color4,
+        icon_index: u32,
+        icon_color: &Color3,
+        icon_texture: &Texture2D,
+    ) {
         let (tex_row, tex_col) = (icon_index / 8, icon_index % 8);
         let tex_rect = Rect::new(
             0.125 * (tex_col as f32),
@@ -147,13 +251,11 @@ impl ChipShader {
         );
         self.program.bind();
         self.mvp.set(matrix);
-        self.chip_size.set(&size);
+        self.chip_size.set(size);
         self.tex_rect.set(&tex_rect);
-        self.icon_color.set(&icon_color);
-        self.icon_texture.set(&icon_texture);
-        self.basic_varray.bind();
-        self.basic_varray
-            .draw_elements(Primitive::Triangles, &self.basic_ibuffer);
+        self.plastic_color.set(plastic_color);
+        self.icon_color.set(icon_color);
+        self.icon_texture.set(icon_texture);
     }
 }
 

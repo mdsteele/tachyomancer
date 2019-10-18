@@ -22,6 +22,7 @@ extern crate downcast_rs;
 extern crate indexmap;
 extern crate num_integer;
 extern crate pathfinding;
+extern crate rand;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;

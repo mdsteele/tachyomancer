@@ -266,6 +266,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         }
         ChipType::Sample => ChipIcon::Sample,
         ChipType::Sub => ChipIcon::Sub,
+        ChipType::Random => ChipIcon::Random,
         ChipType::Unpack => {
             if orient.is_mirrored() {
                 ChipIcon::Unpack2
@@ -288,6 +289,7 @@ fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
         | ChipIcon::Inc
         | ChipIcon::Join
         | ChipIcon::Latest
+        | ChipIcon::Random
         | ChipIcon::Sample => Color3::CYAN4,
         _ => Color3::ORANGE4,
     }
@@ -295,7 +297,7 @@ fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
 
 fn chip_icon_is_fixed(chip_icon: ChipIcon) -> bool {
     match chip_icon {
-        ChipIcon::Halve | ChipIcon::Sub => true,
+        ChipIcon::Halve | ChipIcon::Random | ChipIcon::Sub => true,
         _ => false,
     }
 }

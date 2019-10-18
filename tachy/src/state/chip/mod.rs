@@ -130,6 +130,9 @@ impl ChipExt for ChipType {
             ChipType::Button | ChipType::Toggle(_) => {
                 ChipAvailability::InteractiveOnly
             }
+            ChipType::Random => {
+                ChipAvailability::OnlyIn(&[Puzzle::SandboxEvent])
+            }
         }
     }
 
@@ -236,6 +239,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Or => self::logic::OR_CHIP_DATA,
         ChipType::Pack => self::value::PACK_CHIP_DATA,
         ChipType::Ram => self::special::RAM_CHIP_DATA,
+        ChipType::Random => self::special::RANDOM_CHIP_DATA,
         ChipType::Sample => self::event::SAMPLE_CHIP_DATA,
         ChipType::Sub => self::arith::SUB_CHIP_DATA,
         ChipType::Toggle(_) => self::special::TOGGLE_CHIP_DATA,
@@ -289,6 +293,7 @@ pub(super) fn new_chip_evals(
         ChipType::Or => self::logic::OrChipEval::new_evals(slots),
         ChipType::Pack => self::value::PackChipEval::new_evals(slots),
         ChipType::Ram => self::special::RamChipEval::new_evals(slots),
+        ChipType::Random => self::special::RandomChipEval::new_evals(slots),
         ChipType::Sample => self::event::SampleChipEval::new_evals(slots),
         ChipType::Sub => self::arith::SubChipEval::new_evals(slots),
         ChipType::Toggle(value) => self::special::ToggleChipEval::new_evals(

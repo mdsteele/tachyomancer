@@ -21,6 +21,7 @@ use super::super::eval::{ChipEval, CircuitInteraction, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::{Coords, Direction};
 use crate::state::{PortColor, PortFlow, WireSize};
+use rand;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -209,6 +210,49 @@ impl ChipEval for RamChipEval {
         }
         state.send_behavior(self.output1, self.values[addr1]);
         state.send_behavior(self.output2, self.values[addr2]);
+    }
+}
+
+//===========================================================================//
+
+pub const RANDOM_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Zero),
+        AbstractConstraint::AtLeast(1, WireSize::One),
+    ],
+    dependencies: &[(0, 1)],
+};
+
+pub struct RandomChipEval {
+    input: usize,
+    output: usize,
+    size: WireSize,
+}
+
+impl RandomChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), RANDOM_CHIP_DATA.ports.len());
+        let chip_eval = RandomChipEval {
+            input: slots[0].0,
+            output: slots[1].0,
+            size: slots[1].1,
+        };
+        vec![(1, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for RandomChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if state.has_event(self.input) {
+            let value = rand::random::<u32>() & self.size.mask();
+            state.send_event(self.output, value);
+        }
     }
 }
 

@@ -56,6 +56,7 @@ pub enum ChipType {
     Or,
     Pack,
     Ram,
+    Random,
     Sample,
     Sub,
     Toggle(bool),
@@ -72,6 +73,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Discard,
         ChipType::Sample,
         ChipType::Join,
+        ChipType::Random,
     ]),
     ("Arithmetic", &[
         ChipType::Add,
@@ -143,6 +145,7 @@ impl str::FromStr for ChipType {
             "Or" => Ok(ChipType::Or),
             "Pack" => Ok(ChipType::Pack),
             "Ram" => Ok(ChipType::Ram),
+            "Random" => Ok(ChipType::Random),
             "Sample" => Ok(ChipType::Sample),
             "Sub" => Ok(ChipType::Sub),
             "Toggle(false)" => Ok(ChipType::Toggle(false)),
@@ -239,6 +242,11 @@ impl ChipType {
                 "Joins two input wires into a single output wire with twice \
                  as many bits.  One input wire becomes the low bits of the \
                  output, and the other becomes the high bits."
+            }
+            ChipType::Random => {
+                "When an event arrives, generates a random output value, \
+                 evenly distributed among all possible values for the size of \
+                 the output wire."
             }
             ChipType::Sub => {
                 "Outputs the difference between the two inputs.  The result \

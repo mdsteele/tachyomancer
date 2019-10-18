@@ -119,6 +119,35 @@ impl ChipModel {
             ChipType::Comment(_) => {
                 draw_comment_chip(resources, grid_matrix, coords, orient);
             }
+            ChipType::Display => {
+                draw_chip_icon(
+                    resources,
+                    grid_matrix,
+                    coords,
+                    orient,
+                    chip_size,
+                    ChipIcon::Blank,
+                );
+                let mut value: Option<String> = None;
+                if let Some(grid) = opt_grid {
+                    if grid.eval().is_some() {
+                        let ports = ctype.ports(coords, orient);
+                        debug_assert_eq!(ports.len(), 1);
+                        value = grid
+                            .port_value(ports[0].loc())
+                            .map(|v| format!("{}", v))
+                    }
+                }
+                draw_chip_string(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    oriented_size,
+                    0.3,
+                    &Color4::WHITE,
+                    value.as_ref().map(String::as_str).unwrap_or("Display"),
+                );
+            }
             _ => {
                 let icon = chip_icon(ctype, orient);
                 draw_chip_icon(
@@ -174,37 +203,6 @@ impl ChipModel {
                     &Color4::ORANGE4,
                     &label,
                 );
-            }
-            ChipType::Display => {
-                let mut opt_value: Option<u32> = None;
-                if let Some(grid) = opt_grid {
-                    if grid.eval().is_some() {
-                        let ports = ctype.ports(coords, orient);
-                        debug_assert_eq!(ports.len(), 1);
-                        opt_value = grid.port_value(ports[0].loc())
-                    }
-                }
-                if let Some(value) = opt_value {
-                    draw_chip_string(
-                        resources,
-                        &grid_matrix,
-                        coords,
-                        oriented_size,
-                        0.3,
-                        &Color4::WHITE,
-                        &format!("{}", value),
-                    );
-                } else {
-                    draw_chip_string(
-                        resources,
-                        &grid_matrix,
-                        coords,
-                        oriented_size,
-                        0.3,
-                        &Color4::WHITE,
-                        "Display",
-                    );
-                };
             }
             _ => {}
         }

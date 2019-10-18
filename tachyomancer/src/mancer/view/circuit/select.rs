@@ -19,6 +19,7 @@
 
 use super::super::chip::ChipModel;
 use super::super::wire::WireModel;
+use crate::mancer::gl::Depth;
 use crate::mancer::gui::{Clipboard, Resources, Sound, Ui};
 use cgmath::{vec2, Matrix4, MetricSpace, Point2, Vector2};
 use std::collections::{HashMap, HashSet};
@@ -156,7 +157,19 @@ impl SelectionDrag {
             let grid_matrix = matrix
                 * Matrix4::from_scale(grid_cell_size)
                 * Matrix4::trans2v(offset);
-
+            let depth = Depth::enable_with_face_culling(false);
+            // Draw chips:
+            for (&delta, &(ctype, orient)) in self.selection.chips.iter() {
+                let coords = Coords::new(0, 0) + delta;
+                ChipModel::draw_chip(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    ctype,
+                    orient,
+                    None,
+                );
+            }
             // Draw wires:
             let color = WireColor::Unknown;
             let size = WireSize::One;
@@ -174,19 +187,7 @@ impl SelectionDrag {
                     hilight,
                 );
             }
-
-            // Draw chips:
-            for (&delta, &(ctype, orient)) in self.selection.chips.iter() {
-                let coords = Coords::new(0, 0) + delta;
-                ChipModel::draw_chip(
-                    resources,
-                    &grid_matrix,
-                    coords,
-                    ctype,
-                    orient,
-                    None,
-                );
-            }
+            depth.disable();
         }
 
         // Draw selection box:

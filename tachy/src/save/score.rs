@@ -249,10 +249,9 @@ mod tests {
             .set(Puzzle::TutorialOr, ScoreCurve::new(vec![(8, 16), (9, 12)]));
         scores.set(Puzzle::TutorialMux, ScoreCurve::new(vec![(12, 30)]));
         scores.set(Puzzle::TutorialAdd, ScoreCurve::new(vec![]));
-        // TODO use ScoreCurveMap::serialize_to_string()
-        let bytes = toml::to_vec(&scores).unwrap();
+        let serialized = scores.serialize_to_string().unwrap();
         assert_eq!(
-            String::from_utf8(bytes).unwrap().as_str(),
+            serialized.as_str(),
             "TutorialMux = [[12, 30]]\n\
              TutorialOr = [[8, 16], [9, 12]]\n"
         );
@@ -260,10 +259,10 @@ mod tests {
 
     #[test]
     fn deserialize_score_curve_map() {
-        let toml = "TutorialMux = [[12, 30]]\n\
-                    TutorialOr = [[8, 16], [9, 12]]\n";
-        // TODO use ScoreCurveMap::deserialize_from_string()
-        let scores: ScoreCurveMap = toml::from_slice(toml.as_bytes()).unwrap();
+        let serialized = "TutorialMux = [[12, 30]]\n\
+                          TutorialOr = [[8, 16], [9, 12]]\n";
+        let scores =
+            ScoreCurveMap::deserialize_from_string(serialized).unwrap();
         assert_eq!(
             scores.get(Puzzle::TutorialOr).scores(),
             &[(8, 16), (9, 12)]

@@ -1,0 +1,45 @@
+puzzle = "AutomateGrapple"
+score = 78
+time_steps = 78
+
+[circuit]
+size = [7, 4]
+
+[circuit.chips]
+p0p3 = "f0-Const(3)"
+p1p0 = "t0-Eq"
+p1p1 = "t2-Mux"
+p1p3 = "t3-Mux"
+p3p0 = "f2-Pack"
+p3p2 = "f0-Cmp"
+p4p1 = "t2-Cmp"
+p4p2 = "f2-Const(40)"
+p5p1 = "f2-Const(60)"
+p5p2 = "f0-Const(40)"
+p6p1 = "f0-Const(1)"
+p6p2 = "f2-Cmp"
+
+[circuit.wires]
+p0p1e = "Straight"
+p0p2e = "Straight"
+p0p3e = "Stub"
+p1p0s = "Stub"
+p1p2e = "Straight"
+p1p2s = "Straight"
+p2p0s = "SplitTee"
+p2p1e = "TurnLeft"
+p2p1w = "TurnLeft"
+p2p2n = "SplitTee"
+p2p3e = "Straight"
+p3p1e = "Straight"
+p3p1s = "Straight"
+p3p2e = "Stub"
+p3p3e = "Straight"
+p4p0s = "TurnLeft"
+p4p1e = "Stub"
+p4p3e = "Straight"
+p5p2e = "Stub"
+p5p3e = "Straight"
+p6p1e = "Stub"
+p6p2e = "Stub"
+p6p3w = "TurnLeft"

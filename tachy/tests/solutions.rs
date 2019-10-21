@@ -5,6 +5,11 @@ use tachy::save::SolutionData;
 use tachy::state::verify_solution;
 
 #[test]
+fn automate_grapple() {
+    test_solution("automate_grapple");
+}
+
+#[test]
 fn automate_heliostat_fast() {
     test_solution("automate_heliostat_fast");
 }

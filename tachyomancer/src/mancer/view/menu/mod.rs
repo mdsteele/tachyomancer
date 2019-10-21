@@ -274,6 +274,7 @@ impl MenuView {
                     }
                 }
             }
+            // TODO: Add Debug case to reset local scores for current puzzle
             Event::Debug(key, value) if key == "unlockpuzzle" => {
                 if let Ok(puzzle) = value.parse::<Puzzle>() {
                     return Some(MenuAction::GoToPuzzle(puzzle));

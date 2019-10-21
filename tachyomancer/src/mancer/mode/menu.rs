@@ -26,6 +26,8 @@ use crate::mancer::view::{MenuAction, MenuView};
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
+    // TODO: If current circuit name doesn't exist for current puzzle, change
+    //   current circuit name.
     window.ui().audio().play_music(Music::MorningCruise);
     let mut view = MenuView::new(window, state);
     loop {

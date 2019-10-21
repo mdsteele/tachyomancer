@@ -55,6 +55,7 @@ pub enum Puzzle {
     FabricateHalve,
     FabricateMul,
     AutomateHeliostat,
+    AutomateGrapple,
     AutomateReactor,
     AutomateSensors,
     CommandLander,
@@ -123,15 +124,23 @@ impl Puzzle {
                 graph_bounds: (150, 150),
                 description: "TODO",
                 instructions:
-                    "\
-                     * $!Your goal is TODO.\n\
+                    "* $!Your goal is TODO.\n\
                      * $!The optimal position is given by the sensor \
-                     interface on the left side of the board.  This \
-                     optimal position will change over time.\n\
-                     * $!The current position is given by the motor \
-                     interface on the right side of the board.\n\
-                     * $!The closer the current position is to optimal, \
-                     TODO.",
+                     interface on the left side of the board.  This optimal \
+                     position will change over time.\n\
+                     * $!The current position is given by the motor interface \
+                     on the right side of the board.\n\
+                     * $!The closer the current position is to optimal, TODO.",
+            },
+            Puzzle::AutomateGrapple => &PuzzleData {
+                title: "Grapple Launcher",
+                kind: PuzzleKind::Automate,
+                allow_events: false,
+                init_size: (6, 8),
+                score_units: "Time",
+                graph_bounds: (150, 150),
+                description: "TODO",
+                instructions: "TODO",
             },
             Puzzle::AutomateHeliostat => &PuzzleData {
                 title: "Heliostat",
@@ -141,20 +150,18 @@ impl Puzzle {
                 score_units: "Time",
                 graph_bounds: (50, 150),
                 description:
-                    "\
-                     Automate the ship's heliostat to reflect sunlight \
+                    "Automate the ship's heliostat to reflect sunlight \
                      onto the solar panels at the optimal angle.",
                 instructions:
-                    "\
-                     * $!Your goal is to fill the energy meter by always \
+                    "* $!Your goal is to fill the energy meter by always \
                      moving the heliostat towards the optimal position.\n\
                      * $!The optimal position is given by the sensor \
-                     interface on the left side of the board.  This \
-                     optimal position will change over time.\n\
+                     interface on the left side of the board.  This optimal \
+                     position will change over time.\n\
                      * $!The current position is given by the motor \
                      interface on the right side of the board.\n\
-                     * $!The closer the current position is to optimal, \
-                     the more energy will be produced.",
+                     * $!The closer the current position is to optimal, the \
+                     more energy will be produced.",
             },
             Puzzle::AutomateMiningRobot => &PuzzleData {
                 title: "Mining Robot",
@@ -165,8 +172,7 @@ impl Puzzle {
                 graph_bounds: (100, 250),
                 description: "TODO",
                 instructions:
-                    "\
-                     * $!Your goal is carry all the ore back to the base.\n\
+                    "* $!Your goal is carry all the ore back to the base.\n\
                      * $!The robot will depart from the base in a straight \
                      line, and can dig up ore deposits while passing \
                      over them.  It will return to the base on command, \
@@ -184,8 +190,7 @@ impl Puzzle {
                 score_units: "Time",
                 graph_bounds: (150, 150),
                 description:
-                    "\
-                     Manipulate the reactor's control rods to regulate \
+                    "Manipulate the reactor's control rods to regulate \
                      the power output to the desired level.",
                 instructions: "TODO",
             },
@@ -197,8 +202,7 @@ impl Puzzle {
                 score_units: "Time",
                 graph_bounds: (150, 150),
                 description:
-                    "\
-                     Operate a robotic arm in response to radio commands.",
+                    "Operate a robotic arm in response to radio commands.",
                 instructions: "",
             },
             Puzzle::AutomateSensors => &PuzzleData {
@@ -208,13 +212,9 @@ impl Puzzle {
                 init_size: (6, 7),
                 score_units: "Time",
                 graph_bounds: (100, 150),
-                description:
-                    "\
-                     Design a replacement signal amplifier for the main \
-                     sensor array.",
+                description: "TODO",
                 instructions:
-                    "\
-                     * $!The two inputs indicate the current upper and \
+                    "* $!The two inputs indicate the current upper and \
                      lower bounds (inclusive) of the scan range.\n\
                      * $!Your goal is to subdivide the scan range at each \
                      step, until the final value is found.  The final \
@@ -246,18 +246,15 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "\
-                     Build a 4-bit halver using packers and unpackers.\n\n\
+                    "Build a 4-bit halver using packers and unpackers.\n\n\
                      Once this task is completed, you will be able to use \
                      generic $*Halve$* chips in future tasks.",
                 instructions:
-                    "\
-                     * $!The output should be half the value of the input, \
+                    "* $!The output should be half the value of the input, \
                      rounded down.\n\
                      * $!This can be achieved by unpacking the input into \
-                     four 1-bit wires, then packing the highest three \
-                     wires of the input into the lowest three wires of \
-                     the output.",
+                     four 1-bit wires, then packing the highest three wires \
+                     of the input into the lowest three wires of the output.",
             },
             Puzzle::FabricateInc => &PuzzleData {
                 title: "4-Bit Incrementor",
@@ -267,14 +264,12 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "\
-                     Build a 4-bit incrementor using more basic event and \
+                    "Build a 4-bit incrementor using more basic event and \
                      behavior chips.\n\n\
                      Once this task is completed, you will be able to use \
                      generic $*Inc$* chips in future tasks.",
                 instructions:
-                    "\
-                     * $!Your goal is to construct an incrementor.\n\
+                    "* $!Your goal is to construct an incrementor.\n\
                      * $!When an input event arrives, the circuit should \
                      add the input behavior value to the event value, \
                      and emit an output event with the sum.",
@@ -287,16 +282,13 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 100),
                 description:
-                    "\
-                     Build an 8-bit multiplier using 4-bit multipliers.\n\n\
+                    "Build an 8-bit multiplier using 4-bit multipliers.\n\n\
                      Once this task is completed, you will be able to use \
                      generic $*Mul$* chips in future tasks.",
                 instructions:
-                    "\
-                     * $!Your goal is to construct an 8-bit multiplier.\n\
+                    "* $!Your goal is to construct an 8-bit multiplier.\n\
                      * $!The output should be the product of $*In1$* and \
-                     $*In2$*.  This product will never be more than \
-                     255.",
+                     $*In2$*.  This product will never be more than 255.",
             },
             Puzzle::FabricateXor => &PuzzleData {
                 title: "1-Bit XOR Gate",
@@ -306,14 +298,12 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "\
-                     Build a 1-bit $*XOR$* gate out of $*AND$*, \
+                    "Build a 1-bit $*XOR$* gate out of $*AND$*, \
                      $*OR$*, and $*NOT$* gates.\n\n\
                      Once this task is completed, you will be able to use \
                      $*XOR$* gates in future tasks.",
                 instructions:
-                    "\
-                     * $!Your goal is to construct a $*XOR$* gate.\n\
+                    "* $!Your goal is to construct a $*XOR$* gate.\n\
                      * $!The output on the right side of the board should \
                      be 1 if exactly one input is 1, but not both.\n\
                      * $!Note that ($/a$/ XOR $/b$/) is equivalent to \
@@ -327,8 +317,7 @@ impl Puzzle {
                 score_units: "",
                 graph_bounds: (100, 100),
                 description:
-                    "\
-                     Build any circuits you want using all behavior chips \
+                    "Build any circuits you want using all behavior chips \
                      that are currently available.  You can use this area \
                      for prototyping, experimentation, or freeform design.",
                 instructions: "",
@@ -341,8 +330,7 @@ impl Puzzle {
                 score_units: "",
                 graph_bounds: (100, 100),
                 description:
-                    "\
-                     Build any circuits you want using all behavior and \
+                    "Build any circuits you want using all behavior and \
                      event chips that are currently available.  You can \
                      use this area for prototyping, experimentation, or \
                      freeform design.",
@@ -356,14 +344,12 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "\
-                     Tutorial: Build a 4-bit adder using 2-bit adders, \
+                    "Tutorial: Build a 4-bit adder using 2-bit adders, \
                      packers and unpackers.\n\n\
                      Once this task is completed, you will be able to use \
                      generic $*Add$* chips in future tasks.",
                 instructions:
-                    "\
-                     * $!Your goal is to construct a 4-bit adder.\n\
+                    "* $!Your goal is to construct a 4-bit adder.\n\
                      * $!The output should be the sum of $*In1$* and \
                      $*In2$*.  This sum will never be more than 15.\n\
                      * $!You can use $*Unpack$* chips to separate the \
@@ -379,14 +365,12 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "\
-                     Tutorial: Build a 1-bit $*DEMUX$* using event filter \
+                    "Tutorial: Build a 1-bit $*DEMUX$* using event filter \
                      chips.\n\n\
                      Once this task is completed, you will be able to use \
                      $*DEMUX$* chips in future tasks.",
                 instructions:
-                    "\
-                     * $!Your goal is to construct a 1-bit DEMUX.\n\
+                    "* $!Your goal is to construct a 1-bit DEMUX.\n\
                      * $!When an event arrives on $*In$*, it should be \
                      sent to $*Out0$* if $*Ctrl$* is 0, or to $*Out1$* \
                      if $*Ctrl$* is 1.",
@@ -399,14 +383,12 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "\
-                     Tutorial: Build a 1-bit $*MUX$* using other logic \
+                    "Tutorial: Build a 1-bit $*MUX$* using other logic \
                      gates.\n\n\
                      Once this task is completed, you will be able to use \
                      $*MUX$* chips in future tasks.",
                 instructions:
-                    "\
-                     * $!Your goal is to construct a 1-bit MUX.\n\
+                    "* $!Your goal is to construct a 1-bit MUX.\n\
                      * $!The output should be the value of $*in0$* if \
                      $*ctrl$* is 0, or of $*in1$* if $*ctrl$* is 1.\n\
                      * $!If $/a$/ and $/b$/ are the inputs and $/c$/ is \
@@ -421,17 +403,14 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "\
-                     Tutorial: Build a 1-bit $*OR$* gate out of $*AND$* \
+                    "Tutorial: Build a 1-bit $*OR$* gate out of $*AND$* \
                      and $*NOT$* gates.\n\n\
                      Once this task is completed, you will be able to use \
                      $*OR$* gates in future tasks.",
                 instructions:
-                    "\
-                     * $!Your goal is to construct an $*OR$* gate.\n\
+                    "* $!Your goal is to construct an $*OR$* gate.\n\
                      * $!The output on the right side of the board should \
-                     be 1 if either input is 1, or 0 if both inputs are \
-                     0.\n\
+                     be 1 if either input is 1, or 0 if both inputs are 0.\n\
                      * $!Note that ($/a$/ OR $/b$/) is equivalent to \
                      NOT ((NOT $/a$/) AND (NOT $/b$/)).",
             },
@@ -443,14 +422,12 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 100),
                 description:
-                    "\
-                     Tutorial: Build a circuit for tracking a running \
+                    "Tutorial: Build a circuit for tracking a running \
                      total, and that can also be reset back to zero.\n\n\
                      Once this task is completed, you will be able to use \
                      $*Sum$* chips in future tasks.",
                 instructions:
-                    "\
-                     * $!The output should start at zero.  When an input \
+                    "* $!The output should start at zero.  When an input \
                      event arrives, its value should be added to the \
                      running total output.\n\
                      * $!When a reset event arrives, the output should be \

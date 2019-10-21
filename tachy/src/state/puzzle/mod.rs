@@ -19,6 +19,7 @@
 
 mod beacon;
 mod fabricate;
+mod grapple;
 mod heliostat;
 mod iface;
 mod lander;
@@ -36,6 +37,7 @@ pub use self::beacon::BeaconEval;
 pub use self::fabricate::{
     FabricateHalveEval, FabricateIncEval, FabricateMulEval, FabricateXorEval,
 };
+pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
 pub use self::lander::LanderEval;
@@ -94,6 +96,7 @@ impl PuzzleExt for Puzzle {
     fn interfaces(&self) -> &'static [Interface] {
         match self {
             Puzzle::AutomateBeacon => self::beacon::INTERFACES,
+            Puzzle::AutomateGrapple => self::grapple::INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateMiningRobot => self::mining::INTERFACES,
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
@@ -147,7 +150,7 @@ fn is_chip_allowed_in(
         ChipAvailability::OnlyIn(puzzles) => puzzles.contains(&puzzle),
         ChipAvailability::StartingWith(other_puzzle) => puzzle >= other_puzzle,
         ChipAvailability::UnlockedBy(other_puzzle) => {
-            other_puzzle < puzzle && solved_puzzles.contains(&other_puzzle)
+            puzzle > other_puzzle && solved_puzzles.contains(&other_puzzle)
         }
     }
 }
@@ -162,6 +165,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateBeacon => {
             Box::new(self::beacon::BeaconEval::new(slots))
         }
+        Puzzle::AutomateGrapple => Box::new(GrappleEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateMiningRobot => Box::new(MiningRobotEval::new(slots)),
         Puzzle::AutomateReactor => {

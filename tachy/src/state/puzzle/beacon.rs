@@ -31,8 +31,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Sensor Interface",
         description:
-            "\
-             Connects to a subspace sensor array that determines the ideal \
+            "Connects to a subspace sensor array that determines the ideal \
              position for the beacon dish.  Use the motor interface to move \
              the dish to this position.",
         side: Direction::South,
@@ -57,8 +56,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Motor Interface",
         description:
-            "\
-             Connects to a stepper motor that controls the position of the \
+            "Connects to a stepper motor that controls the position of the \
              beacon mirror.",
         side: Direction::South,
         pos: InterfacePosition::Right(0),
@@ -79,8 +77,7 @@ pub const INTERFACES: &[Interface] = &[
             },
             InterfacePort {
                 name: "Motor",
-                description: "\
-                              Receives motor commands.\n    \
+                description: "Receives motor commands.\n    \
                               Send 8 to move up.\n    \
                               Send 4 to move down.\n    \
                               Send 2 to move left.\n    \

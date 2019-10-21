@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 mod beacon;
+mod grapple;
 mod heliostat;
 mod lander;
 mod mining;
@@ -67,6 +68,9 @@ impl VerificationTray {
         let subview = match current_puzzle {
             Puzzle::AutomateBeacon => {
                 self::beacon::BeaconVerifyView::new(right_bottom)
+            }
+            Puzzle::AutomateGrapple => {
+                self::grapple::GrappleVerifyView::new(right_bottom)
             }
             Puzzle::AutomateHeliostat => {
                 self::heliostat::HeliostatVerifyView::new(right_bottom)

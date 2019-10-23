@@ -10,4 +10,5 @@ edition = "2018"
 getopts = "0.2"
 iron = "0.6"
 router = "0.6"
+sha = "1"
 tachy = { path = "../tachy" }

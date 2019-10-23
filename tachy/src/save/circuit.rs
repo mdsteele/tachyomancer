@@ -29,7 +29,7 @@ use toml;
 
 //===========================================================================//
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct CircuitData {
     pub size: CoordsSize,
     pub chips: CircuitChipData,
@@ -81,6 +81,7 @@ impl CircuitData {
 
 //===========================================================================//
 
+#[derive(Clone)]
 pub struct CircuitChipData(HashMap<CoordsDelta, (ChipType, Orientation)>);
 
 impl CircuitChipData {
@@ -169,6 +170,7 @@ impl<'a> Iterator for CircuitChipDataIter<'a> {
 
 //===========================================================================//
 
+#[derive(Clone)]
 pub struct CircuitWireData(HashMap<(CoordsDelta, Direction), WireShape>);
 
 impl CircuitWireData {

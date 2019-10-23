@@ -162,15 +162,14 @@ pub struct HotkeyBox {
 }
 
 impl HotkeyBox {
-    pub fn new(mid_left: Point2<i32>, hotkey: Hotkey) -> HotkeyBox {
-        let top = mid_left.y - HOTKEY_BOX_HEIGHT / 2;
+    pub fn new(top_left: Point2<i32>, hotkey: Hotkey) -> HotkeyBox {
         let width = HOTKEY_BOX_WIDTH
             + HOTKEY_BOX_SPACING
             + HOTKEY_FONT
                 .str_width(HOTKEY_LABEL_FONT_SIZE, hotkey.name())
                 .ceil() as i32;
         HotkeyBox {
-            rect: Rect::new(mid_left.x, top, width, HOTKEY_BOX_HEIGHT),
+            rect: Rect::new(top_left.x, top_left.y, width, HOTKEY_BOX_HEIGHT),
             hotkey,
             listening: false,
             hover_pulse: HoverPulse::new(),

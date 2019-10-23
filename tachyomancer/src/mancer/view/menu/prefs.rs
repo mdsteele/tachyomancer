@@ -22,13 +22,19 @@ use super::super::button::{
     SliderAction, TextButton,
 };
 use super::list::{ListIcon, ListView};
+use crate::mancer::font::Align;
 use crate::mancer::gui::{Event, Resources, Sound, Ui, Window, WindowOptions};
-use crate::mancer::save::Hotkey;
+use crate::mancer::save::{Hotkey, HOTKEY_CATEGORIES};
 use crate::mancer::state::GameState;
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{Rect, RectSize};
 
 //===========================================================================//
+
+const HOTKEY_CATEGORY_LABEL_FONT_SIZE: f32 = 22.0;
+const HOTKEY_CATEGORY_LABEL_STRIDE: i32 = 28;
+const HOTKEY_BOX_STRIDE: i32 = 32;
+const HOTKEY_CATEGORY_SPACING: i32 = 32;
 
 const PANE_BUTTON_SPACING: i32 = 24;
 const PANE_BUTTON_WIDTH: i32 = 180;
@@ -391,25 +397,38 @@ impl AudioVideoPane {
 //===========================================================================//
 
 pub struct HotkeysPane {
+    category_labels: Vec<((f32, f32), &'static str)>,
     hotkey_boxes: Vec<HotkeyBox>,
     defaults_button: TextButton<()>,
 }
 
 impl HotkeysPane {
     pub fn new(rect: Rect<i32>) -> HotkeysPane {
-        let left = rect.x;
-        let mut top = rect.y - 16;
-        let hotkey_boxes = Hotkey::all()
-            .map(|hotkey| {
-                top += 32;
-                HotkeyBox::new(Point2::new(left, top), hotkey)
-            })
-            .collect();
+        let mut left = rect.x;
+        let mut top = rect.y;
+        let mut category_labels = Vec::new();
+        let mut hotkey_boxes = Vec::new();
+        for &(name, hotkeys) in HOTKEY_CATEGORIES.iter() {
+            let section_height = HOTKEY_CATEGORY_LABEL_STRIDE
+                + HOTKEY_BOX_STRIDE * (hotkeys.len() as i32);
+            if rect.bottom() - top < section_height {
+                left += rect.width / 2;
+                top = rect.y
+            }
+            category_labels.push(((left as f32, top as f32), name));
+            top += HOTKEY_CATEGORY_LABEL_STRIDE;
+            for &hotkey in hotkeys.iter() {
+                hotkey_boxes
+                    .push(HotkeyBox::new(Point2::new(left, top), hotkey));
+                top += HOTKEY_BOX_STRIDE;
+            }
+            top += HOTKEY_CATEGORY_SPACING;
+        }
         let defaults_button_rect =
             Rect::new(rect.right() - 200, rect.bottom() - 40, 200, 40);
         let defaults_button =
             TextButton::new(defaults_button_rect, "Restore Defaults", ());
-        HotkeysPane { hotkey_boxes, defaults_button }
+        HotkeysPane { category_labels, hotkey_boxes, defaults_button }
     }
 
     pub fn draw(
@@ -418,6 +437,16 @@ impl HotkeysPane {
         matrix: &Matrix4<f32>,
         state: &GameState,
     ) {
+        for &(position, label) in self.category_labels.iter() {
+            resources.fonts().bold().draw(
+                matrix,
+                HOTKEY_CATEGORY_LABEL_FONT_SIZE,
+                Align::TopLeft,
+                position,
+                label,
+            );
+        }
+
         for hotkey_box in self.hotkey_boxes.iter() {
             let keycode = state.prefs().hotkey_code(hotkey_box.hotkey());
             hotkey_box.draw(resources, matrix, keycode);

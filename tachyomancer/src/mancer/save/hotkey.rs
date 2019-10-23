@@ -57,6 +57,32 @@ pub enum Hotkey {
     ZoomOut,
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub const HOTKEY_CATEGORIES: &[(&str, &[Hotkey])] = &[
+    ("Camera", &[
+        Hotkey::ScrollUp,
+        Hotkey::ScrollDown,
+        Hotkey::ScrollLeft,
+        Hotkey::ScrollRight,
+        Hotkey::ZoomIn,
+        Hotkey::ZoomOut,
+        Hotkey::ZoomDefault,
+    ]),
+    ("Evalulation", &[
+        Hotkey::EvalReset,
+        Hotkey::EvalRunPause,
+        Hotkey::EvalStepTime,
+        Hotkey::EvalStepCycle,
+        Hotkey::EvalStepSubcycle,
+    ]),
+    ("Selection", &[
+        Hotkey::RotateCw,
+        Hotkey::RotateCcw,
+        Hotkey::FlipHorz,
+        Hotkey::FlipVert,
+    ]),
+];
+
 impl Hotkey {
     /// Returns an iterator over all hotkeys.
     pub fn all() -> HotkeyIter {
@@ -374,9 +400,22 @@ fn keycode_from_name(name: &str) -> Option<Keycode> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Hotkey, HotkeyCodes, Keycode};
+    use super::{Hotkey, HotkeyCodes, Keycode, HOTKEY_CATEGORIES};
+    use std::collections::HashSet;
     use std::str::{self, FromStr};
     use toml;
+
+    #[test]
+    fn categories_contain_all_hotkeys() {
+        let mut remaining: HashSet<Hotkey> = Hotkey::all().collect();
+        for &(_, hotkeys) in HOTKEY_CATEGORIES.iter() {
+            for hotkey in hotkeys {
+                assert!(remaining.contains(&hotkey));
+                remaining.remove(&hotkey);
+            }
+        }
+        assert!(remaining.is_empty());
+    }
 
     #[test]
     fn hotkey_to_and_from_string() {

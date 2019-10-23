@@ -27,7 +27,7 @@ mod progress;
 mod score;
 
 pub use self::dir::{ProfileNamesIter, SaveDir};
-pub use self::hotkey::{Hotkey, HotkeyIter};
+pub use self::hotkey::{Hotkey, HotkeyIter, HOTKEY_CATEGORIES};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
 pub use self::profile::Profile;

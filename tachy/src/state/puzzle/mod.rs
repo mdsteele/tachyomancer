@@ -71,12 +71,24 @@ pub trait PuzzleExt {
 impl PuzzleExt for Puzzle {
     fn origin_conversations(&self) -> &'static [Conversation] {
         match self {
+            Puzzle::AutomateGrapple => {
+                &[Conversation::CaptainAwake, Conversation::AnIdea]
+            }
             Puzzle::AutomateHeliostat => &[Conversation::RestorePower],
-            Puzzle::AutomateReactor => &[Conversation::StepTwo],
-            Puzzle::AutomateSensors => &[Conversation::CaptainsCall],
-            Puzzle::TutorialAdd => &[Conversation::Basics],
-            Puzzle::TutorialMux => &[Conversation::Basics],
-            Puzzle::TutorialOr => &[Conversation::Basics],
+            Puzzle::AutomateReactor => {
+                &[Conversation::ReactorSpecs, Conversation::MorePower]
+            }
+            Puzzle::AutomateSensors => {
+                &[Conversation::WhereAreWe, Conversation::LowVisibility]
+            }
+            Puzzle::CommandLander => &[Conversation::Descent],
+            Puzzle::FabricateHalve
+            | Puzzle::FabricateMul
+            | Puzzle::FabricateXor => &[Conversation::MoreComponents],
+            Puzzle::TutorialAdd | Puzzle::TutorialMux | Puzzle::TutorialOr => {
+                &[Conversation::Basics]
+            }
+            Puzzle::TutorialDemux => &[Conversation::AdvancedCircuits],
             _ => &[], // TODO: origin_conversations for other puzzles
         }
     }

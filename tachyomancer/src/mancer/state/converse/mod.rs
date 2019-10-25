@@ -48,9 +48,29 @@ impl ConversationExt for Conversation {
                 odyssey::more_components(profile, &mut builder)
             }
             Conversation::StepTwo => odyssey::step_two(profile, &mut builder),
+            Conversation::ReactorSpecs => {
+                odyssey::reactor_specs(profile, &mut builder)
+            }
+            Conversation::WhereAreWe => {
+                odyssey::where_are_we(profile, &mut builder)
+            }
+            Conversation::CaptainAwake => {
+                odyssey::captain_awake(profile, &mut builder)
+            }
             Conversation::CaptainsCall => {
                 odyssey::captains_call(profile, &mut builder)
             }
+            Conversation::LowVisibility => {
+                odyssey::low_visibility(profile, &mut builder)
+            }
+            Conversation::AnIdea => odyssey::an_idea(profile, &mut builder),
+            Conversation::MorePower => {
+                odyssey::more_power(profile, &mut builder)
+            }
+            Conversation::SensorResults => {
+                odyssey::sensor_results(profile, &mut builder)
+            }
+            Conversation::Descent => odyssey::descent(profile, &mut builder),
             Conversation::AdvancedCircuits => {
                 planetfall::advanced_circuits(profile, &mut builder)
             }

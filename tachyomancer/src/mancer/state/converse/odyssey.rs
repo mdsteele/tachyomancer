@@ -112,8 +112,6 @@ pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
     Ok(())
 }
 
-//===========================================================================//
-
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn basics(profile: &Profile, builder: &mut ConversationBuilder)
                      -> Result<(), ()> {
@@ -137,7 +135,7 @@ pub(super) fn basics(profile: &Profile, builder: &mut ConversationBuilder)
         There are still other components we're missing, so let's do a little \
         more practice.  Follow the datalink below, and I will walk you though \
         building a XOR gate.");
-    builder.puzzle(profile, Puzzle::FabricateXor)?;
+    builder.puzzle(profile, Puzzle::TutorialMux)?;
     builder.esra("\
         Great.  There is one last exercise I want you to do before we start \
         the real work.  There's a very important component we need to \
@@ -165,15 +163,13 @@ pub(super) fn basics(profile: &Profile, builder: &mut ConversationBuilder)
         exercise, I'm going to have you build a MUX for 2-bit inputs, using \
         packers and unpackers.  But once you're done, you'll be able to use \
         MUXes of any size.");
-    builder.puzzle(profile, Puzzle::TutorialMux)?;
+    builder.puzzle(profile, Puzzle::TutorialAdd)?;
     builder.esra("\
         Wonderful.  With our stocks of basic chips replenished, and your \
         skills in good shape, I think we are ready now to begin repairs.  I \
         will send over the details of your first task.");
     Ok(())
 }
-
-//===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn restore_power(profile: &Profile,
@@ -267,8 +263,6 @@ pub(super) fn restore_power(profile: &Profile,
     Ok(())
 }
 
-//===========================================================================//
-
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn more_components(profile: &Profile,
                               builder: &mut ConversationBuilder)
@@ -297,7 +291,7 @@ pub(super) fn more_components(profile: &Profile,
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub(super) fn step_two(profile: &Profile, builder: &mut ConversationBuilder)
+pub(super) fn step_two(_profile: &Profile, builder: &mut ConversationBuilder)
                        -> Result<(), ()> {
     builder.henry("\
         \"Oi, that still smarts.  You know, I've been in cryo dozens of \
@@ -307,9 +301,9 @@ pub(super) fn step_two(profile: &Profile, builder: &mut ConversationBuilder)
         \"That's because under standard regulations, we're not supposed to \
         stay under for $/nine months straight$/.\"");
     builder.henry("\
-        Oh!  Good morning, Commander!  I'm not quite sure what's been going \
+        \"Oh!  Good morning, Commander!  I'm not quite sure what's been going \
         on while I was asleep, but I do seem to have missed out on some kind \
-        of delightfully horrifying catastrophe.");
+        of delightfully horrifying catastrophe.\"");
     builder.esra("\
         Hello to both of you.  I've just finished filling in Chief Walker on \
         the situation.  Thanks to the Commander's work, we have enough solar \
@@ -317,47 +311,144 @@ pub(super) fn step_two(profile: &Profile, builder: &mut ConversationBuilder)
         that.  I've asked the Chief to look into repairing the backup \
         reactor so we can generate more power.");
     builder.henry("\
-        Yeah, I've been in to take a look.  The LTF core got smashed up \
+        \"Yeah, I've been in to take a look.  The LTF core got smashed up \
         pretty good, but the backup reactor seems salvagable.  I've even \
         still got parts here to fix most of it.  Problem is, the regulator \
         board got proper fried, and I don't know the first thing about \
-        electronics.  Without a replacement, we're out of luck.");
+        electronics.  Without a replacement, we're out of luck.\"");
     builder.esra("\
         That was my assessment as well.  Fortunately, Commander $'YOURNAME' \
         has some former experience with circuit design, and should be able to \
         fabricate a new regulator board from scratch.");
     builder.henry("\
-        Is that right?  Fantastic!  I do have the specs right here, so I'll \
-        send them on over to you.  If it's all right, Commander, I'll go \
-        ahead and start on the mechanical repairs so the reactor will be all \
-        ready for the new board whenever you're done?");
+        \"Is that right, Commander?  Fantastic!  I do have the specs right \
+        here, so I'll get them sent over to you.  And if it's all right, I'll \
+        go ahead and start on the mechanical repairs so the reactor will be \
+        all ready for the new board whenever it's done?\"");
     builder.you("Yes, make it so, Chief.");
     builder.henry("\
-        Aye aye, Commander.  I'll send you those specs and then get started \
-        right away.");
+        \"Aye aye, Commander.  I'll send you those specs and then get started \
+        right away.\"");
+    Ok(())
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn reactor_specs(profile: &Profile,
+                            builder: &mut ConversationBuilder)
+                            -> Result<(), ()> {
+    builder.henry("\
+        \"I have the reactor specs you requested, Commander.  It shouldn't be \
+        too hard.  Basically, the reactor knows how much power it's currently \
+        generating, and the ship knows how much power it needs.  Your circuit \
+        just needs to adjust the reactor control rods to make those match.\"");
+    builder.henry("\
+        \"You can make it a bit more efficient by keeping the control rods as \
+        even with each other as possible, but honestly, I wouldn't worry \
+        about it.  As long as the three control rod numbers add up to the \
+        requested power level, it'll work fine.\"");
     builder.puzzle(profile, Puzzle::AutomateReactor)?;
     builder.you("One reactor control board, coming up.");
     builder.henry("\
-        Thank you, Commander!  I'm having your design fabricated right now.  \
-        I've already got the other repairs on the reactor done, so I'll get \
-        the new board slotted in and then get 'er warmed up.");
+        \"Thank you, Commander!  I'm having your design fabricated right \
+        now.  I've already got the other repairs on the reactor done, so I'll \
+        get the new board slotted in and then get 'er warmed up.\"");
     builder.esra("\
         Congratulations to both of you.  Once the backup reactor comes \
-        online, I can begin thawing out the rest of the surviving crew, \
+        online, I will begin thawing out all the rest of the surviving crew, \
         starting with Captain Jackson.  I will brief her on our situation, \
-        and then set up comm with all of you once she's ready.");
+        and then set up comm with the three of you once she's ready.");
+    Ok(())
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn where_are_we(profile: &Profile,
+                           builder: &mut ConversationBuilder)
+                           -> Result<(), ()> {
+    builder.henry("\"Commander?  Could I have a quick word with you?\"");
+    builder.you("\"What's on your mind, Chief?\"");
+    builder.henry("\"Do you...happen to know where we are right now?\"");
+    let location = builder
+        .choice(profile, "where")
+        .option("noidea", "\"Not really, no.\"")
+        .option("notkansas", "\"Well, I'm pretty sure it's not Kansas.\"")
+        .done()?;
+    if location == "notkansas" {
+        builder.henry("\
+            \"Well, it's not New Ithaca either, which is where we were \
+            supposed to be.  I don't recognize this planet we're orbiting, \
+            and we're not picking up a navsat signal anywhere.\"");
+    } else {
+        builder.henry("\
+            \"Me neither, Commander.  Our convoy was bound for New Ithaca, \
+            and we're definitely not there.  I don't recognize this planet \
+            we're orbiting, and we're not picking up a navsat signal \
+            anywhere.\"");
+    }
+    builder.you("\"Hmm.  ESRA, can you get a fix on our location?\"");
+    builder.esra("\
+        Unfortunately, no.  There has been no navsat signal nor fleet comm \
+        for the entire nine months that the ship has been orbiting this \
+        planet.  However, the long-range sensors are damaged and may simply \
+        not be picking up the signal.");
+    builder.you("\"Can we fix them?\"");
+    builder.esra("\
+        Diagnostics seem to indicate that the exterior units are working.  \
+        However, the internal signal amplifiers are burnt out and need \
+        replacement.");
+    builder.henry("\
+        \"Those'd be easy for me to swap out, Commander.  But, uh, I think \
+        the spares were stored in one of the sections of the ship that got \
+        torn off.\"");
+    builder.esra("\
+        Specifications for new amplifiers are available, Commander.  It \
+        should be possible for you to fabricate new ones.");
+    builder.puzzle(profile, Puzzle::AutomateSensors)?;
+    builder.henry("\
+        \"Okay!  Old ones out, new ones in...easy as pie.  Sensors should be \
+        good to go!\"");
+    builder.esra("\
+        Searching...\n\n\
+        $(500)O$(30)dd.  There don't seem to be any navsats in range.");
+    builder.henry("\
+        \"$/That$/ can't be right.\"");
+    builder.you("\"No navsats at all?  Are you sure, ESRA?\"");
+    builder.esra("\
+        The sensors are working perfectly, but there is no carrier wave at \
+        all.  That implies that the ship is well outside Joint Federation \
+        space.");
+    builder.henry("\
+        \"I'll be honest, Commander, I have trouble believing we could've \
+        travelled that far off course.  I've been checking out the engines \
+        pretty carefully, and based on the level of normal wear and tear I'm \
+        seeing, I'd have guessed we've gone less than half the distance of \
+        our planned route.  That's nowhere near enough to take us outside \
+        the navsat net.\"");
+    builder.you("\
+        \"All right.  ESRA, keep scanning, and try to figure out where we \
+        are.  Let me know as soon as you have something.\"");
+    builder.esra("Affirmative.");
+    Ok(())
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn captain_awake(profile: &Profile,
+                            builder: &mut ConversationBuilder)
+                            -> Result<(), ()> {
+    builder.henry("TODO");
+    builder.puzzle(profile, Puzzle::AutomateGrapple)?;
+    builder.henry("TODO");
     Ok(())
 }
 
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub(super) fn captains_call(profile: &Profile,
+pub(super) fn captains_call(_profile: &Profile,
                             builder: &mut ConversationBuilder)
                             -> Result<(), ()> {
     builder.lisa("\
-        \"Ugh, what a nightmare.  That cryo thaw hurt like a bugger, and now \
-        I find out that my ship is in pieces, half of my crew is dead, and we \
+        \"What a nightmare.  That cryo thaw hurt like a bugger, and now I \
+        find out that my ship is in pieces, half of my crew is dead, and we \
         are $/all out of coffee$/.  Somebody, $/please$/ tell me you \
         have good news for me.\"");
     builder.you("\"Captain!  Glad to see you're awake.\"");
@@ -407,6 +498,14 @@ pub(super) fn captains_call(profile: &Profile,
     builder.lisa("\
         \"Great.  ESRA, send the Commander the relevant specs.  I'll open up \
         the access panel and start swapping out the old parts.\"");
+    Ok(())
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn low_visibility(profile: &Profile,
+                             builder: &mut ConversationBuilder)
+                             -> Result<(), ()> {
+    builder.lisa("TODO");
     builder.puzzle(profile, Puzzle::AutomateSensors)?;
     builder.lisa("\"All right, we're live.  What've we got, ESRA?\"");
     builder.esra("\
@@ -429,6 +528,43 @@ pub(super) fn captains_call(profile: &Profile,
         awake.  Ration heat and oxygen for myself and the Commander if you \
         have to, just make it work.  We $/need$/ that reactor back online.\"");
     builder.esra("Acknowledged, Captain.  I will see what I can do.");
+    Ok(())
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn an_idea(profile: &Profile, builder: &mut ConversationBuilder)
+                      -> Result<(), ()> {
+    builder.lisa("TODO");
+    builder.puzzle(profile, Puzzle::AutomateGrapple)?;
+    builder.lisa("TODO");
+    Ok(())
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn more_power(profile: &Profile, builder: &mut ConversationBuilder)
+                         -> Result<(), ()> {
+    builder.lisa("TODO");
+    builder.puzzle(profile, Puzzle::AutomateReactor)?;
+    builder.lisa("TODO");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn sensor_results(_profile: &Profile,
+                             builder: &mut ConversationBuilder)
+                             -> Result<(), ()> {
+    builder.esra("TODO");
+    Ok(())
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn descent(profile: &Profile, builder: &mut ConversationBuilder)
+                      -> Result<(), ()> {
+    builder.esra("TODO");
+    builder.puzzle(profile, Puzzle::CommandLander)?;
+    builder.esra("TODO");
     Ok(())
 }
 

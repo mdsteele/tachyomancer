@@ -33,10 +33,10 @@ pub enum Prereq {
     Any(&'static [Prereq]),
     Choice(
         Conversation,
-        &'static str,
-        &'static str,
-        &'static Prereq,
-        &'static Prereq,
+        &'static str,    // key
+        &'static str,    // value
+        &'static Prereq, // then
+        &'static Prereq, // else
     ),
 }
 
@@ -63,16 +63,32 @@ impl Chapter {
     Clone, Copy, Debug, Deserialize, EnumIter, Eq, Hash, PartialEq, Serialize,
 )]
 pub enum Conversation {
+    // Odyssey start:
     WakeUp,
     Basics,
     RestorePower,
     MoreComponents,
+    // Odyssey Henry track:
     StepTwo,
+    ReactorSpecs,
+    WhereAreWe,
+    CaptainAwake,
+    // Odyssey Lisa track:
     CaptainsCall,
+    LowVisibility,
+    AnIdea,
+    MorePower,
+    // Odyssey finish:
+    SensorResults,
+    Descent,
+    // Planetfall:
     AdvancedCircuits,
     UnexpectedCompany,
+    // Calliope:
     Memory,
+    // Orpheus:
     KeepingTime,
+    // Lorelei:
     CatchingUp,
 }
 
@@ -89,16 +105,32 @@ impl Conversation {
 
     pub fn title(self) -> &'static str {
         match self {
+            // Odyssey start:
             Conversation::WakeUp => "Wakeup Call",
             Conversation::Basics => "Circuit Basics",
             Conversation::RestorePower => "Restoring Power",
             Conversation::MoreComponents => "More Components",
+            // Odyssey Henry track:
             Conversation::StepTwo => "Step Two",
+            Conversation::ReactorSpecs => "Reactor Specs",
+            Conversation::WhereAreWe => "Where Are We?",
+            Conversation::CaptainAwake => "Captain Awake",
+            // Odyssey Lisa track:
             Conversation::CaptainsCall => "Captain's Call",
+            Conversation::LowVisibility => "Low Visibility",
+            Conversation::AnIdea => "An Idea",
+            Conversation::MorePower => "More Power",
+            // Odyssey finish:
+            Conversation::SensorResults => "Sensor Results",
+            Conversation::Descent => "Descent",
+            // Planetfall:
             Conversation::AdvancedCircuits => "Advanced Circuits",
             Conversation::UnexpectedCompany => "Unexpected Company",
+            // Calliope:
             Conversation::Memory => "Memory",
+            // Orpheus:
             Conversation::KeepingTime => "Keeping Time",
+            // Lorelei:
             Conversation::CatchingUp => "Catching Up",
         }
     }
@@ -110,7 +142,15 @@ impl Conversation {
             | Conversation::RestorePower
             | Conversation::MoreComponents
             | Conversation::StepTwo
-            | Conversation::CaptainsCall => Chapter::Odyssey,
+            | Conversation::ReactorSpecs
+            | Conversation::WhereAreWe
+            | Conversation::CaptainAwake
+            | Conversation::CaptainsCall
+            | Conversation::LowVisibility
+            | Conversation::AnIdea
+            | Conversation::MorePower
+            | Conversation::SensorResults
+            | Conversation::Descent => Chapter::Odyssey,
             Conversation::AdvancedCircuits
             | Conversation::UnexpectedCompany => Chapter::Planetfall,
             Conversation::Memory => Chapter::Calliope,
@@ -121,14 +161,13 @@ impl Conversation {
 
     pub fn prereq(self) -> &'static Prereq {
         match self {
+            // Odyssey intro:
             Conversation::WakeUp => &Prereq::All(&[]),
             Conversation::Basics => &Prereq::Complete(Conversation::WakeUp),
-            Conversation::RestorePower => {
+            Conversation::RestorePower | Conversation::MoreComponents => {
                 &Prereq::Complete(Conversation::Basics)
             }
-            Conversation::MoreComponents => {
-                &Prereq::Complete(Conversation::Basics)
-            }
+            // Odyssey Henry track:
             Conversation::StepTwo => &Prereq::Choice(
                 Conversation::RestorePower,
                 "who",
@@ -136,6 +175,13 @@ impl Conversation {
                 &Prereq::Complete(Conversation::RestorePower),
                 &Prereq::Any(&[]),
             ),
+            Conversation::ReactorSpecs | Conversation::WhereAreWe => {
+                &Prereq::Complete(Conversation::StepTwo)
+            }
+            Conversation::CaptainAwake => {
+                &Prereq::Complete(Conversation::ReactorSpecs)
+            }
+            // Odyssey Lisa track:
             Conversation::CaptainsCall => &Prereq::Choice(
                 Conversation::RestorePower,
                 "who",
@@ -143,7 +189,25 @@ impl Conversation {
                 &Prereq::Any(&[]),
                 &Prereq::Complete(Conversation::RestorePower),
             ),
-            _ => &Prereq::All(&[]), // TODO
+            Conversation::LowVisibility | Conversation::AnIdea => {
+                &Prereq::Complete(Conversation::CaptainsCall)
+            }
+            Conversation::MorePower => &Prereq::Complete(Conversation::AnIdea),
+            // Odyssey finish:
+            Conversation::SensorResults => &Prereq::Any(&[
+                Prereq::All(&[
+                    Prereq::Complete(Conversation::WhereAreWe),
+                    Prereq::Complete(Conversation::CaptainAwake),
+                ]),
+                Prereq::All(&[
+                    Prereq::Complete(Conversation::LowVisibility),
+                    Prereq::Complete(Conversation::MorePower),
+                ]),
+            ]),
+            Conversation::Descent => {
+                &Prereq::Complete(Conversation::SensorResults)
+            }
+            _ => &Prereq::Complete(Conversation::Descent), // TODO
         }
     }
 }

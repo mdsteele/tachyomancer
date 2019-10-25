@@ -20,6 +20,7 @@
 use super::super::cutscene::Cutscene;
 use crate::mancer::save::Profile;
 use tachy::save::{Conversation, Puzzle};
+use tachy::state::PuzzleExt;
 
 //===========================================================================//
 
@@ -145,6 +146,14 @@ impl ConversationBuilder {
         puzzles: &[Puzzle],
     ) -> Result<(), ()> {
         debug_assert!(!puzzles.is_empty());
+        debug_assert!(
+            puzzles.iter().all(|&puzzle| puzzle
+                .origin_conversations()
+                .contains(&self.conv)),
+            "conv={:?} puzzles={:?}",
+            self.conv,
+            puzzles
+        );
         self.bubbles.push(ConversationBubble::Puzzles(puzzles.to_vec()));
         if puzzles.iter().all(|&puzzle| profile.is_puzzle_solved(puzzle)) {
             Ok(())

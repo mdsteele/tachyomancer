@@ -27,7 +27,8 @@ use tachy::geom::{AsFloat, Color3, Color4, Rect};
 
 //===========================================================================//
 
-const CHECKBOX_BOX_SIZE: i32 = 28;
+pub const CHECKBOX_HEIGHT: i32 = 28;
+const CHECKBOX_BOX_WIDTH: i32 = CHECKBOX_HEIGHT;
 const CHECKBOX_BOX_SPACING: i32 = 8;
 const CHECKBOX_FONT: Font = Font::Roman;
 const CHECKBOX_FONT_SIZE: f32 = 20.0;
@@ -42,6 +43,10 @@ const HOTKEY_LABEL_FONT_SIZE: f32 = 20.0;
 const HOVER_PULSE_CLICK: f64 = 1.0;
 const HOVER_PULSE_HOVERING: f64 = 0.55;
 const HOVER_PULSE_DECAY_RATE: f64 = HOVER_PULSE_CLICK / 0.7;
+
+const SLIDER_FONT: Font = Font::Roman;
+const SLIDER_FONT_SIZE: f32 = 20.0;
+const SLIDER_TEXT_MARGIN: i32 = 10;
 
 const TEXT_BOX_CURSOR_BLINK_PERIOD: f64 = 1.0;
 const TEXT_BOX_FONT: Font = Font::Roman;
@@ -60,14 +65,14 @@ pub struct Checkbox {
 }
 
 impl Checkbox {
-    pub fn new(mid_left: Point2<i32>, label: &str) -> Checkbox {
-        let top = mid_left.y - CHECKBOX_BOX_SIZE / 2;
-        let width = CHECKBOX_BOX_SIZE
+    pub fn new(top_left: Point2<i32>, label: String) -> Checkbox {
+        let width = CHECKBOX_BOX_WIDTH
             + CHECKBOX_BOX_SPACING
-            + CHECKBOX_FONT.str_width(CHECKBOX_FONT_SIZE, label).ceil() as i32;
+            + CHECKBOX_FONT.str_width(CHECKBOX_FONT_SIZE, &label).ceil()
+                as i32;
         Checkbox {
-            rect: Rect::new(mid_left.x, top, width, CHECKBOX_BOX_SIZE),
-            label: label.to_string(),
+            rect: Rect::new(top_left.x, top_left.y, width, CHECKBOX_HEIGHT),
+            label,
             hover_pulse: HoverPulse::new(),
         }
     }
@@ -83,8 +88,8 @@ impl Checkbox {
         let box_rect = Rect::new(
             self.rect.x,
             self.rect.y,
-            CHECKBOX_BOX_SIZE,
-            CHECKBOX_BOX_SIZE,
+            CHECKBOX_BOX_WIDTH,
+            CHECKBOX_HEIGHT,
         );
         let bg_color = if !enabled {
             Color4::new(1.0, 1.0, 1.0, 0.1)
@@ -108,8 +113,9 @@ impl Checkbox {
             CHECKBOX_FONT_SIZE,
             Align::MidLeft,
             (
-                (box_rect.x + CHECKBOX_BOX_SIZE + CHECKBOX_BOX_SPACING) as f32,
-                (box_rect.y + CHECKBOX_BOX_SIZE / 2) as f32,
+                (box_rect.x + CHECKBOX_BOX_WIDTH + CHECKBOX_BOX_SPACING)
+                    as f32,
+                (box_rect.y + CHECKBOX_HEIGHT / 2) as f32,
             ),
             &self.label,
         );
@@ -380,7 +386,7 @@ pub struct RadioCheckbox<T> {
 impl<T: Clone + PartialEq> RadioCheckbox<T> {
     pub fn new(
         mid_left: Point2<i32>,
-        label: &str,
+        label: String,
         value: T,
     ) -> RadioCheckbox<T> {
         RadioCheckbox { inner: Checkbox::new(mid_left, label), value }
@@ -552,6 +558,8 @@ impl Scrollbar {
 
 //===========================================================================//
 
+const SLIDER_MAX: i32 = 100;
+
 pub enum SliderAction {
     Update(i32),
     Release,
@@ -560,31 +568,31 @@ pub enum SliderAction {
 pub struct Slider {
     rect: Rect<i32>,
     value: i32,
-    maximum: i32,
+    label: String,
     drag: Option<(i32, i32)>,
     hover_pulse: HoverPulse,
 }
 
 impl Slider {
-    pub fn new(rect: Rect<i32>, value: i32, maximum: i32) -> Slider {
+    pub fn new(rect: Rect<i32>, value: i32, label: String) -> Slider {
         debug_assert!(rect.width > rect.height);
-        let maximum = maximum.max(1);
         Slider {
             rect,
-            value: value.max(0).min(maximum),
-            maximum,
+            value: value.max(0).min(SLIDER_MAX),
+            label,
             drag: None,
             hover_pulse: HoverPulse::new(),
         }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let rect = self.rect.as_f32();
         let ui = resources.shaders().ui();
         ui.draw_scroll_bar(
             matrix,
-            &self.rect.as_f32(),
-            &Color4::ORANGE3,
-            &Color4::CYAN2,
+            &rect,
+            &Color4::CYAN1,
+            &Color4::ORANGE1,
             &Color4::PURPLE0_TRANSLUCENT,
         );
         let (fg_color, bg_color) = if self.drag.is_some() {
@@ -602,6 +610,22 @@ impl Slider {
             fg_color,
             &Color4::CYAN2,
             &bg_color,
+        );
+        let font = resources.fonts().get(SLIDER_FONT);
+        let mid_y = (self.rect.y + self.rect.height / 2) as f32;
+        font.draw(
+            matrix,
+            SLIDER_FONT_SIZE,
+            Align::MidRight,
+            ((self.rect.x - SLIDER_TEXT_MARGIN) as f32, mid_y),
+            &self.label,
+        );
+        font.draw(
+            matrix,
+            SLIDER_FONT_SIZE,
+            Align::MidLeft,
+            ((self.rect.right() + SLIDER_TEXT_MARGIN) as f32, mid_y),
+            &format!("{:3}%", self.value),
         );
     }
 
@@ -628,12 +652,12 @@ impl Slider {
                     let delta = mouse.pt.x - start;
                     let range = self.rect.width - self.rect.height;
                     let value = div_round(
-                        range * self.value + delta * self.maximum,
+                        range * self.value + delta * SLIDER_MAX,
                         range,
                     );
-                    let value = value.max(0).min(self.maximum);
+                    let value = value.max(0).min(SLIDER_MAX);
                     if value != self.value {
-                        self.value = value.max(0).min(self.maximum);
+                        self.value = value.max(0).min(SLIDER_MAX);
                         let new_left = self.handle_left();
                         let new_start = start + new_left - old_left;
                         let new_delta = mouse.pt.x - new_start;
@@ -671,7 +695,7 @@ impl Slider {
         self.rect.x
             + div_round(
                 (self.rect.width - self.rect.height) * self.value,
-                self.maximum,
+                SLIDER_MAX,
             )
     }
 

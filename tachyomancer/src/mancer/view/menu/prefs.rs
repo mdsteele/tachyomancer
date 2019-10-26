@@ -19,7 +19,7 @@
 
 use super::super::button::{
     Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton, RadioCheckbox, Slider,
-    SliderAction, TextButton,
+    SliderAction, TextButton, CHECKBOX_HEIGHT,
 };
 use super::list::{ListIcon, ListView};
 use crate::mancer::font::Align;
@@ -27,14 +27,30 @@ use crate::mancer::gui::{Event, Resources, Sound, Ui, Window, WindowOptions};
 use crate::mancer::save::{Hotkey, HOTKEY_CATEGORIES};
 use crate::mancer::state::GameState;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{Rect, RectSize};
+use num_integer::Roots;
+use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 
 //===========================================================================//
 
+const AV_CATEGORY_FRAME_PADDING: i32 = 18;
+const AV_CATEGORY_FRAME_SPACING: i32 = 22;
+const AV_SLIDER_HEIGHT: i32 = 30;
+const AV_SLIDER_SPACING: i32 = 20;
+const AV_SLIDER_MARGIN: i32 = 62;
+const AV_RESOLUTION_TABLE_MARGIN: i32 = 16;
+const AV_RESOLUTION_COLUMN_WIDTH: i32 = 172;
+const AV_RESOLUTION_ROW_SPACING: i32 = 4;
+const AV_BUTTON_WIDTH: i32 = 200;
+const AV_BUTTON_HEIGHT: i32 = 40;
+const AV_BUTTON_SPACING: i32 = 24;
+
+const HOTKEY_FRAME_PADDING: i32 = AV_CATEGORY_FRAME_PADDING;
 const HOTKEY_CATEGORY_LABEL_FONT_SIZE: f32 = 22.0;
-const HOTKEY_CATEGORY_LABEL_STRIDE: i32 = 28;
+const HOTKEY_CATEGORY_LABEL_STRIDE: i32 = 24;
 const HOTKEY_BOX_STRIDE: i32 = 32;
 const HOTKEY_CATEGORY_SPACING: i32 = 32;
+const HOTKEY_BUTTON_WIDTH: i32 = 200;
+const HOTKEY_BUTTON_HEIGHT: i32 = 40;
 
 const PANE_BUTTON_SPACING: i32 = 24;
 const PANE_BUTTON_WIDTH: i32 = 180;
@@ -228,9 +244,10 @@ impl PrefsView {
 //===========================================================================//
 
 pub struct AudioVideoPane {
+    category_frames: Vec<Rect<f32>>,
     antialias_checkbox: Checkbox,
     fullscreen_checkbox: Checkbox,
-    resolution_buttons: Vec<RadioCheckbox<Option<RectSize<i32>>>>,
+    resolution_checkboxes: Vec<RadioCheckbox<Option<RectSize<i32>>>>,
     sound_volume_slider: Slider,
     music_volume_slider: Slider,
     apply_button: TextButton<()>,
@@ -245,49 +262,112 @@ impl AudioVideoPane {
         window: &Window,
         state: &GameState,
     ) -> AudioVideoPane {
-        let antialias_checkbox =
-            Checkbox::new(Point2::new(rect.x, rect.y + 20), "Antialiasing");
-        let fullscreen_checkbox = Checkbox::new(
-            Point2::new(rect.x + 300, rect.y + 20),
-            "Fullscreen",
-        );
-        let sound_volume_slider = Slider::new(
-            Rect::new(rect.x, rect.y + 80, rect.width, 30),
-            state.prefs().sound_volume_percent(),
-            100,
-        );
+        let mut category_frames = Vec::new();
+        let mut frame_top = rect.y;
+        let mut top = frame_top + AV_CATEGORY_FRAME_PADDING;
+        let left = rect.x + AV_CATEGORY_FRAME_PADDING;
+        let right = rect.right() - AV_CATEGORY_FRAME_PADDING;
+
+        // Audio section:
         let music_volume_slider = Slider::new(
-            Rect::new(rect.x, rect.y + 130, rect.width, 30),
-            state.prefs().music_volume_percent(),
-            100,
-        );
-
-        let res_pos = |index| Point2::new(rect.x, rect.y + 185 + 30 * index);
-        let mut resolution_buttons =
-            vec![RadioCheckbox::new(res_pos(0), "Native", None)];
-        resolution_buttons.extend(
-            window.possible_resolutions().iter().enumerate().map(
-                |(index, &res)| {
-                    RadioCheckbox::new(
-                        res_pos((index as i32) + 1),
-                        &format!("{}x{}", res.width, res.height),
-                        Some(res),
-                    )
-                },
+            Rect::new(
+                rect.x + AV_CATEGORY_FRAME_PADDING + AV_SLIDER_MARGIN,
+                top,
+                right - left - 2 * AV_SLIDER_MARGIN,
+                AV_SLIDER_HEIGHT,
             ),
+            state.prefs().music_volume_percent(),
+            "Music".to_string(),
         );
+        top += AV_SLIDER_HEIGHT + AV_SLIDER_SPACING;
+        let sound_volume_slider = Slider::new(
+            Rect::new(
+                left + AV_SLIDER_MARGIN,
+                top,
+                right - left - 2 * AV_SLIDER_MARGIN,
+                AV_SLIDER_HEIGHT,
+            ),
+            state.prefs().sound_volume_percent(),
+            "Sound".to_string(),
+        );
+        top += AV_SLIDER_HEIGHT + AV_CATEGORY_FRAME_PADDING;
+        category_frames.push(
+            Rect::new(rect.x, frame_top, rect.width, top - frame_top).as_f32(),
+        );
+        top += AV_CATEGORY_FRAME_SPACING;
+        frame_top = top;
 
+        // Video section:
+        top += AV_CATEGORY_FRAME_PADDING;
+        let fullscreen_checkbox =
+            Checkbox::new(Point2::new(left, top), "Fullscreen".to_string());
+        let antialias_checkbox = Checkbox::new(
+            Point2::new(left + AV_BUTTON_WIDTH + AV_BUTTON_SPACING, top),
+            "Antialiasing".to_string(),
+        );
+        top += CHECKBOX_HEIGHT;
+        let button_top =
+            rect.bottom() - AV_CATEGORY_FRAME_PADDING - AV_BUTTON_HEIGHT;
+        let resolution_checkboxes = {
+            let mut resolutions = vec![("Native".to_string(), None)];
+            for &res in window.possible_resolutions().iter() {
+                let label = format!("{}x{}", res.width, res.height);
+                resolutions.push((label, Some(res)));
+            }
+            let max_rows = (button_top - top - 2 * AV_RESOLUTION_TABLE_MARGIN
+                + AV_RESOLUTION_ROW_SPACING)
+                / (CHECKBOX_HEIGHT + AV_RESOLUTION_ROW_SPACING);
+            let max_cols = (right - left) / AV_RESOLUTION_COLUMN_WIDTH;
+            resolutions.truncate((max_rows as usize) * (max_cols as usize));
+            let num_resolutions = resolutions.len() as i32;
+            let num_rows = if max_rows < max_cols {
+                num_resolutions.sqrt().min(max_rows)
+            } else {
+                let num_cols = num_resolutions.sqrt().min(max_cols);
+                (num_resolutions + num_cols - 1) / num_cols
+            };
+            let table_height = num_rows
+                * (CHECKBOX_HEIGHT + AV_RESOLUTION_ROW_SPACING)
+                - AV_RESOLUTION_ROW_SPACING;
+            let table_top = top + ((button_top - top) - table_height) / 2;
+            resolutions
+                .into_iter()
+                .enumerate()
+                .map(|(index, (label, res))| {
+                    let row = (index as i32) % num_rows;
+                    let col = (index as i32) / num_rows;
+                    let x = left + col * AV_RESOLUTION_COLUMN_WIDTH;
+                    let y = table_top
+                        + row * (CHECKBOX_HEIGHT + AV_RESOLUTION_ROW_SPACING);
+                    RadioCheckbox::new(Point2::new(x, y), label, res)
+                })
+                .collect()
+        };
         let apply_button_rect =
-            Rect::new(rect.right() - 200, rect.bottom() - 40, 200, 40);
+            Rect::new(left, button_top, AV_BUTTON_WIDTH, AV_BUTTON_HEIGHT);
         let apply_button = TextButton::new(apply_button_rect, "Apply", ());
-        let revert_button_rect =
-            Rect::new(rect.right() - 420, rect.bottom() - 40, 200, 40);
+        let revert_button_rect = Rect::new(
+            left + AV_BUTTON_WIDTH + AV_BUTTON_SPACING,
+            button_top,
+            AV_BUTTON_WIDTH,
+            AV_BUTTON_HEIGHT,
+        );
         let revert_button = TextButton::new(revert_button_rect, "Revert", ());
+        category_frames.push(
+            Rect::new(
+                rect.x,
+                frame_top,
+                rect.width,
+                rect.bottom() - frame_top,
+            )
+            .as_f32(),
+        );
 
         AudioVideoPane {
+            category_frames,
             antialias_checkbox,
             fullscreen_checkbox,
-            resolution_buttons,
+            resolution_checkboxes,
             sound_volume_slider,
             music_volume_slider,
             apply_button,
@@ -298,6 +378,16 @@ impl AudioVideoPane {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        for rect in self.category_frames.iter() {
+            resources.shaders().ui().draw_bubble(
+                matrix,
+                rect,
+                &Color4::CYAN1,
+                &Color4::ORANGE1,
+                &Color4::PURPLE0_TRANSLUCENT,
+            );
+        }
+
         self.antialias_checkbox.draw(
             resources,
             matrix,
@@ -310,7 +400,7 @@ impl AudioVideoPane {
             self.new_window_options.fullscreen,
             true,
         );
-        for button in self.resolution_buttons.iter() {
+        for button in self.resolution_checkboxes.iter() {
             button.draw(
                 resources,
                 matrix,
@@ -352,7 +442,7 @@ impl AudioVideoPane {
         }
 
         let resolution = self.new_window_options.resolution;
-        for button in self.resolution_buttons.iter_mut() {
+        for button in self.resolution_checkboxes.iter_mut() {
             if let Some(new_res) = button.on_event(event, ui, &resolution) {
                 self.new_window_options.resolution = new_res;
             }
@@ -397,6 +487,7 @@ impl AudioVideoPane {
 //===========================================================================//
 
 pub struct HotkeysPane {
+    rect: Rect<i32>,
     category_labels: Vec<((f32, f32), &'static str)>,
     hotkey_boxes: Vec<HotkeyBox>,
     defaults_button: TextButton<()>,
@@ -404,16 +495,16 @@ pub struct HotkeysPane {
 
 impl HotkeysPane {
     pub fn new(rect: Rect<i32>) -> HotkeysPane {
-        let mut left = rect.x;
-        let mut top = rect.y;
+        let mut left = rect.x + HOTKEY_FRAME_PADDING;
+        let mut top = rect.y + HOTKEY_FRAME_PADDING;
         let mut category_labels = Vec::new();
         let mut hotkey_boxes = Vec::new();
         for &(name, hotkeys) in HOTKEY_CATEGORIES.iter() {
             let section_height = HOTKEY_CATEGORY_LABEL_STRIDE
                 + HOTKEY_BOX_STRIDE * (hotkeys.len() as i32);
-            if rect.bottom() - top < section_height {
-                left += rect.width / 2;
-                top = rect.y
+            if rect.bottom() - HOTKEY_FRAME_PADDING - top < section_height {
+                left = rect.x + rect.width / 2;
+                top = rect.y + HOTKEY_FRAME_PADDING;
             }
             category_labels.push(((left as f32, top as f32), name));
             top += HOTKEY_CATEGORY_LABEL_STRIDE;
@@ -424,11 +515,15 @@ impl HotkeysPane {
             }
             top += HOTKEY_CATEGORY_SPACING;
         }
-        let defaults_button_rect =
-            Rect::new(rect.right() - 200, rect.bottom() - 40, 200, 40);
+        let defaults_button_rect = Rect::new(
+            rect.right() - HOTKEY_FRAME_PADDING - HOTKEY_BUTTON_WIDTH,
+            rect.bottom() - HOTKEY_FRAME_PADDING - HOTKEY_BUTTON_HEIGHT,
+            HOTKEY_BUTTON_WIDTH,
+            HOTKEY_BUTTON_HEIGHT,
+        );
         let defaults_button =
             TextButton::new(defaults_button_rect, "Restore Defaults", ());
-        HotkeysPane { category_labels, hotkey_boxes, defaults_button }
+        HotkeysPane { rect, category_labels, hotkey_boxes, defaults_button }
     }
 
     pub fn draw(
@@ -437,6 +532,13 @@ impl HotkeysPane {
         matrix: &Matrix4<f32>,
         state: &GameState,
     ) {
+        resources.shaders().ui().draw_bubble(
+            matrix,
+            &self.rect.as_f32(),
+            &Color4::CYAN1,
+            &Color4::ORANGE1,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
         for &(position, label) in self.category_labels.iter() {
             resources.fonts().bold().draw(
                 matrix,

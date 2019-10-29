@@ -62,6 +62,8 @@ impl Stencil {
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
     }
+
+    pub fn disable(self) {}
 }
 
 /// Disables the stencil test when dropped.

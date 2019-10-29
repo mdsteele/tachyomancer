@@ -18,13 +18,16 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::button::{
-    Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton, RadioCheckbox, Slider,
-    SliderAction, TextButton, CHECKBOX_HEIGHT,
+    Checkbox, HotkeyBox, HotkeyBoxAction, RadioButton, RadioCheckbox,
+    Scrollbar, Slider, SliderAction, TextButton, CHECKBOX_HEIGHT,
 };
+use super::super::paragraph::Paragraph;
+use super::credits::credits_paragraphs;
 use super::list::{ListIcon, ListView};
 use crate::mancer::font::Align;
+use crate::mancer::gl::Stencil;
 use crate::mancer::gui::{Event, Resources, Sound, Ui, Window, WindowOptions};
-use crate::mancer::save::{Hotkey, HOTKEY_CATEGORIES};
+use crate::mancer::save::{Hotkey, Prefs, HOTKEY_CATEGORIES};
 use crate::mancer::state::GameState;
 use cgmath::{Matrix4, Point2};
 use num_integer::Roots;
@@ -51,6 +54,11 @@ const HOTKEY_BOX_STRIDE: i32 = 32;
 const HOTKEY_CATEGORY_SPACING: i32 = 32;
 const HOTKEY_BUTTON_WIDTH: i32 = 200;
 const HOTKEY_BUTTON_HEIGHT: i32 = 40;
+
+const CREDITS_FRAME_PADDING: i32 = AV_CATEGORY_FRAME_PADDING;
+const CREDITS_PARAGRAPH_SPACING: i32 = 50;
+const CREDITS_SCROLLBAR_WIDTH: i32 = 20;
+const CREDITS_SCROLLBAR_MARGIN: i32 = 5;
 
 const PANE_BUTTON_SPACING: i32 = 24;
 const PANE_BUTTON_WIDTH: i32 = 180;
@@ -92,6 +100,7 @@ pub struct PrefsView {
     audio_video_pane: AudioVideoPane,
     hotkeys_pane: HotkeysPane,
     profiles_pane: ProfilesPane,
+    credits_pane: CreditsPane,
 }
 
 impl PrefsView {
@@ -146,6 +155,7 @@ impl PrefsView {
         let mut ui = window.ui();
         let hotkeys_pane = HotkeysPane::new(pane_rect);
         let profiles_pane = ProfilesPane::new(pane_rect, &mut ui, state);
+        let credits_pane = CreditsPane::new(pane_rect, state.prefs());
 
         PrefsView {
             current_pane: PrefsPane::AudioVideo,
@@ -154,6 +164,7 @@ impl PrefsView {
             audio_video_pane,
             hotkeys_pane,
             profiles_pane,
+            credits_pane,
         }
     }
 
@@ -180,7 +191,7 @@ impl PrefsView {
                 self.profiles_pane.draw(resources, matrix, state);
             }
             PrefsPane::Credits => {
-                // TODO: credits pane
+                self.credits_pane.draw(resources, matrix);
             }
         }
     }
@@ -230,9 +241,7 @@ impl PrefsView {
             PrefsPane::Profiles => {
                 self.profiles_pane.on_event(event, ui, state)
             }
-            PrefsPane::Credits => {
-                None // TODO: credits pane
-            }
+            PrefsPane::Credits => self.credits_pane.on_event(event, ui),
         }
     }
 
@@ -677,6 +686,81 @@ fn profile_list_items(
         .profile_names()
         .map(|name| (name.to_string(), name.to_string(), false, None))
         .collect()
+}
+
+//===========================================================================//
+
+pub struct CreditsPane {
+    rect: Rect<i32>,
+    frame_rect: Rect<f32>,
+    paragraphs: Vec<Paragraph>,
+    scrollbar: Scrollbar,
+}
+
+impl CreditsPane {
+    pub fn new(rect: Rect<i32>, prefs: &Prefs) -> CreditsPane {
+        let frame_width =
+            rect.width - (CREDITS_SCROLLBAR_MARGIN + CREDITS_SCROLLBAR_WIDTH);
+        let paragraph_width = (frame_width - 2 * CREDITS_FRAME_PADDING) as f32;
+        let paragraphs = credits_paragraphs(paragraph_width, prefs);
+        let mut total_height = 0;
+        for paragraph in paragraphs.iter() {
+            if total_height > 0 {
+                total_height += CREDITS_PARAGRAPH_SPACING;
+            }
+            total_height += paragraph.height().ceil() as i32;
+        }
+        total_height += 2 * CREDITS_FRAME_PADDING;
+        let scrollbar_rect = Rect::new(
+            rect.right() - CREDITS_SCROLLBAR_WIDTH,
+            rect.y,
+            CREDITS_SCROLLBAR_WIDTH,
+            rect.height,
+        );
+        let scrollbar = Scrollbar::new(scrollbar_rect, total_height);
+        let frame_rect =
+            Rect::new(rect.x, rect.y, frame_width, rect.height).as_f32();
+        CreditsPane { rect, frame_rect, paragraphs, scrollbar }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let stencil = Stencil::new();
+        resources.shaders().ui().draw_bubble(
+            matrix,
+            &self.frame_rect,
+            &Color4::CYAN1,
+            &Color4::ORANGE1,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
+        stencil.enable_clipping();
+        let left = (self.rect.x + CREDITS_FRAME_PADDING) as f32;
+        let mut top = (self.rect.y + CREDITS_FRAME_PADDING
+            - self.scrollbar.scroll_top()) as f32;
+        for paragraph in self.paragraphs.iter() {
+            let bottom = top + paragraph.height().ceil();
+            if bottom > self.frame_rect.y && top < self.frame_rect.bottom() {
+                paragraph.draw(resources, matrix, (left, top));
+            }
+            top = bottom + (CREDITS_PARAGRAPH_SPACING as f32);
+        }
+        stencil.disable();
+        self.scrollbar.draw(resources, matrix);
+    }
+
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+    ) -> Option<PrefsAction> {
+        self.scrollbar.on_event(event, ui);
+        match event {
+            Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
+                self.scrollbar.scroll_by(scroll.delta.y, ui);
+            }
+            _ => {}
+        }
+        None
+    }
 }
 
 //===========================================================================//

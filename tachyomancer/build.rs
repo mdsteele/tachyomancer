@@ -17,11 +17,16 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+extern crate heck;
 extern crate icns;
 extern crate nsvg;
 extern crate png;
 extern crate rusttype;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
+use heck::{ShoutySnakeCase, TitleCase};
 use png::HasParameters;
 use std::env;
 use std::fs::{self, File};
@@ -33,6 +38,17 @@ use std::time::SystemTime;
 
 fn main() {
     let converter = Converter::new();
+    converter.assemble_resource_info("font", &["src/mancer/font"]);
+    converter.assemble_resource_info("music", &["src/mancer/music"]);
+    converter.assemble_resource_info("sound", &["src/mancer/sound"]);
+    converter.assemble_resource_info(
+        "texture",
+        &[
+            "src/mancer/texture",
+            "src/mancer/texture/portrait",
+            "src/mancer/texture/scene",
+        ],
+    );
     converter.font_to_texture("galactico");
     converter.font_to_texture("inconsolata-bold");
     converter.font_to_texture("inconsolata-regular");
@@ -87,6 +103,46 @@ impl Converter {
         let build_script_timestamp =
             fs::metadata("build.rs").unwrap().modified().unwrap();
         Converter { build_script_timestamp, out_dir }
+    }
+
+    fn assemble_resource_info(&self, name: &str, dirs: &[&str]) {
+        let mut infos = Vec::<ResourceInfo>::new();
+        for dir in dirs {
+            for entry in PathBuf::from(dir).read_dir().unwrap() {
+                let path = entry.unwrap().path();
+                if let Some(name) = path.file_name() {
+                    let name = name.to_str().unwrap();
+                    if name.ends_with(".info.toml") || name == "info.toml" {
+                        let contents = fs::read(path).unwrap();
+                        let info = toml::from_slice(&contents).unwrap();
+                        infos.push(info);
+                    }
+                }
+            }
+        }
+        infos.sort_by_key(|info| info.name.clone());
+        let out_relpath = format!("rsrc_info/{}.rs", name);
+        eprintln!("Generating: {:?}", out_relpath);
+        let out_path = self.out_dir.join(out_relpath);
+        self.create_parent_dir(&out_path);
+        let mut out_file = File::create(&out_path).unwrap();
+        writeln!(
+            out_file,
+            "const {}_RESOURCE_INFO: &[ResourceInfo] = &[",
+            name.to_shouty_snake_case()
+        )
+        .unwrap();
+        for info in infos.iter() {
+            writeln!(out_file, "    ResourceInfo {{").unwrap();
+            writeln!(out_file, "        name: {:?},", info.name).unwrap();
+            writeln!(out_file, "        artist: {:?},", info.artist).unwrap();
+            writeln!(out_file, "        license: {:?},", info.license)
+                .unwrap();
+            writeln!(out_file, "        year: {},", info.year).unwrap();
+            writeln!(out_file, "        url: {:?},", info.url).unwrap();
+            writeln!(out_file, "    }},").unwrap();
+        }
+        writeln!(out_file, "];").unwrap();
     }
 
     fn font_to_texture(&self, font_name: &str) {
@@ -183,7 +239,7 @@ impl Converter {
                 icns::PixelFormat::Alpha,
             );
             png_paths.push(png_path);
-            icon_names.push(capitalize(svg_name.to_str().unwrap()));
+            icon_names.push(svg_name.to_str().unwrap().to_title_case());
         }
         png_paths.sort();
 
@@ -234,7 +290,7 @@ impl Converter {
                 icns::PixelFormat::Alpha,
             );
             png_paths.push(png_path);
-            icon_names.push(capitalize(svg_name.to_str().unwrap()));
+            icon_names.push(svg_name.to_str().unwrap().to_title_case());
         }
         png_paths.sort();
 
@@ -407,16 +463,13 @@ impl Converter {
 
 //===========================================================================//
 
-fn capitalize(string: &str) -> String {
-    let mut capitalized = String::with_capacity(string.len());
-    let mut chars = string.chars();
-    if let Some(chr) = chars.next() {
-        capitalized.push(chr.to_ascii_uppercase());
-    }
-    for chr in chars {
-        capitalized.push(chr);
-    }
-    capitalized
+#[derive(Deserialize, Serialize)]
+struct ResourceInfo {
+    name: String,
+    artist: String,
+    license: String,
+    year: i32,
+    url: String,
 }
 
 //===========================================================================//

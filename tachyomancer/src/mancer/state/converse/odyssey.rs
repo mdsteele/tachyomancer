@@ -552,10 +552,87 @@ pub(super) fn more_power(profile: &Profile, builder: &mut ConversationBuilder)
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub(super) fn sensor_results(_profile: &Profile,
+pub(super) fn sensor_results(profile: &Profile,
                              builder: &mut ConversationBuilder)
                              -> Result<(), ()> {
-    builder.esra("TODO");
+    builder.esra("\
+        Captain.  Commander.  I have been able to determine our location.");
+    builder.lisa("\
+        \"Excellent.  Chief Walker--I want you here for this too.\"\n\n\
+        \"Go ahead, ESRA.\"");
+    builder.esra("\
+        The reason why there are no navsats in sensor range is that the ship \
+        is not simply in the wrong star system.\n\n\
+        The ship is in the wrong galaxy.");
+    builder.lisa("\"I'm sorry, what?\"");
+    builder.esra("\
+        We are no longer in the Milky Way galaxy.  It took some lengthy \
+        analysis of the surrounding star patterns to confirm this.");
+    builder.henry("\
+        \"We're in another $/galaxy?$/  Is that...even possible?\"");
+    builder.lisa("\
+        \"No, it isn't.  ESRA, this is ridiculous.  The nearest thing you \
+        could technically call another galaxy is tens of thousands of \
+        lightyears from where we started, which is a couple orders of \
+        magnitude farther than we could possibly have traveled in the time \
+        we were underway.  And we weren't even heading in that direction.\"");
+    builder.henry("\
+        \"Could we have gone through a wormhole or something?\"");
+    builder.lisa("\
+        \"$/No.$/  Wormholes only exist in fiction, Chief.  They're \
+        mathematically inconsistent with modern metarelativity.  I was an \
+        astrophysicist before I became a captain, you know.\"");
+    builder.esra("\
+        While it it unclear how the ship came to be here, the sensor data is \
+        unambiguous.");
+    builder.you("\"Where do you think we are, then?\"");
+    builder.esra("\
+        Based on sensor analysis, we are currently in Messier 51, also known \
+        as the Whirlpool galaxy.  Distance to Earth: approximately 23 million \
+        lightyears.");
+    builder.lisa("\"I'm sorry, $/what!?$/\"");
+    builder.you("\
+        \"And...how long would it take to get home if we started back now?\"");
+    builder.esra("\
+        If the $/Odyssey$/ could maintain cruising speed indefinitely, it \
+        would reach Earth in approximately 6300 years.");
+    builder.henry("\
+        \"That's probably a $/bit$/ longer than the engines're good for.  And \
+        seems like kind of a long time in cryo, yeah?\"\n\n\
+        \"Er, wait, can humans even survive in cryo for that long?\"");
+    builder.esra("They cannot.");
+    builder.henry("\
+        \"Well then.  I don't suppose we could speed things up a bit?\"");
+    builder.lisa("\
+        \"$/Sigh.$/  Again, no.  Metarelativity is what makes it possible to \
+        travel faster than light, but it still places fundamental limits on \
+        how fast objects of a given mass can travel.  If we actually are \
+        where ESRA thinks we are--and I remain $/politely skeptical$/ of \
+        that--then it's physically impossible to travel fast enough to reach \
+        home within our lifetimes.");
+    let then = builder
+        .choice(profile, "then")
+        .option("how", "\"So how did we get here?\"")
+        .option("wizard", "\"I guess we'll have to take up wizardry.\"")
+        .done()?;
+    if then == "how" {
+        builder.lisa("\
+            \"I don't know, but we're not going to find out by sitting \
+            around.  ESRA, do long-range sensors show any sign of the other \
+            convoy ships?\"");
+    } else {
+        builder.lisa("\
+            \"Well, I certainly don't intend to just sit around here.  ESRA, \
+            do long-range sensors show any sign of the other convoy ships?\"");
+    }
+    builder.esra("Negative.");
+    builder.lisa("\
+        \"All right, then.  We need to look for them, which means we need to \
+        synthesize more hyperfuel, which means we need to get down to the \
+        planet surface and start mining.  Commander, you and the Chief are \
+        going to head down there on the lander while I oversee repairs up \
+        here.  Chief, do whatever it takes to get the lander prepped.\"");
+    builder.henry("\"Aye, Captain!\"");
     Ok(())
 }
 

@@ -97,6 +97,7 @@ impl ChipModel {
                 grid_matrix,
                 port.coords,
                 CoordsSize::new(1, 1),
+                Font::Roman,
                 0.25,
                 &INTERFACE_LABEL_COLOR,
                 name,
@@ -135,18 +136,21 @@ impl ChipModel {
                         debug_assert_eq!(ports.len(), 1);
                         value = grid
                             .port_value(ports[0].loc())
-                            .map(|v| format!("{}", v))
+                            .map(|v| format!("{:05}", v))
                     }
                 }
-                draw_chip_string(
-                    resources,
-                    &grid_matrix,
-                    coords,
-                    oriented_size,
-                    0.3,
-                    &Color4::WHITE,
-                    value.as_ref().map(String::as_str).unwrap_or("Display"),
-                );
+                if let Some(ref val) = value {
+                    draw_chip_string(
+                        resources,
+                        &grid_matrix,
+                        coords,
+                        oriented_size,
+                        Font::Led,
+                        0.6,
+                        &Color4::YELLOW5,
+                        &val,
+                    );
+                }
             }
             _ => {
                 let icon = chip_icon(ctype, orient);
@@ -164,6 +168,7 @@ impl ChipModel {
                         &grid_matrix,
                         coords,
                         oriented_size,
+                        Font::Roman,
                         0.3,
                         &Color4::WHITE,
                         &format!("{:?}", ctype),
@@ -185,6 +190,7 @@ impl ChipModel {
                     &grid_matrix,
                     coords,
                     oriented_size,
+                    Font::Roman,
                     0.25,
                     &Color4::WHITE,
                     string.trim_end(),
@@ -192,13 +198,15 @@ impl ChipModel {
             }
             ChipType::Const(value) => {
                 let label = value.to_string();
-                let font_size = 0.5
-                    / ((label.len() as f32) * Font::Roman.ratio()).max(1.0);
+                let font = Font::Roman;
+                let font_size =
+                    0.5 / ((label.len() as f32) * font.ratio()).max(1.0);
                 draw_chip_string(
                     resources,
                     &grid_matrix,
                     coords,
                     oriented_size,
+                    font,
                     font_size,
                     &Color4::ORANGE4,
                     &label,
@@ -355,6 +363,7 @@ fn draw_chip_string(
     grid_matrix: &Matrix4<f32>,
     coords: Coords,
     chip_size: CoordsSize,
+    font: Font,
     font_size: f32,
     color: &Color4,
     string: &str,
@@ -362,7 +371,7 @@ fn draw_chip_string(
     let matrix =
         grid_matrix * Matrix4::from_translation(vec3(0.0, 0.0, 0.101));
     let (width, height) = (chip_size.width as f32, chip_size.height as f32);
-    let font = resources.fonts().roman();
+    let font = resources.fonts().get(font);
     font.draw_style(
         &matrix,
         font_size,

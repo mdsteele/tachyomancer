@@ -49,9 +49,10 @@ fn main() {
             "src/mancer/texture/scene",
         ],
     );
-    converter.font_to_texture("galactico");
-    converter.font_to_texture("inconsolata-bold");
-    converter.font_to_texture("inconsolata-regular");
+    converter.font_to_texture("galactico", true);
+    converter.font_to_texture("inconsolata-bold", true);
+    converter.font_to_texture("inconsolata-regular", true);
+    converter.font_to_texture("segment7", false);
     converter.generate_chip_icons();
     converter.generate_list_icons();
     converter.generate_portraits_texture();
@@ -145,7 +146,7 @@ impl Converter {
         writeln!(out_file, "];").unwrap();
     }
 
-    fn font_to_texture(&self, font_name: &str) {
+    fn font_to_texture(&self, font_name: &str, centered: bool) {
         // Check if the output PNG file is already up-to-date:
         let font_path =
             PathBuf::from(format!("src/mancer/font/{}.ttf", font_name));
@@ -181,13 +182,17 @@ impl Converter {
             let positioned =
                 scaled.positioned(rusttype::Point { x: 0.0, y: 0.0 });
             if let Some(bounds) = positioned.pixel_bounding_box() {
-                let xoff = ((codepoint % 16) as i32)
+                let mut xoff = ((codepoint % 16) as i32)
                     * (GLYPH_HIRES_SIZE as i32)
-                    + (DIST_SPREAD as i32)
-                    + ((GLYPH_HIRES_SIZE as i32)
-                        - 2 * (DIST_SPREAD as i32)
-                        - bounds.width())
-                        / 2;
+                    + (DIST_SPREAD as i32);
+                let xpadding = (GLYPH_HIRES_SIZE as i32)
+                    - 2 * (DIST_SPREAD as i32)
+                    - bounds.width();
+                if centered {
+                    xoff += xpadding / 2;
+                } else {
+                    xoff += xpadding;
+                }
                 let yoff = ((codepoint / 16) as i32)
                     * (GLYPH_HIRES_SIZE as i32)
                     + (DIST_SPREAD as i32)

@@ -46,6 +46,7 @@ const TEXT_FRAG_CODE: &[u8] = include_bytes!("text.frag");
 pub struct Fonts {
     alien: FontData,
     bold: FontData,
+    led: FontData,
     roman: FontData,
 }
 
@@ -54,14 +55,16 @@ impl Fonts {
         let shader = Rc::new(TextShader::new()?);
         let alien = FontData::new(Font::Alien, &shader)?;
         let bold = FontData::new(Font::Bold, &shader)?;
+        let led = FontData::new(Font::Led, &shader)?;
         let roman = FontData::new(Font::Roman, &shader)?;
-        Ok(Fonts { alien, bold, roman })
+        Ok(Fonts { alien, bold, led, roman })
     }
 
     pub fn get(&self, font: Font) -> &FontData {
         match font {
             Font::Alien => self.alien(),
             Font::Bold => self.bold(),
+            Font::Led => self.led(),
             Font::Roman => self.roman(),
         }
     }
@@ -72,6 +75,10 @@ impl Fonts {
 
     pub fn bold(&self) -> &FontData {
         &self.bold
+    }
+
+    pub fn led(&self) -> &FontData {
+        &self.led
     }
 
     pub fn roman(&self) -> &FontData {

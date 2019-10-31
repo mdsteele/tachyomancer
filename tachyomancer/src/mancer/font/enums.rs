@@ -28,6 +28,9 @@ const INCONSOLATA_BOLD_PNG_DATA: &[u8] =
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const INCONSOLATA_REGULAR_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata-regular.png"));
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const SEGMENT7_PNG_DATA: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/font/segment7.png"));
 
 //===========================================================================//
 
@@ -48,6 +51,7 @@ pub enum Align {
 pub enum Font {
     Alien,
     Bold,
+    Led,
     Roman,
 }
 
@@ -56,6 +60,7 @@ impl Font {
         match self {
             Font::Alien => 0.7,
             Font::Bold => 0.5,
+            Font::Led => 0.5,
             Font::Roman => 0.5,
         }
     }
@@ -76,6 +81,7 @@ impl Font {
         match self {
             Font::Alien => ("font/galactico", GALACTICO_PNG_DATA),
             Font::Bold => ("font/inconsolata-bold", INCONSOLATA_BOLD_PNG_DATA),
+            Font::Led => ("font/segment7", SEGMENT7_PNG_DATA),
             Font::Roman => {
                 ("font/inconsolata-regular", INCONSOLATA_REGULAR_PNG_DATA)
             }

@@ -58,8 +58,7 @@ pub const XOR_INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Out",
-        description: "\
-                      Should be 1 if exactly one input is 1.\n\
+        description: "Should be 1 if exactly one input is 1.\n\
                       Should be 0 if the inputs are both 0 or both 1.",
         side: Direction::East,
         pos: InterfacePosition::Center,
@@ -167,47 +166,41 @@ pub const MUL_INTERFACES: &[Interface] = &[
         description: "First input (from 0 to 255).",
         side: Direction::West,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In1",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Eight,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In1",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Eight,
+        }],
     },
     Interface {
         name: "In2",
         description: "Second input (from 0 to 255).",
         side: Direction::South,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "In2",
-                description: "",
-                flow: PortFlow::Send,
-                color: PortColor::Behavior,
-                size: WireSize::Eight,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "In2",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Behavior,
+            size: WireSize::Eight,
+        }],
     },
     Interface {
         name: "Out",
-        description: "\
-            Should be the product of the two inputs (which will never be more \
-            than 255 for this task).",
+        description:
+            "Should be the product of the two inputs (which will never be \
+             more than 255 for this task).",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[
-            InterfacePort {
-                name: "Out",
-                description: "",
-                flow: PortFlow::Recv,
-                color: PortColor::Behavior,
-                size: WireSize::Eight,
-            },
-        ],
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::Eight,
+        }],
     },
 ];
 
@@ -452,8 +445,7 @@ pub const INC_INTERFACES: &[Interface] = &[
     Interface {
         name: "Out",
         description:
-            "\
-             Whenever an input event arrives, send an event here with the sum \
+            "Whenever an input event arrives, send an event here with the sum \
              of the two input values.",
         side: Direction::East,
         pos: InterfacePosition::Center,

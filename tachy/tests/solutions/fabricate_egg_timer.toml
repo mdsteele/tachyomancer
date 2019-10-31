@@ -1,0 +1,41 @@
+puzzle = "FabricateEggTimer"
+score = 60
+time_steps = 20
+
+[circuit]
+size = [5, 5]
+
+[circuit.chips]
+p0p2 = "f0-Join"
+p1p1 = "f3-Delay"
+p1p3 = "f1-Const(255)"
+p1p4 = "f2-Inc"
+p2p4 = "f2-Sample"
+p3p1 = "f1-Latest"
+p3p3 = "f0-Eq"
+p4p1 = "t1-Discard"
+p4p2 = "t1-Demux"
+p4p3 = "t1-Clock"
+
+[circuit.wires]
+m1p2e = "Stub"
+p0p3s = "Straight"
+p0p4n = "TurnLeft"
+p1p0e = "TurnLeft"
+p1p2w = "TurnLeft"
+p1p3s = "Stub"
+p1p4e = "Stub"
+p2p0e = "Straight"
+p2p0s = "Straight"
+p2p1s = "Straight"
+p2p2e = "SplitTee"
+p2p3e = "SplitTee"
+p3p0s = "SplitTee"
+p3p2e = "TurnLeft"
+p3p2w = "TurnLeft"
+p3p4e = "Straight"
+p4p0s = "TurnLeft"
+p4p1s = "Stub"
+p4p2e = "Stub"
+p4p2s = "Stub"
+p4p4w = "TurnLeft"

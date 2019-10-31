@@ -18,7 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 mod beacon;
-mod fabricate;
+mod fab_arith;
+mod fab_clock;
 mod grapple;
 mod heliostat;
 mod iface;
@@ -34,9 +35,10 @@ mod tutor_bvr;
 mod tutor_evt;
 
 pub use self::beacon::BeaconEval;
-pub use self::fabricate::{
+pub use self::fab_arith::{
     FabricateHalveEval, FabricateIncEval, FabricateMulEval, FabricateXorEval,
 };
+pub use self::fab_clock::FabricateEggTimerEval;
 pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
@@ -115,10 +117,11 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
             Puzzle::CommandLander => self::lander::INTERFACES,
-            Puzzle::FabricateHalve => self::fabricate::HALVE_INTERFACES,
-            Puzzle::FabricateInc => self::fabricate::INC_INTERFACES,
-            Puzzle::FabricateMul => self::fabricate::MUL_INTERFACES,
-            Puzzle::FabricateXor => self::fabricate::XOR_INTERFACES,
+            Puzzle::FabricateEggTimer => self::fab_clock::EGG_TIMER_INTERFACES,
+            Puzzle::FabricateHalve => self::fab_arith::HALVE_INTERFACES,
+            Puzzle::FabricateInc => self::fab_arith::INC_INTERFACES,
+            Puzzle::FabricateMul => self::fab_arith::MUL_INTERFACES,
+            Puzzle::FabricateXor => self::fab_arith::XOR_INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_INTERFACES,
@@ -188,6 +191,9 @@ pub(super) fn new_puzzle_eval(
             Box::new(self::sensors::SensorsEval::new(slots))
         }
         Puzzle::CommandLander => Box::new(LanderEval::new(slots)),
+        Puzzle::FabricateEggTimer => {
+            Box::new(FabricateEggTimerEval::new(slots))
+        }
         Puzzle::FabricateHalve => Box::new(FabricateHalveEval::new(slots)),
         Puzzle::FabricateInc => Box::new(FabricateIncEval::new(slots)),
         Puzzle::FabricateMul => Box::new(FabricateMulEval::new(slots)),

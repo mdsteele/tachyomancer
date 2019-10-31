@@ -30,6 +30,11 @@ fn automate_sensors_small() {
 }
 
 #[test]
+fn fabricate_egg_timer() {
+    test_solution("fabricate_egg_timer");
+}
+
+#[test]
 fn fabricate_halve() {
     test_solution("fabricate_halve");
 }

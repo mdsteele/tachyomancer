@@ -131,6 +131,9 @@ impl ChipExt for ChipType {
             ChipType::EggTimer => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateEggTimer)
             }
+            ChipType::Stopwatch => {
+                ChipAvailability::UnlockedBy(Puzzle::FabricateStopwatch)
+            }
             ChipType::Button | ChipType::Toggle(_) => {
                 ChipAvailability::InteractiveOnly
             }
@@ -246,6 +249,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Ram => self::special::RAM_CHIP_DATA,
         ChipType::Random => self::special::RANDOM_CHIP_DATA,
         ChipType::Sample => self::event::SAMPLE_CHIP_DATA,
+        ChipType::Stopwatch => self::timing::STOPWATCH_CHIP_DATA,
         ChipType::Sub => self::arith::SUB_CHIP_DATA,
         ChipType::Toggle(_) => self::special::TOGGLE_CHIP_DATA,
         ChipType::Unpack => self::value::UNPACK_CHIP_DATA,
@@ -301,6 +305,9 @@ pub(super) fn new_chip_evals(
         ChipType::Ram => self::special::RamChipEval::new_evals(slots),
         ChipType::Random => self::special::RandomChipEval::new_evals(slots),
         ChipType::Sample => self::event::SampleChipEval::new_evals(slots),
+        ChipType::Stopwatch => {
+            self::timing::StopwatchChipEval::new_evals(slots)
+        }
         ChipType::Sub => self::arith::SubChipEval::new_evals(slots),
         ChipType::Toggle(value) => self::special::ToggleChipEval::new_evals(
             value,

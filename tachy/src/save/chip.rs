@@ -59,6 +59,7 @@ pub enum ChipType {
     Ram,
     Random,
     Sample,
+    Stopwatch,
     Sub,
     Toggle(bool),
     Unpack,
@@ -103,6 +104,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Delay,
         ChipType::Clock,
         ChipType::EggTimer,
+        ChipType::Stopwatch,
     ]),
     ("Memory", &[
         ChipType::Latest,
@@ -150,6 +152,7 @@ impl str::FromStr for ChipType {
             "Ram" => Ok(ChipType::Ram),
             "Random" => Ok(ChipType::Random),
             "Sample" => Ok(ChipType::Sample),
+            "Stopwatch" => Ok(ChipType::Stopwatch),
             "Sub" => Ok(ChipType::Sub),
             "Toggle(false)" => Ok(ChipType::Toggle(false)),
             "Toggle(true)" => Ok(ChipType::Toggle(true)),

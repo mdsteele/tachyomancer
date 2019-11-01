@@ -1,6 +1,6 @@
 puzzle = "FabricateStopwatch"
 score = 74
-time_steps = 21
+time_steps = 22
 
 [circuit]
 size = [7, 7]

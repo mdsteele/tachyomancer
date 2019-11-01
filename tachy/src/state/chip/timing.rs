@@ -194,3 +194,70 @@ impl ChipEval for EggTimerChipEval {
 }
 
 //===========================================================================//
+
+pub const STOPWATCH_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::North),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Zero),
+        AbstractConstraint::Exact(1, WireSize::Zero),
+        AbstractConstraint::Exact(2, WireSize::Zero),
+    ],
+    dependencies: &[(0, 3), (1, 3), (2, 3)],
+};
+
+pub struct StopwatchChipEval {
+    start: usize,
+    stop: usize,
+    reset: usize,
+    output: usize,
+    size: WireSize,
+    time: u32,
+    running: bool,
+}
+
+impl StopwatchChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), STOPWATCH_CHIP_DATA.ports.len());
+        let chip_eval = StopwatchChipEval {
+            start: slots[0].0,
+            stop: slots[1].0,
+            reset: slots[2].0,
+            output: slots[3].0,
+            size: slots[3].1,
+            time: 0,
+            running: false,
+        };
+        vec![(3, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for StopwatchChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let start = state.has_event(self.start);
+        let stop = state.has_event(self.stop);
+        if start && !stop {
+            self.running = true;
+        } else if stop && !start {
+            self.running = false;
+        }
+        if state.has_event(self.reset) {
+            self.time = 0;
+        }
+        state.send_behavior(self.output, self.time);
+    }
+
+    fn on_time_step(&mut self) {
+        if self.running {
+            self.time = self.time.wrapping_add(1) & self.size.mask();
+        }
+    }
+}
+
+//===========================================================================//

@@ -43,6 +43,7 @@ pub enum ChipType {
     Demux,
     Discard,
     Display,
+    EggTimer,
     Eq,
     Filter,
     Halve,
@@ -101,6 +102,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
     ("Timing", &[
         ChipType::Delay,
         ChipType::Clock,
+        ChipType::EggTimer,
     ]),
     ("Memory", &[
         ChipType::Latest,
@@ -132,6 +134,7 @@ impl str::FromStr for ChipType {
             "Demux" => Ok(ChipType::Demux),
             "Discard" => Ok(ChipType::Discard),
             "Display" => Ok(ChipType::Display),
+            "EggTimer" => Ok(ChipType::EggTimer),
             "Eq" => Ok(ChipType::Eq),
             "Filter" => Ok(ChipType::Filter),
             "Halve" => Ok(ChipType::Halve),
@@ -196,6 +199,7 @@ impl ChipType {
             ChipType::Add2Bit => "2-Bit Add".to_string(),
             ChipType::Comment(_) => "Comment".to_string(),
             ChipType::Const(_) => "Constant".to_string(),
+            ChipType::EggTimer => "Egg Timer".to_string(),
             ChipType::Mul4Bit => "4-Bit Mul".to_string(),
             ChipType::Toggle(_) => "Toggle Switch".to_string(),
             other => format!("{:?}", other),
@@ -210,6 +214,18 @@ impl ChipType {
                 "For each bit in the wire, the output is 1 if both inputs \
                  are 1, or 0 if either input is 0."
             }
+            ChipType::Clock => {
+                "Sends an event at the beginning of a time step if it \
+                 received at least one event during the previous time step."
+            }
+            ChipType::Cmp => {
+                "Outputs 1 if the one input is strictly less than the other; \
+                 outputs 0 otherwise."
+            }
+            ChipType::CmpEq => {
+                "Outputs 1 if the one input is less than or equal to the \
+                 other; outputs 0 otherwise."
+            }
             ChipType::Comment(_) => {
                 "Visually annotates part of the circuit with a short label, \
                  but has no effect while the circuit is running.\n\
@@ -219,11 +235,38 @@ impl ChipType {
                 "Outputs a constant value.\n\
                  $'Right-click' on the chip to change the output value."
             }
+            ChipType::Delay => {
+                "Delays events by one cycle.  Allows for loops within \
+                 circuits."
+            }
+            ChipType::Demux => {
+                "When the behavior wire is 0, incoming events are sent \
+                 through the antipodal port.  When the behavior wire is 1, \
+                 incoming events are sent through the lateral port instead."
+            }
             ChipType::Discard => {
                 "Transforms value-carrying events into 0-bit events by \
                  discarding the value."
             }
+            ChipType::Eq => {
+                "Outputs 1 if the two inputs are equal; outputs 0 otherwise."
+            }
+            ChipType::Filter => {
+                "When the behavior wire is 0, events pass through unchanged.  \
+                 When the behavior wire is 1, incoming events are ignored."
+            }
             ChipType::Halve => "Outputs half the input, rounded down.",
+            ChipType::Join => {
+                "Merges two event streams into one; when an event arrives at \
+                 either input port, it is sent to the output port.  If an \
+                 event arrives at both inputs simultaneously, the event from \
+                 the antipodal input port is sent on, and the event from the \
+                 lateral input port is ignored."
+            }
+            ChipType::Latest => {
+                "Outputs the value of the most recent event to arrive (or \
+                 zero if no events have arrived yet)."
+            }
             ChipType::Mul => {
                 "Outputs the product of the two inputs.  If the product is \
                  too large for the wire size, the value will wrap around (for \
@@ -240,13 +283,18 @@ impl ChipType {
             }
             ChipType::Pack => {
                 "Joins two input wires into a single output wire with twice \
-                 as many bits.  One input wire becomes the low bits of the \
-                 output, and the other becomes the high bits."
+                 as many bits.  The antipodal input becomes the low bits of \
+                 the output, and the lateral input becomes the high bits."
             }
             ChipType::Random => {
                 "When an event arrives, generates a random output value, \
                  evenly distributed among all possible values for the size of \
                  the output wire."
+            }
+            ChipType::Sample => {
+                "Transforms 0-bit events into value-carrying events by \
+                 sampling the value of the behavior wire when an event \
+                 arrives."
             }
             ChipType::Sub => {
                 "Outputs the difference between the two inputs.  The result \
@@ -260,8 +308,8 @@ impl ChipType {
             }
             ChipType::Unpack => {
                 "Splits the input wire into two output wires, each with half \
-                 as many bits.  One output wire has the low bits of the \
-                 input, and the other has the high bits."
+                 as many bits.  The antipodal output has the low bits of the \
+                 input, and the lateral output has the high bits."
             }
             ChipType::Xor => {
                 "For each bit in the wire, the output is 1 if exactly one \

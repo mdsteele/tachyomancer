@@ -23,6 +23,7 @@ mod data;
 mod event;
 mod logic;
 mod special;
+mod timing;
 mod value;
 
 use self::data::{localize, AbstractConstraint, ChipData};
@@ -127,6 +128,9 @@ impl ChipExt for ChipType {
             ChipType::Inc => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateInc)
             }
+            ChipType::EggTimer => {
+                ChipAvailability::UnlockedBy(Puzzle::FabricateEggTimer)
+            }
             ChipType::Button | ChipType::Toggle(_) => {
                 ChipAvailability::InteractiveOnly
             }
@@ -217,15 +221,16 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::And => self::logic::AND_CHIP_DATA,
         ChipType::Break => self::special::BREAK_CHIP_DATA,
         ChipType::Button => self::special::BUTTON_CHIP_DATA,
-        ChipType::Clock => self::event::CLOCK_CHIP_DATA,
+        ChipType::Clock => self::timing::CLOCK_CHIP_DATA,
         ChipType::Cmp => self::compare::CMP_CHIP_DATA,
         ChipType::CmpEq => self::compare::CMPEQ_CHIP_DATA,
         ChipType::Comment(_) => self::special::COMMENT_CHIP_DATA,
         ChipType::Const(value) => self::value::const_chip_data(value),
-        ChipType::Delay => self::event::DELAY_CHIP_DATA,
+        ChipType::Delay => self::timing::DELAY_CHIP_DATA,
         ChipType::Demux => self::event::DEMUX_CHIP_DATA,
         ChipType::Discard => self::event::DISCARD_CHIP_DATA,
         ChipType::Display => self::special::DISPLAY_CHIP_DATA,
+        ChipType::EggTimer => self::timing::EGG_TIMER_CHIP_DATA,
         ChipType::Eq => self::compare::EQ_CHIP_DATA,
         ChipType::Filter => self::event::FILTER_CHIP_DATA,
         ChipType::Halve => self::arith::HALVE_CHIP_DATA,
@@ -269,17 +274,18 @@ pub(super) fn new_chip_evals(
             coords,
             interact.clone(),
         ),
-        ChipType::Clock => self::event::ClockChipEval::new_evals(slots),
+        ChipType::Clock => self::timing::ClockChipEval::new_evals(slots),
         ChipType::Cmp => self::compare::CmpChipEval::new_evals(slots),
         ChipType::CmpEq => self::compare::CmpEqChipEval::new_evals(slots),
         ChipType::Comment(_) => vec![],
         ChipType::Const(value) => {
             self::value::ConstChipEval::new_evals(value, slots)
         }
-        ChipType::Delay => self::event::DelayChipEval::new_evals(slots),
+        ChipType::Delay => self::timing::DelayChipEval::new_evals(slots),
         ChipType::Demux => self::event::DemuxChipEval::new_evals(slots),
         ChipType::Discard => self::event::DiscardChipEval::new_evals(slots),
         ChipType::Display => vec![],
+        ChipType::EggTimer => self::timing::EggTimerChipEval::new_evals(slots),
         ChipType::Eq => self::compare::EqChipEval::new_evals(slots),
         ChipType::Filter => self::event::FilterChipEval::new_evals(slots),
         ChipType::Halve => self::arith::HalveChipEval::new_evals(slots),

@@ -38,7 +38,7 @@ pub use self::beacon::BeaconEval;
 pub use self::fab_arith::{
     FabricateHalveEval, FabricateIncEval, FabricateMulEval, FabricateXorEval,
 };
-pub use self::fab_clock::FabricateEggTimerEval;
+pub use self::fab_clock::{FabricateEggTimerEval, FabricateStopwatchEval};
 pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
@@ -121,6 +121,9 @@ impl PuzzleExt for Puzzle {
             Puzzle::FabricateHalve => self::fab_arith::HALVE_INTERFACES,
             Puzzle::FabricateInc => self::fab_arith::INC_INTERFACES,
             Puzzle::FabricateMul => self::fab_arith::MUL_INTERFACES,
+            Puzzle::FabricateStopwatch => {
+                self::fab_clock::STOPWATCH_INTERFACES
+            }
             Puzzle::FabricateXor => self::fab_arith::XOR_INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
@@ -197,6 +200,9 @@ pub(super) fn new_puzzle_eval(
         Puzzle::FabricateHalve => Box::new(FabricateHalveEval::new(slots)),
         Puzzle::FabricateInc => Box::new(FabricateIncEval::new(slots)),
         Puzzle::FabricateMul => Box::new(FabricateMulEval::new(slots)),
+        Puzzle::FabricateStopwatch => {
+            Box::new(FabricateStopwatchEval::new(slots))
+        }
         Puzzle::FabricateXor => Box::new(FabricateXorEval::new(slots)),
         Puzzle::SandboxBehavior => {
             Box::new(self::sandbox::SandboxBehaviorEval::new(slots))

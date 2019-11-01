@@ -226,3 +226,185 @@ impl FabricationEval for FabricateEggTimerEval {
 }
 
 //===========================================================================//
+
+pub const STOPWATCH_INTERFACES: &[Interface] = &[
+    Interface {
+        name: "Start",
+        description:
+            "When an event value arrives here, the timer should start \
+             counting up from its current value.",
+        side: Direction::West,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Start",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Zero,
+        }],
+    },
+    Interface {
+        name: "Stop",
+        description:
+            "When an event value arrives here, the timer should pause.",
+        side: Direction::South,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Stop",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Zero,
+        }],
+    },
+    Interface {
+        name: "Reset",
+        description:
+            "When an event value arrives here, the timer value should be \
+             reset to zero.",
+        side: Direction::North,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Reset",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Zero,
+        }],
+    },
+    Interface {
+        name: "Time",
+        description: "Should be the current timer value, starting at zero.",
+        side: Direction::East,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Time",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::Eight,
+        }],
+    },
+];
+
+pub struct FabricateStopwatchEval {
+    table_values: Vec<u64>,
+    start_wire: usize,
+    stop_wire: usize,
+    reset_wire: usize,
+    time_wire: usize,
+    time_port: (Coords, Direction),
+}
+
+impl FabricateStopwatchEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> FabricateStopwatchEval {
+        debug_assert_eq!(slots.len(), 4);
+        debug_assert_eq!(slots[0].len(), 1);
+        debug_assert_eq!(slots[1].len(), 1);
+        debug_assert_eq!(slots[2].len(), 1);
+        debug_assert_eq!(slots[3].len(), 1);
+        FabricateStopwatchEval {
+            table_values: FabricateStopwatchEval::expected_table_values()
+                .to_vec(),
+            start_wire: slots[0][0].1,
+            stop_wire: slots[1][0].1,
+            reset_wire: slots[2][0].1,
+            time_wire: slots[3][0].1,
+            time_port: slots[3][0].0,
+        }
+    }
+}
+
+impl PuzzleEval for FabricateStopwatchEval {
+    fn begin_time_step(
+        &mut self,
+        time_step: u32,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
+        let expected = FabricateStopwatchEval::expected_table_values();
+        let start = (time_step as usize) * 4;
+        if start >= expected.len() {
+            Some(EvalScore::WireLength)
+        } else {
+            let slice = &expected[start..];
+            if slice[0] <= (u32::MAX as u64) {
+                state.send_event(self.start_wire, slice[0] as u32);
+            }
+            if slice[1] <= (u32::MAX as u64) {
+                state.send_event(self.stop_wire, slice[1] as u32);
+            }
+            if slice[2] <= (u32::MAX as u64) {
+                state.send_event(self.reset_wire, slice[2] as u32);
+            }
+            None
+        }
+    }
+
+    fn end_time_step(
+        &mut self,
+        time_step: u32,
+        state: &CircuitState,
+    ) -> Vec<EvalError> {
+        let expected_table = FabricateStopwatchEval::expected_table_values();
+        let start = (time_step as usize) * 4;
+        if start >= expected_table.len() {
+            return vec![];
+        }
+        let expected_time = expected_table[start + 3];
+        let actual_time = state.recv_behavior(self.time_wire).0;
+
+        let mut errors = Vec::new();
+        if (actual_time as u64) != expected_time {
+            errors.push(EvalError {
+                time_step,
+                port: Some(self.time_port),
+                message: format!(
+                    "Expected output time to be {}, but was {}",
+                    expected_time, actual_time
+                ),
+            });
+        }
+        return errors;
+    }
+}
+
+impl FabricationEval for FabricateStopwatchEval {
+    fn table_column_names() -> &'static [&'static str] {
+        &["Start", "Stop", "Reset", "Time"]
+    }
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn expected_table_values() -> &'static [u64] {
+        &[
+            u64::MAX, u64::MAX, u64::MAX, 0,
+            0,        u64::MAX, u64::MAX, 0,
+            u64::MAX, u64::MAX, u64::MAX, 1,
+            u64::MAX, u64::MAX, u64::MAX, 2,
+            u64::MAX, 0,        u64::MAX, 3,
+            u64::MAX, u64::MAX, u64::MAX, 3,
+            u64::MAX, u64::MAX, 0,        0,
+            u64::MAX, u64::MAX, u64::MAX, 0,
+            0,        u64::MAX, u64::MAX, 0,
+            u64::MAX, u64::MAX, u64::MAX, 1,
+            u64::MAX, u64::MAX, u64::MAX, 2,
+            u64::MAX, u64::MAX, 0,        0,
+            u64::MAX, u64::MAX, u64::MAX, 1,
+            u64::MAX, u64::MAX, u64::MAX, 2,
+            u64::MAX, 0,        u64::MAX, 3,
+            u64::MAX, u64::MAX, u64::MAX, 3,
+            0,        u64::MAX, 0,        0,
+            u64::MAX, u64::MAX, u64::MAX, 1,
+            u64::MAX, u64::MAX, u64::MAX, 2,
+            u64::MAX, 0,        0,        0,
+            u64::MAX, u64::MAX, u64::MAX, 0,
+        ]
+    }
+
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
+}
+
+//===========================================================================//

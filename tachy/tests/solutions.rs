@@ -45,6 +45,11 @@ fn fabricate_mul() {
 }
 
 #[test]
+fn fabricate_stopwatch() {
+    test_solution("fabricate_stopwatch");
+}
+
+#[test]
 fn fabricate_xor() {
     test_solution("fabricate_xor");
 }

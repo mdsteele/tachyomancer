@@ -36,8 +36,9 @@ use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::save::Puzzle;
 use tachy::state::{
     CircuitEval, FabricateEggTimerEval, FabricateHalveEval, FabricateIncEval,
-    FabricateMulEval, FabricateXorEval, TutorialAddEval, TutorialDemuxEval,
-    TutorialMuxEval, TutorialOrEval, TutorialSumEval,
+    FabricateMulEval, FabricateStopwatchEval, FabricateXorEval,
+    TutorialAddEval, TutorialDemuxEval, TutorialMuxEval, TutorialOrEval,
+    TutorialSumEval,
 };
 
 //===========================================================================//
@@ -103,6 +104,9 @@ impl VerificationTray {
             Puzzle::FabricateMul => {
                 FabricationVerifyView::<FabricateMulEval>::new(right_bottom)
             }
+            Puzzle::FabricateStopwatch => FabricationVerifyView::<
+                FabricateStopwatchEval,
+            >::new(right_bottom),
             Puzzle::FabricateXor => {
                 FabricationVerifyView::<FabricateXorEval>::new(right_bottom)
             }

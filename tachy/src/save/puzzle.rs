@@ -66,6 +66,7 @@ pub enum Puzzle {
     AutomateBeacon,
     AutomateRobotArm,
     FabricateEggTimer,
+    FabricateStopwatch,
     SandboxBehavior,
     SandboxEvent,
 }
@@ -300,6 +301,16 @@ impl Puzzle {
                     "* $!Your goal is to construct an 8-bit multiplier.\n\
                      * $!The output should be the product of $*In1$* and \
                      $*In2$*.  This product will never be more than 255.",
+            },
+            Puzzle::FabricateStopwatch => &PuzzleData {
+                title: "Stopwatch",
+                kind: PuzzleKind::Fabricate,
+                allow_events: true,
+                init_size: (7, 7),
+                score_units: "Wire Length",
+                graph_bounds: (100, 150),
+                description: "TODO",
+                instructions: "TODO",
             },
             Puzzle::FabricateXor => &PuzzleData {
                 title: "1-Bit XOR Gate",

@@ -1,0 +1,47 @@
+puzzle = "FabricateStopwatch"
+score = 74
+time_steps = 21
+
+[circuit]
+size = [7, 7]
+
+[circuit.chips]
+p0p4 = "t1-Sample"
+p1p4 = "f2-Const(1)"
+p1p5 = "f0-Join"
+p2p5 = "f0-Latest"
+p2p6 = "f2-Sample"
+p3p2 = "f0-Join"
+p3p4 = "f2-Demux"
+p4p0 = "t0-Sample"
+p4p1 = "t0-Const(1)"
+p4p3 = "f1-Clock"
+p5p0 = "f0-Join"
+p5p1 = "t3-Inc"
+p5p3 = "f3-Sample"
+p6p1 = "f1-Delay"
+p6p2 = "f1-Latest"
+
+[circuit.wires]
+p0p2e = "TurnLeft"
+p0p3w = "SplitTee"
+p0p4e = "Stub"
+p0p5n = "TurnLeft"
+p1p2e = "Straight"
+p1p5e = "Stub"
+p1p6n = "TurnLeft"
+p2p2e = "Straight"
+p3p0n = "TurnLeft"
+p3p3s = "Straight"
+p3p5w = "TurnLeft"
+p3p6s = "TurnLeft"
+p4p0e = "Stub"
+p4p1e = "Stub"
+p4p2s = "TurnLeft"
+p4p4n = "SplitTee"
+p5p0s = "Stub"
+p5p2s = "Straight"
+p5p4w = "TurnLeft"
+p6p0s = "TurnLeft"
+p6p1s = "Stub"
+p6p3n = "SplitTee"

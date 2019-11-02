@@ -30,6 +30,11 @@ fn automate_sensors_small() {
 }
 
 #[test]
+fn automate_x_unit() {
+    test_solution("automate_x_unit");
+}
+
+#[test]
 fn fabricate_egg_timer() {
     test_solution("fabricate_egg_timer");
 }

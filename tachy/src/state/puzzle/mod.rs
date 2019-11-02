@@ -33,6 +33,7 @@ mod sensors;
 mod shared;
 mod tutor_bvr;
 mod tutor_evt;
+mod xunit;
 
 pub use self::beacon::BeaconEval;
 pub use self::fab_arith::{
@@ -49,6 +50,7 @@ pub use self::sensors::SensorsEval;
 pub use self::shared::TutorialBubblePosition;
 pub use self::tutor_bvr::{TutorialAddEval, TutorialMuxEval, TutorialOrEval};
 pub use self::tutor_evt::{TutorialDemuxEval, TutorialSumEval};
+pub use self::xunit::XUnitEval;
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
 use crate::geom::{Coords, Direction};
@@ -116,6 +118,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
+            Puzzle::AutomateXUnit => self::xunit::INTERFACES,
             Puzzle::CommandLander => self::lander::INTERFACES,
             Puzzle::FabricateEggTimer => self::fab_clock::EGG_TIMER_INTERFACES,
             Puzzle::FabricateHalve => self::fab_arith::HALVE_INTERFACES,
@@ -193,6 +196,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateSensors => {
             Box::new(self::sensors::SensorsEval::new(slots))
         }
+        Puzzle::AutomateXUnit => Box::new(XUnitEval::new(slots)),
         Puzzle::CommandLander => Box::new(LanderEval::new(slots)),
         Puzzle::FabricateEggTimer => {
             Box::new(FabricateEggTimerEval::new(slots))

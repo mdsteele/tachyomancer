@@ -141,6 +141,8 @@ impl CircuitEval {
                 self.errors.extend(
                     self.puzzle.end_cycle(self.time_step, &self.state),
                 );
+                needs_another_cycle |=
+                    self.puzzle.needs_another_cycle(self.time_step);
                 self.subcycle = 0;
                 self.cycle += 1;
                 if needs_another_cycle {
@@ -149,7 +151,10 @@ impl CircuitEval {
                         self.cycle
                     );
                     self.state.reset_for_cycle();
-                    self.puzzle.begin_cycle(&mut self.state);
+                    self.puzzle.begin_additional_cycle(
+                        self.time_step,
+                        &mut self.state,
+                    );
                     return EvalResult::Continue;
                 }
                 self.errors.extend(
@@ -333,9 +338,15 @@ pub trait PuzzleEval: Downcast {
         state: &mut CircuitState,
     ) -> Option<EvalScore>;
 
-    /// Called at the beginning of each cycle; optionally sends additional
-    /// events for that time step.  The default implementation is a no-op.
-    fn begin_cycle(&mut self, _state: &mut CircuitState) {}
+    /// Called at the beginning of each cycle except the first; optionally
+    /// sends additional events for that time step.  The default implementation
+    /// is a no-op.
+    fn begin_additional_cycle(
+        &mut self,
+        _time_step: u32,
+        _state: &mut CircuitState,
+    ) {
+    }
 
     /// Called at the end of each cycle; returns a list of errors (if any) that
     /// cause the puzzle to be failed (e.g. if an invalid value was sent to an
@@ -350,6 +361,12 @@ pub trait PuzzleEval: Downcast {
         _state: &CircuitState,
     ) -> Vec<EvalError> {
         Vec::new()
+    }
+
+    /// Called after end_cycle(); returns true if another cycle is needed.  The
+    /// default implementation always returns false.
+    fn needs_another_cycle(&self, _time_step: u32) -> bool {
+        false
     }
 
     /// Called at the end of each time step; returns a list of errors (if any)

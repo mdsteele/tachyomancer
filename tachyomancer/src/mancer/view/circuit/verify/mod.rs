@@ -89,6 +89,10 @@ impl VerificationTray {
             Puzzle::AutomateSensors => {
                 self::sensors::SensorsVerifyView::new(right_bottom)
             }
+            Puzzle::AutomateXUnit => {
+                // TODO: Make a verification view for AutomateXUnit
+                self::shared::NullVerifyView::new()
+            }
             Puzzle::CommandLander => {
                 self::lander::LanderVerifyView::new(right_bottom)
             }

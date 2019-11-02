@@ -67,6 +67,7 @@ pub enum Puzzle {
     AutomateRobotArm,
     FabricateEggTimer,
     FabricateStopwatch,
+    AutomateXUnit,
     SandboxBehavior,
     SandboxEvent,
 }
@@ -229,6 +230,26 @@ impl Puzzle {
                      value to terminate the scan.\n\
                      * $!Note that ($/x$/ AND 1) is 0 when $/x$/ is even, \
                      and 1 when $/x$/ is odd.",
+            },
+            Puzzle::AutomateXUnit => &PuzzleData {
+                title: "X-Unit",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (12, 9),
+                score_units: "Time",
+                graph_bounds: (300, 300),
+                description: "TODO",
+                instructions:
+                    "* $!Your goal is to make all 256 charges detonate at \
+                     once.\n\
+                     * $!Each charge has some delay between when the ignition \
+                     signal is sent and when it detonates.\n\
+                     * $!You must stagger the Fire events so that all charges \
+                     detonate in the same time step.\n\
+                     * $!You can measure the delay for a charge by sending a \
+                     test signal to the Ping port and waiting for an echo on \
+                     the Pong port.  The echo will take exactly twice that \
+                     charge's delay to come back.",
             },
             Puzzle::CommandLander => &PuzzleData {
                 title: "Orbital Lander",

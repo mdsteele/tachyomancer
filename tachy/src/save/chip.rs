@@ -192,7 +192,9 @@ impl ChipType {
     pub fn size(self) -> CoordsSize {
         match self {
             ChipType::Ram => CoordsSize::new(2, 2),
-            ChipType::Display => CoordsSize::new(2, 1),
+            ChipType::Display | ChipType::EggTimer | ChipType::Stopwatch => {
+                CoordsSize::new(2, 1)
+            }
             _ => CoordsSize::new(1, 1),
         }
     }

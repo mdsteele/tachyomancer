@@ -120,7 +120,7 @@ impl ChipModel {
             ChipType::Comment(_) => {
                 draw_comment_chip(resources, grid_matrix, coords, orient);
             }
-            ChipType::Display => {
+            ChipType::Display | ChipType::EggTimer | ChipType::Stopwatch => {
                 draw_chip_icon(
                     resources,
                     grid_matrix,
@@ -129,28 +129,30 @@ impl ChipModel {
                     chip_size,
                     ChipIcon::Blank,
                 );
-                let mut value: Option<String> = None;
+                let mut value: u32 = 0;
                 if let Some(grid) = opt_grid {
                     if grid.eval().is_some() {
                         let ports = ctype.ports(coords, orient);
-                        debug_assert_eq!(ports.len(), 1);
-                        value = grid
-                            .port_value(ports[0].loc())
-                            .map(|v| format!("{:05}", v))
+                        let index = match ctype {
+                            ChipType::Display => 0,
+                            ChipType::EggTimer => 1,
+                            ChipType::Stopwatch => 3,
+                            _ => unreachable!(),
+                        };
+                        value =
+                            grid.port_value(ports[index].loc()).unwrap_or(0);
                     }
                 }
-                if let Some(ref val) = value {
-                    draw_chip_string(
-                        resources,
-                        &grid_matrix,
-                        coords,
-                        oriented_size,
-                        Font::Led,
-                        0.6,
-                        &Color4::YELLOW5,
-                        &val,
-                    );
-                }
+                draw_chip_string(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    oriented_size,
+                    Font::Led,
+                    0.5,
+                    &Color4::YELLOW5,
+                    &format!("{:05}", value),
+                );
             }
             _ => {
                 let icon = chip_icon(ctype, orient);

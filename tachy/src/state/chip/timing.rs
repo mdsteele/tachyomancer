@@ -133,9 +133,9 @@ impl ChipEval for DelayChipEval {
 
 pub const EGG_TIMER_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::North),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Behavior, (1, 0), Direction::North),
+        (PortFlow::Send, PortColor::Event, (0, 0), Direction::North),
     ],
     constraints: &[
         AbstractConstraint::Equal(0, 1),
@@ -197,10 +197,10 @@ impl ChipEval for EggTimerChipEval {
 
 pub const STOPWATCH_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
         (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::North),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Recv, PortColor::Event, (1, 0), Direction::North),
+        (PortFlow::Recv, PortColor::Event, (1, 0), Direction::South),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::North),
     ],
     constraints: &[
         AbstractConstraint::Exact(0, WireSize::Zero),

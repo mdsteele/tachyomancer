@@ -127,7 +127,7 @@ pub const COMMENT_CHIP_DATA: &ChipData =
 //===========================================================================//
 
 pub const DISPLAY_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West)],
+    ports: &[(PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South)],
     constraints: &[],
     dependencies: &[],
 };

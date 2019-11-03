@@ -108,12 +108,11 @@ impl FabricateEggTimerEval {
 impl PuzzleEval for FabricateEggTimerEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         self.has_received_alarm_event = false;
         let expected = FabricateEggTimerEval::expected_table_values();
-        let start = (time_step as usize) * 3;
+        let start = (state.time_step() as usize) * 3;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -125,11 +124,8 @@ impl PuzzleEval for FabricateEggTimerEval {
         }
     }
 
-    fn end_cycle(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let expected_table = FabricateEggTimerEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected_table.len() {
@@ -153,11 +149,8 @@ impl PuzzleEval for FabricateEggTimerEval {
         return errors;
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let expected_table = FabricateEggTimerEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected_table.len() {
@@ -320,11 +313,10 @@ impl FabricateStopwatchEval {
 impl PuzzleEval for FabricateStopwatchEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let expected = FabricateStopwatchEval::expected_table_values();
-        let start = (time_step as usize) * 4;
+        let start = (state.time_step() as usize) * 4;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -342,11 +334,8 @@ impl PuzzleEval for FabricateStopwatchEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let expected_table = FabricateStopwatchEval::expected_table_values();
         let start = (time_step as usize) * 4;
         if start >= expected_table.len() {

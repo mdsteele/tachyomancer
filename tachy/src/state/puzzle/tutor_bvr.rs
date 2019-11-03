@@ -121,9 +121,9 @@ impl PuzzleEval for TutorialOrEval {
 
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
+        let time_step = state.time_step();
         if time_step >= 4 {
             Some(EvalScore::WireLength)
         } else {
@@ -133,11 +133,8 @@ impl PuzzleEval for TutorialOrEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let input1 = state.recv_behavior(self.input1_wire);
         let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 | input2;
@@ -276,11 +273,10 @@ impl TutorialMuxEval {
 impl PuzzleEval for TutorialMuxEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let expected = TutorialMuxEval::expected_table_values();
-        let start = (time_step as usize) * 4;
+        let start = (state.time_step() as usize) * 4;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -292,11 +288,8 @@ impl PuzzleEval for TutorialMuxEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let input0 = state.recv_behavior(self.input0_wire);
         let input1 = state.recv_behavior(self.input1_wire);
         let control = state.recv_behavior(self.control_wire);
@@ -432,11 +425,10 @@ impl TutorialAddEval {
 impl PuzzleEval for TutorialAddEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let expected = TutorialAddEval::expected_table_values();
-        let start = (time_step as usize) * 3;
+        let start = (state.time_step() as usize) * 3;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -447,11 +439,8 @@ impl PuzzleEval for TutorialAddEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let input1 = state.recv_behavior(self.input1_wire);
         let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 + input2;

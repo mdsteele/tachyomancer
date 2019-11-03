@@ -153,7 +153,6 @@ impl HeliostatEval {
 impl PuzzleEval for HeliostatEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let is_in_shadow = self.current_orbit_degrees >= 135
@@ -181,17 +180,13 @@ impl PuzzleEval for HeliostatEval {
         state.send_behavior(self.efficiency_wire, self.current_efficiency);
         state.send_behavior(self.pos_wire, self.current_pos);
         if self.energy >= ENERGY_NEEDED_FOR_VICTORY {
-            Some(EvalScore::Value(time_step))
+            Some(EvalScore::Value(state.time_step()))
         } else {
             None
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        _time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
         self.energy +=
             (ENERGY_MAX_GEN_PER_TIME_STEP * self.current_efficiency) / 100;
         self.energy = self.energy.saturating_sub(ENERGY_DRAIN_PER_TIME_STEP);

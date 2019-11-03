@@ -136,13 +136,12 @@ impl TutorialDemuxEval {
 impl PuzzleEval for TutorialDemuxEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         self.has_received_output0_event = false;
         self.has_received_output1_event = false;
         let expected = TutorialDemuxEval::expected_table_values();
-        let start = (time_step as usize) * 4;
+        let start = (state.time_step() as usize) * 4;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -155,11 +154,8 @@ impl PuzzleEval for TutorialDemuxEval {
         }
     }
 
-    fn end_cycle(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let expected_table = TutorialDemuxEval::expected_table_values();
         let start = (time_step as usize) * 4;
         if start >= expected_table.len() {
@@ -193,11 +189,8 @@ impl PuzzleEval for TutorialDemuxEval {
         return errors;
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        _state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let expected_table = TutorialDemuxEval::expected_table_values();
         let start = (time_step as usize) * 4;
         if start >= expected_table.len() {
@@ -325,12 +318,11 @@ impl TutorialSumEval {
 impl PuzzleEval for TutorialSumEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let expected = TutorialSumEval::expected_table_values();
-        let start =
-            (time_step as usize) * TutorialSumEval::table_column_names().len();
+        let start = (state.time_step() as usize)
+            * TutorialSumEval::table_column_names().len();
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -345,11 +337,8 @@ impl PuzzleEval for TutorialSumEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let expected_table = TutorialSumEval::expected_table_values();
         let start =
             (time_step as usize) * TutorialSumEval::table_column_names().len();

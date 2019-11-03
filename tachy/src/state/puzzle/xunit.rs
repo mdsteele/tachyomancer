@@ -137,7 +137,8 @@ impl XUnitEval {
         }
     }
 
-    fn send_next_pong(&mut self, time_step: u32, state: &mut CircuitState) {
+    fn send_next_pong(&mut self, state: &mut CircuitState) {
+        let time_step = state.time_step();
         if let Some(charges) = self.test_signals.get_mut(&time_step) {
             debug_assert!(!charges.is_empty());
             if let Some(&charge) = charges.iter().next() {
@@ -154,42 +155,33 @@ impl XUnitEval {
 impl PuzzleEval for XUnitEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
-        if time_step == 0 {
+        if state.time_step() == 0 {
             state.send_event(self.proxy_wire, 0);
         }
-        self.send_next_pong(time_step, state);
+        self.send_next_pong(state);
         if self.any_detonated {
-            Some(EvalScore::Value(time_step))
+            Some(EvalScore::Value(state.time_step()))
         } else {
             None
         }
     }
 
-    fn begin_additional_cycle(
-        &mut self,
-        time_step: u32,
-        state: &mut CircuitState,
-    ) {
-        self.send_next_pong(time_step, state);
+    fn begin_additional_cycle(&mut self, state: &mut CircuitState) {
+        self.send_next_pong(state);
     }
 
-    fn end_cycle(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
         if let Some(charge) = state.recv_event(self.ping_wire) {
-            let pong_time = time_step + 2 * delay_for(charge);
+            let pong_time = state.time_step() + 2 * delay_for(charge);
             self.test_signals
                 .entry(pong_time)
                 .or_insert_with(BTreeSet::new)
                 .insert(charge);
         }
         if let Some(charge) = state.recv_event(self.fire_wire) {
-            let fire_time = time_step + delay_for(charge);
+            let fire_time = state.time_step() + delay_for(charge);
             self.detonations
                 .entry(fire_time)
                 .or_insert_with(BTreeSet::new)
@@ -202,19 +194,15 @@ impl PuzzleEval for XUnitEval {
         self.test_signals.contains_key(&time_step)
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        _state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let mut errors = Vec::<EvalError>::new();
-        match self.detonations.remove(&time_step) {
+        match self.detonations.remove(&state.time_step()) {
             Some(charges) => {
                 debug_assert!(!charges.is_empty());
                 self.any_detonated = true;
                 if charges.len() < CHARGE_DELAYS.len() {
                     errors.push(EvalError {
-                        time_step,
+                        time_step: state.time_step(),
                         port: None,
                         message: format!(
                             "Only {} out of {} charges were detonated at once",

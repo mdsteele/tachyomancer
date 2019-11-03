@@ -153,29 +153,24 @@ impl GrappleEval {
 impl PuzzleEval for GrappleEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         state.send_behavior(self.port_charge_wire, self.current_port_charge);
         state.send_behavior(self.stbd_charge_wire, self.current_stbd_charge);
         if self.num_coils_fired >= STARTING_CHARGES.len() {
-            Some(EvalScore::Value(time_step))
+            Some(EvalScore::Value(state.time_step()))
         } else {
             None
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let mut errors = Vec::new();
         let old_port_charge = self.current_port_charge;
         let old_stbd_charge = self.current_stbd_charge;
         let mut fired = false;
         fired |= coil_control(
-            time_step,
+            state.time_step(),
             self.port_ctrl_port,
             state.recv_behavior(self.port_ctrl_wire),
             &mut self.current_port_charge,
@@ -183,7 +178,7 @@ impl PuzzleEval for GrappleEval {
             &mut errors,
         );
         fired |= coil_control(
-            time_step,
+            state.time_step(),
             self.stbd_ctrl_port,
             state.recv_behavior(self.stbd_ctrl_wire),
             &mut self.current_stbd_charge,

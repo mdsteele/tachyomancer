@@ -139,10 +139,9 @@ impl BeaconEval {
 impl PuzzleEval for BeaconEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
-        if (time_step % 20) == 0 {
+        if (state.time_step() % 20) == 0 {
             let x = self.rng.rand_u4();
             let y = self.rng.rand_u4();
             self.current_opt = Point2::new(x, y);
@@ -152,17 +151,13 @@ impl PuzzleEval for BeaconEval {
         state.send_behavior(self.pos_x_wire, self.current_pos.x);
         state.send_behavior(self.pos_y_wire, self.current_pos.y);
         if self.energy >= 5000 {
-            Some(EvalScore::Value(time_step))
+            Some(EvalScore::Value(state.time_step()))
         } else {
             None
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        _time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let delta = 10
             * Point2::new(
                 self.current_pos.x as i32 - self.current_opt.x as i32,

@@ -105,9 +105,9 @@ impl PuzzleEval for FabricateXorEval {
 
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
+        let time_step = state.time_step();
         if time_step >= 4 {
             Some(EvalScore::WireLength)
         } else {
@@ -117,11 +117,8 @@ impl PuzzleEval for FabricateXorEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let input1 = state.recv_behavior(self.input1_wire);
         let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 ^ input2;
@@ -233,11 +230,10 @@ impl FabricateMulEval {
 impl PuzzleEval for FabricateMulEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let expected = FabricateMulEval::expected_table_values();
-        let start = (time_step as usize) * 3;
+        let start = (state.time_step() as usize) * 3;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -248,11 +244,8 @@ impl PuzzleEval for FabricateMulEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let input1 = state.recv_behavior(self.input1_wire);
         let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 * input2;
@@ -358,11 +351,10 @@ impl FabricateHalveEval {
 impl PuzzleEval for FabricateHalveEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let expected = FabricateHalveEval::expected_table_values();
-        let start = (time_step as usize) * 2;
+        let start = (state.time_step() as usize) * 2;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -371,11 +363,8 @@ impl PuzzleEval for FabricateHalveEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let input = state.recv_behavior(self.input_wire);
         let expected = input >> 1;
         let actual = state.recv_behavior(self.output_wire);
@@ -490,12 +479,11 @@ impl FabricateIncEval {
 impl PuzzleEval for FabricateIncEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         self.has_received_output_event = false;
         let expected = FabricateIncEval::expected_table_values();
-        let start = (time_step as usize) * 3;
+        let start = (state.time_step() as usize) * 3;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -508,11 +496,8 @@ impl PuzzleEval for FabricateIncEval {
         }
     }
 
-    fn end_cycle(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let expected_table = FabricateIncEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected_table.len() {
@@ -536,11 +521,8 @@ impl PuzzleEval for FabricateIncEval {
         return errors;
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        _state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let expected_table = FabricateIncEval::expected_table_values();
         let start = (time_step as usize) * 3;
         if start >= expected_table.len() {

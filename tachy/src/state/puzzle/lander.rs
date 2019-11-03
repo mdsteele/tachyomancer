@@ -152,7 +152,6 @@ impl PuzzleEval for LanderEval {
 
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let altitude = self.current_altitude();
@@ -162,15 +161,12 @@ impl PuzzleEval for LanderEval {
         if altitude > 0 {
             None
         } else {
-            Some(EvalScore::Value(time_step))
+            Some(EvalScore::Value(state.time_step()))
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let time_step = state.time_step();
         let port_thrust = state.recv_behavior(self.port_wire);
         let stbd_thrust = state.recv_behavior(self.stbd_wire);
         let (port_thrust, stbd_thrust) =

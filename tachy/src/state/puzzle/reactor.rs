@@ -130,7 +130,6 @@ impl AutomateReactorEval {
 impl PuzzleEval for AutomateReactorEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         let current_power = self.current_power.round() as u32;
@@ -151,17 +150,13 @@ impl PuzzleEval for AutomateReactorEval {
         state.send_behavior(self.target_wire, self.current_target);
 
         if self.num_targets_held >= TARGETS.len() {
-            Some(EvalScore::Value(time_step))
+            Some(EvalScore::Value(state.time_step()))
         } else {
             None
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        _time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let rod_values: Vec<u32> = self
             .rod_wires
             .iter()

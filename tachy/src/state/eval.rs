@@ -53,7 +53,6 @@ pub enum EvalScore {
 //===========================================================================//
 
 pub struct CircuitEval {
-    time_step: u32,  // which time step we're on
     cycle: u32,      // which cycle of the time step we're on
     subcycle: usize, // index into `chips` of next chip group to eval
     errors: Vec<EvalError>,
@@ -73,7 +72,6 @@ impl CircuitEval {
         interact: Rc<RefCell<CircuitInteraction>>,
     ) -> CircuitEval {
         CircuitEval {
-            time_step: 0,
             cycle: 0,
             subcycle: 0,
             errors: Vec::new(),
@@ -94,7 +92,7 @@ impl CircuitEval {
     }
 
     pub fn time_step(&self) -> u32 {
-        self.time_step
+        self.state.time_step
     }
 
     pub fn subcycle(&self) -> usize {
@@ -138,11 +136,9 @@ impl CircuitEval {
                             chip.needs_another_cycle(&self.state);
                     }
                 }
-                self.errors.extend(
-                    self.puzzle.end_cycle(self.time_step, &self.state),
-                );
+                self.errors.extend(self.puzzle.end_cycle(&self.state));
                 needs_another_cycle |=
-                    self.puzzle.needs_another_cycle(self.time_step);
+                    self.puzzle.needs_another_cycle(self.time_step());
                 self.subcycle = 0;
                 self.cycle += 1;
                 if needs_another_cycle {
@@ -151,15 +147,10 @@ impl CircuitEval {
                         self.cycle
                     );
                     self.state.reset_for_cycle();
-                    self.puzzle.begin_additional_cycle(
-                        self.time_step,
-                        &mut self.state,
-                    );
+                    self.puzzle.begin_additional_cycle(&mut self.state);
                     return EvalResult::Continue;
                 }
-                self.errors.extend(
-                    self.puzzle.end_time_step(self.time_step, &self.state),
-                );
+                self.errors.extend(self.puzzle.end_time_step(&self.state));
                 for group in self.chips.iter_mut() {
                     for chip in group.iter_mut() {
                         chip.on_time_step();
@@ -167,18 +158,17 @@ impl CircuitEval {
                 }
                 debug_log!(
                     "Time step {} complete after {} cycle(s)",
-                    self.time_step,
+                    self.time_step(),
                     self.cycle
                 );
                 self.state.reset_for_cycle();
                 self.cycle = 0;
-                self.time_step += 1;
+                self.state.time_step += 1;
                 return EvalResult::Continue;
             }
             if self.cycle == 0 && self.subcycle == 0 {
-                if let Some(score) = self
-                    .puzzle
-                    .begin_time_step(self.time_step, &mut self.state)
+                if let Some(score) =
+                    self.puzzle.begin_time_step(&mut self.state)
                 {
                     return if self.errors.is_empty() {
                         EvalResult::Victory(score)
@@ -211,9 +201,9 @@ impl CircuitEval {
     }
 
     pub fn step_cycle(&mut self) -> EvalResult {
-        let current_time_step = self.time_step;
+        let current_time_step = self.time_step();
         let current_cycle = self.cycle;
-        while self.time_step == current_time_step
+        while self.time_step() == current_time_step
             && self.cycle == current_cycle
         {
             match self.step_subcycle() {
@@ -225,8 +215,8 @@ impl CircuitEval {
     }
 
     pub fn step_time(&mut self) -> EvalResult {
-        let current_time_step = self.time_step;
-        while self.time_step == current_time_step {
+        let current_time_step = self.time_step();
+        while self.time_step() == current_time_step {
             match self.step_subcycle() {
                 EvalResult::Continue => {}
                 result => return result,
@@ -239,6 +229,7 @@ impl CircuitEval {
 //===========================================================================//
 
 pub struct CircuitState {
+    time_step: u32,
     // "Null" wires are ports that have no wire fragments connected to them.
     // We treat them as wires for ease of evaluation, but we don't count the
     // circuit state as having "changed" for the purposes of debug stepping
@@ -252,11 +243,16 @@ pub struct CircuitState {
 impl CircuitState {
     fn new(num_values: usize, null_wires: HashSet<usize>) -> CircuitState {
         CircuitState {
+            time_step: 0,
             null_wires,
             values: vec![(0, false); num_values],
             breakpoints: vec![],
             changed: false,
         }
+    }
+
+    pub fn time_step(&self) -> u32 {
+        self.time_step
     }
 
     pub fn recv_behavior(&self, slot: usize) -> u32 {
@@ -338,19 +334,13 @@ pub trait PuzzleEval: Downcast {
     /// circuit.
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore>;
 
     /// Called at the beginning of each cycle except the first; optionally
     /// sends additional events for that time step.  The default implementation
     /// is a no-op.
-    fn begin_additional_cycle(
-        &mut self,
-        _time_step: u32,
-        _state: &mut CircuitState,
-    ) {
-    }
+    fn begin_additional_cycle(&mut self, _state: &mut CircuitState) {}
 
     /// Called at the end of each cycle; returns a list of errors (if any) that
     /// cause the puzzle to be failed (e.g. if an invalid value was sent to an
@@ -359,11 +349,7 @@ pub trait PuzzleEval: Downcast {
     ///
     /// This is the method that should be used for receiving events at puzzle
     /// interface ports.
-    fn end_cycle(
-        &mut self,
-        _time_step: u32,
-        _state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_cycle(&mut self, _state: &CircuitState) -> Vec<EvalError> {
         Vec::new()
     }
 
@@ -380,11 +366,7 @@ pub trait PuzzleEval: Downcast {
     ///
     /// This is the method that should be used for receiving behavior values at
     /// puzzle interface ports.
-    fn end_time_step(
-        &mut self,
-        _time_step: u32,
-        _state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, _state: &CircuitState) -> Vec<EvalError> {
         Vec::new()
     }
 }
@@ -396,7 +378,6 @@ pub struct NullPuzzleEval();
 impl PuzzleEval for NullPuzzleEval {
     fn begin_time_step(
         &mut self,
-        _step: u32,
         _state: &mut CircuitState,
     ) -> Option<EvalScore> {
         None

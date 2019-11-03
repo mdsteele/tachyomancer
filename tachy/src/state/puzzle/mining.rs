@@ -154,7 +154,6 @@ impl MiningRobotEval {
 impl PuzzleEval for MiningRobotEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         state.send_behavior(self.dist_wire, self.current_position as u32);
@@ -164,17 +163,13 @@ impl PuzzleEval for MiningRobotEval {
             state.send_event(self.found_wire, ore);
         }
         if self.ore_at_base >= ORE_NEEDED_AT_BASE {
-            Some(EvalScore::Value(time_step))
+            Some(EvalScore::Value(state.time_step()))
         } else {
             None
         }
     }
 
-    fn end_cycle(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let mut errors = Vec::<EvalError>::new();
         if state.recv_event(self.back_wire).is_some() {
             self.returning_to_base = true;
@@ -192,7 +187,7 @@ impl PuzzleEval for MiningRobotEval {
                     ore, self.ore_carried, MAX_ORE_CARRIED
                 );
                 let error = EvalError {
-                    time_step,
+                    time_step: state.time_step(),
                     port: Some(self.dig_port),
                     message,
                 };
@@ -202,11 +197,7 @@ impl PuzzleEval for MiningRobotEval {
         errors
     }
 
-    fn end_time_step(
-        &mut self,
-        _time_step: u32,
-        _state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, _state: &CircuitState) -> Vec<EvalError> {
         let last_position = self.ore_deposits.len() - 1;
         if self.returning_to_base {
             if self.current_position > 0 {

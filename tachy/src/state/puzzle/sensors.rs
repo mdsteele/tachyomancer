@@ -115,11 +115,10 @@ impl SensorsEval {
 impl PuzzleEval for SensorsEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         if self.num_goals_found >= GOALS.len() {
-            Some(EvalScore::Value(time_step))
+            Some(EvalScore::Value(state.time_step()))
         } else {
             state.send_behavior(self.upper_wire, self.current_upper);
             state.send_behavior(self.lower_wire, self.current_lower);
@@ -127,11 +126,7 @@ impl PuzzleEval for SensorsEval {
         }
     }
 
-    fn end_time_step(
-        &mut self,
-        _time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let out = state.recv_behavior(self.out_wire);
         if self.current_lower == self.current_upper {
             if out == self.current_lower {

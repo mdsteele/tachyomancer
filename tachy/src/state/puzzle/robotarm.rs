@@ -191,14 +191,13 @@ impl RobotArmEval {
 impl PuzzleEval for RobotArmEval {
     fn begin_time_step(
         &mut self,
-        time_step: u32,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         if self.time_to_next_command == Some(0) {
             self.time_to_next_command = None;
             self.num_completed_commands += 1;
             if self.num_completed_commands >= NUM_COMMANDS_FOR_VICTORY {
-                return Some(EvalScore::Value(time_step));
+                return Some(EvalScore::Value(state.time_step()));
             }
             let quarter = NUM_POSITIONS / 4;
             self.last_command = (self.last_command
@@ -218,18 +217,14 @@ impl PuzzleEval for RobotArmEval {
         return None;
     }
 
-    fn end_cycle(
-        &mut self,
-        time_step: u32,
-        state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let mut errors = Vec::<EvalError>::new();
         if state.recv_event(self.xmit_wire).is_some() {
             if !self.has_completed_command {
                 let message = "Sent radio reply without first completing the \
                                instructed manipulation.";
                 let error = EvalError {
-                    time_step,
+                    time_step: state.time_step(),
                     port: Some(self.xmit_port),
                     message: message.to_string(),
                 };
@@ -238,7 +233,7 @@ impl PuzzleEval for RobotArmEval {
                 let message = "Sent more than one radio reply for the same \
                                command.";
                 let error = EvalError {
-                    time_step,
+                    time_step: state.time_step(),
                     port: Some(self.xmit_port),
                     message: message.to_string(),
                 };
@@ -262,7 +257,7 @@ impl PuzzleEval for RobotArmEval {
                         self.current_position, self.last_command
                     );
                     let error = EvalError {
-                        time_step,
+                        time_step: state.time_step(),
                         port: Some(self.manip_port),
                         message,
                     };
@@ -270,7 +265,7 @@ impl PuzzleEval for RobotArmEval {
                 } else if self.has_completed_command {
                     let message = "Already performed manipulation.";
                     let error = EvalError {
-                        time_step,
+                        time_step: state.time_step(),
                         port: Some(self.manip_port),
                         message: message.to_string(),
                     };
@@ -283,11 +278,7 @@ impl PuzzleEval for RobotArmEval {
         errors
     }
 
-    fn end_time_step(
-        &mut self,
-        _time_step: u32,
-        _state: &CircuitState,
-    ) -> Vec<EvalError> {
+    fn end_time_step(&mut self, _state: &CircuitState) -> Vec<EvalError> {
         if self.has_sent_radio_reply && self.time_to_next_command.is_none() {
             self.time_to_next_command =
                 Some(self.rng.rand_int(

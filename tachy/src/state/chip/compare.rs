@@ -59,8 +59,8 @@ impl CmpChipEval {
 
 impl ChipEval for CmpChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let input1 = state.recv_behavior(self.input1).0;
-        let input2 = state.recv_behavior(self.input2).0;
+        let input1 = state.recv_behavior(self.input1);
+        let input2 = state.recv_behavior(self.input2);
         let output = if input1 < input2 { 1 } else { 0 };
         state.send_behavior(self.output, output);
     }
@@ -92,8 +92,8 @@ impl CmpEqChipEval {
 
 impl ChipEval for CmpEqChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let input1 = state.recv_behavior(self.input1).0;
-        let input2 = state.recv_behavior(self.input2).0;
+        let input1 = state.recv_behavior(self.input1);
+        let input2 = state.recv_behavior(self.input2);
         let output = if input1 <= input2 { 1 } else { 0 };
         state.send_behavior(self.output, output);
     }
@@ -125,8 +125,8 @@ impl EqChipEval {
 
 impl ChipEval for EqChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let input1 = state.recv_behavior(self.input1).0;
-        let input2 = state.recv_behavior(self.input2).0;
+        let input1 = state.recv_behavior(self.input1);
+        let input2 = state.recv_behavior(self.input2);
         let output = if input1 == input2 { 1 } else { 0 };
         state.send_behavior(self.output, output);
     }

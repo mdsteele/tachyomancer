@@ -138,10 +138,10 @@ impl PuzzleEval for TutorialOrEval {
         time_step: u32,
         state: &CircuitState,
     ) -> Vec<EvalError> {
-        let input1 = state.recv_behavior(self.input1_wire).0;
-        let input2 = state.recv_behavior(self.input2_wire).0;
+        let input1 = state.recv_behavior(self.input1_wire);
+        let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 | input2;
-        let actual = state.recv_behavior(self.output_wire).0;
+        let actual = state.recv_behavior(self.output_wire);
         self.table_values[3 * (time_step as usize) + 2] = actual as u64;
         if actual != expected {
             let error = EvalError {
@@ -297,11 +297,11 @@ impl PuzzleEval for TutorialMuxEval {
         time_step: u32,
         state: &CircuitState,
     ) -> Vec<EvalError> {
-        let input0 = state.recv_behavior(self.input0_wire).0;
-        let input1 = state.recv_behavior(self.input1_wire).0;
-        let control = state.recv_behavior(self.control_wire).0;
+        let input0 = state.recv_behavior(self.input0_wire);
+        let input1 = state.recv_behavior(self.input1_wire);
+        let control = state.recv_behavior(self.control_wire);
         let expected = if control == 0 { input0 } else { input1 };
-        let actual = state.recv_behavior(self.output_wire).0;
+        let actual = state.recv_behavior(self.output_wire);
         self.table_values[4 * (time_step as usize) + 3] = actual as u64;
         if actual != expected {
             let error = EvalError {
@@ -452,10 +452,10 @@ impl PuzzleEval for TutorialAddEval {
         time_step: u32,
         state: &CircuitState,
     ) -> Vec<EvalError> {
-        let input1 = state.recv_behavior(self.input1_wire).0;
-        let input2 = state.recv_behavior(self.input2_wire).0;
+        let input1 = state.recv_behavior(self.input1_wire);
+        let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 + input2;
-        let actual = state.recv_behavior(self.output_wire).0;
+        let actual = state.recv_behavior(self.output_wire);
         self.table_values[3 * (time_step as usize) + 2] = actual as u64;
         if actual != expected {
             let error = EvalError {

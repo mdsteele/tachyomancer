@@ -62,12 +62,13 @@ impl AddChipEval {
 
 impl ChipEval for AddChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
-            let sum = (input1 as u64) + (input2 as u64);
-            let lo = (sum & (self.size.mask() as u64)) as u32;
-            state.send_behavior(self.output, lo);
+        if state.behavior_changed(self.input1)
+            || state.behavior_changed(self.input2)
+        {
+            let input1 = state.recv_behavior(self.input1);
+            let input2 = state.recv_behavior(self.input2);
+            let sum = input1.wrapping_add(input2) & self.size.mask();
+            state.send_behavior(self.output, sum);
         }
     }
 }
@@ -114,9 +115,11 @@ impl Add2BitChipEval {
 
 impl ChipEval for Add2BitChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
+        if state.behavior_changed(self.input1)
+            || state.behavior_changed(self.input2)
+        {
+            let input1 = state.recv_behavior(self.input1);
+            let input2 = state.recv_behavior(self.input2);
             let sum = input1 + input2;
             let lo = sum & 0b11;
             let hi = (sum >> 2) & 0b11;
@@ -155,10 +158,8 @@ impl HalveChipEval {
 
 impl ChipEval for HalveChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input, changed) = state.recv_behavior(self.input);
-        if changed {
-            state.send_behavior(self.output, input >> 1);
-        }
+        let input = state.recv_behavior(self.input);
+        state.send_behavior(self.output, input >> 1);
     }
 }
 
@@ -190,12 +191,13 @@ impl MulChipEval {
 
 impl ChipEval for MulChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
-            let prod = (input1 as u64) * (input2 as u64);
-            let lo = (prod & (self.size.mask() as u64)) as u32;
-            state.send_behavior(self.output, lo);
+        if state.behavior_changed(self.input1)
+            || state.behavior_changed(self.input2)
+        {
+            let input1 = state.recv_behavior(self.input1);
+            let input2 = state.recv_behavior(self.input2);
+            let prod = input1.wrapping_mul(input2) & self.size.mask();
+            state.send_behavior(self.output, prod);
         }
     }
 }
@@ -242,9 +244,11 @@ impl Mul4BitChipEval {
 
 impl ChipEval for Mul4BitChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
+        if state.behavior_changed(self.input1)
+            || state.behavior_changed(self.input2)
+        {
+            let input1 = state.recv_behavior(self.input1);
+            let input2 = state.recv_behavior(self.input2);
             let product = input1 * input2;
             let lo = product & 0xf;
             let hi = (product >> 4) & 0xf;
@@ -280,9 +284,11 @@ impl SubChipEval {
 
 impl ChipEval for SubChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
+        if state.behavior_changed(self.input1)
+            || state.behavior_changed(self.input2)
+        {
+            let input1 = state.recv_behavior(self.input1);
+            let input2 = state.recv_behavior(self.input2);
             let diff = (input1 as i64) - (input2 as i64);
             state.send_behavior(self.output, diff.abs() as u32);
         }

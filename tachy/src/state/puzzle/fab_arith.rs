@@ -122,10 +122,10 @@ impl PuzzleEval for FabricateXorEval {
         time_step: u32,
         state: &CircuitState,
     ) -> Vec<EvalError> {
-        let input1 = state.recv_behavior(self.input1_wire).0;
-        let input2 = state.recv_behavior(self.input2_wire).0;
+        let input1 = state.recv_behavior(self.input1_wire);
+        let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 ^ input2;
-        let actual = state.recv_behavior(self.output_wire).0;
+        let actual = state.recv_behavior(self.output_wire);
         self.table_values[3 * (time_step as usize) + 2] = actual as u64;
         if actual != expected {
             let error = EvalError {
@@ -253,10 +253,10 @@ impl PuzzleEval for FabricateMulEval {
         time_step: u32,
         state: &CircuitState,
     ) -> Vec<EvalError> {
-        let input1 = state.recv_behavior(self.input1_wire).0;
-        let input2 = state.recv_behavior(self.input2_wire).0;
+        let input1 = state.recv_behavior(self.input1_wire);
+        let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 * input2;
-        let actual = state.recv_behavior(self.output_wire).0;
+        let actual = state.recv_behavior(self.output_wire);
         self.table_values[3 * (time_step as usize) + 2] = actual as u64;
         if actual != expected {
             let error = EvalError {
@@ -376,9 +376,9 @@ impl PuzzleEval for FabricateHalveEval {
         time_step: u32,
         state: &CircuitState,
     ) -> Vec<EvalError> {
-        let input = state.recv_behavior(self.input_wire).0;
+        let input = state.recv_behavior(self.input_wire);
         let expected = input >> 1;
-        let actual = state.recv_behavior(self.output_wire).0;
+        let actual = state.recv_behavior(self.output_wire);
         self.table_values[2 * (time_step as usize) + 1] = actual as u64;
         if actual != expected {
             let error = EvalError {

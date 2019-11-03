@@ -171,7 +171,7 @@ impl PuzzleEval for BeaconEval {
         let dist = (delta.x * delta.x + delta.y * delta.y).sqrt() as u32;
         self.energy += 85;
         self.energy = self.energy.saturating_sub(dist);
-        match state.recv_behavior(self.motor_wire).0 {
+        match state.recv_behavior(self.motor_wire) {
             0x8 if self.current_pos.y < 0xf => self.current_pos.y += 1,
             0x4 if self.current_pos.y > 0x0 => self.current_pos.y -= 1,
             0x2 if self.current_pos.x > 0x0 => self.current_pos.x -= 1,

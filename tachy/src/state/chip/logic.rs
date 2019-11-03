@@ -60,11 +60,9 @@ impl AndChipEval {
 
 impl ChipEval for AndChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
-            state.send_behavior(self.output, input1 & input2);
-        }
+        let input1 = state.recv_behavior(self.input1);
+        let input2 = state.recv_behavior(self.input2);
+        state.send_behavior(self.output, input1 & input2);
     }
 }
 
@@ -110,10 +108,10 @@ impl MuxChipEval {
 
 impl ChipEval for MuxChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let output = if state.recv_behavior(self.control).0 == 0 {
-            state.recv_behavior(self.input1).0
+        let output = if state.recv_behavior(self.control) == 0 {
+            state.recv_behavior(self.input1)
         } else {
-            state.recv_behavior(self.input2).0
+            state.recv_behavior(self.input2)
         };
         state.send_behavior(self.output, output);
     }
@@ -152,7 +150,7 @@ impl NotChipEval {
 
 impl ChipEval for NotChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input, _) = state.recv_behavior(self.input);
+        let input = state.recv_behavior(self.input);
         state.send_behavior(self.output, (!input) & self.size.mask());
     }
 }
@@ -183,11 +181,9 @@ impl OrChipEval {
 
 impl ChipEval for OrChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
-            state.send_behavior(self.output, input1 | input2);
-        }
+        let input1 = state.recv_behavior(self.input1);
+        let input2 = state.recv_behavior(self.input2);
+        state.send_behavior(self.output, input1 | input2);
     }
 }
 
@@ -217,11 +213,9 @@ impl XorChipEval {
 
 impl ChipEval for XorChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
-            state.send_behavior(self.output, input1 ^ input2);
-        }
+        let input1 = state.recv_behavior(self.input1);
+        let input2 = state.recv_behavior(self.input2);
+        state.send_behavior(self.output, input1 ^ input2);
     }
 }
 
@@ -269,7 +263,7 @@ mod tests {
             eval.circuit_state_mut().send_behavior(0, inputs.0);
             eval.circuit_state_mut().send_behavior(1, inputs.1);
             let _ = eval.step_time();
-            let output = eval.circuit_state_mut().recv_behavior(5).0;
+            let output = eval.circuit_state_mut().recv_behavior(5);
             assert_eq!(output, inputs.0 | inputs.1, "inputs: {:?}", inputs);
         }
     }

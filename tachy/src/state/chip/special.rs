@@ -200,8 +200,8 @@ impl RamChipEval {
 
 impl ChipEval for RamChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let addr1 = state.recv_behavior(self.input_b1).0 as usize;
-        let addr2 = state.recv_behavior(self.input_b2).0 as usize;
+        let addr1 = state.recv_behavior(self.input_b1) as usize;
+        let addr2 = state.recv_behavior(self.input_b2) as usize;
         if let Some(value1) = state.recv_event(self.input_e1) {
             self.values[addr1] = value1;
         }

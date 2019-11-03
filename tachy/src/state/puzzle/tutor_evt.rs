@@ -354,7 +354,7 @@ impl PuzzleEval for TutorialSumEval {
         let start =
             (time_step as usize) * TutorialSumEval::table_column_names().len();
         let expected = expected_table[start + 2] as u32;
-        let actual = state.recv_behavior(self.output_wire).0;
+        let actual = state.recv_behavior(self.output_wire);
         self.table_values[start + 2] = actual as u64;
         if actual != expected {
             let error = EvalError {

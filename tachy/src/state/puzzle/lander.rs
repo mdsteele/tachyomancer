@@ -171,8 +171,8 @@ impl PuzzleEval for LanderEval {
         time_step: u32,
         state: &CircuitState,
     ) -> Vec<EvalError> {
-        let port_thrust = state.recv_behavior(self.port_wire).0;
-        let stbd_thrust = state.recv_behavior(self.stbd_wire).0;
+        let port_thrust = state.recv_behavior(self.port_wire);
+        let stbd_thrust = state.recv_behavior(self.stbd_wire);
         let (port_thrust, stbd_thrust) =
             limit_thrust(port_thrust, stbd_thrust, self.current_fuel);
         debug_assert!(port_thrust + stbd_thrust <= self.current_fuel);

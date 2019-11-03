@@ -259,8 +259,12 @@ impl CircuitState {
         }
     }
 
-    pub fn recv_behavior(&self, slot: usize) -> (u32, bool) {
-        self.values[slot]
+    pub fn recv_behavior(&self, slot: usize) -> u32 {
+        self.values[slot].0
+    }
+
+    pub fn behavior_changed(&self, slot: usize) -> bool {
+        self.values[slot].1
     }
 
     pub fn recv_event(&self, slot: usize) -> Option<u32> {

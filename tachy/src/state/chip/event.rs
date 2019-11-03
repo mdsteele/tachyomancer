@@ -65,7 +65,7 @@ impl DemuxChipEval {
 impl ChipEval for DemuxChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         if let Some(value) = state.recv_event(self.input) {
-            if state.recv_behavior(self.control).0 != 0 {
+            if state.recv_behavior(self.control) != 0 {
                 state.send_event(self.output1, value);
             } else {
                 state.send_event(self.output2, value);
@@ -150,7 +150,7 @@ impl FilterChipEval {
 impl ChipEval for FilterChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         if let Some(value) = state.recv_event(self.input) {
-            if state.recv_behavior(self.control).0 == 0 {
+            if state.recv_behavior(self.control) == 0 {
                 state.send_event(self.output, value);
             }
         }
@@ -198,7 +198,7 @@ impl IncChipEval {
 impl ChipEval for IncChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         if let Some(input1) = state.recv_event(self.input1) {
-            let input2 = state.recv_behavior(self.input2).0;
+            let input2 = state.recv_behavior(self.input2);
             let output = (input1 + input2) & self.size.mask();
             state.send_event(self.output, output);
         }
@@ -324,7 +324,7 @@ impl SampleChipEval {
 impl ChipEval for SampleChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         if state.has_event(self.input_e) {
-            let (value, _) = state.recv_behavior(self.input_b);
+            let value = state.recv_behavior(self.input_b);
             state.send_event(self.output, value);
         }
     }

@@ -164,7 +164,7 @@ impl PuzzleEval for FabricateEggTimerEval {
             return vec![];
         }
         let expected_remain = expected_table[start + 1];
-        let actual_remain = state.recv_behavior(self.remain_wire).0;
+        let actual_remain = state.recv_behavior(self.remain_wire);
         let expected_alarm = expected_table[start + 2];
 
         let mut errors = Vec::new();
@@ -353,7 +353,7 @@ impl PuzzleEval for FabricateStopwatchEval {
             return vec![];
         }
         let expected_time = expected_table[start + 3];
-        let actual_time = state.recv_behavior(self.time_wire).0;
+        let actual_time = state.recv_behavior(self.time_wire);
 
         let mut errors = Vec::new();
         if (actual_time as u64) != expected_time {

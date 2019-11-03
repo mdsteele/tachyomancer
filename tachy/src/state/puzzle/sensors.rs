@@ -132,7 +132,7 @@ impl PuzzleEval for SensorsEval {
         _time_step: u32,
         state: &CircuitState,
     ) -> Vec<EvalError> {
-        let out = state.recv_behavior(self.out_wire).0;
+        let out = state.recv_behavior(self.out_wire);
         if self.current_lower == self.current_upper {
             if out == self.current_lower {
                 self.num_goals_found += 1;

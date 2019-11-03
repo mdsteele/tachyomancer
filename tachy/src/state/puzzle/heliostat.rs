@@ -195,7 +195,7 @@ impl PuzzleEval for HeliostatEval {
         self.energy +=
             (ENERGY_MAX_GEN_PER_TIME_STEP * self.current_efficiency) / 100;
         self.energy = self.energy.saturating_sub(ENERGY_DRAIN_PER_TIME_STEP);
-        match state.recv_behavior(self.motor_wire).0 {
+        match state.recv_behavior(self.motor_wire) {
             0x1 => self.current_pos = (self.current_pos + 1) % 16,
             0x2 => self.current_pos = (self.current_pos + 15) % 16,
             _ => {}

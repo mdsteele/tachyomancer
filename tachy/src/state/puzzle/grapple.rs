@@ -177,7 +177,7 @@ impl PuzzleEval for GrappleEval {
         fired |= coil_control(
             time_step,
             self.port_ctrl_port,
-            state.recv_behavior(self.port_ctrl_wire).0,
+            state.recv_behavior(self.port_ctrl_wire),
             &mut self.current_port_charge,
             old_stbd_charge,
             &mut errors,
@@ -185,7 +185,7 @@ impl PuzzleEval for GrappleEval {
         fired |= coil_control(
             time_step,
             self.stbd_ctrl_port,
-            state.recv_behavior(self.stbd_ctrl_wire).0,
+            state.recv_behavior(self.stbd_ctrl_wire),
             &mut self.current_stbd_charge,
             old_port_charge,
             &mut errors,

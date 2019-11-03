@@ -127,12 +127,10 @@ impl PackChipEval {
 
 impl ChipEval for PackChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input1, changed1) = state.recv_behavior(self.input1);
-        let (input2, changed2) = state.recv_behavior(self.input2);
-        if changed1 || changed2 {
-            let output = input1 | (input2 << self.input_size.num_bits());
-            state.send_behavior(self.output, output);
-        }
+        let input1 = state.recv_behavior(self.input1);
+        let input2 = state.recv_behavior(self.input2);
+        let output = input1 | (input2 << self.input_size.num_bits());
+        state.send_behavior(self.output, output);
     }
 }
 
@@ -176,13 +174,11 @@ impl UnpackChipEval {
 
 impl ChipEval for UnpackChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        let (input, changed) = state.recv_behavior(self.input);
-        if changed {
-            let output1 = input & self.output_size.mask();
-            let output2 = input >> self.output_size.num_bits();
-            state.send_behavior(self.output1, output1);
-            state.send_behavior(self.output2, output2);
-        }
+        let input = state.recv_behavior(self.input);
+        let output1 = input & self.output_size.mask();
+        let output2 = input >> self.output_size.num_bits();
+        state.send_behavior(self.output1, output1);
+        state.send_behavior(self.output2, output2);
     }
 }
 

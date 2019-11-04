@@ -69,11 +69,12 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
                     break;
                 }
                 EvalResult::Failure => {
-                    errors.extend(
-                        eval.errors()
-                            .iter()
-                            .map(|error| error.message.clone()),
-                    );
+                    errors.extend(eval.errors().iter().map(|error| {
+                        format!(
+                            "Time step {}: {}",
+                            error.time_step, error.message
+                        )
+                    }));
                     break;
                 }
                 EvalResult::Victory(score) if time_step < data.time_steps => {

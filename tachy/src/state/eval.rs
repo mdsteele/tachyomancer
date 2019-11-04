@@ -26,6 +26,10 @@ use std::rc::Rc;
 
 //===========================================================================//
 
+const MAX_CYCLES_PER_TIME_STEP: u32 = 1000;
+
+//===========================================================================//
+
 #[derive(Debug)]
 #[must_use = "non-`Continue` values must be handled"]
 pub enum EvalResult {
@@ -150,6 +154,13 @@ impl CircuitEval {
                 }
                 needs_another_cycle |=
                     self.puzzle.needs_another_cycle(self.time_step());
+                if self.cycle + 1 >= MAX_CYCLES_PER_TIME_STEP {
+                    self.errors.push(self.state.fatal_error(format!(
+                        "Exceeded {} cycles",
+                        MAX_CYCLES_PER_TIME_STEP
+                    )));
+                    return EvalResult::Failure;
+                }
                 self.subcycle = 0;
                 self.cycle += 1;
                 if needs_another_cycle {

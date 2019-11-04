@@ -1,0 +1,17 @@
+puzzle = "SandboxEvent"
+score = 0
+time_steps = 1
+
+[circuit]
+size = [3, 2]
+
+[circuit.chips]
+p0p1 = "t0-Join"
+p1p0 = "f2-Delay"
+
+[circuit.wires]
+m1p1e = "Stub"
+p0p0e = "TurnLeft"
+p1p1e = "Straight"
+p2p0s = "TurnLeft"
+p2p1w = "TurnLeft"

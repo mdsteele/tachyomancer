@@ -91,11 +91,6 @@ impl CircuitEval {
         self.puzzle.seconds_per_time_step()
     }
 
-    #[cfg(test)]
-    pub(super) fn circuit_state_mut(&mut self) -> &mut CircuitState {
-        &mut self.state
-    }
-
     pub fn time_step(&self) -> u32 {
         self.state.time_step
     }
@@ -431,18 +426,6 @@ pub trait PuzzleEval: Downcast {
     }
 }
 impl_downcast!(PuzzleEval);
-
-#[allow(dead_code)]
-pub struct NullPuzzleEval();
-
-impl PuzzleEval for NullPuzzleEval {
-    fn begin_time_step(
-        &mut self,
-        _state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        None
-    }
-}
 
 //===========================================================================//
 

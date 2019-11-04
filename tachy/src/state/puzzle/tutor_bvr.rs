@@ -141,16 +141,11 @@ impl PuzzleEval for TutorialOrEval {
         let actual = state.recv_behavior(self.output_wire);
         self.table_values[3 * (time_step as usize) + 2] = actual as u64;
         if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!(
-                    "Expected output {} for inputs {} and {}, \
-                     but output was {}",
-                    expected, input1, input2, actual
-                ),
-            };
-            vec![error]
+            let message = format!(
+                "Expected output {} for inputs {} and {}, but output was {}",
+                expected, input1, input2, actual
+            );
+            vec![state.port_error(self.output_port, message)]
         } else {
             vec![]
         }
@@ -297,16 +292,12 @@ impl PuzzleEval for TutorialMuxEval {
         let actual = state.recv_behavior(self.output_wire);
         self.table_values[4 * (time_step as usize) + 3] = actual as u64;
         if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!(
-                    "Expected output {} for inputs {} and {} \
-                     with control {}, but output was {}",
-                    expected, input0, input1, control, actual
-                ),
-            };
-            vec![error]
+            let message = format!(
+                "Expected output {} for inputs {} and {} with control {}, but \
+                 output was {}",
+                expected, input0, input1, control, actual
+            );
+            vec![state.port_error(self.output_port, message)]
         } else {
             vec![]
         }
@@ -447,16 +438,11 @@ impl PuzzleEval for TutorialAddEval {
         let actual = state.recv_behavior(self.output_wire);
         self.table_values[3 * (time_step as usize) + 2] = actual as u64;
         if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!(
-                    "Expected output {} for inputs {} and {}, \
-                     but output was {}",
-                    expected, input1, input2, actual
-                ),
-            };
-            vec![error]
+            let message = format!(
+                "Expected output {} for inputs {} and {}, but output was {}",
+                expected, input1, input2, actual
+            );
+            vec![state.port_error(self.output_port, message)]
         } else {
             vec![]
         }

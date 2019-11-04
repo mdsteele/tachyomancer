@@ -170,7 +170,7 @@ impl PuzzleEval for GrappleEval {
         let old_stbd_charge = self.current_stbd_charge;
         let mut fired = false;
         fired |= coil_control(
-            state.time_step(),
+            state,
             self.port_ctrl_port,
             state.recv_behavior(self.port_ctrl_wire),
             &mut self.current_port_charge,
@@ -178,7 +178,7 @@ impl PuzzleEval for GrappleEval {
             &mut errors,
         );
         fired |= coil_control(
-            state.time_step(),
+            state,
             self.stbd_ctrl_port,
             state.recv_behavior(self.stbd_ctrl_wire),
             &mut self.current_stbd_charge,
@@ -198,7 +198,7 @@ impl PuzzleEval for GrappleEval {
 }
 
 fn coil_control(
-    time_step: u32,
+    state: &CircuitState,
     port: (Coords, Direction),
     ctrl: u32,
     current_charge: &mut u32,
@@ -222,8 +222,7 @@ fn coil_control(
                     "Can't fire coil: charge ({}) is not in {}-{} range.",
                     *current_charge, MIN_CHARGE_TO_FIRE, MAX_CHARGE_TO_FIRE,
                 );
-                let error = EvalError { time_step, port: Some(port), message };
-                errors.push(error);
+                errors.push(state.fatal_port_error(port, message));
                 return false;
             }
             if other_charge >= MIN_CHARGE_TO_FIRE
@@ -234,8 +233,7 @@ fn coil_control(
                      outside {}-{} range.",
                     other_charge, MIN_CHARGE_TO_FIRE, MAX_CHARGE_TO_FIRE,
                 );
-                let error = EvalError { time_step, port: Some(port), message };
-                errors.push(error);
+                errors.push(state.fatal_port_error(port, message));
                 return false;
             }
             return true;

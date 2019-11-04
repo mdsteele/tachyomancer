@@ -186,12 +186,7 @@ impl PuzzleEval for MiningRobotEval {
                      is {}kg).",
                     ore, self.ore_carried, MAX_ORE_CARRIED
                 );
-                let error = EvalError {
-                    time_step: state.time_step(),
-                    port: Some(self.dig_port),
-                    message,
-                };
-                errors.push(error);
+                errors.push(state.fatal_port_error(self.dig_port, message));
             }
         }
         errors

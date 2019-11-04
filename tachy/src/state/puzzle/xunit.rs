@@ -201,15 +201,11 @@ impl PuzzleEval for XUnitEval {
                 debug_assert!(!charges.is_empty());
                 self.any_detonated = true;
                 if charges.len() < CHARGE_DELAYS.len() {
-                    errors.push(EvalError {
-                        time_step: state.time_step(),
-                        port: None,
-                        message: format!(
-                            "Only {} out of {} charges were detonated at once",
-                            charges.len(),
-                            CHARGE_DELAYS.len()
-                        ),
-                    });
+                    errors.push(state.fatal_error(format!(
+                        "Only {} out of {} charges were detonated at once",
+                        charges.len(),
+                        CHARGE_DELAYS.len()
+                    )));
                 }
             }
             None => {}

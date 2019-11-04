@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::EvalError;
+use super::super::eval::{CircuitState, EvalError};
 use crate::geom::{Coords, Direction};
 use std::u32;
 use std::u64;
@@ -52,72 +52,53 @@ pub fn opt_u32_to_u64(opt_value: Option<u32>) -> u64 {
 //===========================================================================//
 
 pub fn end_cycle_check_event_output(
+    state: &CircuitState,
     opt_actual: Option<u32>,
     opt_expected: u64,
     has_received: &mut bool,
     port: (Coords, Direction),
-    time_step: u32,
     errors_out: &mut Vec<EvalError>,
 ) {
     if let Some(actual) = opt_actual {
         if let Some(expected) = u64_to_opt_u32(opt_expected) {
             if *has_received {
-                let error = EvalError {
-                    time_step,
-                    port: Some(port),
-                    message: format!(
-                        "Expected only one output event, \
-                         but got more than one"
-                    ),
-                };
-                errors_out.push(error);
+                let message = format!(
+                    "Expected only one output event, but got more than one"
+                );
+                errors_out.push(state.port_error(port, message));
             } else if actual != expected {
-                let error = EvalError {
-                    time_step,
-                    port: Some(port),
-                    message: format!(
-                        "Expected output event value of {}, \
-                         but got output event value of {}",
-                        expected, actual
-                    ),
-                };
-                errors_out.push(error);
+                let message = format!(
+                    "Expected output event value of {}, but got output event \
+                     value of {}",
+                    expected, actual
+                );
+                errors_out.push(state.port_error(port, message));
             }
         } else {
-            let error = EvalError {
-                time_step,
-                port: Some(port),
-                message: format!(
-                    "No output event expected, but got \
-                     output event value of {}",
-                    actual
-                ),
-            };
-            errors_out.push(error);
+            let message = format!(
+                "No output event expected, but got output event value of {}",
+                actual
+            );
+            errors_out.push(state.port_error(port, message));
         }
         *has_received = true;
     }
 }
 
 pub fn end_time_step_check_event_output(
+    state: &CircuitState,
     opt_expected: u64,
     has_received: bool,
     port: (Coords, Direction),
-    time_step: u32,
     errors_out: &mut Vec<EvalError>,
 ) {
     if !has_received {
         if let Some(expected) = u64_to_opt_u32(opt_expected) {
-            let error = EvalError {
-                time_step,
-                port: Some(port),
-                message: format!(
-                    "Expected output event value of {}, but \
-                     got no output event",
-                    expected
-                ),
-            };
-            errors_out.push(error);
+            let message = format!(
+                "Expected output event value of {}, but got no output event",
+                expected
+            );
+            errors_out.push(state.port_error(port, message));
         }
     }
 }

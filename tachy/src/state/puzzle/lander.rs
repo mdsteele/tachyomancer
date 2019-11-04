@@ -166,7 +166,6 @@ impl PuzzleEval for LanderEval {
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
         let port_thrust = state.recv_behavior(self.port_wire);
         let stbd_thrust = state.recv_behavior(self.stbd_wire);
         let (port_thrust, stbd_thrust) =
@@ -195,25 +194,21 @@ impl PuzzleEval for LanderEval {
         let mut errors = Vec::new();
         if self.current_altitude <= 0.0 {
             if -self.current_velocity > MAX_LANDING_SPEED {
-                let message = format!(
+                errors.push(state.fatal_error(format!(
                     "Landed at too high a speed ({} d/t is \
                      above the safe limit of {} d/t).",
                     self.current_velocity.abs().ceil(),
                     MAX_LANDING_SPEED.floor()
-                );
-                let error = EvalError { time_step, port: None, message };
-                errors.push(error);
+                )));
             }
             if self.current_angle < MIN_LANDING_ANGLE
                 || self.current_angle > MAX_LANDING_ANGLE
             {
-                let message = format!(
+                errors.push(state.fatal_error(format!(
                     "Landed at too shallow an angle ({}° is \
                      not in the safe range of {}° to {}°).",
                     self.current_angle, MIN_LANDING_ANGLE, MAX_LANDING_ANGLE
-                );
-                let error = EvalError { time_step, port: None, message };
-                errors.push(error);
+                )));
             }
         }
         errors

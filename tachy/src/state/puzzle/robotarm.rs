@@ -221,23 +221,13 @@ impl PuzzleEval for RobotArmEval {
         let mut errors = Vec::<EvalError>::new();
         if state.recv_event(self.xmit_wire).is_some() {
             if !self.has_completed_command {
-                let message = "Sent radio reply without first completing the \
-                               instructed manipulation.";
-                let error = EvalError {
-                    time_step: state.time_step(),
-                    port: Some(self.xmit_port),
-                    message: message.to_string(),
-                };
-                errors.push(error);
+                let message = format!("Sent radio reply without first completing the instructed manipulation.");
+                errors.push(state.fatal_port_error(self.xmit_port, message));
             } else if self.has_sent_radio_reply {
-                let message = "Sent more than one radio reply for the same \
-                               command.";
-                let error = EvalError {
-                    time_step: state.time_step(),
-                    port: Some(self.xmit_port),
-                    message: message.to_string(),
-                };
-                errors.push(error);
+                let message = format!(
+                    "Sent more than one radio reply for the same command."
+                );
+                errors.push(state.fatal_port_error(self.xmit_port, message));
             } else {
                 self.has_sent_radio_reply = true;
             }
@@ -256,20 +246,14 @@ impl PuzzleEval for RobotArmEval {
                          command was for position {}.",
                         self.current_position, self.last_command
                     );
-                    let error = EvalError {
-                        time_step: state.time_step(),
-                        port: Some(self.manip_port),
-                        message,
-                    };
-                    errors.push(error);
+                    errors.push(
+                        state.fatal_port_error(self.manip_port, message),
+                    );
                 } else if self.has_completed_command {
-                    let message = "Already performed manipulation.";
-                    let error = EvalError {
-                        time_step: state.time_step(),
-                        port: Some(self.manip_port),
-                        message: message.to_string(),
-                    };
-                    errors.push(error);
+                    errors.push(state.fatal_port_error(
+                        self.manip_port,
+                        format!("Already performed manipulation."),
+                    ));
                 }
                 self.motor_movement =
                     MotorMovement::Manipulating(TIME_PER_MANIPULATE);

@@ -125,9 +125,8 @@ impl PuzzleEval for FabricateEggTimerEval {
     }
 
     fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
         let expected_table = FabricateEggTimerEval::expected_table_values();
-        let start = (time_step as usize) * 3;
+        let start = (state.time_step() as usize) * 3;
         if start >= expected_table.len() {
             return vec![];
         }
@@ -139,20 +138,19 @@ impl PuzzleEval for FabricateEggTimerEval {
 
         let mut errors = Vec::new();
         shared::end_cycle_check_event_output(
+            state,
             opt_actual_alarm,
             expected_alarm,
             &mut self.has_received_alarm_event,
             self.alarm_port,
-            time_step,
             &mut errors,
         );
         return errors;
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
         let expected_table = FabricateEggTimerEval::expected_table_values();
-        let start = (time_step as usize) * 3;
+        let start = (state.time_step() as usize) * 3;
         if start >= expected_table.len() {
             return vec![];
         }
@@ -162,20 +160,17 @@ impl PuzzleEval for FabricateEggTimerEval {
 
         let mut errors = Vec::new();
         if (actual_remain as u64) != expected_remain {
-            errors.push(EvalError {
-                time_step,
-                port: Some(self.remain_port),
-                message: format!(
-                    "Expected remaining time to be {}, but was {}",
-                    expected_remain, actual_remain
-                ),
-            });
+            let message = format!(
+                "Expected remaining time to be {}, but was {}",
+                expected_remain, actual_remain
+            );
+            errors.push(state.port_error(self.remain_port, message));
         }
         shared::end_time_step_check_event_output(
+            state,
             expected_alarm,
             self.has_received_alarm_event,
             self.alarm_port,
-            time_step,
             &mut errors,
         );
         return errors;
@@ -346,14 +341,11 @@ impl PuzzleEval for FabricateStopwatchEval {
 
         let mut errors = Vec::new();
         if (actual_time as u64) != expected_time {
-            errors.push(EvalError {
-                time_step,
-                port: Some(self.time_port),
-                message: format!(
-                    "Expected output time to be {}, but was {}",
-                    expected_time, actual_time
-                ),
-            });
+            let message = format!(
+                "Expected output time to be {}, but was {}",
+                expected_time, actual_time
+            );
+            errors.push(state.port_error(self.time_port, message));
         }
         return errors;
     }

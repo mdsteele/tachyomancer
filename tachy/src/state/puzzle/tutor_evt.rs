@@ -155,9 +155,8 @@ impl PuzzleEval for TutorialDemuxEval {
     }
 
     fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
         let expected_table = TutorialDemuxEval::expected_table_values();
-        let start = (time_step as usize) * 4;
+        let start = (state.time_step() as usize) * 4;
         if start >= expected_table.len() {
             return vec![];
         }
@@ -171,28 +170,27 @@ impl PuzzleEval for TutorialDemuxEval {
 
         let mut errors = Vec::new();
         shared::end_cycle_check_event_output(
+            state,
             opt_output0,
             expected_output0,
             &mut self.has_received_output0_event,
             self.output0_port,
-            time_step,
             &mut errors,
         );
         shared::end_cycle_check_event_output(
+            state,
             opt_output1,
             expected_output1,
             &mut self.has_received_output1_event,
             self.output1_port,
-            time_step,
             &mut errors,
         );
         return errors;
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
         let expected_table = TutorialDemuxEval::expected_table_values();
-        let start = (time_step as usize) * 4;
+        let start = (state.time_step() as usize) * 4;
         if start >= expected_table.len() {
             return vec![];
         }
@@ -201,17 +199,17 @@ impl PuzzleEval for TutorialDemuxEval {
 
         let mut errors = Vec::new();
         shared::end_time_step_check_event_output(
+            state,
             expected_output0,
             self.has_received_output0_event,
             self.output0_port,
-            time_step,
             &mut errors,
         );
         shared::end_time_step_check_event_output(
+            state,
             expected_output1,
             self.has_received_output1_event,
             self.output1_port,
-            time_step,
             &mut errors,
         );
         return errors;
@@ -346,15 +344,11 @@ impl PuzzleEval for TutorialSumEval {
         let actual = state.recv_behavior(self.output_wire);
         self.table_values[start + 2] = actual as u64;
         if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!(
-                    "Expected output of {}, but output was {}",
-                    expected, actual
-                ),
-            };
-            vec![error]
+            let message = format!(
+                "Expected output of {}, but output was {}",
+                expected, actual
+            );
+            vec![state.port_error(self.output_port, message)]
         } else {
             vec![]
         }

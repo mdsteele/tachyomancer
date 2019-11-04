@@ -39,6 +39,7 @@ pub enum EvalResult {
 pub struct EvalError {
     pub time_step: u32,
     pub port: Option<(Coords, Direction)>,
+    pub fatal: bool,
     pub message: String,
 }
 
@@ -125,6 +126,13 @@ impl CircuitEval {
         self.state.values[wire_index].1
     }
 
+    /// Appends the given errors and returns true if any were fatal.
+    fn errors_are_fatal(&mut self, errors: Vec<EvalError>) -> bool {
+        let fatal = errors.iter().any(|error| error.fatal);
+        self.errors.extend(errors);
+        fatal
+    }
+
     pub fn step_subcycle(&mut self) -> EvalResult {
         self.state.reset_for_subcycle();
         while !self.state.changed {
@@ -136,7 +144,10 @@ impl CircuitEval {
                             chip.needs_another_cycle(&self.state);
                     }
                 }
-                self.errors.extend(self.puzzle.end_cycle(&self.state));
+                let errors = self.puzzle.end_cycle(&self.state);
+                if self.errors_are_fatal(errors) {
+                    return EvalResult::Failure;
+                }
                 needs_another_cycle |=
                     self.puzzle.needs_another_cycle(self.time_step());
                 self.subcycle = 0;
@@ -150,7 +161,10 @@ impl CircuitEval {
                     self.puzzle.begin_additional_cycle(&mut self.state);
                     return EvalResult::Continue;
                 }
-                self.errors.extend(self.puzzle.end_time_step(&self.state));
+                let errors = self.puzzle.end_time_step(&self.state);
+                if self.errors_are_fatal(errors) {
+                    return EvalResult::Failure;
+                }
                 for group in self.chips.iter_mut() {
                     for chip in group.iter_mut() {
                         chip.on_time_step();
@@ -290,6 +304,41 @@ impl CircuitState {
 
     pub fn breakpoint(&mut self, coords: Coords) {
         self.breakpoints.push(coords);
+    }
+
+    pub fn fatal_error(&self, message: String) -> EvalError {
+        EvalError {
+            time_step: self.time_step,
+            port: None,
+            fatal: true,
+            message,
+        }
+    }
+
+    pub fn port_error(
+        &self,
+        port: (Coords, Direction),
+        message: String,
+    ) -> EvalError {
+        EvalError {
+            time_step: self.time_step,
+            port: Some(port),
+            fatal: false,
+            message,
+        }
+    }
+
+    pub fn fatal_port_error(
+        &self,
+        port: (Coords, Direction),
+        message: String,
+    ) -> EvalError {
+        EvalError {
+            time_step: self.time_step,
+            port: Some(port),
+            fatal: true,
+            message,
+        }
     }
 
     fn reset_for_cycle(&mut self) {

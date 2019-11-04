@@ -118,23 +118,18 @@ impl PuzzleEval for FabricateXorEval {
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
         let input1 = state.recv_behavior(self.input1_wire);
         let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 ^ input2;
         let actual = state.recv_behavior(self.output_wire);
-        self.table_values[3 * (time_step as usize) + 2] = actual as u64;
+        self.table_values[3 * (state.time_step() as usize) + 2] =
+            actual as u64;
         if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!(
-                    "Expected output {} for inputs {} and {}, \
-                     but output was {}",
-                    expected, input1, input2, actual
-                ),
-            };
-            vec![error]
+            let message = format!(
+                "Expected output {} for inputs {} and {}, but output was {}",
+                expected, input1, input2, actual
+            );
+            vec![state.port_error(self.output_port, message)]
         } else {
             vec![]
         }
@@ -245,23 +240,18 @@ impl PuzzleEval for FabricateMulEval {
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
         let input1 = state.recv_behavior(self.input1_wire);
         let input2 = state.recv_behavior(self.input2_wire);
         let expected = input1 * input2;
         let actual = state.recv_behavior(self.output_wire);
-        self.table_values[3 * (time_step as usize) + 2] = actual as u64;
+        self.table_values[3 * (state.time_step() as usize) + 2] =
+            actual as u64;
         if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!(
-                    "Expected output {} for inputs {} and {}, \
-                     but output was {}",
-                    expected, input1, input2, actual
-                ),
-            };
-            vec![error]
+            let message = format!(
+                "Expected output {} for inputs {} and {}, but output was {}",
+                expected, input1, input2, actual
+            );
+            vec![state.port_error(self.output_port, message)]
         } else {
             vec![]
         }
@@ -370,16 +360,11 @@ impl PuzzleEval for FabricateHalveEval {
         let actual = state.recv_behavior(self.output_wire);
         self.table_values[2 * (time_step as usize) + 1] = actual as u64;
         if actual != expected {
-            let error = EvalError {
-                time_step,
-                port: Some(self.output_port),
-                message: format!(
-                    "Expected output {} for input {}, but output \
-                     was {}",
-                    expected, input, actual
-                ),
-            };
-            vec![error]
+            let message = format!(
+                "Expected output {} for input {}, but output was {}",
+                expected, input, actual
+            );
+            vec![state.port_error(self.output_port, message)]
         } else {
             vec![]
         }
@@ -511,20 +496,19 @@ impl PuzzleEval for FabricateIncEval {
 
         let mut errors = Vec::new();
         shared::end_cycle_check_event_output(
+            state,
             opt_actual_output,
             expected_output,
             &mut self.has_received_output_event,
             self.output_port,
-            time_step,
             &mut errors,
         );
         return errors;
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
         let expected_table = FabricateIncEval::expected_table_values();
-        let start = (time_step as usize) * 3;
+        let start = (state.time_step() as usize) * 3;
         if start >= expected_table.len() {
             return vec![];
         }
@@ -532,10 +516,10 @@ impl PuzzleEval for FabricateIncEval {
 
         let mut errors = Vec::new();
         shared::end_time_step_check_event_output(
+            state,
             expected_output,
             self.has_received_output_event,
             self.output_port,
-            time_step,
             &mut errors,
         );
         return errors;

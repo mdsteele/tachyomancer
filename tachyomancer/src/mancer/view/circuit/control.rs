@@ -190,6 +190,7 @@ impl ControlsTray {
         ui: &mut Ui,
         status: ControlsStatus,
         has_errors: bool,
+        is_interacting: bool,
         prefs: &Prefs,
     ) -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
@@ -197,7 +198,7 @@ impl ControlsTray {
                 event,
                 ui,
                 status,
-                has_errors,
+                has_errors || is_interacting,
                 prefs,
                 &mut self.tooltip,
             );
@@ -317,7 +318,7 @@ impl ControlsButton {
         event: &Event,
         ui: &mut Ui,
         status: ControlsStatus,
-        has_errors: bool,
+        controls_disabled: bool,
         prefs: &Prefs,
         tooltip: &mut Tooltip<ControlsAction>,
     ) -> Option<ControlsAction> {
@@ -326,7 +327,7 @@ impl ControlsButton {
                 self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::KeyDown(key) => {
-                if !has_errors
+                if !controls_disabled
                     && self.is_enabled(status)
                     && key.code == prefs.hotkey_code(self.hotkey)
                 {
@@ -336,7 +337,7 @@ impl ControlsButton {
                 }
             }
             Event::MouseDown(mouse) if mouse.left => {
-                if !has_errors
+                if !controls_disabled
                     && self.is_enabled(status)
                     && self.rect.contains_point(mouse.pt)
                 {
@@ -353,7 +354,7 @@ impl ControlsButton {
                     tooltip.stop_hover(ui, &self.action);
                 }
                 if self.hover_pulse.set_hovering(hovering, ui)
-                    && !has_errors
+                    && !controls_disabled
                     && self.is_enabled(status)
                 {
                     ui.audio().play_sound(Sound::ButtonHover);

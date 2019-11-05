@@ -245,6 +245,7 @@ impl CircuitView {
             ui,
             self.controls_status,
             grid.has_errors(),
+            !self.edit_grid.can_start_evaluation(),
             prefs,
         ) {
             match opt_action {
@@ -262,6 +263,7 @@ impl CircuitView {
                     match self.controls_status {
                         ControlsStatus::Stopped => {
                             debug_assert!(grid.eval().is_none());
+                            self.edit_grid.cancel_interaction(ui, grid);
                             ui.audio().play_sound(Sound::Beep);
                             self.seconds_since_time_step = 0.0;
                             self.controls_status = ControlsStatus::Running;
@@ -287,6 +289,7 @@ impl CircuitView {
                 }
                 Some(ControlsAction::StepTime) => {
                     if grid.eval().is_none() {
+                        self.edit_grid.cancel_interaction(ui, grid);
                         ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         self.controls_status = ControlsStatus::Paused;
@@ -302,6 +305,7 @@ impl CircuitView {
                 }
                 Some(ControlsAction::StepCycle) => {
                     if grid.eval().is_none() {
+                        self.edit_grid.cancel_interaction(ui, grid);
                         ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         self.controls_status = ControlsStatus::Paused;
@@ -317,6 +321,7 @@ impl CircuitView {
                 }
                 Some(ControlsAction::StepSubcycle) => {
                     if grid.eval().is_none() {
+                        self.edit_grid.cancel_interaction(ui, grid);
                         ui.audio().play_sound(Sound::Beep);
                         self.seconds_since_time_step = 0.0;
                         self.controls_status = ControlsStatus::Paused;

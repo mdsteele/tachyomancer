@@ -927,9 +927,19 @@ impl EditGridView {
         }
     }
 
+    /// Returns false if we shouldn't start evaluation in the middle of the
+    /// current interaction (e.g. because we're in the middle of dragging a
+    /// chip).
+    pub fn can_start_evaluation(&self) -> bool {
+        match self.interaction {
+            Interaction::Nothing | Interaction::RectSelected(_) => true,
+            _ => false,
+        }
+    }
+
     /// Ceases the current interaction (if any) and sets `self.interaction` to
     /// `Nothing`.  Returns true if any provisional changes were rolled back.
-    fn cancel_interaction(
+    pub fn cancel_interaction(
         &mut self,
         ui: &mut Ui,
         grid: &mut EditGrid,

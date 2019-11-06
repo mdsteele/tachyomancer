@@ -392,6 +392,41 @@ fn draw_selection_box(
 
 //===========================================================================//
 
+pub fn flip_horz(grid: &mut EditGrid, selected_rect: CoordsRect) {
+    reorient(grid, selected_rect, Orientation::default().flip_horz());
+}
+
+pub fn flip_vert(grid: &mut EditGrid, selected_rect: CoordsRect) {
+    reorient(grid, selected_rect, Orientation::default().flip_vert());
+}
+
+pub fn rotate_ccw(grid: &mut EditGrid, selected_rect: CoordsRect) {
+    reorient(grid, selected_rect, Orientation::default().rotate_ccw());
+}
+
+pub fn rotate_cw(grid: &mut EditGrid, selected_rect: CoordsRect) {
+    reorient(grid, selected_rect, Orientation::default().rotate_cw());
+}
+
+fn reorient(
+    grid: &mut EditGrid,
+    selected_rect: CoordsRect,
+    orient: Orientation,
+) {
+    let mut selection = cut_provisionally(grid, selected_rect);
+    selection.reorient(orient);
+    let changes =
+        changes_for_paste(grid, &selection, selected_rect.top_left());
+    if grid.try_mutate_provisionally(changes) {
+        grid.commit_provisional_changes();
+    } else {
+        debug_warn!("reorient paste mutation failed");
+        grid.roll_back_provisional_changes();
+    }
+}
+
+//===========================================================================//
+
 pub fn copy(
     grid: &EditGrid,
     selected_rect: CoordsRect,

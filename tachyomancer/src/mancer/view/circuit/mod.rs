@@ -21,6 +21,7 @@ mod bounds;
 mod chipdrag;
 mod control;
 mod grid;
+mod manip;
 mod parts;
 mod select;
 mod specify;

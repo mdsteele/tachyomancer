@@ -356,21 +356,7 @@ impl UiShader {
             .draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
-    pub fn draw_dialog(
-        &self,
-        matrix: &Matrix4<f32>,
-        rect: &Rect<f32>,
-        color1: &Color4,
-        color2: &Color4,
-        color3: &Color4,
-    ) {
-        let tex_rect = Rect::new(0.0, 0.5, 0.5, 0.5);
-        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
-        self.dialog_varray.bind();
-        self.dialog_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
-    }
-
-    pub fn draw_icon(
+    pub fn draw_controls_icon(
         &self,
         matrix: &Matrix4<f32>,
         rect: &Rect<f32>,
@@ -390,6 +376,20 @@ impl UiShader {
         self.checkbox_varray.bind();
         self.checkbox_varray
             .draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn draw_dialog(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
+        let tex_rect = Rect::new(0.0, 0.5, 0.5, 0.5);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.dialog_varray.bind();
+        self.dialog_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
     pub fn draw_list_frame(
@@ -418,6 +418,23 @@ impl UiShader {
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.scroll_varray.bind();
         self.scroll_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
+    }
+
+    pub fn draw_manipulation_icon(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        icon_index: usize,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
+        let tex_rect =
+            Rect::new(0.875, 0.5 + 0.125 * (icon_index as f32), 0.125, 0.125);
+        self.bind(matrix, rect, color1, color2, color3, &tex_rect);
+        self.checkbox_varray.bind();
+        self.checkbox_varray
+            .draw_elements(Primitive::Triangles, &self.ibuffer);
     }
 
     pub fn draw_scroll_bar(

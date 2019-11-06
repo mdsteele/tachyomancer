@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::chip::{chip_grid_rect, interface_grid_rect};
+use super::manip::ManipulationAction;
 use cgmath::Point2;
 use tachy::geom::{AsInt, Coords, Direction, PolygonRef};
 use tachy::save::{ChipType, WireShape};
@@ -29,6 +30,7 @@ use tachy::state::EditGrid;
 pub enum GridTooltipTag {
     Chip(Coords, ChipType),
     Interface(usize),
+    Manipulation(ManipulationAction),
     Wire(usize),
 }
 
@@ -90,6 +92,7 @@ impl GridTooltipTag {
             GridTooltipTag::Interface(index) => {
                 grid.interfaces()[index].tooltip_format()
             }
+            GridTooltipTag::Manipulation(action) => action.tooltip_format(),
             GridTooltipTag::Wire(index) => grid.wire_tooltip_format(index),
         }
     }

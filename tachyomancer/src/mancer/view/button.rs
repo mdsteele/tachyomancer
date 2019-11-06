@@ -300,6 +300,10 @@ impl HoverPulse {
         HoverPulse { hovering: false, brightness: 0.0 }
     }
 
+    pub fn is_hovering(&self) -> bool {
+        self.hovering
+    }
+
     pub fn brightness(&self) -> f32 {
         self.brightness as f32
     }

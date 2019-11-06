@@ -36,27 +36,22 @@ const TRAY_MARGIN: i32 = 12;
 const TRAY_HEIGHT: i32 = 2 * TRAY_MARGIN + BUTTON_HEIGHT;
 
 const TOOLTIP_RESET: &str =
-    "\
-     $*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
+    "$*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
      Resets the simulation back to the beginning and returns to edit mode.";
-const TOOLTIP_RUN_PAUSE: &str = "\
-                                 $*Run/pause$* $>$G$*$[EvalRunPause]$*$D$<\n\
+const TOOLTIP_RUN_PAUSE: &str = "$*Run/pause$* $>$G$*$[EvalRunPause]$*$D$<\n\
                                  Runs or pauses the simulation.";
 const TOOLTIP_STEP_SUBCYCLE: &str =
-    "\
-     $*Step forward one subcycle$* $>$G$*$[EvalStepSubcycle]$*$D$<\n\
+    "$*Step forward one subcycle$* $>$G$*$[EvalStepSubcycle]$*$D$<\n\
      Runs the simulation forward by a single subcycle, then pauses.  This \
      allows you to see how data is flowing through your circuit, one chip at \
      a time.";
 const TOOLTIP_STEP_CYCLE: &str =
-    "\
-     $*Step forward one cycle$* $>$G$*$[EvalStepCycle]$*$D$<\n\
+    "$*Step forward one cycle$* $>$G$*$[EvalStepCycle]$*$D$<\n\
      Runs the simulation forward until the end of the current cycle, then \
      pauses.  This allows you to see event loops in your circuit, running \
      one iteration at a time.";
 const TOOLTIP_STEP_TIME: &str =
-    "\
-     $*Step forward one time step$* $>$G$*$[EvalStepTime]$*$D$<\n\
+    "$*Step forward one time step$* $>$G$*$[EvalStepTime]$*$D$<\n\
      Runs the simulation forward until the end of the current time step, \
      then pauses.";
 
@@ -293,7 +288,7 @@ impl ControlsButton {
         );
         let icon_index = self.action.icon_index(status);
         if enabled {
-            ui.draw_icon(
+            ui.draw_controls_icon(
                 matrix,
                 &icon_rect,
                 icon_index,
@@ -302,7 +297,7 @@ impl ControlsButton {
                 &Color4::ORANGE2,
             );
         } else {
-            ui.draw_icon(
+            ui.draw_controls_icon(
                 matrix,
                 &icon_rect,
                 icon_index,

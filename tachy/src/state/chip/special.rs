@@ -17,13 +17,11 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{ChipEval, CircuitInteraction, CircuitState};
+use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::{Coords, Direction};
 use crate::state::{PortColor, PortFlow, WireSize};
 use rand;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 //===========================================================================//
 
@@ -41,7 +39,6 @@ pub struct BreakChipEval {
     input: usize,
     output: usize,
     coords: Coords,
-    interact: Rc<RefCell<CircuitInteraction>>,
 }
 
 impl BreakChipEval {
@@ -49,7 +46,6 @@ impl BreakChipEval {
         enabled: bool,
         slots: &[(usize, WireSize)],
         coords: Coords,
-        interact: Rc<RefCell<CircuitInteraction>>,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), BREAK_CHIP_DATA.ports.len());
         let chip_eval = BreakChipEval {
@@ -57,7 +53,6 @@ impl BreakChipEval {
             input: slots[0].0,
             output: slots[1].0,
             coords,
-            interact,
         };
         vec![(1, Box::new(chip_eval))]
     }
@@ -65,18 +60,8 @@ impl BreakChipEval {
 
 impl ChipEval for BreakChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        if let Some(count) =
-            self.interact.borrow_mut().buttons.remove(&self.coords)
-        {
-            debug_log!(
-                "Break at ({}, {}) was pressed {} time(s)",
-                self.coords.x,
-                self.coords.y,
-                count
-            );
-            if count % 2 != 0 {
-                self.enabled = !self.enabled;
-            }
+        if state.pop_button_presses(self.coords) % 2 != 0 {
+            self.enabled = !self.enabled;
         }
         if let Some(value) = state.recv_event(self.input) {
             state.send_event(self.output, value);
@@ -99,39 +84,23 @@ pub struct ButtonChipEval {
     output: usize,
     coords: Coords,
     press_count: i32,
-    interact: Rc<RefCell<CircuitInteraction>>,
 }
 
 impl ButtonChipEval {
     pub fn new_evals(
         slots: &[(usize, WireSize)],
         coords: Coords,
-        interact: Rc<RefCell<CircuitInteraction>>,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), BUTTON_CHIP_DATA.ports.len());
-        let chip_eval = ButtonChipEval {
-            output: slots[0].0,
-            coords,
-            press_count: 0,
-            interact,
-        };
+        let chip_eval =
+            ButtonChipEval { output: slots[0].0, coords, press_count: 0 };
         vec![(0, Box::new(chip_eval))]
     }
 }
 
 impl ChipEval for ButtonChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        if let Some(count) =
-            self.interact.borrow_mut().buttons.remove(&self.coords)
-        {
-            debug_log!(
-                "Button at ({}, {}) was pressed {} time(s)",
-                self.coords.x,
-                self.coords.y,
-                count
-            );
-            self.press_count += count;
-        }
+        self.press_count += state.pop_button_presses(self.coords);
         if self.press_count > 0 {
             self.press_count -= 1;
             state.send_event(self.output, 0);
@@ -292,7 +261,6 @@ pub struct ToggleChipEval {
     output: usize,
     value: bool,
     coords: Coords,
-    interact: Rc<RefCell<CircuitInteraction>>,
 }
 
 impl ToggleChipEval {
@@ -300,29 +268,17 @@ impl ToggleChipEval {
         value: bool,
         slots: &[(usize, WireSize)],
         coords: Coords,
-        interact: Rc<RefCell<CircuitInteraction>>,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), TOGGLE_CHIP_DATA.ports.len());
-        let chip_eval =
-            ToggleChipEval { output: slots[0].0, value, coords, interact };
+        let chip_eval = ToggleChipEval { output: slots[0].0, value, coords };
         vec![(0, Box::new(chip_eval))]
     }
 }
 
 impl ChipEval for ToggleChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        if let Some(count) =
-            self.interact.borrow_mut().buttons.remove(&self.coords)
-        {
-            debug_log!(
-                "Toggle at ({}, {}) was pressed {} time(s)",
-                self.coords.x,
-                self.coords.y,
-                count
-            );
-            if count % 2 != 0 {
-                self.value = !self.value;
-            }
+        if state.pop_button_presses(self.coords) % 2 != 0 {
+            self.value = !self.value;
         }
         state.send_behavior(self.output, self.value.into());
     }

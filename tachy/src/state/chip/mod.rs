@@ -27,7 +27,7 @@ mod timing;
 mod value;
 
 use self::data::{localize, AbstractConstraint, ChipData};
-use super::eval::{ChipEval, CircuitInteraction};
+use super::eval::ChipEval;
 use super::port::{
     PortColor, PortConstraint, PortDependency, PortFlow, PortSpec,
 };
@@ -35,8 +35,6 @@ use super::size::WireSize;
 use crate::geom::{Coords, Orientation};
 use crate::save::{ChipType, Puzzle};
 use cgmath::Bounded;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 //===========================================================================//
 
@@ -263,24 +261,18 @@ pub(super) fn new_chip_evals(
     ctype: ChipType,
     coords: Coords,
     slots: &[(usize, WireSize)],
-    interact: &Rc<RefCell<CircuitInteraction>>,
 ) -> Vec<(usize, Box<dyn ChipEval>)> {
     debug_assert_eq!(slots.len(), chip_data(ctype).ports.len());
     match ctype {
         ChipType::Add => self::arith::AddChipEval::new_evals(slots),
         ChipType::Add2Bit => self::arith::Add2BitChipEval::new_evals(slots),
         ChipType::And => self::logic::AndChipEval::new_evals(slots),
-        ChipType::Break(enabled) => self::special::BreakChipEval::new_evals(
-            enabled,
-            slots,
-            coords,
-            interact.clone(),
-        ),
-        ChipType::Button => self::special::ButtonChipEval::new_evals(
-            slots,
-            coords,
-            interact.clone(),
-        ),
+        ChipType::Break(enabled) => {
+            self::special::BreakChipEval::new_evals(enabled, slots, coords)
+        }
+        ChipType::Button => {
+            self::special::ButtonChipEval::new_evals(slots, coords)
+        }
         ChipType::Clock => self::timing::ClockChipEval::new_evals(slots),
         ChipType::Cmp => self::compare::CmpChipEval::new_evals(slots),
         ChipType::CmpEq => self::compare::CmpEqChipEval::new_evals(slots),
@@ -312,12 +304,9 @@ pub(super) fn new_chip_evals(
             self::timing::StopwatchChipEval::new_evals(slots)
         }
         ChipType::Sub => self::arith::SubChipEval::new_evals(slots),
-        ChipType::Toggle(value) => self::special::ToggleChipEval::new_evals(
-            value,
-            slots,
-            coords,
-            interact.clone(),
-        ),
+        ChipType::Toggle(value) => {
+            self::special::ToggleChipEval::new_evals(value, slots, coords)
+        }
         ChipType::Unpack => self::value::UnpackChipEval::new_evals(slots),
         ChipType::Xor => self::logic::XorChipEval::new_evals(slots),
     }

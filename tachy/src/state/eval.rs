@@ -19,10 +19,8 @@
 
 use crate::geom::{Coords, Direction};
 use downcast_rs::{impl_downcast, Downcast};
-use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 use std::mem;
-use std::rc::Rc;
 
 //===========================================================================//
 
@@ -65,7 +63,6 @@ pub struct CircuitEval {
     chips: Vec<Vec<Box<dyn ChipEval>>>,
     puzzle: Box<dyn PuzzleEval>,
     state: CircuitState,
-    interact: Rc<RefCell<CircuitInteraction>>,
 }
 
 impl CircuitEval {
@@ -74,7 +71,6 @@ impl CircuitEval {
         null_wires: HashSet<usize>,
         chip_groups: Vec<Vec<Box<dyn ChipEval>>>,
         puzzle: Box<dyn PuzzleEval>,
-        interact: Rc<RefCell<CircuitInteraction>>,
     ) -> CircuitEval {
         CircuitEval {
             cycle: 0,
@@ -83,7 +79,6 @@ impl CircuitEval {
             chips: chip_groups,
             puzzle,
             state: CircuitState::new(num_wires, null_wires),
-            interact,
         }
     }
 
@@ -109,8 +104,8 @@ impl CircuitEval {
         &self.errors
     }
 
-    pub fn interaction(&mut self) -> RefMut<CircuitInteraction> {
-        self.interact.borrow_mut()
+    pub fn press_button(&mut self, coords: Coords) {
+        self.state.press_button(coords);
     }
 
     pub fn wire_event(&self, wire_index: usize) -> Option<u32> {
@@ -257,6 +252,7 @@ pub struct CircuitState {
     null_wires: HashSet<usize>,
     values: Vec<(u32, bool)>,
     breakpoints: Vec<Coords>,
+    button_presses: HashMap<Coords, i32>,
     changed: bool,
 }
 
@@ -267,6 +263,7 @@ impl CircuitState {
             null_wires,
             values: vec![(0, false); num_values],
             breakpoints: vec![],
+            button_presses: HashMap::new(),
             changed: false,
         }
     }
@@ -310,6 +307,14 @@ impl CircuitState {
 
     pub fn breakpoint(&mut self, coords: Coords) {
         self.breakpoints.push(coords);
+    }
+
+    fn press_button(&mut self, coords: Coords) {
+        self.button_presses.entry(coords).and_modify(|n| *n += 1).or_insert(1);
+    }
+
+    pub fn pop_button_presses(&mut self, coords: Coords) -> i32 {
+        self.button_presses.remove(&coords).unwrap_or(0)
     }
 
     pub fn fatal_error(&self, message: String) -> EvalError {
@@ -356,25 +361,6 @@ impl CircuitState {
     fn reset_for_subcycle(&mut self) {
         debug_assert!(self.breakpoints.is_empty());
         self.changed = false;
-    }
-}
-
-//===========================================================================//
-
-/// Stores player interations with the circuit that take place during
-/// evaluation (such as pressing button parts on the board).
-pub struct CircuitInteraction {
-    pub(super) buttons: HashMap<Coords, i32>,
-}
-
-impl CircuitInteraction {
-    pub fn new() -> Rc<RefCell<CircuitInteraction>> {
-        let interact = CircuitInteraction { buttons: HashMap::new() };
-        Rc::new(RefCell::new(interact))
-    }
-
-    pub fn press_button(&mut self, coords: Coords) {
-        self.buttons.entry(coords).and_modify(|n| *n += 1).or_insert(1);
     }
 }
 

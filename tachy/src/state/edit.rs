@@ -20,7 +20,7 @@
 use super::change::GridChange;
 use super::check::{self, WireColor, WireError, WireInfo};
 use super::chip::{new_chip_evals, ChipExt};
-use super::eval::{ChipEval, CircuitEval, CircuitInteraction};
+use super::eval::{ChipEval, CircuitEval};
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::{new_puzzle_eval, Interface, PuzzleExt};
 use super::size::WireSize;
@@ -821,7 +821,7 @@ impl EditGrid {
 
     pub fn press_button(&mut self, coords: Coords) {
         if let Some(ref mut eval) = self.eval {
-            eval.interaction().press_button(coords);
+            eval.press_button(coords);
         }
     }
 
@@ -859,7 +859,6 @@ impl EditGrid {
             }
         }
 
-        let interact = CircuitInteraction::new();
         let mut chip_evals: Vec<Vec<Box<dyn ChipEval>>> =
             (0..self.wire_groups.len()).map(|_| vec![]).collect();
         for (coords, ctype, orient) in self.chips() {
@@ -875,7 +874,7 @@ impl EditGrid {
                 })
                 .collect();
             for (port_index, chip_eval) in
-                new_chip_evals(ctype, coords, &wires, &interact)
+                new_chip_evals(ctype, coords, &wires)
             {
                 let port = &ports[port_index];
                 let group_index = groups_for_ports[&port.loc()];
@@ -906,7 +905,6 @@ impl EditGrid {
             null_wires,
             chip_evals,
             puzzle_eval,
-            interact,
         ));
         debug_log!("Starting evaluation");
         return true;

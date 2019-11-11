@@ -117,6 +117,11 @@ impl ChipModel {
         let oriented_size = orient * chip_size;
 
         match ctype {
+            ChipType::Break(enabled) => {
+                // TODO: If eval is running, get `enabled` from the chip eval
+                //   rather than from the ChipType.
+                draw_break_chip(resources, grid_matrix, coords, enabled);
+            }
             ChipType::Comment(_) => {
                 draw_comment_chip(resources, grid_matrix, coords, orient);
             }
@@ -230,6 +235,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
             }
         }
         ChipType::And => ChipIcon::And,
+        ChipType::Break(_) => ChipIcon::Break,
         ChipType::Clock => ChipIcon::Clock,
         ChipType::Cmp => ChipIcon::Cmp,
         ChipType::CmpEq => {
@@ -308,6 +314,28 @@ fn chip_icon_is_fixed(chip_icon: ChipIcon) -> bool {
         ChipIcon::Halve | ChipIcon::Random | ChipIcon::Sub => true,
         _ => false,
     }
+}
+
+fn draw_break_chip(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    coords: Coords,
+    enabled: bool,
+) {
+    let matrix = grid_matrix
+        * Matrix4::trans2((coords.x as f32) + 0.5, (coords.y as f32) + 0.5);
+    let color = if enabled {
+        Color3::new(0.9, 0.3, 0.3)
+    } else {
+        Color3::new(0.5, 0.6, 0.6)
+    };
+    resources.shaders().chip().draw_basic(
+        &matrix,
+        RectSize::new(1.0, 1.0).expand(-CHIP_MARGIN),
+        ChipIcon::Break as u32,
+        color,
+        resources.textures().chip_icons(),
+    );
 }
 
 fn draw_comment_chip(

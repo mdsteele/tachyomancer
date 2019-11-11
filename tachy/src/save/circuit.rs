@@ -323,13 +323,13 @@ mod tests {
         let mut data = CircuitData::new(8, 5);
         data.chips.insert(
             CoordsDelta::new(2, 3),
-            ChipType::Break,
-            Orientation::default().flip_vert(),
+            ChipType::Break(true),
+            Orientation::default(),
         );
         data.chips.insert(
             CoordsDelta::new(1, 3),
             ChipType::Button,
-            Orientation::default(),
+            Orientation::default().flip_vert(),
         );
         data.wires.insert(
             CoordsDelta::new(1, 3),
@@ -346,8 +346,8 @@ mod tests {
             String::from_utf8(bytes).unwrap().as_str(),
             "size = [8, 5]\n\n\
              [chips]\n\
-             p1p3 = \"f0-Button\"\n\
-             p2p3 = \"t0-Break\"\n\n\
+             p1p3 = \"t0-Button\"\n\
+             p2p3 = \"f0-Break(true)\"\n\n\
              [wires]\n\
              p1p3e = \"Stub\"\n\
              p2p3w = \"Stub\"\n"
@@ -358,8 +358,8 @@ mod tests {
     fn deserialize_circuit_data() {
         let toml = "size = [8, 5]\n\n\
                     [chips]\n\
-                    p1p3 = \"f0-Button\"\n\
-                    p2p3 = \"t0-Break\"\n\n\
+                    p1p3 = \"t0-Button\"\n\
+                    p2p3 = \"f0-Break(true)\"\n\n\
                     [wires]\n\
                     p1p3e = \"Stub\"\n\
                     p2p3w = \"Stub\"\n";
@@ -370,11 +370,11 @@ mod tests {
             vec![
                 (
                     CoordsDelta::new(1, 3),
-                    (ChipType::Button, Orientation::default())
+                    (ChipType::Button, Orientation::default().flip_vert())
                 ),
                 (
                     CoordsDelta::new(2, 3),
-                    (ChipType::Break, Orientation::default().flip_vert())
+                    (ChipType::Break(true), Orientation::default())
                 ),
             ]
             .into_iter()

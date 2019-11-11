@@ -819,6 +819,12 @@ impl EditGrid {
         }
     }
 
+    pub fn press_button(&mut self, coords: Coords) {
+        if let Some(ref mut eval) = self.eval {
+            eval.interaction().press_button(coords);
+        }
+    }
+
     pub fn eval(&self) -> Option<&CircuitEval> {
         self.eval.as_ref()
     }

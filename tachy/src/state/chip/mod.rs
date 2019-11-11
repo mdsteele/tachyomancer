@@ -114,7 +114,7 @@ impl ChipExt for ChipType {
             ChipType::Filter => {
                 ChipAvailability::OnlyIn(&[Puzzle::TutorialDemux])
             }
-            ChipType::Break
+            ChipType::Break(_)
             | ChipType::Clock
             | ChipType::Delay
             | ChipType::Demux
@@ -222,7 +222,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Add => self::arith::ADD_CHIP_DATA,
         ChipType::Add2Bit => self::arith::ADD_2BIT_CHIP_DATA,
         ChipType::And => self::logic::AND_CHIP_DATA,
-        ChipType::Break => self::special::BREAK_CHIP_DATA,
+        ChipType::Break(_) => self::special::BREAK_CHIP_DATA,
         ChipType::Button => self::special::BUTTON_CHIP_DATA,
         ChipType::Clock => self::timing::CLOCK_CHIP_DATA,
         ChipType::Cmp => self::compare::CMP_CHIP_DATA,
@@ -270,9 +270,12 @@ pub(super) fn new_chip_evals(
         ChipType::Add => self::arith::AddChipEval::new_evals(slots),
         ChipType::Add2Bit => self::arith::Add2BitChipEval::new_evals(slots),
         ChipType::And => self::logic::AndChipEval::new_evals(slots),
-        ChipType::Break => {
-            self::special::BreakChipEval::new_evals(slots, coords)
-        }
+        ChipType::Break(enabled) => self::special::BreakChipEval::new_evals(
+            enabled,
+            slots,
+            coords,
+            interact.clone(),
+        ),
         ChipType::Button => self::special::ButtonChipEval::new_evals(
             slots,
             coords,

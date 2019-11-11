@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="64" height="64">
+  <path transform="translate(32, 32) scale(1.2)"
+        d="M 18.5,7.65 L 7.65,18.5 L -7.65,18.5 L -18.5,7.65
+           L -18.5,-7.65 L -7.65,-18.5 L 7.65,-18.5 L 18.5,-7.65 Z
+           M -2.5,-8 H -8 V 8 H -2.5 Z
+           M 2.5,8 H 8 V -8 H 2.5 Z"
+        fill="black" fill-opacity="0.3" stroke="black" stroke-width="2.5"/>
+</svg>

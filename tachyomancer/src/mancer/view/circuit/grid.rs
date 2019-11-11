@@ -427,7 +427,8 @@ impl EditGridView {
             Interaction::Nothing => {
                 if grid.eval().is_some() {
                     match grid.chip_at(coords) {
-                        Some((_, ChipType::Button, _))
+                        Some((_, ChipType::Break(_), _))
+                        | Some((_, ChipType::Button, _))
                         | Some((_, ChipType::Toggle(_), _)) => {
                             return Cursor::HandPointing;
                         }
@@ -694,13 +695,17 @@ impl EditGridView {
                 self.stop_hover(ui);
                 if grid.eval().is_some() {
                     match grid.chip_at(grid_pt.as_i32_floor()) {
-                        Some((coords, ChipType::Button, _))
-                        | Some((coords, ChipType::Toggle(_), _)) => {
-                            // TODO: play sound depending on chip type
-                            grid.eval_mut()
-                                .unwrap()
-                                .interaction()
-                                .press_button(coords);
+                        Some((coords, ChipType::Break(_), _)) => {
+                            // TODO: Play sound for toggling breakpoint.
+                            grid.press_button(coords);
+                        }
+                        Some((coords, ChipType::Button, _)) => {
+                            // TODO: Play sound for pressing button.
+                            grid.press_button(coords);
+                        }
+                        Some((coords, ChipType::Toggle(_), _)) => {
+                            // TODO: Play sound for flipping toggle switch.
+                            grid.press_button(coords);
                         }
                         _ => {}
                     }
@@ -802,10 +807,19 @@ impl EditGridView {
             }
             Event::MouseDown(mouse) if mouse.right => {
                 if grid.eval().is_some() {
+                    // TODO: May as well let right-click continue to work for
+                    //   Break/Toggle chips during evaluation.
                     return None;
                 }
                 let coords = self.coords_for_screen_pt(mouse.pt);
                 match grid.chip_at(coords) {
+                    Some((_, ChipType::Break(enabled), orient)) => {
+                        if try_toggle_break(coords, enabled, orient, grid) {
+                            // TODO: Play sound for toggling breakpoint.
+                            ui.request_redraw();
+                            return None;
+                        }
+                    }
                     Some((_, ChipType::Comment(bytes), _)) => {
                         let string: String =
                             bytes.iter().map(|&b| char::from(b)).collect();
@@ -817,7 +831,7 @@ impl EditGridView {
                     Some((_, ChipType::Const(value), _)) => {
                         return Some(EditGridAction::EditConst(coords, value));
                     }
-                    Some((coords, ChipType::Toggle(value), orient)) => {
+                    Some((_, ChipType::Toggle(value), orient)) => {
                         if try_toggle_switch(coords, value, orient, grid) {
                             // TODO: Play sound for flipping toggle switch.
                             ui.request_redraw();
@@ -1064,6 +1078,19 @@ fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {
     let difference = (goal - current) as f64;
     let change = difference * (1.0 - tracking_base.powf(tick.elapsed));
     current + (change.round() as i32)
+}
+
+fn try_toggle_break(
+    coords: Coords,
+    enabled: bool,
+    orient: Orientation,
+    grid: &mut EditGrid,
+) -> bool {
+    let changes = vec![
+        GridChange::RemoveChip(coords, ChipType::Break(enabled), orient),
+        GridChange::AddChip(coords, ChipType::Break(!enabled), orient),
+    ];
+    grid.try_mutate(changes)
 }
 
 fn try_toggle_switch(

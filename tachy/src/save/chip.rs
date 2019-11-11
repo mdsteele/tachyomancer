@@ -32,7 +32,7 @@ pub enum ChipType {
     Add,
     Add2Bit,
     And,
-    Break,
+    Break(bool),
     Button,
     Clock,
     Cmp,
@@ -114,7 +114,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Comment(*b"//   "),
         ChipType::Display,
         ChipType::Toggle(false),
-        ChipType::Break,
+        ChipType::Break(true),
         ChipType::Button,
     ]),
 ];
@@ -127,7 +127,9 @@ impl str::FromStr for ChipType {
             "Add" => Ok(ChipType::Add),
             "Add2Bit" => Ok(ChipType::Add2Bit),
             "And" => Ok(ChipType::And),
-            "Break" => Ok(ChipType::Break),
+            "Break" => Ok(ChipType::Break(true)),
+            "Break(false)" => Ok(ChipType::Break(false)),
+            "Break(true)" => Ok(ChipType::Break(true)),
             "Button" => Ok(ChipType::Button),
             "Clock" => Ok(ChipType::Clock),
             "Cmp" => Ok(ChipType::Cmp),
@@ -202,11 +204,14 @@ impl ChipType {
     pub fn tooltip_format(self) -> String {
         let name = match self {
             ChipType::Add2Bit => "2-Bit Add".to_string(),
+            ChipType::Break(false) => "Breakpoint (disabled)".to_string(),
+            ChipType::Break(true) => "Breakpoint (enabled)".to_string(),
             ChipType::Comment(_) => "Comment".to_string(),
-            ChipType::Const(_) => "Constant".to_string(),
+            ChipType::Const(value) => format!("Constant ({})", value),
             ChipType::EggTimer => "Egg Timer".to_string(),
             ChipType::Mul4Bit => "4-Bit Mul".to_string(),
-            ChipType::Toggle(_) => "Toggle Switch".to_string(),
+            ChipType::Toggle(false) => "Toggle Switch (off)".to_string(),
+            ChipType::Toggle(true) => "Toggle Switch (on)".to_string(),
             other => format!("{:?}", other),
         };
         let description = match self {
@@ -218,6 +223,12 @@ impl ChipType {
             ChipType::And => {
                 "For each bit in the wire, the output is 1 if both inputs \
                  are 1, or 0 if either input is 0."
+            }
+            ChipType::Break(_) => {
+                "Passes events through unchanged.  When enabled, \
+                 automatically pauses the simulation whenever an event goes \
+                 through.\n\
+                 $'Right-click' to toggle whether the breakpoint is enabled."
             }
             ChipType::Clock => {
                 "Sends an event at the beginning of a time step if it \
@@ -339,6 +350,9 @@ impl ChipSet {
 
     pub fn contains(&self, ctype: ChipType) -> bool {
         match ctype {
+            ChipType::Break(_) => {
+                self.ctypes.contains(&ChipType::Break(false))
+            }
             ChipType::Comment(_) => {
                 self.ctypes.contains(&ChipType::Comment(*b"     "))
             }
@@ -352,6 +366,9 @@ impl ChipSet {
 
     pub fn insert(&mut self, ctype: ChipType) {
         match ctype {
+            ChipType::Break(_) => {
+                self.ctypes.insert(ChipType::Break(false));
+            }
             ChipType::Comment(_) => {
                 self.ctypes.insert(ChipType::Comment(*b"     "));
             }
@@ -378,6 +395,7 @@ mod tests {
     #[test]
     fn chip_type_to_and_from_string() {
         let mut chip_types = vec![
+            ChipType::Break(false),
             ChipType::Comment(*b"Blarg"),
             ChipType::Const(0),
             ChipType::Const(13),
@@ -407,6 +425,10 @@ mod tests {
         assert!(!set.contains(ChipType::Toggle(true)));
         set.insert(ChipType::Toggle(false));
         assert!(set.contains(ChipType::Toggle(true)));
+
+        assert!(!set.contains(ChipType::Break(false)));
+        set.insert(ChipType::Break(true));
+        assert!(set.contains(ChipType::Break(false)));
 
         assert!(!set.contains(ChipType::Comment(*b"foo  ")));
         set.insert(ChipType::Comment(*b"bar  "));

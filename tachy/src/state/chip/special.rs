@@ -37,28 +37,52 @@ pub const BREAK_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct BreakChipEval {
+    enabled: bool,
     input: usize,
     output: usize,
     coords: Coords,
+    interact: Rc<RefCell<CircuitInteraction>>,
 }
 
 impl BreakChipEval {
     pub fn new_evals(
+        enabled: bool,
         slots: &[(usize, WireSize)],
         coords: Coords,
+        interact: Rc<RefCell<CircuitInteraction>>,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), BREAK_CHIP_DATA.ports.len());
-        let chip_eval =
-            BreakChipEval { input: slots[0].0, output: slots[1].0, coords };
+        let chip_eval = BreakChipEval {
+            enabled,
+            input: slots[0].0,
+            output: slots[1].0,
+            coords,
+            interact,
+        };
         vec![(1, Box::new(chip_eval))]
     }
 }
 
 impl ChipEval for BreakChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(count) =
+            self.interact.borrow_mut().buttons.remove(&self.coords)
+        {
+            debug_log!(
+                "Break at ({}, {}) was pressed {} time(s)",
+                self.coords.x,
+                self.coords.y,
+                count
+            );
+            if count % 2 != 0 {
+                self.enabled = !self.enabled;
+            }
+        }
         if let Some(value) = state.recv_event(self.input) {
             state.send_event(self.output, value);
-            state.breakpoint(self.coords);
+            if self.enabled {
+                state.breakpoint(self.coords);
+            }
         }
     }
 }

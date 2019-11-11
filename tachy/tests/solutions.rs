@@ -20,6 +20,11 @@ fn automate_heliostat_small() {
 }
 
 #[test]
+fn automate_mining_robot() {
+    test_solution("automate_mining_robot");
+}
+
+#[test]
 fn automate_sensors_fast() {
     test_solution("automate_sensors_fast");
 }
@@ -27,6 +32,11 @@ fn automate_sensors_fast() {
 #[test]
 fn automate_sensors_small() {
     test_solution("automate_sensors_small");
+}
+
+#[test]
+fn automate_storage_depot() {
+    test_solution("automate_storage_depot");
 }
 
 #[test]

@@ -1,0 +1,46 @@
+puzzle = "AutomateMiningRobot"
+score = 160
+time_steps = 160
+
+[circuit]
+size = [5, 7]
+
+[circuit.chips]
+p0p3 = "f1-Eq"
+p0p6 = "f0-Const(15)"
+p1p1 = "f1-Pack"
+p1p4 = "f1-CmpEq"
+p1p6 = "t3-Sub"
+p2p1 = "f3-Latest"
+p3p2 = "t0-Demux"
+p3p5 = "f0-Demux"
+p3p6 = "f1-Discard"
+p4p1 = "f1-Discard"
+
+[circuit.wires]
+p0p2e = "TurnLeft"
+p0p4s = "Straight"
+p0p5n = "TurnLeft"
+p0p6e = "Stub"
+p1p0e = "TurnLeft"
+p1p2w = "SplitTee"
+p1p3e = "Straight"
+p1p3s = "Straight"
+p1p5w = "SplitTee"
+p1p6s = "Stub"
+p2p0s = "TurnLeft"
+p2p2e = "SplitTee"
+p2p3e = "Straight"
+p2p3s = "Straight"
+p2p4e = "Straight"
+p2p4s = "Straight"
+p2p5e = "SplitTee"
+p2p6s = "Straight"
+p3p0e = "TurnLeft"
+p3p1s = "Straight"
+p3p3w = "TurnLeft"
+p3p4s = "TurnLeft"
+p3p5s = "Stub"
+p3p6s = "Stub"
+p4p0s = "TurnLeft"
+p4p2n = "TurnLeft"

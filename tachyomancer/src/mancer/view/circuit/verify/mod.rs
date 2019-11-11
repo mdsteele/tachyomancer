@@ -25,6 +25,7 @@ mod mining;
 mod robotarm;
 mod sensors;
 mod shared;
+mod storage;
 
 use self::shared::{FabricationVerifyView, PuzzleVerifyView};
 use super::tray::TraySlide;
@@ -88,6 +89,9 @@ impl VerificationTray {
             }
             Puzzle::AutomateSensors => {
                 self::sensors::SensorsVerifyView::new(right_bottom)
+            }
+            Puzzle::AutomateStorageDepot => {
+                self::storage::StorageDepotVerifyView::new(right_bottom)
             }
             Puzzle::AutomateXUnit => {
                 // TODO: Make a verification view for AutomateXUnit

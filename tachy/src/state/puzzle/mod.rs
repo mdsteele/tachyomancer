@@ -31,6 +31,7 @@ mod robotarm;
 mod sandbox;
 mod sensors;
 mod shared;
+mod storage;
 mod tutor_bvr;
 mod tutor_evt;
 mod xunit;
@@ -48,6 +49,7 @@ pub use self::mining::MiningRobotEval;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::shared::TutorialBubblePosition;
+pub use self::storage::StorageDepotEval;
 pub use self::tutor_bvr::{TutorialAddEval, TutorialMuxEval, TutorialOrEval};
 pub use self::tutor_evt::{TutorialDemuxEval, TutorialSumEval};
 pub use self::xunit::XUnitEval;
@@ -118,6 +120,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
+            Puzzle::AutomateStorageDepot => self::storage::INTERFACES,
             Puzzle::AutomateXUnit => self::xunit::INTERFACES,
             Puzzle::CommandLander => self::lander::INTERFACES,
             Puzzle::FabricateEggTimer => self::fab_clock::EGG_TIMER_INTERFACES,
@@ -196,6 +199,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateSensors => {
             Box::new(self::sensors::SensorsEval::new(slots))
         }
+        Puzzle::AutomateStorageDepot => Box::new(StorageDepotEval::new(slots)),
         Puzzle::AutomateXUnit => Box::new(XUnitEval::new(slots)),
         Puzzle::CommandLander => Box::new(LanderEval::new(slots)),
         Puzzle::FabricateEggTimer => {

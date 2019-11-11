@@ -65,6 +65,7 @@ pub enum Puzzle {
     AutomateMiningRobot,
     AutomateBeacon,
     AutomateRobotArm,
+    AutomateStorageDepot,
     FabricateEggTimer,
     FabricateStopwatch,
     AutomateXUnit,
@@ -206,7 +207,7 @@ impl Puzzle {
                 graph_bounds: (150, 150),
                 description:
                     "Operate a robotic arm in response to radio commands.",
-                instructions: "",
+                instructions: "TODO",
             },
             Puzzle::AutomateSensors => &PuzzleData {
                 title: "Main Sensors",
@@ -230,6 +231,16 @@ impl Puzzle {
                      value to terminate the scan.\n\
                      * $!Note that ($/x$/ AND 1) is 0 when $/x$/ is even, \
                      and 1 when $/x$/ is odd.",
+            },
+            Puzzle::AutomateStorageDepot => &PuzzleData {
+                title: "Storage Depot",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (8, 6),
+                score_units: "Time",
+                graph_bounds: (300, 1000),
+                description: "TODO",
+                instructions: "TODO",
             },
             Puzzle::AutomateXUnit => &PuzzleData {
                 title: "X-Unit",

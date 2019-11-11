@@ -113,14 +113,12 @@ impl DelayChipEval {
 impl ChipEval for DelayChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         if let Some(value) = self.value.take() {
-            debug_log!("Delay chip is sending value {}", value);
             state.send_event(self.output, value);
         }
     }
 
     fn needs_another_cycle(&mut self, state: &CircuitState) -> bool {
         if let Some(value) = state.recv_event(self.input) {
-            debug_log!("Delay chip is storing value {}", value);
             self.value = Some(value);
             true
         } else {

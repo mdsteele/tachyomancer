@@ -46,24 +46,22 @@ pub const INTERFACES: &[Interface] = &[
         pos: InterfacePosition::Right(1),
         ports: &[
             InterfacePort {
-                name: "Xmit",
-                description:
-                    "\
-                     Connects to the radio transmitter.  Signal here when \
-                     the command is completed.",
-                flow: PortFlow::Recv,
-                color: PortColor::Event,
-                size: WireSize::Zero,
-            },
-            InterfacePort {
                 name: "Recv",
                 description:
-                    "\
-                     Connects to the radio receiver.  Sends an event when a \
+                    "Connects to the radio receiver.  Sends an event when a \
                      radio command arrives.",
                 flow: PortFlow::Send,
                 color: PortColor::Event,
                 size: WireSize::Four,
+            },
+            InterfacePort {
+                name: "Xmit",
+                description:
+                    "Connects to the radio transmitter.  Signal here when \
+                     the command is completed.",
+                flow: PortFlow::Recv,
+                color: PortColor::Event,
+                size: WireSize::Zero,
             },
         ],
     },
@@ -155,9 +153,9 @@ impl RobotArmEval {
         debug_assert_eq!(slots[1].len(), 4);
         RobotArmEval {
             rng: SimpleRng::new(0xd313_0a05_098a_98b5),
-            xmit_port: slots[0][0].0,
-            xmit_wire: slots[0][0].1,
-            recv_wire: slots[0][1].1,
+            recv_wire: slots[0][0].1,
+            xmit_port: slots[0][1].0,
+            xmit_wire: slots[0][1].1,
             pos_wire: slots[1][0].1,
             turn_wire: slots[1][1].1,
             manip_port: slots[1][2].0,
@@ -221,7 +219,10 @@ impl PuzzleEval for RobotArmEval {
         let mut errors = Vec::<EvalError>::new();
         if state.recv_event(self.xmit_wire).is_some() {
             if !self.has_completed_command {
-                let message = format!("Sent radio reply without first completing the instructed manipulation.");
+                let message = format!(
+                    "Sent radio reply without first completing the instructed \
+                     manipulation."
+                );
                 errors.push(state.fatal_port_error(self.xmit_port, message));
             } else if self.has_sent_radio_reply {
                 let message = format!(

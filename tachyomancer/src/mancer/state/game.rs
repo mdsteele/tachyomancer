@@ -324,11 +324,11 @@ impl GameState {
             .map_or(false, |profile| profile.is_puzzle_solved(puzzle))
     }
 
-    pub fn local_scores(&self, puzzle: Puzzle) -> Option<&ScoreCurve> {
+    pub fn local_scores(&self, puzzle: Puzzle) -> &ScoreCurve {
         if let Some(ref profile) = self.profile {
             profile.local_scores(puzzle)
         } else {
-            None
+            ScoreCurve::EMPTY
         }
     }
 

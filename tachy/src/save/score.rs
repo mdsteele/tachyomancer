@@ -25,16 +25,19 @@ use std::str::FromStr;
 
 //===========================================================================//
 
-// TODO: Once const fn Vec::new is stabilized, make a public constant for an
-//   empty ScoreCurve so we can return &ScoreCurve in various places instead of
-//   Option<&ScoreCurve>, and not require ScoreCurveMap to store empty curves.
 #[derive(Clone)]
 pub struct ScoreCurve {
     scores: Vec<(i32, u32)>,
 }
 
 impl ScoreCurve {
-    pub fn new(mut scores: Vec<(i32, u32)>) -> ScoreCurve {
+    pub const EMPTY: &'static ScoreCurve = &ScoreCurve::new();
+
+    pub const fn new() -> ScoreCurve {
+        ScoreCurve { scores: Vec::new() }
+    }
+
+    pub fn with_scores(mut scores: Vec<(i32, u32)>) -> ScoreCurve {
         ScoreCurve::fix(&mut scores);
         ScoreCurve { scores }
     }
@@ -73,7 +76,7 @@ impl<'d> serde::Deserialize<'d> for ScoreCurve {
         D: serde::Deserializer<'d>,
     {
         let scores = Vec::<(i32, u32)>::deserialize(deserializer)?;
-        Ok(ScoreCurve::new(scores))
+        Ok(ScoreCurve::with_scores(scores))
     }
 }
 
@@ -94,23 +97,26 @@ pub struct ScoreCurveMap {
 
 impl ScoreCurveMap {
     pub fn new() -> ScoreCurveMap {
-        ScoreCurveMap {
-            map: Puzzle::all()
-                .map(|puzzle| (puzzle, ScoreCurve::new(Vec::new())))
-                .collect(),
-        }
+        ScoreCurveMap { map: HashMap::new() }
     }
 
     pub fn get(&self, puzzle: Puzzle) -> &ScoreCurve {
-        self.map.get(&puzzle).unwrap()
+        self.map.get(&puzzle).unwrap_or(&ScoreCurve::EMPTY)
     }
 
     pub fn set(&mut self, puzzle: Puzzle, scores: ScoreCurve) {
-        self.map.insert(puzzle, scores);
+        if scores.is_empty() {
+            self.map.remove(&puzzle);
+        } else {
+            self.map.insert(puzzle, scores);
+        }
     }
 
     pub fn insert(&mut self, puzzle: Puzzle, area: i32, score: u32) {
-        self.map.get_mut(&puzzle).unwrap().insert((area, score));
+        self.map
+            .entry(puzzle)
+            .or_insert_with(ScoreCurve::new)
+            .insert((area, score));
     }
 
     pub fn deserialize_from_string(
@@ -158,7 +164,6 @@ impl serde::Serialize for ScoreCurveMap {
     {
         self.map
             .iter()
-            .filter(|(_, curve)| !curve.is_empty())
             .map(|(puzzle, curve)| (format!("{:?}", puzzle), curve))
             .collect::<BTreeMap<String, &ScoreCurve>>()
             .serialize(serializer)
@@ -224,7 +229,7 @@ mod tests {
 
     #[test]
     fn serialize_score_curve() {
-        let scores = ScoreCurve::new(vec![(16, 85), (20, 43)]);
+        let scores = ScoreCurve::with_scores(vec![(16, 85), (20, 43)]);
         let mut map = HashMap::<String, ScoreCurve>::new();
         map.insert("foo".to_string(), scores);
         let bytes = toml::to_vec(&map).unwrap();
@@ -243,12 +248,26 @@ mod tests {
     }
 
     #[test]
+    fn insert_into_score_curve_map() {
+        let mut scores = ScoreCurveMap::new();
+        scores.insert(Puzzle::TutorialOr, 9, 12);
+        scores.insert(Puzzle::TutorialOr, 8, 16);
+        assert_eq!(
+            scores.get(Puzzle::TutorialOr).scores(),
+            &[(8, 16), (9, 12)]
+        );
+    }
+
+    #[test]
     fn serialize_score_curve_map() {
         let mut scores = ScoreCurveMap::new();
+        scores.set(
+            Puzzle::TutorialOr,
+            ScoreCurve::with_scores(vec![(8, 16), (9, 12)]),
+        );
         scores
-            .set(Puzzle::TutorialOr, ScoreCurve::new(vec![(8, 16), (9, 12)]));
-        scores.set(Puzzle::TutorialMux, ScoreCurve::new(vec![(12, 30)]));
-        scores.set(Puzzle::TutorialAdd, ScoreCurve::new(vec![]));
+            .set(Puzzle::TutorialMux, ScoreCurve::with_scores(vec![(12, 30)]));
+        scores.set(Puzzle::TutorialAdd, ScoreCurve::new());
         let serialized = scores.serialize_to_string().unwrap();
         assert_eq!(
             serialized.as_str(),

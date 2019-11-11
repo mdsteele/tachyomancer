@@ -162,18 +162,19 @@ impl PuzzleProgress {
     }
 
     pub fn is_solved(&self) -> bool {
-        !self.local_scores().map_or(true, ScoreCurve::is_empty)
+        !self.local_scores().is_empty()
     }
 
-    pub fn local_scores(&self) -> Option<&ScoreCurve> {
-        self.data.graph.as_ref()
+    pub fn local_scores(&self) -> &ScoreCurve {
+        self.data.graph.as_ref().unwrap_or(ScoreCurve::EMPTY)
     }
 
     pub fn record_score(&mut self, area: i32, score: u32) {
         if let Some(ref mut graph) = self.data.graph {
             graph.insert((area, score));
         } else {
-            self.data.graph = Some(ScoreCurve::new(vec![(area, score)]));
+            self.data.graph =
+                Some(ScoreCurve::with_scores(vec![(area, score)]));
         }
         self.needs_save = true;
     }

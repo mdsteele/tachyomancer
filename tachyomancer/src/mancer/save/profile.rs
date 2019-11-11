@@ -308,11 +308,11 @@ impl Profile {
         Puzzle::all().filter(|&puzzle| self.is_puzzle_solved(puzzle)).collect()
     }
 
-    pub fn local_scores(&self, puzzle: Puzzle) -> Option<&ScoreCurve> {
+    pub fn local_scores(&self, puzzle: Puzzle) -> &ScoreCurve {
         if let Some(ref progress) = self.puzzles.get(&puzzle) {
             progress.local_scores()
         } else {
-            None
+            ScoreCurve::EMPTY
         }
     }
 

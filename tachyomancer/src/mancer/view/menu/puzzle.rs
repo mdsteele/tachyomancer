@@ -407,7 +407,7 @@ impl GraphView {
         &self,
         resources: &Resources,
         puzzle: Puzzle,
-        local_scores: Option<&ScoreCurve>,
+        local_scores: &ScoreCurve,
     ) -> FrameBuffer {
         debug_log!("Regenerating preview image");
         let fbo_size = self.rect.size().expand(-GRAPH_INNER_MARGIN);
@@ -419,8 +419,8 @@ impl GraphView {
         fbo.bind();
         if puzzle.kind() == PuzzleKind::Sandbox {
             GraphView::draw_sandbox_message(resources, fbo_size);
-        } else if let Some(scores) = local_scores {
-            GraphView::draw_graph(resources, fbo_size, puzzle, scores);
+        } else if !local_scores.is_empty() {
+            GraphView::draw_graph(resources, fbo_size, puzzle, local_scores);
         } else {
             GraphView::draw_no_solutions_message(resources, fbo_size);
         }

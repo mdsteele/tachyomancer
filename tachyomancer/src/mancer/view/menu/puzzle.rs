@@ -21,16 +21,16 @@ use super::super::button::TextButton;
 use super::super::chip::ChipModel;
 use super::super::paragraph::Paragraph;
 use super::super::wire::WireModel;
+use super::graph::ScoreGraphView;
 use super::list::{ListIcon, ListView};
-use crate::mancer::font::Align;
 use crate::mancer::gl::{Depth, FrameBuffer};
 use crate::mancer::gui::{Event, Resources, Ui};
 use crate::mancer::save::Prefs;
 use crate::mancer::state::GameState;
-use cgmath::{vec2, Deg, Matrix4};
+use cgmath::{vec2, Matrix4};
 use std::cell::RefCell;
-use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect, RectSize};
-use tachy::save::{Conversation, Puzzle, PuzzleKind, ScoreCurve};
+use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
+use tachy::save::{Conversation, Puzzle, PuzzleKind};
 use tachy::state::{EditGrid, PuzzleExt, WireColor};
 
 //===========================================================================//
@@ -44,14 +44,6 @@ const DESCRIPTION_FONT_SIZE: f32 = 20.0;
 const DESCRIPTION_INNER_MARGIN_HORZ: f32 = 14.0;
 const DESCRIPTION_INNER_MARGIN_VERT: f32 = 10.0;
 const DESCRIPTION_LINE_HEIGHT: f32 = 22.0;
-
-const GRAPH_LABEL_FONT_SIZE: f32 = 14.0;
-const GRAPH_INNER_MARGIN: f32 = 10.0;
-const GRAPH_LABEL_MARGIN: f32 = 18.0;
-const GRAPH_TICK_STEP_HORZ: i32 = 10;
-const GRAPH_TICK_STEP_VERT: u32 = 10;
-const GRAPH_TICK_LENGTH: f32 = 4.0;
-const GRAPH_TICK_THICKNESS: f32 = 2.0;
 
 const PREVIEW_INNER_MARGIN: f32 = 14.0;
 const PREVIEW_MAX_GRID_CELL_SIZE: f32 = 48.0;
@@ -74,7 +66,7 @@ pub struct PuzzlesView {
     circuit_list: ListView<String>,
     back_button: TextButton<()>,
     description: DescriptionView,
-    graph: GraphView,
+    graph: ScoreGraphView,
     preview: CircuitPreviewView,
     edit_button: TextButton<PuzzlesAction>,
     rename_button: TextButton<PuzzlesAction>,
@@ -155,7 +147,7 @@ impl PuzzlesView {
                 state.circuit_name(),
             ),
             description: DescriptionView::new(description_rect),
-            graph: GraphView::new(window_size, graph_rect),
+            graph: ScoreGraphView::new(window_size, graph_rect),
             preview: CircuitPreviewView::new(window_size, preview_rect),
             edit_button,
             rename_button,
@@ -341,247 +333,6 @@ impl DescriptionView {
         let left = self.rect.x + DESCRIPTION_INNER_MARGIN_HORZ;
         let top = self.rect.y + DESCRIPTION_INNER_MARGIN_VERT;
         paragraph.draw(resources, matrix, (left, top));
-    }
-}
-
-//===========================================================================//
-
-struct GraphView {
-    window_size: RectSize<i32>,
-    rect: Rect<f32>,
-    cache: RefCell<Option<(Option<String>, Puzzle, FrameBuffer)>>,
-}
-
-impl GraphView {
-    pub fn new(window_size: RectSize<i32>, rect: Rect<i32>) -> GraphView {
-        GraphView {
-            window_size,
-            rect: rect.as_f32(),
-            cache: RefCell::new(None),
-        }
-    }
-
-    pub fn draw(
-        &self,
-        resources: &Resources,
-        matrix: &Matrix4<f32>,
-        state: &GameState,
-    ) {
-        let profile_name = state.profile().map(|profile| profile.name());
-        let puzzle = state.current_puzzle();
-
-        let color = Color3::new(0.1, 0.7, 0.4);
-        resources.shaders().solid().fill_rect(&matrix, color, self.rect);
-
-        let mut cached = self.cache.borrow_mut();
-        match cached.as_ref() {
-            Some(&(ref pname, puzz, ref fbo))
-                if pname.as_ref().map(String::as_str) == profile_name
-                    && puzz == puzzle =>
-            {
-                self.draw_fbo(resources, matrix, fbo);
-                return;
-            }
-            _ => {}
-        }
-
-        let fbo =
-            self.generate_fbo(resources, puzzle, state.local_scores(puzzle));
-        self.draw_fbo(resources, matrix, &fbo);
-        *cached = Some((profile_name.map(str::to_string), puzzle, fbo));
-    }
-
-    fn draw_fbo(
-        &self,
-        resources: &Resources,
-        matrix: &Matrix4<f32>,
-        fbo: &FrameBuffer,
-    ) {
-        let left_top = self.rect.top_left()
-            + vec2(GRAPH_INNER_MARGIN, GRAPH_INNER_MARGIN);
-        let grayscale = false;
-        resources.shaders().frame().draw(matrix, fbo, left_top, grayscale);
-    }
-
-    fn generate_fbo(
-        &self,
-        resources: &Resources,
-        puzzle: Puzzle,
-        local_scores: &ScoreCurve,
-    ) -> FrameBuffer {
-        debug_log!("Regenerating preview image");
-        let fbo_size = self.rect.size().expand(-GRAPH_INNER_MARGIN);
-        let fbo = FrameBuffer::new(
-            fbo_size.width as usize,
-            fbo_size.height as usize,
-            false,
-        );
-        fbo.bind();
-        if puzzle.kind() == PuzzleKind::Sandbox {
-            GraphView::draw_sandbox_message(resources, fbo_size);
-        } else if !local_scores.is_empty() {
-            GraphView::draw_graph(resources, fbo_size, puzzle, local_scores);
-        } else {
-            GraphView::draw_no_solutions_message(resources, fbo_size);
-        }
-        fbo.unbind(self.window_size);
-        fbo
-    }
-
-    fn draw_sandbox_message(resources: &Resources, fbo_size: RectSize<f32>) {
-        let matrix = GraphView::fbo_matrix(fbo_size);
-        let mid_x = (0.5 * fbo_size.width).round();
-        let mid_y = (0.5 * fbo_size.height).round();
-        let font = resources.fonts().roman();
-        font.draw(
-            &matrix,
-            20.0,
-            Align::MidCenter,
-            (mid_x, mid_y),
-            "NO GRAPH FOR SANDBOX",
-        );
-    }
-
-    fn draw_no_solutions_message(
-        resources: &Resources,
-        fbo_size: RectSize<f32>,
-    ) {
-        let matrix = GraphView::fbo_matrix(fbo_size);
-        let mid_x = (0.5 * fbo_size.width).round();
-        let mid_y = (0.5 * fbo_size.height).round();
-        let font = resources.fonts().roman();
-        font.draw(
-            &matrix,
-            20.0,
-            Align::MidCenter,
-            (mid_x, mid_y - 12.0),
-            "COMPLETE THIS TASK TO",
-        );
-        font.draw(
-            &matrix,
-            20.0,
-            Align::MidCenter,
-            (mid_x, mid_y + 12.0),
-            "VIEW OPTIMIZATION GRAPH",
-        );
-    }
-
-    fn draw_graph(
-        resources: &Resources,
-        fbo_size: RectSize<f32>,
-        puzzle: Puzzle,
-        local_scores: &ScoreCurve,
-    ) {
-        let matrix = GraphView::fbo_matrix(fbo_size);
-
-        // Draw the graph data:
-        let graph_rect = Rect::new(
-            0.0,
-            0.0,
-            fbo_size.width - GRAPH_LABEL_MARGIN,
-            fbo_size.height - GRAPH_LABEL_MARGIN,
-        );
-        let color = Color3::new(0.1, 0.1, 0.1);
-        resources.shaders().solid().fill_rect(&matrix, color, graph_rect);
-        let graph_bounds = puzzle.graph_bounds();
-        let global_scores = resources.global_scores_for(puzzle);
-        GraphView::draw_score_curve(
-            resources,
-            &matrix,
-            graph_rect,
-            graph_bounds,
-            &global_scores,
-            Color3::new(0.1, 0.1, 0.9),
-        );
-        GraphView::draw_score_curve(
-            resources,
-            &matrix,
-            graph_rect,
-            graph_bounds,
-            local_scores,
-            Color3::new(0.9, 0.1, 0.1),
-        );
-
-        // Draw axis ticks:
-        let color = Color3::new(0.1, 0.1, 0.1);
-        let unit_span = (graph_rect.width - GRAPH_TICK_THICKNESS)
-            / (graph_bounds.0 as f32);
-        let mut tick = 0;
-        while tick <= graph_bounds.0 {
-            let tick_rect = Rect::new(
-                graph_rect.x + (tick as f32) * unit_span,
-                graph_rect.bottom(),
-                GRAPH_TICK_THICKNESS,
-                GRAPH_TICK_LENGTH,
-            );
-            resources.shaders().solid().fill_rect(&matrix, color, tick_rect);
-            tick += GRAPH_TICK_STEP_HORZ;
-        }
-        let unit_span = (graph_rect.height - GRAPH_TICK_THICKNESS)
-            / (graph_bounds.1 as f32);
-        let mut tick = 0;
-        while tick <= graph_bounds.1 {
-            let tick_rect = Rect::new(
-                graph_rect.right(),
-                graph_rect.bottom()
-                    - GRAPH_TICK_THICKNESS
-                    - (tick as f32) * unit_span,
-                GRAPH_TICK_LENGTH,
-                GRAPH_TICK_THICKNESS,
-            );
-            resources.shaders().solid().fill_rect(&matrix, color, tick_rect);
-            tick += GRAPH_TICK_STEP_VERT;
-        }
-
-        // Draw axis labels:
-        let font = resources.fonts().roman();
-        font.draw(
-            &matrix,
-            GRAPH_LABEL_FONT_SIZE,
-            Align::BottomCenter,
-            (
-                graph_rect.x + 0.5 * graph_rect.width,
-                graph_rect.bottom() + GRAPH_LABEL_MARGIN as f32,
-            ),
-            "Size",
-        );
-        let side_matrix = matrix
-            * Matrix4::trans2(graph_rect.right(), graph_rect.bottom())
-            * Matrix4::from_angle_z(Deg(-90.0));
-        font.draw(
-            &side_matrix,
-            GRAPH_LABEL_FONT_SIZE,
-            Align::BottomCenter,
-            (0.5 * graph_rect.height, GRAPH_LABEL_MARGIN as f32),
-            puzzle.score_units(),
-        );
-    }
-
-    fn draw_score_curve(
-        resources: &Resources,
-        matrix: &Matrix4<f32>,
-        graph_rect: Rect<f32>,
-        graph_bounds: (i32, u32),
-        scores: &ScoreCurve,
-        color: Color3,
-    ) {
-        for &(pt_x, pt_y) in scores.scores().iter() {
-            let rel_x =
-                graph_rect.width * ((pt_x as f32) / (graph_bounds.0 as f32));
-            let rel_y =
-                graph_rect.height * ((pt_y as f32) / (graph_bounds.1 as f32));
-            let point_rect = Rect::new(
-                graph_rect.x + rel_x,
-                graph_rect.y,
-                graph_rect.width - rel_x,
-                graph_rect.height - rel_y,
-            );
-            resources.shaders().solid().fill_rect(&matrix, color, point_rect);
-        }
-    }
-
-    fn fbo_matrix(fbo_size: RectSize<f32>) -> Matrix4<f32> {
-        cgmath::ortho(0.0, fbo_size.width, 0.0, fbo_size.height, -10.0, 10.0)
     }
 }
 

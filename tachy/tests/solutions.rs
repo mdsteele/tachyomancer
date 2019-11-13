@@ -5,6 +5,11 @@ use tachy::save::SolutionData;
 use tachy::state::verify_solution;
 
 #[test]
+fn automate_drilling_rig() {
+    test_solution("automate_drilling_rig");
+}
+
+#[test]
 fn automate_grapple() {
     test_solution("automate_grapple");
 }

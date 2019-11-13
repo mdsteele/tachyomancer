@@ -1,0 +1,42 @@
+puzzle = "AutomateDrillingRig"
+score = 93
+time_steps = 93
+
+[circuit]
+size = [6, 5]
+
+[circuit.chips]
+p0p1 = "t1-Or"
+p0p3 = "f0-Mux"
+p0p4 = "f3-Const(3)"
+p2p0 = "f3-Eq"
+p2p2 = "t2-EggTimer"
+p3p3 = "f3-Demux"
+p3p4 = "f3-Sample"
+p4p1 = "f3-Eq"
+p4p2 = "t2-EggTimer"
+p4p3 = "f0-Delay"
+p4p4 = "f2-Const(4)"
+
+[circuit.wires]
+p0p0e = "TurnLeft"
+p0p2s = "Straight"
+p0p3s = "Stub"
+p1p0e = "Straight"
+p1p1s = "SplitTee"
+p1p2s = "Straight"
+p1p3n = "TurnLeft"
+p1p3s = "TurnLeft"
+p1p4n = "TurnLeft"
+p2p1e = "Straight"
+p2p1s = "Straight"
+p2p3e = "Straight"
+p2p4s = "TurnLeft"
+p3p1e = "Straight"
+p3p2s = "Stub"
+p3p3e = "Stub"
+p3p3s = "Stub"
+p3p4e = "Stub"
+p3p4s = "Stub"
+p4p1s = "Stub"
+p5p3w = "TurnLeft"

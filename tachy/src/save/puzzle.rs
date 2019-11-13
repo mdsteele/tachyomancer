@@ -68,6 +68,7 @@ pub enum Puzzle {
     AutomateStorageDepot,
     FabricateEggTimer,
     FabricateStopwatch,
+    AutomateDrillingRig,
     AutomateXUnit,
     SandboxBehavior,
     SandboxEvent,
@@ -135,6 +136,16 @@ impl Puzzle {
                      * $!The current position is given by the motor interface \
                      on the right side of the board.\n\
                      * $!The closer the current position is to optimal, TODO.",
+            },
+            Puzzle::AutomateDrillingRig => &PuzzleData {
+                title: "Drilling Rig",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (5, 7),
+                score_units: "Time",
+                graph_bounds: (100, 200),
+                description: "TODO",
+                instructions: "TODO",
             },
             Puzzle::AutomateGrapple => &PuzzleData {
                 title: "Grapple Launcher",

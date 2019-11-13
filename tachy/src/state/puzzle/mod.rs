@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 mod beacon;
+mod drill;
 mod fab_arith;
 mod fab_clock;
 mod grapple;
@@ -37,6 +38,7 @@ mod tutor_evt;
 mod xunit;
 
 pub use self::beacon::BeaconEval;
+pub use self::drill::DrillingRigEval;
 pub use self::fab_arith::{
     FabricateHalveEval, FabricateIncEval, FabricateMulEval, FabricateXorEval,
 };
@@ -114,6 +116,7 @@ impl PuzzleExt for Puzzle {
     fn interfaces(&self) -> &'static [Interface] {
         match self {
             Puzzle::AutomateBeacon => self::beacon::INTERFACES,
+            Puzzle::AutomateDrillingRig => self::drill::INTERFACES,
             Puzzle::AutomateGrapple => self::grapple::INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateMiningRobot => self::mining::INTERFACES,
@@ -186,9 +189,8 @@ pub(super) fn new_puzzle_eval(
     slots: Vec<Vec<((Coords, Direction), usize)>>,
 ) -> Box<dyn PuzzleEval> {
     match puzzle {
-        Puzzle::AutomateBeacon => {
-            Box::new(self::beacon::BeaconEval::new(slots))
-        }
+        Puzzle::AutomateBeacon => Box::new(BeaconEval::new(slots)),
+        Puzzle::AutomateDrillingRig => Box::new(DrillingRigEval::new(slots)),
         Puzzle::AutomateGrapple => Box::new(GrappleEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateMiningRobot => Box::new(MiningRobotEval::new(slots)),

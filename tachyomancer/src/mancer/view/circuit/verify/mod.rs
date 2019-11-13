@@ -71,6 +71,10 @@ impl VerificationTray {
             Puzzle::AutomateBeacon => {
                 self::beacon::BeaconVerifyView::new(right_bottom)
             }
+            Puzzle::AutomateDrillingRig => {
+                // TODO: Make a verification view for AutomateDrillingRig
+                self::shared::NullVerifyView::new()
+            }
             Puzzle::AutomateGrapple => {
                 self::grapple::GrappleVerifyView::new(right_bottom)
             }

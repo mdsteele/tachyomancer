@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::paragraph::Paragraph;
+use super::super::tooltip::TooltipSink;
 use super::tray::TraySlide;
 use crate::mancer::font::Align;
 use crate::mancer::gui::{Cursor, Event, Resources, Ui};
@@ -125,7 +126,12 @@ impl SpecificationTray {
         );
     }
 
-    pub fn on_event(&mut self, event: &Event, ui: &mut Ui) -> bool {
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        tooltip: &mut dyn TooltipSink<()>,
+    ) -> bool {
         match event {
             Event::ClockTick(tick) => {
                 self.slide.on_tick(tick, ui);
@@ -155,6 +161,7 @@ impl SpecificationTray {
                     || tab_rect.contains_point(rel_mouse_pt.as_f32())
                 {
                     ui.cursor().request(Cursor::default());
+                    tooltip.hover_none(ui);
                 }
             }
             Event::Multitouch(touch)

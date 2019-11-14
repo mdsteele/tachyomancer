@@ -71,6 +71,7 @@ enum CircuitTooltipTag {
     Controls(ControlsAction),
     Grid(GridTooltipTag),
     Parts(ChipType),
+    Unused(()),
 }
 
 impl CircuitTooltipTag {
@@ -81,6 +82,7 @@ impl CircuitTooltipTag {
             }
             CircuitTooltipTag::Grid(tag) => tag.tooltip_format(grid),
             CircuitTooltipTag::Parts(ctype) => ctype.tooltip_format(),
+            CircuitTooltipTag::Unused(()) => String::new(),
         }
     }
 }
@@ -388,12 +390,20 @@ impl CircuitView {
             return action;
         }
 
-        let stop = self.specification_tray.on_event(event, ui);
+        let stop = self.specification_tray.on_event(
+            event,
+            ui,
+            &mut self.tooltip.sink(CircuitTooltipTag::Unused),
+        );
         if stop {
             return action;
         }
 
-        let stop = self.verification_tray.on_event(event, ui);
+        let stop = self.verification_tray.on_event(
+            event,
+            ui,
+            &mut self.tooltip.sink(CircuitTooltipTag::Unused),
+        );
         if stop {
             return action;
         }

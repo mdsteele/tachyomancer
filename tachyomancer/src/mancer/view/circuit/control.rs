@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::button::HoverPulse;
-use super::super::tooltip::Tooltip;
+use super::super::tooltip::TooltipSink;
 use super::tutorial::TutorialBubble;
 use crate::mancer::gui::{Cursor, Event, Resources, Sound, Ui};
 use crate::mancer::save::{Hotkey, Prefs};
@@ -91,7 +91,7 @@ impl ControlsAction {
         }
     }
 
-    fn tooltip_format(self) -> &'static str {
+    pub fn tooltip_format(self) -> &'static str {
         match self {
             ControlsAction::Reset => TOOLTIP_RESET,
             ControlsAction::RunOrPause => TOOLTIP_RUN_PAUSE,
@@ -108,7 +108,6 @@ pub struct ControlsTray {
     rect: Rect<i32>,
     buttons: Vec<ControlsButton>,
     tutorial_bubble: Option<TutorialBubble>,
-    tooltip: Tooltip<ControlsAction>,
 }
 
 impl ControlsTray {
@@ -150,8 +149,7 @@ impl ControlsTray {
                 ControlsButton::new(action, rect, hotkey)
             })
             .collect::<Vec<ControlsButton>>();
-        let tooltip = Tooltip::new(window_size);
-        ControlsTray { rect, buttons, tutorial_bubble, tooltip }
+        ControlsTray { rect, buttons, tutorial_bubble }
     }
 
     pub fn draw(
@@ -176,7 +174,6 @@ impl ControlsTray {
             let topleft = Point2::new(self.rect.x - 230, self.rect.y - 24);
             bubble.draw(resources, matrix, topleft);
         }
-        self.tooltip.draw(resources, matrix);
     }
 
     pub fn on_event(
@@ -186,6 +183,7 @@ impl ControlsTray {
         status: ControlsStatus,
         has_errors: bool,
         is_interacting: bool,
+        tooltip: &mut dyn TooltipSink<ControlsAction>,
         prefs: &Prefs,
     ) -> Option<Option<ControlsAction>> {
         for button in self.buttons.iter_mut() {
@@ -194,25 +192,21 @@ impl ControlsTray {
                 ui,
                 status,
                 has_errors || is_interacting,
+                tooltip,
                 prefs,
-                &mut self.tooltip,
             );
             if opt_action.is_some() {
                 return Some(opt_action);
             }
         }
         match event {
-            Event::ClockTick(tick) => {
-                self.tooltip.tick(tick, ui, prefs, |action| {
-                    action.tooltip_format().to_string()
-                });
-            }
             Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
                 return Some(None);
             }
             Event::MouseMove(mouse) | Event::MouseUp(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
                     ui.cursor().request(Cursor::default());
+                    tooltip.hover_none(ui);
                 }
             }
             Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
@@ -314,8 +308,8 @@ impl ControlsButton {
         ui: &mut Ui,
         status: ControlsStatus,
         controls_disabled: bool,
+        tooltip: &mut dyn TooltipSink<ControlsAction>,
         prefs: &Prefs,
-        tooltip: &mut Tooltip<ControlsAction>,
     ) -> Option<ControlsAction> {
         match event {
             Event::ClockTick(tick) => {
@@ -344,9 +338,7 @@ impl ControlsButton {
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
                 if hovering {
-                    tooltip.start_hover(mouse.pt, ui, self.action);
-                } else {
-                    tooltip.stop_hover(ui, &self.action);
+                    tooltip.hover_tag(mouse.pt, ui, self.action);
                 }
                 if self.hover_pulse.set_hovering(hovering, ui)
                     && !controls_disabled
@@ -357,7 +349,6 @@ impl ControlsButton {
             }
             Event::Unfocus => {
                 self.hover_pulse.unfocus();
-                tooltip.stop_hover(ui, &self.action);
             }
             _ => {}
         }

@@ -35,9 +35,11 @@ use self::control::{ControlsAction, ControlsStatus, ControlsTray};
 use self::grid::{EditGridAction, EditGridView};
 use self::parts::{PartsAction, PartsTray};
 use self::specify::SpecificationTray;
+use self::tooltip::GridTooltipTag;
 use self::tutorial::TutorialBubble;
 use self::verify::VerificationTray;
 use super::dialog::{ButtonDialogBox, TextDialogBox};
+use super::tooltip::Tooltip;
 use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui, Window};
 use crate::mancer::save::Prefs;
 use cgmath;
@@ -64,6 +66,27 @@ enum VictoryDialogAction {
 
 //===========================================================================//
 
+#[derive(Eq, PartialEq)]
+enum CircuitTooltipTag {
+    Controls(ControlsAction),
+    Grid(GridTooltipTag),
+    Parts(ChipType),
+}
+
+impl CircuitTooltipTag {
+    fn tooltip_format(&self, grid: &EditGrid) -> String {
+        match self {
+            CircuitTooltipTag::Controls(action) => {
+                action.tooltip_format().to_string()
+            }
+            CircuitTooltipTag::Grid(tag) => tag.tooltip_format(grid),
+            CircuitTooltipTag::Parts(ctype) => ctype.tooltip_format(),
+        }
+    }
+}
+
+//===========================================================================//
+
 pub struct CircuitView {
     width: f32,
     height: f32,
@@ -74,6 +97,7 @@ pub struct CircuitView {
     verification_tray: VerificationTray,
     seconds_since_time_step: f64,
     controls_status: ControlsStatus,
+    tooltip: Tooltip<CircuitTooltipTag>,
     edit_comment_dialog: Option<(TextDialogBox, Coords)>,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
     victory_dialog: Option<ButtonDialogBox<VictoryDialogAction>>,
@@ -132,6 +156,7 @@ impl CircuitView {
             verification_tray: VerificationTray::new(window_size, puzzle),
             seconds_since_time_step: 0.0,
             controls_status: ControlsStatus::Stopped,
+            tooltip: Tooltip::new(window_size),
             edit_comment_dialog: None,
             edit_const_dialog: None,
             victory_dialog: None,
@@ -152,7 +177,7 @@ impl CircuitView {
             grid.has_errors(),
         );
         self.edit_grid.draw_dragged(resources);
-        self.edit_grid.draw_tooltip(resources, &projection);
+        self.tooltip.draw(resources, &projection);
         if let Some((ref dialog, _)) = self.edit_comment_dialog {
             dialog.draw(resources, &projection, |_| true);
         }
@@ -174,6 +199,9 @@ impl CircuitView {
             self.controls_status == ControlsStatus::Stopped,
             grid.eval().is_none()
         );
+
+        self.tooltip
+            .on_event(event, ui, prefs, |tag| tag.tooltip_format(grid));
 
         if let Some((mut dialog, coords)) = self.edit_comment_dialog.take() {
             match dialog.on_event(event, ui, |_| true) {
@@ -247,6 +275,7 @@ impl CircuitView {
             self.controls_status,
             grid.has_errors(),
             !self.edit_grid.can_start_evaluation(),
+            &mut self.tooltip.sink(CircuitTooltipTag::Controls),
             prefs,
         ) {
             match opt_action {
@@ -340,8 +369,12 @@ impl CircuitView {
             return action;
         }
 
-        let (opt_action, stop) =
-            self.parts_tray.on_event(event, ui, grid.eval().is_none(), prefs);
+        let (opt_action, stop) = self.parts_tray.on_event(
+            event,
+            ui,
+            grid.eval().is_none(),
+            &mut self.tooltip.sink(CircuitTooltipTag::Parts),
+        );
         match opt_action {
             Some(PartsAction::Grab(ctype, pt)) => {
                 self.edit_grid.grab_from_parts_tray(pt, ui, ctype);
@@ -365,7 +398,13 @@ impl CircuitView {
             return action;
         }
 
-        match self.edit_grid.on_event(event, ui, grid, prefs) {
+        match self.edit_grid.on_event(
+            event,
+            ui,
+            grid,
+            &mut self.tooltip.sink(CircuitTooltipTag::Grid),
+            prefs,
+        ) {
             Some(EditGridAction::EditComment(coords, string)) => {
                 let size =
                     RectSize::new(self.width as i32, self.height as i32);

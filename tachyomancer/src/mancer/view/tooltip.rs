@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::paragraph::Paragraph;
-use crate::mancer::gui::{ClockEventData, Resources, Ui};
+use crate::mancer::gui::{Event, Resources, Ui};
 use crate::mancer::save::Prefs;
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{Color3, Color4, Rect, RectSize};
@@ -34,15 +34,45 @@ const TOOLTIP_OUTER_MARGIN: f32 = 14.0;
 
 //===========================================================================//
 
+pub trait TooltipSink<T> {
+    fn hover_tag(&mut self, pt: Point2<i32>, ui: &mut Ui, tag: T);
+
+    fn hover_none(&mut self, ui: &mut Ui);
+}
+
+//===========================================================================//
+
+pub struct TooltipRef<'a, T, F> {
+    tooltip: &'a mut Tooltip<T>,
+    func: F,
+}
+
+impl<'a, S, T, F> TooltipSink<S> for TooltipRef<'a, T, F>
+where
+    T: PartialEq,
+    F: Fn(S) -> T,
+{
+    fn hover_tag(&mut self, pt: Point2<i32>, ui: &mut Ui, tag: S) {
+        self.tooltip.hover_tag(pt, ui, (self.func)(tag));
+    }
+
+    fn hover_none(&mut self, ui: &mut Ui) {
+        self.tooltip.hover_none(ui);
+    }
+}
+
+//===========================================================================//
+
 pub struct Tooltip<T> {
     window_size: RectSize<i32>,
     hover: Option<(T, Point2<i32>, f64)>,
     paragraph: Option<Paragraph>,
+    locked: bool,
 }
 
 impl<T: PartialEq> Tooltip<T> {
     pub fn new(window_size: RectSize<i32>) -> Tooltip<T> {
-        Tooltip { window_size, hover: None, paragraph: None }
+        Tooltip { window_size, hover: None, paragraph: None, locked: true }
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -78,7 +108,57 @@ impl<T: PartialEq> Tooltip<T> {
         }
     }
 
-    pub fn start_hover(&mut self, pt: Point2<i32>, ui: &mut Ui, tag: T) {
+    pub fn on_event<F>(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+        prefs: &Prefs,
+        func: F,
+    ) where
+        F: FnOnce(&T) -> String,
+    {
+        self.locked = false;
+        match event {
+            Event::ClockTick(tick) => {
+                if self.paragraph.is_none() {
+                    if let Some((ref tag, _, ref mut time)) = self.hover {
+                        *time = (*time + tick.elapsed).min(TOOLTIP_HOVER_TIME);
+                        if *time >= TOOLTIP_HOVER_TIME {
+                            self.paragraph = Some(Paragraph::compile(
+                                TOOLTIP_FONT_SIZE,
+                                TOOLTIP_LINE_HEIGHT,
+                                TOOLTIP_MAX_WIDTH,
+                                prefs,
+                                &func(tag),
+                            ));
+                            ui.request_redraw();
+                        }
+                    }
+                }
+            }
+            Event::KeyDown(_) => self.hover_none(ui),
+            Event::MouseDown(_) => self.hover_none(ui),
+            Event::MouseMove(mouse) if mouse.left || mouse.right => {
+                self.hover_none(ui);
+            }
+            Event::Multitouch(_) => self.hover_none(ui),
+            Event::Scroll(_) => self.hover_none(ui),
+            Event::Unfocus => self.hover_none(ui),
+            _ => {}
+        }
+    }
+
+    pub fn sink<A, F: Fn(A) -> T>(&mut self, func: F) -> TooltipRef<T, F> {
+        TooltipRef { tooltip: self, func }
+    }
+}
+
+impl<T: PartialEq> TooltipSink<T> for Tooltip<T> {
+    fn hover_tag(&mut self, pt: Point2<i32>, ui: &mut Ui, tag: T) {
+        if self.locked {
+            return;
+        }
+        self.locked = true;
         if let Some((ref hover_tag, ref mut hover_pt, _)) = self.hover {
             if &tag == hover_tag {
                 if *hover_pt != pt {
@@ -97,47 +177,15 @@ impl<T: PartialEq> Tooltip<T> {
         }
     }
 
-    pub fn stop_hover(&mut self, ui: &mut Ui, tag: &T) {
-        if let Some((ref hover_tag, _, _)) = self.hover {
-            if hover_tag != tag {
-                return;
-            }
+    fn hover_none(&mut self, ui: &mut Ui) {
+        if self.locked {
+            return;
         }
-        self.stop_hover_all(ui);
-    }
-
-    pub fn stop_hover_all(&mut self, ui: &mut Ui) {
+        self.locked = true;
         self.hover = None;
         if self.paragraph.is_some() {
             self.paragraph = None;
             ui.request_redraw();
-        }
-    }
-
-    pub fn tick<F>(
-        &mut self,
-        tick: &ClockEventData,
-        ui: &mut Ui,
-        prefs: &Prefs,
-        func: F,
-    ) where
-        F: FnOnce(&T) -> String,
-    {
-        if self.paragraph.is_some() {
-            return;
-        }
-        if let Some((ref tag, _, ref mut time)) = self.hover {
-            *time = (*time + tick.elapsed).min(TOOLTIP_HOVER_TIME);
-            if *time >= TOOLTIP_HOVER_TIME {
-                self.paragraph = Some(Paragraph::compile(
-                    TOOLTIP_FONT_SIZE,
-                    TOOLTIP_LINE_HEIGHT,
-                    TOOLTIP_MAX_WIDTH,
-                    prefs,
-                    &func(tag),
-                ));
-                ui.request_redraw();
-            }
         }
     }
 }

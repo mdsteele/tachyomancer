@@ -19,13 +19,12 @@
 
 use super::super::button::Scrollbar;
 use super::super::chip::ChipModel;
-use super::super::tooltip::Tooltip;
+use super::super::tooltip::TooltipSink;
 use super::tray::TraySlide;
 use super::tutorial::TutorialBubble;
 use crate::mancer::font::Align;
 use crate::mancer::gl::{Depth, FrameBuffer, Stencil};
 use crate::mancer::gui::{Cursor, Event, Resources, Ui, Window};
-use crate::mancer::save::Prefs;
 use crate::mancer::shader::UiShader;
 use cgmath::{vec2, Deg, Matrix4, Point2};
 use tachy::geom::{AsFloat, Color4, Coords, MatrixExt, Orientation, Rect};
@@ -68,7 +67,6 @@ pub struct PartsTray {
     scrollbar: Scrollbar,
     slide: TraySlide,
     tutorial_bubble: Option<TutorialBubble>,
-    tooltip: Tooltip<ChipType>,
 }
 
 impl PartsTray {
@@ -199,7 +197,6 @@ impl PartsTray {
             scrollbar,
             slide: TraySlide::new(rect.width),
             tutorial_bubble,
-            tooltip: Tooltip::new(window_size),
         }
     }
 
@@ -229,7 +226,6 @@ impl PartsTray {
                 bubble.draw(resources, &matrix, topleft);
             }
         }
-        self.tooltip.draw(resources, matrix);
     }
 
     fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -287,20 +283,15 @@ impl PartsTray {
         event: &Event,
         ui: &mut Ui,
         enabled: bool,
-        prefs: &Prefs,
+        tooltip: &mut dyn TooltipSink<ChipType>,
     ) -> (Option<PartsAction>, bool) {
         let rel_event =
             event.relative_to(Point2::new(-self.slide.distance(), 0));
         self.scrollbar.on_event(&rel_event, ui);
 
         match event {
-            Event::ClockTick(tick) => {
-                self.slide.on_tick(tick, ui);
-                self.tooltip
-                    .tick(tick, ui, prefs, |ctype| ctype.tooltip_format());
-            }
+            Event::ClockTick(tick) => self.slide.on_tick(tick, ui),
             Event::MouseDown(mouse) if mouse.left => {
-                self.tooltip.stop_hover_all(ui);
                 let rel_mouse_pt = mouse.pt + vec2(self.slide.distance(), 0);
                 let tab_rect = UiShader::tray_tab_rect(
                     self.rect.as_f32(),
@@ -328,14 +319,12 @@ impl PartsTray {
                 {
                     ui.cursor().request(cursor);
                 }
-                if mouse.left {
-                    self.tooltip.stop_hover_all(ui);
-                } else {
+                if self.slid_rect().contains_point(mouse.pt) {
                     let rel = mouse.pt + vec2(self.slide.distance(), 0);
                     if let Some(ctype) = self.part_under_rel_mouse_pt(rel) {
-                        self.tooltip.start_hover(mouse.pt, ui, ctype);
+                        tooltip.hover_tag(mouse.pt, ui, ctype);
                     } else {
-                        self.tooltip.stop_hover_all(ui);
+                        tooltip.hover_none(ui);
                     }
                 }
             }

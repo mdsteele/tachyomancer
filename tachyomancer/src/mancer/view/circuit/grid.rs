@@ -20,7 +20,7 @@
 use super::super::chip::{
     chip_grid_rect, interface_grid_rect, ChipModel, CHIP_MARGIN,
 };
-use super::super::tooltip::Tooltip;
+use super::super::tooltip::TooltipSink;
 use super::super::wire::WireModel;
 use super::bounds::{BoundsDrag, BoundsHandle, BOUNDS_MARGIN};
 use super::chipdrag::ChipDrag;
@@ -80,7 +80,6 @@ pub struct EditGridView {
     tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
     hover_wire: Option<usize>,
     manip_buttons: ManipulationButtons,
-    tooltip: Tooltip<GridTooltipTag>,
 }
 
 impl EditGridView {
@@ -101,7 +100,6 @@ impl EditGridView {
             tutorial_bubbles,
             hover_wire: None,
             manip_buttons: ManipulationButtons::new(),
-            tooltip: Tooltip::new(window_size),
         }
     }
 
@@ -361,10 +359,6 @@ impl EditGridView {
         }
     }
 
-    pub fn draw_tooltip(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        self.tooltip.draw(resources, matrix);
-    }
-
     fn ortho_matrix(&self) -> Matrix4<f32> {
         cgmath::ortho(
             -0.5 * self.size.width,
@@ -537,6 +531,7 @@ impl EditGridView {
         event: &Event,
         ui: &mut Ui,
         grid: &mut EditGrid,
+        tooltip: &mut dyn TooltipSink<GridTooltipTag>,
         prefs: &Prefs,
     ) -> Option<EditGridAction> {
         if let Interaction::RectSelected(rect) = self.interaction {
@@ -549,8 +544,6 @@ impl EditGridView {
         }
         match event {
             Event::ClockTick(tick) => {
-                self.tooltip
-                    .tick(tick, ui, prefs, |tag| tag.tooltip_format(grid));
                 // Scroll if we're holding down any scroll key(s):
                 let (left, right, up, down) = {
                     let keyboard = ui.keyboard();
@@ -852,7 +845,7 @@ impl EditGridView {
                 ui.cursor().request(self.cursor_for_grid_pt(grid_pt, grid));
                 match self.interaction {
                     Interaction::Nothing | Interaction::RectSelected(_) => {
-                        self.apply_tooltip(mouse, ui, grid);
+                        self.apply_tooltip(mouse, ui, grid, tooltip);
                     }
                     Interaction::DraggingBounds(ref mut drag) => {
                         drag.move_to(grid_pt, ui, grid);
@@ -931,6 +924,7 @@ impl EditGridView {
         mouse: &MouseEventData,
         ui: &mut Ui,
         grid: &EditGrid,
+        tooltip: &mut dyn TooltipSink<GridTooltipTag>,
     ) {
         if mouse.left || mouse.right {
             return;
@@ -940,7 +934,7 @@ impl EditGridView {
                 self.hover_wire = None;
                 ui.request_redraw();
             }
-            self.tooltip.start_hover(
+            tooltip.hover_tag(
                 mouse.pt,
                 ui,
                 GridTooltipTag::Manipulation(action),
@@ -960,14 +954,14 @@ impl EditGridView {
                 self.hover_wire = None;
                 ui.request_redraw();
             }
-            self.tooltip.start_hover(mouse.pt, ui, tag);
-        } else {
-            self.stop_hover(ui);
+            tooltip.hover_tag(mouse.pt, ui, tag);
+            return;
         }
+        tooltip.hover_none(ui);
+        self.stop_hover(ui);
     }
 
     fn stop_hover(&mut self, ui: &mut Ui) {
-        self.tooltip.stop_hover_all(ui);
         if self.hover_wire.is_some() {
             self.hover_wire = None;
             ui.request_redraw();

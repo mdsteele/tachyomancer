@@ -53,6 +53,8 @@ pub(super) fn advanced_circuits(profile: &Profile,
 pub(super) fn unexpected_company(profile: &Profile,
                                  builder: &mut ConversationBuilder)
                                  -> Result<(), ()> {
+    builder.henry("Enemies approaching!");
+    builder.puzzle(profile, Puzzle::CommandTurret)?;
     builder.henry("Which ship should we scan for first?");
     let chapter = builder
         .choice(profile, "chapter")

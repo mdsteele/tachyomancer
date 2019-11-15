@@ -43,8 +43,7 @@ const MAX_LANDING_ANGLE: i32 = 95;
 pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Instruments Interface",
-        description: "\
-            Indicates the current lower bound of the scan range (inclusive).",
+        description: "TODO",
         side: Direction::West,
         pos: InterfacePosition::Center,
         ports: &[
@@ -77,7 +76,7 @@ pub const INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Thruster Interface",
-        description: "Controls where the scan range will be subdivided.",
+        description: "TODO",
         side: Direction::South,
         pos: InterfacePosition::Center,
         ports: &[

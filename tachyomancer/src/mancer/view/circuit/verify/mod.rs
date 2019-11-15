@@ -26,6 +26,7 @@ mod robotarm;
 mod sensors;
 mod shared;
 mod storage;
+mod turret;
 
 use self::shared::{FabricationVerifyView, PuzzleVerifyView};
 use super::super::tooltip::TooltipSink;
@@ -104,6 +105,9 @@ impl VerificationTray {
             }
             Puzzle::CommandLander => {
                 self::lander::LanderVerifyView::new(right_bottom)
+            }
+            Puzzle::CommandTurret => {
+                self::turret::TurretVerifyView::new(right_bottom)
             }
             Puzzle::FabricateEggTimer => FabricationVerifyView::<
                 FabricateEggTimerEval,

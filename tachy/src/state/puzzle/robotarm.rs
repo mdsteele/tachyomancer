@@ -76,17 +76,15 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Pos",
                 description:
-                    "\
-                     Indicates the current position of the arm (0-7).",
+                    "Indicates the current position of the arm (0-7).",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "Rotate",
-                description:
-                    "\
-                     Send 1 to rotate clockwise, 0 to rotate counterclockwise.",
+                description: "Send 1 to rotate clockwise, 0 to rotate \
+                              counterclockwise.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::One,
@@ -94,17 +92,16 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Manip",
                 description:
-                    "\
-                     Signal here to manipulate at the current position.",
+                    "Signal here to manipulate at the current position.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
             InterfacePort {
                 name: "Done",
-                description: "\
-                              Signals when the the robot arm has finished \
-                              moving/manipulating.",
+                description:
+                    "Signals when the the robot arm has finished moving/\
+                     manipulating.",
                 flow: PortFlow::Send,
                 color: PortColor::Event,
                 size: WireSize::Zero,

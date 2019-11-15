@@ -151,7 +151,7 @@ impl ConverseView {
         state: &mut GameState,
     ) -> Option<ConverseAction> {
         match event {
-            Event::Debug(key, _) if key == "resetconv" => {
+            Event::Debug(key, _) if key == "ResetConv" => {
                 state.reset_current_conversation_progress();
                 self.bubbles_list.reset(ui, state);
             }

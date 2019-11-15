@@ -309,10 +309,16 @@ impl Profile {
     }
 
     pub fn local_scores(&self, puzzle: Puzzle) -> &ScoreCurve {
-        if let Some(ref progress) = self.puzzles.get(&puzzle) {
+        if let Some(progress) = self.puzzles.get(&puzzle) {
             progress.local_scores()
         } else {
             ScoreCurve::EMPTY
+        }
+    }
+
+    pub fn reset_local_scores(&mut self, puzzle: Puzzle) {
+        if let Some(progress) = self.puzzles.get_mut(&puzzle) {
+            progress.reset_local_scores();
         }
     }
 

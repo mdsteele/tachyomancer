@@ -55,6 +55,10 @@ impl ScoreGraphView {
         }
     }
 
+    pub fn clear_cache(&mut self) {
+        *self.cache.borrow_mut() = None;
+    }
+
     pub fn draw(
         &self,
         resources: &Resources,

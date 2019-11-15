@@ -157,6 +157,10 @@ impl PuzzlesView {
         }
     }
 
+    pub fn clear_score_graph_cache(&mut self) {
+        self.graph.clear_cache();
+    }
+
     fn copy_and_delete_enabled(&self, state: &GameState) -> bool {
         !state.circuit_name().is_empty()
     }

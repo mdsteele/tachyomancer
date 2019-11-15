@@ -276,8 +276,16 @@ impl MenuView {
                     }
                 }
             }
-            // TODO: Add Debug case to reset local scores for current puzzle
-            Event::Debug(key, value) if key == "unlockpuzzle" => {
+            Event::Debug(key, value) if key == "ResetScores" => {
+                if value.is_empty() {
+                    state.reset_local_scores(state.current_puzzle());
+                } else if let Ok(puzzle) = value.parse::<Puzzle>() {
+                    state.reset_local_scores(puzzle);
+                }
+                self.puzzles_view.clear_score_graph_cache();
+                ui.request_redraw();
+            }
+            Event::Debug(key, value) if key == "UnlockPuzzle" => {
                 if let Ok(puzzle) = value.parse::<Puzzle>() {
                     return Some(MenuAction::GoToPuzzle(puzzle));
                 }

@@ -332,6 +332,12 @@ impl GameState {
         }
     }
 
+    pub fn reset_local_scores(&mut self, puzzle: Puzzle) {
+        if let Some(ref mut profile) = self.profile {
+            profile.reset_local_scores(puzzle);
+        }
+    }
+
     pub fn record_current_puzzle_score(
         &mut self,
         area: i32,

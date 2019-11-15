@@ -169,6 +169,13 @@ impl PuzzleProgress {
         self.data.graph.as_ref().unwrap_or(ScoreCurve::EMPTY)
     }
 
+    pub fn reset_local_scores(&mut self) {
+        if self.data.graph.is_some() {
+            self.data.graph = None;
+            self.needs_save = true;
+        }
+    }
+
     pub fn record_score(&mut self, area: i32, score: u32) {
         if let Some(ref mut graph) = self.data.graph {
             graph.insert((area, score));

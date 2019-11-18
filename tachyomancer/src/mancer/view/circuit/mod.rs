@@ -281,7 +281,11 @@ impl CircuitView {
             }
             Event::KeyDown(key) => {
                 if key.code == Keycode::Escape {
-                    return Some(CircuitAction::BackToMenu);
+                    if self.edit_grid.has_interaction() {
+                        self.edit_grid.cancel_interaction(ui, grid);
+                    } else {
+                        return Some(CircuitAction::BackToMenu);
+                    }
                 }
             }
             _ => {}
@@ -294,7 +298,7 @@ impl CircuitView {
             ui,
             self.controls_status,
             grid.has_errors(),
-            !self.edit_grid.can_start_evaluation(),
+            self.edit_grid.is_dragging(),
             &mut self.tooltip.sink(CircuitTooltipTag::Controls),
             prefs,
         ) {

@@ -199,12 +199,8 @@ impl SelectionDrag {
     /// Cancels/undoes the in-progress selection drag.  Returns true if any
     /// provisional changes were rolled back.
     pub fn cancel(self, ui: &mut Ui, grid: &mut EditGrid) -> bool {
-        if grid.roll_back_provisional_changes() {
-            ui.request_redraw();
-            true
-        } else {
-            false
-        }
+        ui.request_redraw();
+        grid.roll_back_provisional_changes()
     }
 
     pub fn finish(

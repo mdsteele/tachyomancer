@@ -993,13 +993,17 @@ impl EditGridView {
         }
     }
 
-    /// Returns false if we shouldn't start evaluation in the middle of the
-    /// current interaction (e.g. because we're in the middle of dragging a
-    /// chip).
-    pub fn can_start_evaluation(&self) -> bool {
+    pub fn has_interaction(&self) -> bool {
         match self.interaction {
-            Interaction::Nothing | Interaction::RectSelected(_) => true,
-            _ => false,
+            Interaction::Nothing => false,
+            _ => true,
+        }
+    }
+
+    pub fn is_dragging(&self) -> bool {
+        match self.interaction {
+            Interaction::Nothing | Interaction::RectSelected(_) => false,
+            _ => true,
         }
     }
 
@@ -1011,6 +1015,7 @@ impl EditGridView {
         grid: &mut EditGrid,
     ) -> bool {
         match self.interaction.take() {
+            Interaction::Nothing => false,
             Interaction::DraggingChip(drag) => drag.cancel(ui, grid),
             Interaction::DraggingSelection(drag) => drag.cancel(ui, grid),
             Interaction::DraggingWires(drag) => {
@@ -1019,9 +1024,14 @@ impl EditGridView {
             }
             Interaction::RectSelected(_) => {
                 self.manip_buttons.unfocus();
+                ui.request_redraw();
                 false
             }
-            _ => false,
+            Interaction::DraggingBounds(_) |
+            Interaction::SelectingRect(_) => {
+                ui.request_redraw();
+                false
+            }
         }
     }
 

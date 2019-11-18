@@ -367,6 +367,14 @@ impl GameState {
         self.circuit_name = name;
     }
 
+    pub fn has_circuit_name(&self, name: &str) -> bool {
+        if let Some(ref profile) = self.profile {
+            profile.has_circuit_name(profile.current_puzzle(), name)
+        } else {
+            false
+        }
+    }
+
     pub fn is_valid_circuit_rename(&self, name: &str) -> bool {
         let name = name.trim();
         if name.is_empty() {
@@ -375,12 +383,7 @@ impl GameState {
         if unicase::eq(name, &self.circuit_name) {
             return true;
         }
-        if let Some(ref profile) = self.profile {
-            if profile.has_circuit_name(profile.current_puzzle(), name) {
-                return false;
-            }
-        }
-        return true;
+        return !self.has_circuit_name(name);
     }
 
     pub fn copy_current_circuit(&mut self) -> Result<(), String> {

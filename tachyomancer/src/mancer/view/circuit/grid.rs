@@ -1027,8 +1027,7 @@ impl EditGridView {
                 ui.request_redraw();
                 false
             }
-            Interaction::DraggingBounds(_) |
-            Interaction::SelectingRect(_) => {
+            Interaction::DraggingBounds(_) | Interaction::SelectingRect(_) => {
                 ui.request_redraw();
                 false
             }

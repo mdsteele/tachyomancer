@@ -50,6 +50,11 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         match state.save() {
                             Ok(()) => {
                                 state.clear_edit_grid();
+                                if !state
+                                    .has_circuit_name(state.circuit_name())
+                                {
+                                    state.set_circuit_name(String::new());
+                                }
                                 return ModeChange::Next;
                             }
                             Err(err) => {

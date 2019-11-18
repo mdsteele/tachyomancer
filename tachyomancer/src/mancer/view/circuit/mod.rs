@@ -41,6 +41,7 @@ use self::verify::VerificationTray;
 use super::dialog::{
     ButtonDialogBox, DialogAction, HotkeyDialogBox, TextDialogBox,
 };
+use super::paragraph::Paragraph;
 use super::tooltip::Tooltip;
 use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui, Window};
 use crate::mancer::save::Prefs;
@@ -57,7 +58,14 @@ use tachy::state::{
 
 pub enum CircuitAction {
     BackToMenu,
+    BackToMenuWithoutSaving,
     Victory(SolutionData),
+}
+
+#[derive(Clone, Copy)]
+enum FailedSaveDialogAction {
+    BackToMenuWithoutSaving,
+    ContinueEditing,
 }
 
 #[derive(Clone, Copy)]
@@ -105,6 +113,7 @@ pub struct CircuitView {
     edit_button_dialog: Option<(HotkeyDialogBox, Coords)>,
     edit_comment_dialog: Option<(TextDialogBox, Coords)>,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
+    failed_save_dialog: Option<ButtonDialogBox<FailedSaveDialogAction>>,
     victory_dialog: Option<ButtonDialogBox<VictoryDialogAction>>,
 }
 
@@ -165,6 +174,7 @@ impl CircuitView {
             edit_button_dialog: None,
             edit_comment_dialog: None,
             edit_const_dialog: None,
+            failed_save_dialog: None,
             victory_dialog: None,
         }
     }
@@ -186,14 +196,13 @@ impl CircuitView {
         self.tooltip.draw(resources, &projection);
         if let Some((ref dialog, _)) = self.edit_button_dialog {
             dialog.draw(resources, &projection);
-        }
-        if let Some((ref dialog, _)) = self.edit_comment_dialog {
+        } else if let Some((ref dialog, _)) = self.edit_comment_dialog {
             dialog.draw(resources, &projection, |_| true);
-        }
-        if let Some((ref dialog, _)) = self.edit_const_dialog {
+        } else if let Some((ref dialog, _)) = self.edit_const_dialog {
             dialog.draw(resources, &projection, is_valid_const);
-        }
-        if let Some(ref dialog) = self.victory_dialog {
+        } else if let Some(ref dialog) = self.failed_save_dialog {
+            dialog.draw(resources, &projection);
+        } else if let Some(ref dialog) = self.victory_dialog {
             dialog.draw(resources, &projection);
         }
     }
@@ -243,6 +252,17 @@ impl CircuitView {
                 }
                 Some(DialogAction::Cancel) => {}
                 None => self.edit_const_dialog = Some((dialog, coords)),
+            }
+            return None;
+        }
+
+        if let Some(mut dialog) = self.failed_save_dialog.take() {
+            match dialog.on_event(event, ui) {
+                Some(FailedSaveDialogAction::BackToMenuWithoutSaving) => {
+                    return Some(CircuitAction::BackToMenuWithoutSaving);
+                }
+                Some(FailedSaveDialogAction::ContinueEditing) => {}
+                None => self.failed_save_dialog = Some(dialog),
             }
             return None;
         }
@@ -546,6 +566,36 @@ impl CircuitView {
                 None
             }
         }
+    }
+
+    pub fn show_failed_to_save_error(
+        &mut self,
+        ui: &mut Ui,
+        prefs: &Prefs,
+        error: &str,
+    ) {
+        debug_warn!("Failed to save: {}", error);
+        // TODO: Play sound for error dialog popup.
+        let size = RectSize::new(self.width as i32, self.height as i32);
+        let format = format!(
+            "$R$*ERROR:$*$D Unable to save!\n\n{}",
+            Paragraph::escape(error)
+        );
+        let buttons = &[
+            (
+                "Continue editing",
+                FailedSaveDialogAction::ContinueEditing,
+                Some(Keycode::Escape),
+            ),
+            (
+                "Discard changes",
+                FailedSaveDialogAction::BackToMenuWithoutSaving,
+                None,
+            ),
+        ];
+        self.failed_save_dialog =
+            Some(ButtonDialogBox::new(size, prefs, &format, buttons));
+        ui.request_redraw();
     }
 }
 

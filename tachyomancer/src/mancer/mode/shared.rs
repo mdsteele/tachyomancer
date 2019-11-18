@@ -21,6 +21,7 @@ use crate::mancer::gui::WindowOptions;
 
 //===========================================================================//
 
+#[must_use = "ModeChange must be handled"]
 pub enum ModeChange {
     Next,
     RebootWindow(WindowOptions),

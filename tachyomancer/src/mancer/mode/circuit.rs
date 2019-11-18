@@ -46,22 +46,18 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     &mut window.ui(),
                     state.edit_grid_mut_and_prefs().unwrap(),
                 ) {
-                    Some(CircuitAction::BackToMenu) => {
-                        match state.save() {
-                            Ok(()) => {
-                                state.clear_edit_grid();
-                                if !state
-                                    .has_circuit_name(state.circuit_name())
-                                {
-                                    state.set_circuit_name(String::new());
-                                }
-                                return ModeChange::Next;
-                            }
-                            Err(err) => {
-                                // TODO: display error to user; don't panic
-                                panic!("BackToMenu failed: {:?}", err);
-                            }
+                    Some(CircuitAction::BackToMenu) => match state.save() {
+                        Ok(()) => return back_to_menu(state),
+                        Err(err) => {
+                            view.show_failed_to_save_error(
+                                &mut window.ui(),
+                                state.prefs(),
+                                &err,
+                            );
                         }
+                    },
+                    Some(CircuitAction::BackToMenuWithoutSaving) => {
+                        return back_to_menu(state);
                     }
                     Some(CircuitAction::Victory(solution)) => {
                         record_score(state, window, solution);
@@ -73,6 +69,14 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
             }
         }
     }
+}
+
+fn back_to_menu(state: &mut GameState) -> ModeChange {
+    state.clear_edit_grid();
+    if !state.has_circuit_name(state.circuit_name()) {
+        state.set_circuit_name(String::new());
+    }
+    ModeChange::Next
 }
 
 fn record_score(

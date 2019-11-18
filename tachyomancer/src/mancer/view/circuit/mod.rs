@@ -38,14 +38,16 @@ use self::specify::SpecificationTray;
 use self::tooltip::GridTooltipTag;
 use self::tutorial::TutorialBubble;
 use self::verify::VerificationTray;
-use super::dialog::{ButtonDialogBox, TextDialogBox};
+use super::dialog::{
+    ButtonDialogBox, DialogAction, HotkeyDialogBox, TextDialogBox,
+};
 use super::tooltip::Tooltip;
 use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui, Window};
 use crate::mancer::save::Prefs;
 use cgmath;
 use std::u16;
 use tachy::geom::{Coords, Direction, RectSize};
-use tachy::save::{ChipType, SolutionData, MAX_COMMENT_CHARS};
+use tachy::save::{ChipType, HotkeyCode, SolutionData, MAX_COMMENT_CHARS};
 use tachy::state::{
     EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
     TutorialBubblePosition,
@@ -100,6 +102,7 @@ pub struct CircuitView {
     seconds_since_time_step: f64,
     controls_status: ControlsStatus,
     tooltip: Tooltip<CircuitTooltipTag>,
+    edit_button_dialog: Option<(HotkeyDialogBox, Coords)>,
     edit_comment_dialog: Option<(TextDialogBox, Coords)>,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
     victory_dialog: Option<ButtonDialogBox<VictoryDialogAction>>,
@@ -159,6 +162,7 @@ impl CircuitView {
             seconds_since_time_step: 0.0,
             controls_status: ControlsStatus::Stopped,
             tooltip: Tooltip::new(window_size),
+            edit_button_dialog: None,
             edit_comment_dialog: None,
             edit_const_dialog: None,
             victory_dialog: None,
@@ -180,6 +184,9 @@ impl CircuitView {
         );
         self.edit_grid.draw_dragged(resources);
         self.tooltip.draw(resources, &projection);
+        if let Some((ref dialog, _)) = self.edit_button_dialog {
+            dialog.draw(resources, &projection);
+        }
         if let Some((ref dialog, _)) = self.edit_comment_dialog {
             dialog.draw(resources, &projection, |_| true);
         }
@@ -205,12 +212,23 @@ impl CircuitView {
         self.tooltip
             .on_event(event, ui, prefs, |tag| tag.tooltip_format(grid));
 
+        if let Some((mut dialog, coords)) = self.edit_button_dialog.take() {
+            match dialog.on_event(event, ui) {
+                Some(DialogAction::Value(opt_code)) => {
+                    change_button_chip_hotkey(ui, grid, coords, opt_code);
+                }
+                Some(DialogAction::Cancel) => {}
+                None => self.edit_button_dialog = Some((dialog, coords)),
+            }
+            return None;
+        }
+
         if let Some((mut dialog, coords)) = self.edit_comment_dialog.take() {
             match dialog.on_event(event, ui, |_| true) {
-                Some(Some(text)) => {
+                Some(DialogAction::Value(text)) => {
                     change_comment_chip_value(ui, grid, coords, &text);
                 }
-                Some(None) => {}
+                Some(DialogAction::Cancel) => {}
                 None => self.edit_comment_dialog = Some((dialog, coords)),
             }
             return None;
@@ -218,12 +236,12 @@ impl CircuitView {
 
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
             match dialog.on_event(event, ui, is_valid_const) {
-                Some(Some(text)) => {
+                Some(DialogAction::Value(text)) => {
                     if let Ok(new_value) = text.parse::<u16>() {
                         change_const_chip_value(ui, grid, coords, new_value);
                     }
                 }
-                Some(None) => {}
+                Some(DialogAction::Cancel) => {}
                 None => self.edit_const_dialog = Some((dialog, coords)),
             }
             return None;
@@ -415,6 +433,18 @@ impl CircuitView {
             &mut self.tooltip.sink(CircuitTooltipTag::Grid),
             prefs,
         ) {
+            Some(EditGridAction::EditButton(coords, code)) => {
+                let size =
+                    RectSize::new(self.width as i32, self.height as i32);
+                let dialog = HotkeyDialogBox::new(
+                    size,
+                    prefs,
+                    "Choose a hotkey for this button:",
+                    code,
+                );
+                self.edit_button_dialog = Some((dialog, coords));
+                ui.request_redraw();
+            }
             Some(EditGridAction::EditComment(coords, string)) => {
                 let size =
                     RectSize::new(self.width as i32, self.height as i32);
@@ -517,6 +547,27 @@ impl CircuitView {
 
 fn is_valid_const(text: &str) -> bool {
     text.parse::<u16>().is_ok()
+}
+
+fn change_button_chip_hotkey(
+    ui: &mut Ui,
+    grid: &mut EditGrid,
+    coords: Coords,
+    new_code: Option<HotkeyCode>,
+) {
+    if let Some((coords, ChipType::Button(old_code), orient)) =
+        grid.chip_at(coords)
+    {
+        let changes = vec![
+            GridChange::RemoveChip(coords, ChipType::Button(old_code), orient),
+            GridChange::AddChip(coords, ChipType::Button(new_code), orient),
+        ];
+        if grid.try_mutate(changes) {
+            ui.request_redraw();
+        } else {
+            debug_warn!("change_button_chip_hotkey mutation failed");
+        }
+    }
 }
 
 fn change_comment_chip_value(

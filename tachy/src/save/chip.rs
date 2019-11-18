@@ -17,8 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::hotkey::HotkeyCode;
 use crate::geom::CoordsSize;
 use std::collections::HashSet;
+use std::fmt;
 use std::str;
 
 //===========================================================================//
@@ -33,7 +35,7 @@ pub enum ChipType {
     Add2Bit,
     And,
     Break(bool),
-    Button,
+    Button(Option<HotkeyCode>),
     Clock,
     Cmp,
     CmpEq,
@@ -111,83 +113,13 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Ram,
     ]),
     ("Debug", &[
-        ChipType::Comment(*b"//   "),
+        ChipType::Comment(*b"#    "),
         ChipType::Display,
         ChipType::Toggle(false),
         ChipType::Break(true),
-        ChipType::Button,
+        ChipType::Button(None),
     ]),
 ];
-
-impl str::FromStr for ChipType {
-    type Err = String;
-
-    fn from_str(string: &str) -> Result<ChipType, String> {
-        match string {
-            "Add" => Ok(ChipType::Add),
-            "Add2Bit" => Ok(ChipType::Add2Bit),
-            "And" => Ok(ChipType::And),
-            "Break" => Ok(ChipType::Break(true)),
-            "Break(false)" => Ok(ChipType::Break(false)),
-            "Break(true)" => Ok(ChipType::Break(true)),
-            "Button" => Ok(ChipType::Button),
-            "Clock" => Ok(ChipType::Clock),
-            "Cmp" => Ok(ChipType::Cmp),
-            "CmpEq" => Ok(ChipType::CmpEq),
-            "Delay" => Ok(ChipType::Delay),
-            "Demux" => Ok(ChipType::Demux),
-            "Discard" => Ok(ChipType::Discard),
-            "Display" => Ok(ChipType::Display),
-            "EggTimer" => Ok(ChipType::EggTimer),
-            "Eq" => Ok(ChipType::Eq),
-            "Filter" => Ok(ChipType::Filter),
-            "Halve" => Ok(ChipType::Halve),
-            "Inc" => Ok(ChipType::Inc),
-            "Join" => Ok(ChipType::Join),
-            "Latest" => Ok(ChipType::Latest),
-            "Mul" => Ok(ChipType::Mul),
-            "Mul4Bit" => Ok(ChipType::Mul4Bit),
-            "Mux" => Ok(ChipType::Mux),
-            "Not" => Ok(ChipType::Not),
-            "Or" => Ok(ChipType::Or),
-            "Pack" => Ok(ChipType::Pack),
-            "Ram" => Ok(ChipType::Ram),
-            "Random" => Ok(ChipType::Random),
-            "Sample" => Ok(ChipType::Sample),
-            "Stopwatch" => Ok(ChipType::Stopwatch),
-            "Sub" => Ok(ChipType::Sub),
-            "Toggle(false)" => Ok(ChipType::Toggle(false)),
-            "Toggle(true)" => Ok(ChipType::Toggle(true)),
-            "Unpack" => Ok(ChipType::Unpack),
-            "Xor" => Ok(ChipType::Xor),
-            _ => {
-                if string.starts_with("Const(") && string.ends_with(')') {
-                    let inner = &string[6..(string.len() - 1)];
-                    if let Ok(value) = inner.parse() {
-                        return Ok(ChipType::Const(value));
-                    }
-                } else if string.starts_with("Comment([")
-                    && string.ends_with("])")
-                {
-                    let inner = &string[9..(string.len() - 2)];
-                    let parts: Vec<&str> = inner.split(", ").collect();
-                    if parts.len() <= MAX_COMMENT_CHARS {
-                        let mut bytes = [b' '; MAX_COMMENT_CHARS];
-                        for (index, part) in parts.into_iter().enumerate() {
-                            if let Ok(byte) = part.parse() {
-                                bytes[index] = byte;
-                            } else {
-                                return Err(string.to_string());
-                            }
-                        }
-                        return Ok(ChipType::Comment(bytes));
-                    }
-                }
-                return Err(string.to_string());
-            }
-        }
-    }
-}
 
 impl ChipType {
     /// Returns the width and height of the chip in its default orientation.
@@ -212,7 +144,7 @@ impl ChipType {
             ChipType::Mul4Bit => "4-Bit Mul".to_string(),
             ChipType::Toggle(false) => "Toggle Switch (off)".to_string(),
             ChipType::Toggle(true) => "Toggle Switch (on)".to_string(),
-            other => format!("{:?}", other),
+            other => format!("{}", other),
         };
         let description = match self {
             ChipType::Add => {
@@ -337,6 +269,161 @@ impl ChipType {
     }
 }
 
+impl fmt::Display for ChipType {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self {
+            ChipType::Button(None) => formatter.pad("Button"),
+            ChipType::Button(Some(code)) => {
+                formatter.pad(&format!("Button({:?})", code))
+            }
+            ChipType::Comment(bytes) => formatter
+                .pad(&format!("Comment('{}')", escape(bytes).trim_end())),
+            _ => fmt::Debug::fmt(self, formatter),
+        }
+    }
+}
+
+impl str::FromStr for ChipType {
+    type Err = String;
+
+    fn from_str(string: &str) -> Result<ChipType, String> {
+        match string {
+            "Add" => Ok(ChipType::Add),
+            "Add2Bit" => Ok(ChipType::Add2Bit),
+            "And" => Ok(ChipType::And),
+            "Break" => Ok(ChipType::Break(true)),
+            "Break(false)" => Ok(ChipType::Break(false)),
+            "Break(true)" => Ok(ChipType::Break(true)),
+            "Button" => Ok(ChipType::Button(None)),
+            "Button(None)" => Ok(ChipType::Button(None)),
+            "Clock" => Ok(ChipType::Clock),
+            "Cmp" => Ok(ChipType::Cmp),
+            "CmpEq" => Ok(ChipType::CmpEq),
+            "Delay" => Ok(ChipType::Delay),
+            "Demux" => Ok(ChipType::Demux),
+            "Discard" => Ok(ChipType::Discard),
+            "Display" => Ok(ChipType::Display),
+            "EggTimer" => Ok(ChipType::EggTimer),
+            "Eq" => Ok(ChipType::Eq),
+            "Filter" => Ok(ChipType::Filter),
+            "Halve" => Ok(ChipType::Halve),
+            "Inc" => Ok(ChipType::Inc),
+            "Join" => Ok(ChipType::Join),
+            "Latest" => Ok(ChipType::Latest),
+            "Mul" => Ok(ChipType::Mul),
+            "Mul4Bit" => Ok(ChipType::Mul4Bit),
+            "Mux" => Ok(ChipType::Mux),
+            "Not" => Ok(ChipType::Not),
+            "Or" => Ok(ChipType::Or),
+            "Pack" => Ok(ChipType::Pack),
+            "Ram" => Ok(ChipType::Ram),
+            "Random" => Ok(ChipType::Random),
+            "Sample" => Ok(ChipType::Sample),
+            "Stopwatch" => Ok(ChipType::Stopwatch),
+            "Sub" => Ok(ChipType::Sub),
+            "Toggle(false)" => Ok(ChipType::Toggle(false)),
+            "Toggle(true)" => Ok(ChipType::Toggle(true)),
+            "Unpack" => Ok(ChipType::Unpack),
+            "Xor" => Ok(ChipType::Xor),
+            _ => {
+                if let Some(inner) = within(string, "Button(Some(", "))") {
+                    if let Ok(code) = inner.parse() {
+                        return Ok(ChipType::Button(Some(code)));
+                    }
+                } else if let Some(inner) = within(string, "Button(", ")") {
+                    if let Ok(code) = inner.parse() {
+                        return Ok(ChipType::Button(Some(code)));
+                    }
+                } else if let Some(inner) = within(string, "Const(", ")") {
+                    if let Ok(value) = inner.parse() {
+                        return Ok(ChipType::Const(value));
+                    }
+                } else if let Some(inner) = within(string, "Comment('", "')") {
+                    if let Some(bytes) = unescape(inner) {
+                        return Ok(ChipType::Comment(bytes));
+                    }
+                } else if let Some(inner) = within(string, "Comment([", "])") {
+                    let parts: Vec<&str> = inner.split(", ").collect();
+                    if parts.len() <= MAX_COMMENT_CHARS {
+                        let mut bytes = [b' '; MAX_COMMENT_CHARS];
+                        for (index, part) in parts.into_iter().enumerate() {
+                            if let Ok(byte) = part.parse() {
+                                bytes[index] = byte;
+                            } else {
+                                return Err(string.to_string());
+                            }
+                        }
+                        return Ok(ChipType::Comment(bytes));
+                    }
+                }
+                return Err(string.to_string());
+            }
+        }
+    }
+}
+
+fn escape(bytes: &[u8]) -> String {
+    let mut escaped = String::new();
+    for &byte in bytes.iter() {
+        if byte == b'\'' {
+            escaped.push_str("\\'");
+        } else if byte == b'\\' {
+            escaped.push_str("\\\\");
+        } else if byte < b' ' || byte > b'~' {
+            escaped = format!("{}\\x{:02x}", escaped, byte);
+        } else {
+            escaped.push(char::from(byte));
+        }
+    }
+    escaped
+}
+
+fn unescape(string: &str) -> Option<[u8; MAX_COMMENT_CHARS]> {
+    let mut bytes = [b' '; MAX_COMMENT_CHARS];
+    let mut index: usize = 0;
+    let mut chars = string.chars();
+    while let Some(chr) = chars.next() {
+        if index >= MAX_COMMENT_CHARS {
+            return None;
+        } else if chr == '\\' {
+            match chars.next() {
+                Some('\'') => bytes[index] = b'\'',
+                Some('\\') => bytes[index] = b'\\',
+                Some('x') => {
+                    let next = chars.next();
+                    match (next, chars.next()) {
+                        (Some(c1), Some(c2)) => {
+                            let cs = format!("{}{}", c1, c2);
+                            match u8::from_str_radix(&cs, 16) {
+                                Ok(byte) => {
+                                    bytes[index] = byte;
+                                }
+                                _ => return None,
+                            }
+                        }
+                        _ => return None,
+                    }
+                }
+                _ => return None,
+            }
+        } else if chr >= ' ' && chr <= '~' && chr != '\'' {
+            bytes[index] = chr as u8;
+        } else {
+            return None;
+        }
+        index += 1;
+    }
+    return Some(bytes);
+}
+
+fn within<'a>(string: &'a str, prefix: &str, suffix: &str) -> Option<&'a str> {
+    if string.starts_with(prefix) && string.ends_with(suffix) {
+        Some(&string[prefix.len()..(string.len() - suffix.len())])
+    } else {
+        None
+    }
+}
+
 //===========================================================================//
 
 pub struct ChipSet {
@@ -353,6 +440,9 @@ impl ChipSet {
             ChipType::Break(_) => {
                 self.ctypes.contains(&ChipType::Break(false))
             }
+            ChipType::Button(_) => {
+                self.ctypes.contains(&ChipType::Button(None))
+            }
             ChipType::Comment(_) => {
                 self.ctypes.contains(&ChipType::Comment(*b"     "))
             }
@@ -368,6 +458,9 @@ impl ChipSet {
         match ctype {
             ChipType::Break(_) => {
                 self.ctypes.insert(ChipType::Break(false));
+            }
+            ChipType::Button(_) => {
+                self.ctypes.insert(ChipType::Button(None));
             }
             ChipType::Comment(_) => {
                 self.ctypes.insert(ChipType::Comment(*b"     "));
@@ -389,6 +482,7 @@ impl ChipSet {
 
 #[cfg(test)]
 mod tests {
+    use super::super::hotkey::HotkeyCode;
     use super::{ChipSet, ChipType, CHIP_CATEGORIES};
     use std::u16;
 
@@ -396,7 +490,10 @@ mod tests {
     fn chip_type_to_and_from_string() {
         let mut chip_types = vec![
             ChipType::Break(false),
+            ChipType::Button(Some(HotkeyCode::M)),
+            ChipType::Button(Some(HotkeyCode::Kp5)),
             ChipType::Comment(*b"Blarg"),
+            ChipType::Comment(*b" \x1b\"~ "),
             ChipType::Const(0),
             ChipType::Const(13),
             ChipType::Const(u16::MAX),
@@ -406,8 +503,23 @@ mod tests {
             chip_types.extend_from_slice(ctypes);
         }
         for &ctype in chip_types.iter() {
+            assert_eq!(format!("{}", ctype).parse(), Ok(ctype));
+        }
+        for &ctype in chip_types.iter() {
             assert_eq!(format!("{:?}", ctype).parse(), Ok(ctype));
         }
+    }
+
+    #[test]
+    fn display_comment() {
+        assert_eq!(
+            format!("{}", ChipType::Comment(*b" \x1b\"~ ")),
+            "Comment(' \\x1b\"~')"
+        );
+        assert_eq!(
+            format!("{}", ChipType::Comment(*b"'\\'  ")),
+            "Comment('\\'\\\\\\'')"
+        );
     }
 
     #[test]

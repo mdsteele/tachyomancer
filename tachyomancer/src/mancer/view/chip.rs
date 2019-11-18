@@ -178,7 +178,7 @@ impl ChipModel {
                         Font::Roman,
                         0.3,
                         &Color4::WHITE,
-                        &format!("{:?}", ctype),
+                        &format!("{}", ctype),
                     );
                 }
             }

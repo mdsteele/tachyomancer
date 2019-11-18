@@ -18,13 +18,15 @@
 // +--------------------------------------------------------------------------+
 
 use super::button::{
-    TextBox, TextButton, TEXT_BUTTON_FONT, TEXT_BUTTON_FONT_SIZE,
+    HotkeyBox, HotkeyBoxAction, TextBox, TextButton, HOTKEY_BOX_HEIGHT,
+    HOTKEY_BOX_WIDTH, TEXT_BUTTON_FONT, TEXT_BUTTON_FONT_SIZE,
 };
 use super::paragraph::Paragraph;
 use crate::mancer::gui::{Cursor, Event, Keycode, Resources, Ui};
 use crate::mancer::save::Prefs;
-use cgmath::Matrix4;
+use cgmath::{Matrix4, Point2};
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
+use tachy::save::HotkeyCode;
 
 //===========================================================================//
 
@@ -39,11 +41,19 @@ const BUTTON_SPACING: i32 = 14;
 const BUTTON_TOP_MARGIN: i32 = 16;
 
 const FONT_SIZE: f32 = 20.0;
+const HOTKEY_BOX_TOP_MARGIN: i32 = 16;
 const LINE_HEIGHT: f32 = 24.0;
 const MARGIN: i32 = 24;
 const MAX_PARAGRAPH_WIDTH: f32 = 600.0;
 const TEXTBOX_HEIGHT: i32 = 32;
 const TEXTBOX_TOP_MARGIN: i32 = 16;
+
+//===========================================================================//
+
+pub enum DialogAction<T> {
+    Cancel,
+    Value(T),
+}
 
 //===========================================================================//
 
@@ -138,6 +148,141 @@ impl<T: Clone> ButtonDialogBox<T> {
             if let Some(value) = button.on_event(event, ui, true) {
                 return Some(value);
             }
+        }
+        return None;
+    }
+}
+
+//===========================================================================//
+
+pub struct HotkeyDialogBox {
+    rect: Rect<i32>,
+    paragraph: Paragraph,
+    hotkey_box: HotkeyBox,
+    opt_code: Option<HotkeyCode>,
+    ok_button: TextButton<()>,
+    cancel_button: TextButton<()>,
+}
+
+impl HotkeyDialogBox {
+    pub fn new(
+        window_size: RectSize<i32>,
+        prefs: &Prefs,
+        format: &str,
+        initial: Option<HotkeyCode>,
+    ) -> HotkeyDialogBox {
+        let paragraph = Paragraph::compile(
+            FONT_SIZE,
+            LINE_HEIGHT,
+            MAX_PARAGRAPH_WIDTH,
+            prefs,
+            format,
+        );
+        let width = (paragraph.width().ceil() as i32)
+            .max(2 * BUTTON_MIN_WIDTH + BUTTON_SPACING)
+            .max(HOTKEY_BOX_WIDTH)
+            + 2 * MARGIN;
+
+        let hotkey_box_top = MARGIN
+            + (paragraph.height().ceil() as i32)
+            + HOTKEY_BOX_TOP_MARGIN;
+        let button_top =
+            hotkey_box_top + HOTKEY_BOX_HEIGHT + BUTTON_TOP_MARGIN;
+        let height = button_top + BUTTON_HEIGHT + MARGIN;
+
+        let rect = Rect::new(
+            (window_size.width - width) / 2,
+            (window_size.height - height) / 2,
+            width,
+            height,
+        );
+
+        let hotkey_box_left_top = Point2::new(
+            rect.x + (rect.width - HOTKEY_BOX_WIDTH) / 2,
+            rect.y + hotkey_box_top,
+        );
+        let hotkey_box = HotkeyBox::new(hotkey_box_left_top, String::new());
+
+        let ok_button_rect = Rect::new(
+            rect.right() - MARGIN - BUTTON_MIN_WIDTH,
+            rect.y + button_top,
+            BUTTON_MIN_WIDTH,
+            BUTTON_HEIGHT,
+        );
+        let ok_button = TextButton::new_with_key(
+            ok_button_rect,
+            "OK",
+            (),
+            Some(Keycode::Return),
+        );
+
+        let cancel_button_rect = Rect::new(
+            ok_button_rect.x - BUTTON_SPACING - BUTTON_MIN_WIDTH,
+            rect.y + button_top,
+            BUTTON_MIN_WIDTH,
+            BUTTON_HEIGHT,
+        );
+        let cancel_button = TextButton::new_with_key(
+            cancel_button_rect,
+            "Cancel",
+            (),
+            Some(Keycode::Escape),
+        );
+
+        HotkeyDialogBox {
+            rect,
+            paragraph,
+            hotkey_box,
+            opt_code: initial,
+            ok_button,
+            cancel_button,
+        }
+    }
+
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let rect = self.rect.as_f32();
+        resources.shaders().ui().draw_dialog(
+            &matrix,
+            &rect,
+            &DIALOG_COLOR_1,
+            &DIALOG_COLOR_2,
+            &DIALOG_COLOR_3,
+        );
+
+        let left = (self.rect.x + MARGIN) as f32;
+        let top = (self.rect.y + MARGIN) as f32;
+        self.paragraph.draw(resources, matrix, (left, top));
+
+        self.hotkey_box.draw(resources, matrix, self.opt_code);
+        self.ok_button.draw(resources, matrix, true);
+        self.cancel_button.draw(resources, matrix, true);
+    }
+
+    pub fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+    ) -> Option<DialogAction<Option<HotkeyCode>>> {
+        match self.hotkey_box.on_event(event, ui) {
+            Some(HotkeyBoxAction::Listening) => {}
+            Some(HotkeyBoxAction::Set(code)) => {
+                self.opt_code = Some(code);
+                ui.request_redraw();
+            }
+            Some(HotkeyBoxAction::Clear) => {
+                self.opt_code = None;
+                ui.request_redraw();
+            }
+            None => {}
+        }
+        if let Some(()) = self.ok_button.on_event(event, ui, true) {
+            return Some(DialogAction::Value(self.opt_code));
+        }
+        if let Some(()) = self.cancel_button.on_event(event, ui, true) {
+            return Some(DialogAction::Cancel);
+        }
+        if event.is_mouse() {
+            ui.cursor().request(Cursor::default());
         }
         return None;
     }
@@ -253,7 +398,7 @@ impl TextDialogBox {
         event: &Event,
         ui: &mut Ui,
         is_valid: F,
-    ) -> Option<Option<String>>
+    ) -> Option<DialogAction<String>>
     where
         F: Fn(&str) -> bool,
     {
@@ -261,10 +406,10 @@ impl TextDialogBox {
         let string = self.textbox.string();
         let valid = is_valid(string);
         if let Some(()) = self.ok_button.on_event(event, ui, valid) {
-            return Some(Some(string.to_string()));
+            return Some(DialogAction::Value(string.to_string()));
         }
         if let Some(()) = self.cancel_button.on_event(event, ui, true) {
-            return Some(None);
+            return Some(DialogAction::Cancel);
         }
         if event.is_mouse() {
             ui.cursor().request(Cursor::default());

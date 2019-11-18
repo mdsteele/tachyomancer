@@ -31,7 +31,7 @@ use self::prefs::{PrefsAction, PrefsView};
 use self::puzzle::{PuzzlesAction, PuzzlesView};
 use super::background::{background_for_chapter, BackgroundView};
 use super::button::RadioButton;
-use super::dialog::{ButtonDialogBox, TextDialogBox};
+use super::dialog::{ButtonDialogBox, DialogAction, TextDialogBox};
 use crate::mancer::gui::{
     ClockEventData, Cursor, Event, Keycode, Resources, Ui, Window,
     WindowOptions,
@@ -308,10 +308,10 @@ impl MenuView {
             match dialog.on_event(event, ui, |name| {
                 state.is_valid_circuit_rename(name)
             }) {
-                Some(Some(name)) => {
+                Some(DialogAction::Value(name)) => {
                     return Some(MenuAction::RenameCircuit(name));
                 }
-                Some(None) => {}
+                Some(DialogAction::Cancel) => {}
                 None => self.rename_dialog = Some(dialog),
             }
             if !event.is_clock_tick() {

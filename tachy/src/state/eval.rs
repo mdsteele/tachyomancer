@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use crate::geom::{Coords, Direction};
+use crate::save::HotkeyCode;
 use downcast_rs::{impl_downcast, Downcast};
 use std::collections::{HashMap, HashSet};
 use std::mem;
@@ -106,6 +107,10 @@ impl CircuitEval {
 
     pub fn press_button(&mut self, coords: Coords) {
         self.state.press_button(coords);
+    }
+
+    pub fn press_hotkey(&mut self, code: HotkeyCode) {
+        self.state.press_hotkey(code);
     }
 
     pub fn wire_event(&self, wire_index: usize) -> Option<u32> {
@@ -253,6 +258,7 @@ pub struct CircuitState {
     values: Vec<(u32, bool)>,
     breakpoints: Vec<Coords>,
     button_presses: HashMap<Coords, i32>,
+    hotkey_presses: HashMap<HotkeyCode, i32>,
     changed: bool,
 }
 
@@ -264,6 +270,7 @@ impl CircuitState {
             values: vec![(0, false); num_values],
             breakpoints: vec![],
             button_presses: HashMap::new(),
+            hotkey_presses: HashMap::new(),
             changed: false,
         }
     }
@@ -313,8 +320,16 @@ impl CircuitState {
         self.button_presses.entry(coords).and_modify(|n| *n += 1).or_insert(1);
     }
 
+    fn press_hotkey(&mut self, code: HotkeyCode) {
+        self.hotkey_presses.entry(code).and_modify(|n| *n += 1).or_insert(1);
+    }
+
     pub fn pop_button_presses(&mut self, coords: Coords) -> i32 {
         self.button_presses.remove(&coords).unwrap_or(0)
+    }
+
+    pub fn pop_hotkey_presses(&mut self, code: HotkeyCode) -> i32 {
+        self.hotkey_presses.remove(&code).unwrap_or(0)
     }
 
     pub fn fatal_error(&self, message: String) -> EvalError {

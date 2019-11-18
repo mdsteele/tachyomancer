@@ -143,7 +143,7 @@ impl serde::Serialize for CircuitChipData {
         self.0
             .iter()
             .map(|(&coords, &(ctype, orient))| {
-                (delta_key_string(coords), format!("{}-{:?}", orient, ctype))
+                (delta_key_string(coords), format!("{}-{}", orient, ctype))
             })
             .collect::<BTreeMap<String, String>>()
             .serialize(serializer)
@@ -328,8 +328,13 @@ mod tests {
         );
         data.chips.insert(
             CoordsDelta::new(1, 3),
-            ChipType::Button,
+            ChipType::Button(None),
             Orientation::default().flip_vert(),
+        );
+        data.chips.insert(
+            CoordsDelta::new(1, 4),
+            ChipType::Comment(*b"Press"),
+            Orientation::default().rotate_ccw(),
         );
         data.wires.insert(
             CoordsDelta::new(1, 3),
@@ -347,6 +352,7 @@ mod tests {
             "size = [8, 5]\n\n\
              [chips]\n\
              p1p3 = \"t0-Button\"\n\
+             p1p4 = \"f3-Comment('Press')\"\n\
              p2p3 = \"f0-Break(true)\"\n\n\
              [wires]\n\
              p1p3e = \"Stub\"\n\
@@ -359,6 +365,7 @@ mod tests {
         let toml = "size = [8, 5]\n\n\
                     [chips]\n\
                     p1p3 = \"t0-Button\"\n\
+                    p1p4 = \"f3-Comment('Press')\"\n\
                     p2p3 = \"f0-Break(true)\"\n\n\
                     [wires]\n\
                     p1p3e = \"Stub\"\n\
@@ -370,7 +377,17 @@ mod tests {
             vec![
                 (
                     CoordsDelta::new(1, 3),
-                    (ChipType::Button, Orientation::default().flip_vert())
+                    (
+                        ChipType::Button(None),
+                        Orientation::default().flip_vert()
+                    )
+                ),
+                (
+                    CoordsDelta::new(1, 4),
+                    (
+                        ChipType::Comment(*b"Press"),
+                        Orientation::default().rotate_ccw()
+                    )
                 ),
                 (
                     CoordsDelta::new(2, 3),

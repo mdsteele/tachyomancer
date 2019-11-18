@@ -20,6 +20,7 @@
 mod chip;
 mod circuit;
 mod converse;
+mod hotkey;
 mod puzzle;
 mod score;
 mod solution;
@@ -30,6 +31,7 @@ pub use self::circuit::CircuitData;
 pub use self::converse::{
     Chapter, Conversation, ConversationIter, ConversationProgress, Prereq,
 };
+pub use self::hotkey::HotkeyCode;
 pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
 pub use self::score::{ScoreCurve, ScoreCurveMap};
 pub use self::solution::SolutionData;

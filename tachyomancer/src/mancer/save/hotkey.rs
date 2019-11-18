@@ -22,6 +22,7 @@ use serde;
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use strum::IntoEnumIterator;
+use tachy::save::HotkeyCode;
 
 //===========================================================================//
 
@@ -110,63 +111,55 @@ impl Hotkey {
         }
     }
 
-    pub fn default_keycode(self) -> Keycode {
+    pub fn default_keycode(self) -> HotkeyCode {
         match self {
-            Hotkey::EvalReset => Keycode::T,
-            Hotkey::EvalRunPause => Keycode::R,
-            Hotkey::EvalStepCycle => Keycode::D,
-            Hotkey::EvalStepSubcycle => Keycode::S,
-            Hotkey::EvalStepTime => Keycode::F,
-            Hotkey::FlipHorz => Keycode::A,
-            Hotkey::FlipVert => Keycode::W,
-            Hotkey::RotateCcw => Keycode::Q,
-            Hotkey::RotateCw => Keycode::E,
-            Hotkey::ScrollDown => Keycode::Down,
-            Hotkey::ScrollLeft => Keycode::Left,
-            Hotkey::ScrollRight => Keycode::Right,
-            Hotkey::ScrollUp => Keycode::Up,
-            Hotkey::ZoomDefault => Keycode::Num0,
-            Hotkey::ZoomIn => Keycode::Equals,
-            Hotkey::ZoomOut => Keycode::Minus,
+            Hotkey::EvalReset => HotkeyCode::T,
+            Hotkey::EvalRunPause => HotkeyCode::R,
+            Hotkey::EvalStepCycle => HotkeyCode::D,
+            Hotkey::EvalStepSubcycle => HotkeyCode::S,
+            Hotkey::EvalStepTime => HotkeyCode::F,
+            Hotkey::FlipHorz => HotkeyCode::A,
+            Hotkey::FlipVert => HotkeyCode::W,
+            Hotkey::RotateCcw => HotkeyCode::Q,
+            Hotkey::RotateCw => HotkeyCode::E,
+            Hotkey::ScrollDown => HotkeyCode::Down,
+            Hotkey::ScrollLeft => HotkeyCode::Left,
+            Hotkey::ScrollRight => HotkeyCode::Right,
+            Hotkey::ScrollUp => HotkeyCode::Up,
+            Hotkey::ZoomDefault => HotkeyCode::Num0,
+            Hotkey::ZoomIn => HotkeyCode::Equals,
+            Hotkey::ZoomOut => HotkeyCode::Minus,
         }
     }
 
-    pub fn default_for_keycode(code: Keycode) -> Option<Hotkey> {
+    pub fn default_for_keycode(code: HotkeyCode) -> Option<Hotkey> {
         match code {
-            Keycode::A => Some(Hotkey::FlipHorz),
-            Keycode::D => Some(Hotkey::EvalStepCycle),
-            Keycode::E => Some(Hotkey::RotateCw),
-            Keycode::F => Some(Hotkey::EvalStepTime),
-            Keycode::Q => Some(Hotkey::RotateCcw),
-            Keycode::R => Some(Hotkey::EvalRunPause),
-            Keycode::S => Some(Hotkey::EvalStepSubcycle),
-            Keycode::T => Some(Hotkey::EvalReset),
-            Keycode::W => Some(Hotkey::FlipVert),
-            Keycode::Num0 => Some(Hotkey::ZoomDefault),
-            Keycode::Down => Some(Hotkey::ScrollDown),
-            Keycode::Equals => Some(Hotkey::ZoomIn),
-            Keycode::Left => Some(Hotkey::ScrollLeft),
-            Keycode::Minus => Some(Hotkey::ZoomOut),
-            Keycode::Right => Some(Hotkey::ScrollRight),
-            Keycode::Up => Some(Hotkey::ScrollUp),
+            HotkeyCode::A => Some(Hotkey::FlipHorz),
+            HotkeyCode::D => Some(Hotkey::EvalStepCycle),
+            HotkeyCode::E => Some(Hotkey::RotateCw),
+            HotkeyCode::F => Some(Hotkey::EvalStepTime),
+            HotkeyCode::Q => Some(Hotkey::RotateCcw),
+            HotkeyCode::R => Some(Hotkey::EvalRunPause),
+            HotkeyCode::S => Some(Hotkey::EvalStepSubcycle),
+            HotkeyCode::T => Some(Hotkey::EvalReset),
+            HotkeyCode::W => Some(Hotkey::FlipVert),
+            HotkeyCode::Num0 => Some(Hotkey::ZoomDefault),
+            HotkeyCode::Down => Some(Hotkey::ScrollDown),
+            HotkeyCode::Equals => Some(Hotkey::ZoomIn),
+            HotkeyCode::Left => Some(Hotkey::ScrollLeft),
+            HotkeyCode::Minus => Some(Hotkey::ZoomOut),
+            HotkeyCode::Right => Some(Hotkey::ScrollRight),
+            HotkeyCode::Up => Some(Hotkey::ScrollUp),
             _ => None,
         }
-    }
-
-    pub fn keycode_name(code: Keycode) -> &'static str {
-        keycode_name(code).unwrap_or("<???>")
-    }
-
-    pub fn is_valid_keycode(code: Keycode) -> bool {
-        keycode_name(code).is_some()
     }
 }
 
 //===========================================================================//
 
 pub struct HotkeyCodes {
-    hotkeys: HashMap<Keycode, Hotkey>,
-    keycodes: HashMap<Hotkey, Keycode>,
+    hotkeys: HashMap<HotkeyCode, Hotkey>,
+    keycodes: HashMap<Hotkey, HotkeyCode>,
 }
 
 impl HotkeyCodes {
@@ -176,11 +169,11 @@ impl HotkeyCodes {
             .all(|(&hotkey, &code)| code == hotkey.default_keycode())
     }
 
-    pub fn hotkey(&self, keycode: Keycode) -> Option<Hotkey> {
+    pub fn hotkey(&self, keycode: HotkeyCode) -> Option<Hotkey> {
         self.hotkeys.get(&keycode).copied()
     }
 
-    pub fn keycode(&self, hotkey: Hotkey) -> Keycode {
+    pub fn keycode(&self, hotkey: Hotkey) -> HotkeyCode {
         if let Some(&code) = self.keycodes.get(&hotkey) {
             code
         } else {
@@ -188,10 +181,7 @@ impl HotkeyCodes {
         }
     }
 
-    pub fn set_keycode(&mut self, hotkey: Hotkey, new_code: Keycode) {
-        if !Hotkey::is_valid_keycode(new_code) {
-            return;
-        }
+    pub fn set_keycode(&mut self, hotkey: Hotkey, new_code: HotkeyCode) {
         let old_code = self.keycodes[&hotkey];
         if old_code == new_code {
             return;
@@ -211,8 +201,8 @@ impl HotkeyCodes {
 
 impl Default for HotkeyCodes {
     fn default() -> HotkeyCodes {
-        let mut hotkeys = HashMap::<Keycode, Hotkey>::new();
-        let mut keycodes = HashMap::<Hotkey, Keycode>::new();
+        let mut hotkeys = HashMap::<HotkeyCode, Hotkey>::new();
+        let mut keycodes = HashMap::<Hotkey, HotkeyCode>::new();
         for hotkey in Hotkey::all() {
             let code = hotkey.default_keycode();
             hotkeys.insert(code, hotkey);
@@ -228,12 +218,10 @@ impl<'d> serde::Deserialize<'d> for HotkeyCodes {
         D: serde::Deserializer<'d>,
     {
         let mut hotkeys = HotkeyCodes::default();
-        let map = BTreeMap::<&str, &str>::deserialize(deserializer)?;
-        for (hotkey_name, keycode_name) in map.into_iter() {
+        let map = BTreeMap::<&str, HotkeyCode>::deserialize(deserializer)?;
+        for (hotkey_name, code) in map.into_iter() {
             if let Ok(hotkey) = Hotkey::from_str(hotkey_name) {
-                if let Some(keycode) = keycode_from_name(keycode_name) {
-                    hotkeys.set_keycode(hotkey, keycode);
-                }
+                hotkeys.set_keycode(hotkey, code);
             }
         }
         Ok(hotkeys)
@@ -248,151 +236,159 @@ impl serde::Serialize for HotkeyCodes {
         self.keycodes
             .iter()
             .filter(|(&hotkey, &code)| code != hotkey.default_keycode())
-            .filter_map(|(&hotkey, &code)| {
-                keycode_name(code).map(|name| (format!("{:?}", hotkey), name))
-            })
-            .collect::<BTreeMap<String, &str>>()
+            .map(|(&hotkey, &code)| (format!("{:?}", hotkey), code))
+            .collect::<BTreeMap<String, HotkeyCode>>()
             .serialize(serializer)
     }
 }
 
 //===========================================================================//
 
-fn keycode_name(keycode: Keycode) -> Option<&'static str> {
-    match keycode {
-        Keycode::Up => Some("Up"),
-        Keycode::Down => Some("Down"),
-        Keycode::Left => Some("Left"),
-        Keycode::Right => Some("Right"),
-        Keycode::A => Some("A"),
-        Keycode::B => Some("B"),
-        Keycode::C => Some("C"),
-        Keycode::D => Some("D"),
-        Keycode::E => Some("E"),
-        Keycode::F => Some("F"),
-        Keycode::G => Some("G"),
-        Keycode::H => Some("H"),
-        Keycode::I => Some("I"),
-        Keycode::J => Some("J"),
-        Keycode::K => Some("K"),
-        Keycode::L => Some("L"),
-        Keycode::M => Some("M"),
-        Keycode::N => Some("N"),
-        Keycode::O => Some("O"),
-        Keycode::P => Some("P"),
-        Keycode::Q => Some("Q"),
-        Keycode::R => Some("R"),
-        Keycode::S => Some("S"),
-        Keycode::T => Some("T"),
-        Keycode::U => Some("U"),
-        Keycode::V => Some("V"),
-        Keycode::W => Some("W"),
-        Keycode::X => Some("X"),
-        Keycode::Y => Some("Y"),
-        Keycode::Z => Some("Z"),
-        Keycode::Kp0 => Some("KP0"),
-        Keycode::Kp1 => Some("KP1"),
-        Keycode::Kp2 => Some("KP2"),
-        Keycode::Kp3 => Some("KP3"),
-        Keycode::Kp4 => Some("KP4"),
-        Keycode::Kp5 => Some("KP5"),
-        Keycode::Kp6 => Some("KP6"),
-        Keycode::Kp7 => Some("KP7"),
-        Keycode::Kp8 => Some("KP8"),
-        Keycode::Kp9 => Some("KP9"),
-        Keycode::Num0 => Some("0"),
-        Keycode::Num1 => Some("1"),
-        Keycode::Num2 => Some("2"),
-        Keycode::Num3 => Some("3"),
-        Keycode::Num4 => Some("4"),
-        Keycode::Num5 => Some("5"),
-        Keycode::Num6 => Some("6"),
-        Keycode::Num7 => Some("7"),
-        Keycode::Num8 => Some("8"),
-        Keycode::Num9 => Some("9"),
-        Keycode::Backquote => Some("`"),
-        Keycode::Backslash => Some("\\"),
-        Keycode::LeftBracket => Some("["),
-        Keycode::RightBracket => Some("]"),
-        Keycode::Comma => Some(","),
-        Keycode::Equals => Some("="),
-        Keycode::Minus => Some("-"),
-        Keycode::Period => Some("."),
-        Keycode::Quote => Some("'"),
-        Keycode::Semicolon => Some(";"),
-        Keycode::Slash => Some("/"),
-        Keycode::Space => Some("Space"),
-        Keycode::Tab => Some("Tab"),
-        _ => None,
-    }
+pub trait HotkeyCodeExt
+where
+    Self: Sized,
+{
+    fn from_keycode(keycode: Keycode) -> Option<Self>;
+
+    fn to_keycode(&self) -> Keycode;
 }
 
-fn keycode_from_name(name: &str) -> Option<Keycode> {
-    match name {
-        "Up" => Some(Keycode::Up),
-        "Down" => Some(Keycode::Down),
-        "Left" => Some(Keycode::Left),
-        "Right" => Some(Keycode::Right),
-        "A" => Some(Keycode::A),
-        "B" => Some(Keycode::B),
-        "C" => Some(Keycode::C),
-        "D" => Some(Keycode::D),
-        "E" => Some(Keycode::E),
-        "F" => Some(Keycode::F),
-        "G" => Some(Keycode::G),
-        "H" => Some(Keycode::H),
-        "I" => Some(Keycode::I),
-        "J" => Some(Keycode::J),
-        "K" => Some(Keycode::K),
-        "L" => Some(Keycode::L),
-        "M" => Some(Keycode::M),
-        "N" => Some(Keycode::N),
-        "O" => Some(Keycode::O),
-        "P" => Some(Keycode::P),
-        "Q" => Some(Keycode::Q),
-        "R" => Some(Keycode::R),
-        "S" => Some(Keycode::S),
-        "T" => Some(Keycode::T),
-        "U" => Some(Keycode::U),
-        "V" => Some(Keycode::V),
-        "W" => Some(Keycode::W),
-        "X" => Some(Keycode::X),
-        "Y" => Some(Keycode::Y),
-        "Z" => Some(Keycode::Z),
-        "KP0" => Some(Keycode::Kp0),
-        "KP1" => Some(Keycode::Kp1),
-        "KP2" => Some(Keycode::Kp2),
-        "KP3" => Some(Keycode::Kp3),
-        "KP4" => Some(Keycode::Kp4),
-        "KP5" => Some(Keycode::Kp5),
-        "KP6" => Some(Keycode::Kp6),
-        "KP7" => Some(Keycode::Kp7),
-        "KP8" => Some(Keycode::Kp8),
-        "KP9" => Some(Keycode::Kp9),
-        "0" => Some(Keycode::Num0),
-        "1" => Some(Keycode::Num1),
-        "2" => Some(Keycode::Num2),
-        "3" => Some(Keycode::Num3),
-        "4" => Some(Keycode::Num4),
-        "5" => Some(Keycode::Num5),
-        "6" => Some(Keycode::Num6),
-        "7" => Some(Keycode::Num7),
-        "8" => Some(Keycode::Num8),
-        "9" => Some(Keycode::Num9),
-        "`" => Some(Keycode::Backquote),
-        "\\" => Some(Keycode::Backslash),
-        "[" => Some(Keycode::LeftBracket),
-        "]" => Some(Keycode::RightBracket),
-        "," => Some(Keycode::Comma),
-        "=" => Some(Keycode::Equals),
-        "-" => Some(Keycode::Minus),
-        "." => Some(Keycode::Period),
-        "'" => Some(Keycode::Quote),
-        ";" => Some(Keycode::Semicolon),
-        "/" => Some(Keycode::Slash),
-        "Space" => Some(Keycode::Space),
-        "Tab" => Some(Keycode::Tab),
-        _ => None,
+impl HotkeyCodeExt for HotkeyCode {
+    fn from_keycode(keycode: Keycode) -> Option<HotkeyCode> {
+        match keycode {
+            Keycode::Up => Some(HotkeyCode::Up),
+            Keycode::Down => Some(HotkeyCode::Down),
+            Keycode::Left => Some(HotkeyCode::Left),
+            Keycode::Right => Some(HotkeyCode::Right),
+            Keycode::A => Some(HotkeyCode::A),
+            Keycode::B => Some(HotkeyCode::B),
+            Keycode::C => Some(HotkeyCode::C),
+            Keycode::D => Some(HotkeyCode::D),
+            Keycode::E => Some(HotkeyCode::E),
+            Keycode::F => Some(HotkeyCode::F),
+            Keycode::G => Some(HotkeyCode::G),
+            Keycode::H => Some(HotkeyCode::H),
+            Keycode::I => Some(HotkeyCode::I),
+            Keycode::J => Some(HotkeyCode::J),
+            Keycode::K => Some(HotkeyCode::K),
+            Keycode::L => Some(HotkeyCode::L),
+            Keycode::M => Some(HotkeyCode::M),
+            Keycode::N => Some(HotkeyCode::N),
+            Keycode::O => Some(HotkeyCode::O),
+            Keycode::P => Some(HotkeyCode::P),
+            Keycode::Q => Some(HotkeyCode::Q),
+            Keycode::R => Some(HotkeyCode::R),
+            Keycode::S => Some(HotkeyCode::S),
+            Keycode::T => Some(HotkeyCode::T),
+            Keycode::U => Some(HotkeyCode::U),
+            Keycode::V => Some(HotkeyCode::V),
+            Keycode::W => Some(HotkeyCode::W),
+            Keycode::X => Some(HotkeyCode::X),
+            Keycode::Y => Some(HotkeyCode::Y),
+            Keycode::Z => Some(HotkeyCode::Z),
+            Keycode::Kp0 => Some(HotkeyCode::Kp0),
+            Keycode::Kp1 => Some(HotkeyCode::Kp1),
+            Keycode::Kp2 => Some(HotkeyCode::Kp2),
+            Keycode::Kp3 => Some(HotkeyCode::Kp3),
+            Keycode::Kp4 => Some(HotkeyCode::Kp4),
+            Keycode::Kp5 => Some(HotkeyCode::Kp5),
+            Keycode::Kp6 => Some(HotkeyCode::Kp6),
+            Keycode::Kp7 => Some(HotkeyCode::Kp7),
+            Keycode::Kp8 => Some(HotkeyCode::Kp8),
+            Keycode::Kp9 => Some(HotkeyCode::Kp9),
+            Keycode::Num0 => Some(HotkeyCode::Num0),
+            Keycode::Num1 => Some(HotkeyCode::Num1),
+            Keycode::Num2 => Some(HotkeyCode::Num2),
+            Keycode::Num3 => Some(HotkeyCode::Num3),
+            Keycode::Num4 => Some(HotkeyCode::Num4),
+            Keycode::Num5 => Some(HotkeyCode::Num5),
+            Keycode::Num6 => Some(HotkeyCode::Num6),
+            Keycode::Num7 => Some(HotkeyCode::Num7),
+            Keycode::Num8 => Some(HotkeyCode::Num8),
+            Keycode::Num9 => Some(HotkeyCode::Num9),
+            Keycode::Backquote => Some(HotkeyCode::Backquote),
+            Keycode::Backslash => Some(HotkeyCode::Backslash),
+            Keycode::LeftBracket => Some(HotkeyCode::LeftBracket),
+            Keycode::RightBracket => Some(HotkeyCode::RightBracket),
+            Keycode::Comma => Some(HotkeyCode::Comma),
+            Keycode::Equals => Some(HotkeyCode::Equals),
+            Keycode::Minus => Some(HotkeyCode::Minus),
+            Keycode::Period => Some(HotkeyCode::Period),
+            Keycode::Quote => Some(HotkeyCode::Quote),
+            Keycode::Semicolon => Some(HotkeyCode::Semicolon),
+            Keycode::Slash => Some(HotkeyCode::Slash),
+            Keycode::Space => Some(HotkeyCode::Space),
+            Keycode::Tab => Some(HotkeyCode::Tab),
+            _ => None,
+        }
+    }
+
+    fn to_keycode(&self) -> Keycode {
+        match *self {
+            HotkeyCode::Up => Keycode::Up,
+            HotkeyCode::Down => Keycode::Down,
+            HotkeyCode::Left => Keycode::Left,
+            HotkeyCode::Right => Keycode::Right,
+            HotkeyCode::A => Keycode::A,
+            HotkeyCode::B => Keycode::B,
+            HotkeyCode::C => Keycode::C,
+            HotkeyCode::D => Keycode::D,
+            HotkeyCode::E => Keycode::E,
+            HotkeyCode::F => Keycode::F,
+            HotkeyCode::G => Keycode::G,
+            HotkeyCode::H => Keycode::H,
+            HotkeyCode::I => Keycode::I,
+            HotkeyCode::J => Keycode::J,
+            HotkeyCode::K => Keycode::K,
+            HotkeyCode::L => Keycode::L,
+            HotkeyCode::M => Keycode::M,
+            HotkeyCode::N => Keycode::N,
+            HotkeyCode::O => Keycode::O,
+            HotkeyCode::P => Keycode::P,
+            HotkeyCode::Q => Keycode::Q,
+            HotkeyCode::R => Keycode::R,
+            HotkeyCode::S => Keycode::S,
+            HotkeyCode::T => Keycode::T,
+            HotkeyCode::U => Keycode::U,
+            HotkeyCode::V => Keycode::V,
+            HotkeyCode::W => Keycode::W,
+            HotkeyCode::X => Keycode::X,
+            HotkeyCode::Y => Keycode::Y,
+            HotkeyCode::Z => Keycode::Z,
+            HotkeyCode::Kp0 => Keycode::Kp0,
+            HotkeyCode::Kp1 => Keycode::Kp1,
+            HotkeyCode::Kp2 => Keycode::Kp2,
+            HotkeyCode::Kp3 => Keycode::Kp3,
+            HotkeyCode::Kp4 => Keycode::Kp4,
+            HotkeyCode::Kp5 => Keycode::Kp5,
+            HotkeyCode::Kp6 => Keycode::Kp6,
+            HotkeyCode::Kp7 => Keycode::Kp7,
+            HotkeyCode::Kp8 => Keycode::Kp8,
+            HotkeyCode::Kp9 => Keycode::Kp9,
+            HotkeyCode::Num0 => Keycode::Num0,
+            HotkeyCode::Num1 => Keycode::Num1,
+            HotkeyCode::Num2 => Keycode::Num2,
+            HotkeyCode::Num3 => Keycode::Num3,
+            HotkeyCode::Num4 => Keycode::Num4,
+            HotkeyCode::Num5 => Keycode::Num5,
+            HotkeyCode::Num6 => Keycode::Num6,
+            HotkeyCode::Num7 => Keycode::Num7,
+            HotkeyCode::Num8 => Keycode::Num8,
+            HotkeyCode::Num9 => Keycode::Num9,
+            HotkeyCode::Backquote => Keycode::Backquote,
+            HotkeyCode::Backslash => Keycode::Backslash,
+            HotkeyCode::LeftBracket => Keycode::LeftBracket,
+            HotkeyCode::RightBracket => Keycode::RightBracket,
+            HotkeyCode::Comma => Keycode::Comma,
+            HotkeyCode::Equals => Keycode::Equals,
+            HotkeyCode::Minus => Keycode::Minus,
+            HotkeyCode::Period => Keycode::Period,
+            HotkeyCode::Quote => Keycode::Quote,
+            HotkeyCode::Semicolon => Keycode::Semicolon,
+            HotkeyCode::Slash => Keycode::Slash,
+            HotkeyCode::Space => Keycode::Space,
+            HotkeyCode::Tab => Keycode::Tab,
+        }
     }
 }
 
@@ -400,7 +396,7 @@ fn keycode_from_name(name: &str) -> Option<Keycode> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Hotkey, HotkeyCodes, Keycode, HOTKEY_CATEGORIES};
+    use super::{Hotkey, HotkeyCode, HotkeyCodes, HOTKEY_CATEGORIES};
     use std::collections::HashSet;
     use std::str::{self, FromStr};
     use toml;
@@ -447,7 +443,7 @@ mod tests {
         let mut hotkeys = HotkeyCodes::default();
         let hotkey = Hotkey::RotateCw;
         let old_keycode = hotkeys.keycode(hotkey);
-        let new_keycode = Keycode::Space;
+        let new_keycode = HotkeyCode::Space;
         assert_ne!(old_keycode, new_keycode);
         hotkeys.set_keycode(hotkey, new_keycode);
         assert_eq!(hotkeys.keycode(hotkey), new_keycode);
@@ -460,18 +456,6 @@ mod tests {
         let keycode = hotkeys.keycode(hotkey);
         hotkeys.set_keycode(hotkey, keycode);
         assert_eq!(hotkeys.keycode(hotkey), keycode);
-    }
-
-    #[test]
-    fn set_keycode_invalid() {
-        let mut hotkeys = HotkeyCodes::default();
-        let hotkey = Hotkey::RotateCw;
-        let old_keycode = hotkeys.keycode(hotkey);
-        let new_keycode = Keycode::LShift;
-        assert_ne!(old_keycode, new_keycode);
-        assert!(!Hotkey::is_valid_keycode(new_keycode));
-        hotkeys.set_keycode(hotkey, new_keycode);
-        assert_eq!(hotkeys.keycode(hotkey), old_keycode);
     }
 
     #[test]
@@ -488,17 +472,17 @@ mod tests {
     #[test]
     fn serialization() {
         let mut hotkeys = HotkeyCodes::default();
-        hotkeys.set_keycode(Hotkey::FlipHorz, Keycode::Semicolon);
-        hotkeys.set_keycode(Hotkey::FlipVert, Keycode::Tab);
+        hotkeys.set_keycode(Hotkey::FlipHorz, HotkeyCode::Semicolon);
+        hotkeys.set_keycode(Hotkey::FlipVert, HotkeyCode::Tab);
         let bytes = toml::to_vec(&hotkeys).unwrap();
         assert_eq!(
             str::from_utf8(&bytes).unwrap(),
-            "FlipHorz = \";\"\n\
+            "FlipHorz = \"Semicolon\"\n\
              FlipVert = \"Tab\"\n"
         );
         let hotkeys: HotkeyCodes = toml::from_slice(&bytes).unwrap();
-        assert_eq!(hotkeys.keycode(Hotkey::FlipHorz), Keycode::Semicolon);
-        assert_eq!(hotkeys.keycode(Hotkey::FlipVert), Keycode::Tab);
+        assert_eq!(hotkeys.keycode(Hotkey::FlipHorz), HotkeyCode::Semicolon);
+        assert_eq!(hotkeys.keycode(Hotkey::FlipVert), HotkeyCode::Tab);
     }
 }
 

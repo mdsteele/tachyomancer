@@ -102,7 +102,7 @@ impl Parser {
 
     pub fn push_key(&mut self, hotkey_name: &str, prefs: &Prefs) {
         if let Ok(hotkey) = Hotkey::from_str(hotkey_name) {
-            let key_name = Hotkey::keycode_name(prefs.hotkey_code(hotkey));
+            let key_name = prefs.hotkey_code(hotkey).name();
             self.push_str(&format!("[{}]", key_name));
         } else {
             debug_warn!(

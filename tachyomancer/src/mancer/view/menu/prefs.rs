@@ -498,7 +498,7 @@ impl AudioVideoPane {
 pub struct HotkeysPane {
     rect: Rect<i32>,
     category_labels: Vec<((f32, f32), &'static str)>,
-    hotkey_boxes: Vec<HotkeyBox>,
+    hotkey_boxes: Vec<(Hotkey, HotkeyBox)>,
     defaults_button: TextButton<()>,
 }
 
@@ -518,8 +518,13 @@ impl HotkeysPane {
             category_labels.push(((left as f32, top as f32), name));
             top += HOTKEY_CATEGORY_LABEL_STRIDE;
             for &hotkey in hotkeys.iter() {
-                hotkey_boxes
-                    .push(HotkeyBox::new(Point2::new(left, top), hotkey));
+                hotkey_boxes.push((
+                    hotkey,
+                    HotkeyBox::new(
+                        Point2::new(left, top),
+                        hotkey.name().to_string(),
+                    ),
+                ));
                 top += HOTKEY_BOX_STRIDE;
             }
             top += HOTKEY_CATEGORY_SPACING;
@@ -558,9 +563,9 @@ impl HotkeysPane {
             );
         }
 
-        for hotkey_box in self.hotkey_boxes.iter() {
-            let keycode = state.prefs().hotkey_code(hotkey_box.hotkey());
-            hotkey_box.draw(resources, matrix, keycode);
+        for &(hotkey, ref hotkey_box) in self.hotkey_boxes.iter() {
+            let code = state.prefs().hotkey_code(hotkey);
+            hotkey_box.draw(resources, matrix, Some(code));
         }
 
         let enabled = !state.prefs().hotkeys_are_defaults();
@@ -580,21 +585,23 @@ impl HotkeysPane {
         }
 
         let mut listening: Option<Hotkey> = None;
-        for hotkey_box in self.hotkey_boxes.iter_mut() {
+        for &mut (hotkey, ref mut hotkey_box) in self.hotkey_boxes.iter_mut() {
             match hotkey_box.on_event(event, ui) {
                 Some(HotkeyBoxAction::Listening) => {
-                    listening = Some(hotkey_box.hotkey());
+                    listening = Some(hotkey);
                 }
-                Some(HotkeyBoxAction::Update(keycode)) => {
-                    let hotkey = hotkey_box.hotkey();
-                    state.prefs_mut().set_hotkey_code(hotkey, keycode);
+                Some(HotkeyBoxAction::Set(code)) => {
+                    state.prefs_mut().set_hotkey_code(hotkey, code);
                 }
+                Some(HotkeyBoxAction::Clear) => {}
                 None => {}
             }
         }
-        if let Some(hotkey) = listening {
-            for hotkey_box in self.hotkey_boxes.iter_mut() {
-                if hotkey_box.hotkey() != hotkey {
+        if let Some(listening_hotkey) = listening {
+            for &mut (hotkey, ref mut hotkey_box) in
+                self.hotkey_boxes.iter_mut()
+            {
+                if hotkey != listening_hotkey {
                     hotkey_box.on_event(&Event::Unfocus, ui);
                 }
             }

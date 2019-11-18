@@ -20,6 +20,7 @@
 use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::{Coords, Direction};
+use crate::save::HotkeyCode;
 use crate::state::{PortColor, PortFlow, WireSize};
 use rand;
 
@@ -83,17 +84,23 @@ pub const BUTTON_CHIP_DATA: &ChipData = &ChipData {
 pub struct ButtonChipEval {
     output: usize,
     coords: Coords,
+    hotkey: Option<HotkeyCode>,
     press_count: i32,
 }
 
 impl ButtonChipEval {
     pub fn new_evals(
+        hotkey: Option<HotkeyCode>,
         slots: &[(usize, WireSize)],
         coords: Coords,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), BUTTON_CHIP_DATA.ports.len());
-        let chip_eval =
-            ButtonChipEval { output: slots[0].0, coords, press_count: 0 };
+        let chip_eval = ButtonChipEval {
+            output: slots[0].0,
+            coords,
+            hotkey,
+            press_count: 0,
+        };
         vec![(0, Box::new(chip_eval))]
     }
 }
@@ -101,6 +108,9 @@ impl ButtonChipEval {
 impl ChipEval for ButtonChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         self.press_count += state.pop_button_presses(self.coords);
+        if let Some(code) = self.hotkey {
+            self.press_count += state.pop_hotkey_presses(code);
+        }
         if self.press_count > 0 {
             self.press_count -= 1;
             state.send_event(self.output, 0);

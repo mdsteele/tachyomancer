@@ -34,7 +34,7 @@ use crate::mancer::gui::{
     ClockEventData, Cursor, Event, Keycode, MouseEventData, NextCursor,
     Resources, Sound, Ui,
 };
-use crate::mancer::save::{Hotkey, Prefs};
+use crate::mancer::save::{Hotkey, HotkeyCodeExt, Prefs};
 use cgmath::{self, vec2, Matrix4, Point2, Vector2};
 use std::collections::HashSet;
 use std::mem;
@@ -42,7 +42,7 @@ use tachy::geom::{
     AsFloat, AsInt, Color3, Color4, Coords, CoordsRect, Direction, MatrixExt,
     Orientation, Rect, RectSize,
 };
-use tachy::save::ChipType;
+use tachy::save::{ChipType, HotkeyCode};
 use tachy::state::{EditGrid, GridChange, WireColor};
 
 //===========================================================================//
@@ -66,6 +66,7 @@ const ZOOM_PER_KEYDOWN: f32 = 1.415; // slightly more than sqrt(2)
 //===========================================================================//
 
 pub enum EditGridAction {
+    EditButton(Coords, Option<HotkeyCode>),
     EditComment(Coords, String),
     EditConst(Coords, u16),
 }
@@ -422,7 +423,7 @@ impl EditGridView {
                 if grid.eval().is_some() {
                     match grid.chip_at(coords) {
                         Some((_, ChipType::Break(_), _))
-                        | Some((_, ChipType::Button, _))
+                        | Some((_, ChipType::Button(_), _))
                         | Some((_, ChipType::Toggle(_), _)) => {
                             return Cursor::HandPointing;
                         }
@@ -545,18 +546,10 @@ impl EditGridView {
         match event {
             Event::ClockTick(tick) => {
                 // Scroll if we're holding down any scroll key(s):
-                let (left, right, up, down) = {
-                    let keyboard = ui.keyboard();
-                    (
-                        keyboard
-                            .is_held(prefs.hotkey_code(Hotkey::ScrollLeft)),
-                        keyboard
-                            .is_held(prefs.hotkey_code(Hotkey::ScrollRight)),
-                        keyboard.is_held(prefs.hotkey_code(Hotkey::ScrollUp)),
-                        keyboard
-                            .is_held(prefs.hotkey_code(Hotkey::ScrollDown)),
-                    )
-                };
+                let left = is_hotkey_held(Hotkey::ScrollLeft, ui, prefs);
+                let right = is_hotkey_held(Hotkey::ScrollRight, ui, prefs);
+                let up = is_hotkey_held(Hotkey::ScrollUp, ui, prefs);
+                let down = is_hotkey_held(Hotkey::ScrollDown, ui, prefs);
                 let dist = ((SCROLL_GRID_CELLS_PER_SECOND * tick.elapsed)
                     * (GRID_CELL_SIZE as f64))
                     .round() as i32;
@@ -678,8 +671,12 @@ impl EditGridView {
                         }
                         _ => {}
                     }
-                } else if let Some(hotkey) = prefs.hotkey_for_code(key.code) {
-                    self.on_hotkey(hotkey, ui, grid);
+                } else if let Some(code) = HotkeyCode::from_keycode(key.code) {
+                    if let Some(hotkey) = prefs.hotkey_for_code(code) {
+                        self.on_hotkey(hotkey, ui, grid);
+                    } else if let Some(eval) = grid.eval_mut() {
+                        eval.press_hotkey(code);
+                    }
                 }
                 self.stop_hover(ui);
             }
@@ -692,7 +689,7 @@ impl EditGridView {
                             // TODO: Play sound for toggling breakpoint.
                             grid.press_button(coords);
                         }
-                        Some((coords, ChipType::Button, _)) => {
+                        Some((coords, ChipType::Button(_), _)) => {
                             // TODO: Play sound for pressing button.
                             grid.press_button(coords);
                         }
@@ -812,6 +809,9 @@ impl EditGridView {
                             ui.request_redraw();
                             return None;
                         }
+                    }
+                    Some((_, ChipType::Button(code), _)) => {
+                        return Some(EditGridAction::EditButton(coords, code));
                     }
                     Some((_, ChipType::Comment(bytes), _)) => {
                         let string: String =
@@ -1065,6 +1065,10 @@ impl EditGridView {
     fn coords_for_screen_pt(&self, screen_pt: Point2<i32>) -> Coords {
         self.screen_pt_to_grid_pt(screen_pt).as_i32_floor()
     }
+}
+
+fn is_hotkey_held(hotkey: Hotkey, ui: &Ui, prefs: &Prefs) -> bool {
+    ui.keyboard().is_held(prefs.hotkey_code(hotkey).to_keycode())
 }
 
 fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {

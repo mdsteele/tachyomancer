@@ -21,7 +21,7 @@ use super::super::button::HoverPulse;
 use super::super::tooltip::TooltipSink;
 use super::tutorial::TutorialBubble;
 use crate::mancer::gui::{Cursor, Event, Resources, Sound, Ui};
-use crate::mancer::save::{Hotkey, Prefs};
+use crate::mancer::save::{Hotkey, HotkeyCodeExt, Prefs};
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::save::Puzzle;
@@ -318,7 +318,7 @@ impl ControlsButton {
             Event::KeyDown(key) => {
                 if !controls_disabled
                     && self.is_enabled(status)
-                    && key.code == prefs.hotkey_code(self.hotkey)
+                    && key.code == prefs.hotkey_code(self.hotkey).to_keycode()
                 {
                     self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);

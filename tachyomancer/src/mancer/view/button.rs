@@ -21,9 +21,10 @@ use crate::mancer::font::{Align, Font};
 use crate::mancer::gui::{
     ClockEventData, Cursor, Event, Keycode, Resources, Sound, Ui,
 };
-use crate::mancer::save::Hotkey;
+use crate::mancer::save::HotkeyCodeExt;
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{AsFloat, Color3, Color4, Rect};
+use tachy::save::HotkeyCode;
 
 //===========================================================================//
 
@@ -33,8 +34,8 @@ const CHECKBOX_BOX_SPACING: i32 = 8;
 const CHECKBOX_FONT: Font = Font::Roman;
 const CHECKBOX_FONT_SIZE: f32 = 20.0;
 
-const HOTKEY_BOX_HEIGHT: i32 = 28;
-const HOTKEY_BOX_WIDTH: i32 = 68;
+pub const HOTKEY_BOX_HEIGHT: i32 = 28;
+pub const HOTKEY_BOX_WIDTH: i32 = 68;
 const HOTKEY_BOX_SPACING: i32 = 8;
 const HOTKEY_BOX_FONT_SIZE: f32 = 20.0;
 const HOTKEY_FONT: Font = Font::Roman;
@@ -157,40 +158,38 @@ impl Checkbox {
 
 pub enum HotkeyBoxAction {
     Listening,
-    Update(Keycode),
+    Set(HotkeyCode),
+    Clear,
 }
 
 pub struct HotkeyBox {
     rect: Rect<i32>,
-    hotkey: Hotkey,
+    label: String,
     listening: bool,
     hover_pulse: HoverPulse,
 }
 
 impl HotkeyBox {
-    pub fn new(top_left: Point2<i32>, hotkey: Hotkey) -> HotkeyBox {
-        let width = HOTKEY_BOX_WIDTH
-            + HOTKEY_BOX_SPACING
-            + HOTKEY_FONT
-                .str_width(HOTKEY_LABEL_FONT_SIZE, hotkey.name())
-                .ceil() as i32;
+    pub fn new(top_left: Point2<i32>, label: String) -> HotkeyBox {
+        let mut width = HOTKEY_BOX_WIDTH;
+        if !label.is_empty() {
+            width += HOTKEY_BOX_SPACING
+                + HOTKEY_FONT.str_width(HOTKEY_LABEL_FONT_SIZE, &label).ceil()
+                    as i32;
+        }
         HotkeyBox {
             rect: Rect::new(top_left.x, top_left.y, width, HOTKEY_BOX_HEIGHT),
-            hotkey,
+            label,
             listening: false,
             hover_pulse: HoverPulse::new(),
         }
-    }
-
-    pub fn hotkey(&self) -> Hotkey {
-        self.hotkey
     }
 
     pub fn draw(
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
-        keycode: Keycode,
+        opt_code: Option<HotkeyCode>,
     ) {
         let ui = resources.shaders().ui();
         let box_rect = Rect::new(
@@ -216,27 +215,31 @@ impl HotkeyBox {
         );
         let font = resources.fonts().get(HOTKEY_FONT);
         if !self.listening {
+            if let Some(code) = opt_code {
+                font.draw(
+                    &matrix,
+                    HOTKEY_BOX_FONT_SIZE,
+                    Align::MidCenter,
+                    (
+                        (box_rect.x + box_rect.width / 2) as f32,
+                        (box_rect.y + box_rect.height / 2) as f32,
+                    ),
+                    code.name(),
+                );
+            }
+        }
+        if !self.label.is_empty() {
             font.draw(
                 &matrix,
-                HOTKEY_BOX_FONT_SIZE,
-                Align::MidCenter,
+                HOTKEY_LABEL_FONT_SIZE,
+                Align::MidLeft,
                 (
-                    (box_rect.x + box_rect.width / 2) as f32,
+                    (box_rect.right() + HOTKEY_BOX_SPACING) as f32,
                     (box_rect.y + box_rect.height / 2) as f32,
                 ),
-                Hotkey::keycode_name(keycode),
+                &self.label,
             );
         }
-        font.draw(
-            &matrix,
-            HOTKEY_LABEL_FONT_SIZE,
-            Align::MidLeft,
-            (
-                (box_rect.right() + HOTKEY_BOX_SPACING) as f32,
-                (box_rect.y + box_rect.height / 2) as f32,
-            ),
-            self.hotkey.name(),
-        );
     }
 
     pub fn on_event(
@@ -249,10 +252,18 @@ impl HotkeyBox {
                 self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::KeyDown(key) => {
-                if self.listening && Hotkey::is_valid_keycode(key.code) {
-                    self.listening = false;
-                    ui.request_redraw();
-                    return Some(HotkeyBoxAction::Update(key.code));
+                if self.listening {
+                    if let Some(code) = HotkeyCode::from_keycode(key.code) {
+                        self.listening = false;
+                        ui.request_redraw();
+                        return Some(HotkeyBoxAction::Set(code));
+                    } else if key.code == Keycode::Backspace
+                        || key.code == Keycode::Delete
+                    {
+                        self.listening = false;
+                        ui.request_redraw();
+                        return Some(HotkeyBoxAction::Clear);
+                    }
                 }
             }
             Event::MouseDown(mouse) if mouse.left => {

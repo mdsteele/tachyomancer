@@ -132,7 +132,7 @@ impl ChipExt for ChipType {
             ChipType::Stopwatch => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateStopwatch)
             }
-            ChipType::Button | ChipType::Toggle(_) => {
+            ChipType::Button(_) | ChipType::Toggle(_) => {
                 ChipAvailability::InteractiveOnly
             }
             ChipType::Random => {
@@ -221,7 +221,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Add2Bit => self::arith::ADD_2BIT_CHIP_DATA,
         ChipType::And => self::logic::AND_CHIP_DATA,
         ChipType::Break(_) => self::special::BREAK_CHIP_DATA,
-        ChipType::Button => self::special::BUTTON_CHIP_DATA,
+        ChipType::Button(_) => self::special::BUTTON_CHIP_DATA,
         ChipType::Clock => self::timing::CLOCK_CHIP_DATA,
         ChipType::Cmp => self::compare::CMP_CHIP_DATA,
         ChipType::CmpEq => self::compare::CMPEQ_CHIP_DATA,
@@ -270,8 +270,8 @@ pub(super) fn new_chip_evals(
         ChipType::Break(enabled) => {
             self::special::BreakChipEval::new_evals(enabled, slots, coords)
         }
-        ChipType::Button => {
-            self::special::ButtonChipEval::new_evals(slots, coords)
+        ChipType::Button(hotkey) => {
+            self::special::ButtonChipEval::new_evals(hotkey, slots, coords)
         }
         ChipType::Clock => self::timing::ClockChipEval::new_evals(slots),
         ChipType::Cmp => self::compare::CmpChipEval::new_evals(slots),

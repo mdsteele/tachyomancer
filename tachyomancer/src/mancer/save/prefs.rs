@@ -17,12 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::hotkey::{Hotkey, HotkeyCodes, Keycode};
+use super::hotkey::{Hotkey, HotkeyCodes};
 use rand::{self, Rng};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use tachy::geom::RectSize;
+use tachy::save::HotkeyCode;
 use toml;
 
 //===========================================================================//
@@ -167,7 +168,7 @@ impl Prefs {
         self.needs_save = true;
     }
 
-    pub fn hotkey_for_code(&self, keycode: Keycode) -> Option<Hotkey> {
+    pub fn hotkey_for_code(&self, keycode: HotkeyCode) -> Option<Hotkey> {
         if let Some(ref hotkeys) = self.data.hotkeys {
             hotkeys.hotkey(keycode)
         } else {
@@ -175,7 +176,7 @@ impl Prefs {
         }
     }
 
-    pub fn hotkey_code(&self, hotkey: Hotkey) -> Keycode {
+    pub fn hotkey_code(&self, hotkey: Hotkey) -> HotkeyCode {
         if let Some(ref hotkeys) = self.data.hotkeys {
             hotkeys.keycode(hotkey)
         } else {
@@ -183,7 +184,7 @@ impl Prefs {
         }
     }
 
-    pub fn set_hotkey_code(&mut self, hotkey: Hotkey, code: Keycode) {
+    pub fn set_hotkey_code(&mut self, hotkey: Hotkey, code: HotkeyCode) {
         if self.data.hotkeys.is_none() {
             self.data.hotkeys = Some(HotkeyCodes::default());
         }

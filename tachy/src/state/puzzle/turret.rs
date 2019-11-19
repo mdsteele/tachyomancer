@@ -381,10 +381,11 @@ fn div_round(a: u32, b: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{ENEMIES, NUM_POSITIONS};
+    use super::{BASE_DAMAGE_FOR_FAILURE, ENEMIES, NUM_POSITIONS};
 
     #[test]
     fn enemies_list_is_valid() {
+        assert!(ENEMIES.len() >= (BASE_DAMAGE_FOR_FAILURE as usize));
         let mut prev_time_step = 0;
         for &(time_step, pos, speed) in ENEMIES.iter() {
             assert!(time_step >= prev_time_step);

@@ -25,6 +25,7 @@ mod mining;
 mod robotarm;
 mod sensors;
 mod shared;
+mod shields;
 mod storage;
 mod turret;
 
@@ -105,6 +106,9 @@ impl VerificationTray {
             }
             Puzzle::CommandLander => {
                 self::lander::LanderVerifyView::new(right_bottom)
+            }
+            Puzzle::CommandShields => {
+                self::shields::ShieldsVerifyView::new(right_bottom)
             }
             Puzzle::CommandTurret => {
                 self::turret::TurretVerifyView::new(right_bottom)

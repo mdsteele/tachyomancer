@@ -561,6 +561,15 @@ impl CircuitView {
             }
             EvalResult::Failure => {
                 debug_log!("Failure!");
+                if cfg!(debug_assertions) {
+                    for error in grid.eval().unwrap().errors() {
+                        debug_log!(
+                            "Time step {}: {}",
+                            error.time_step,
+                            error.message
+                        );
+                    }
+                }
                 self.controls_status = ControlsStatus::Finished;
                 ui.request_redraw();
                 None

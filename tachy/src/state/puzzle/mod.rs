@@ -32,6 +32,7 @@ mod robotarm;
 mod sandbox;
 mod sensors;
 mod shared;
+mod shields;
 mod storage;
 mod turret;
 mod tutor_bvr;
@@ -52,6 +53,7 @@ pub use self::mining::MiningRobotEval;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::shared::TutorialBubblePosition;
+pub use self::shields::ShieldsEval;
 pub use self::storage::StorageDepotEval;
 pub use self::turret::TurretEval;
 pub use self::tutor_bvr::{TutorialAddEval, TutorialMuxEval, TutorialOrEval};
@@ -129,6 +131,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateStorageDepot => self::storage::INTERFACES,
             Puzzle::AutomateXUnit => self::xunit::INTERFACES,
             Puzzle::CommandLander => self::lander::INTERFACES,
+            Puzzle::CommandShields => self::shields::INTERFACES,
             Puzzle::CommandTurret => self::turret::INTERFACES,
             Puzzle::FabricateEggTimer => self::fab_clock::EGG_TIMER_INTERFACES,
             Puzzle::FabricateHalve => self::fab_arith::HALVE_INTERFACES,
@@ -208,6 +211,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateStorageDepot => Box::new(StorageDepotEval::new(slots)),
         Puzzle::AutomateXUnit => Box::new(XUnitEval::new(slots)),
         Puzzle::CommandLander => Box::new(LanderEval::new(slots)),
+        Puzzle::CommandShields => Box::new(ShieldsEval::new(slots)),
         Puzzle::CommandTurret => Box::new(TurretEval::new(slots)),
         Puzzle::FabricateEggTimer => {
             Box::new(FabricateEggTimerEval::new(slots))

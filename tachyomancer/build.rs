@@ -66,6 +66,11 @@ fn main() {
         &PathBuf::from("texture/ui.png"),
         icns::PixelFormat::RGBA,
     );
+    converter.svgs_to_pngs(
+        &PathBuf::from("src/mancer/texture/diagram"),
+        &PathBuf::from("texture/diagram"),
+        icns::PixelFormat::RGBA,
+    );
 
     let target = env::var("TARGET").unwrap();
     if target.ends_with("-apple-darwin") {
@@ -227,26 +232,18 @@ impl Converter {
 
     fn generate_chip_icons(&self) {
         // Convert chip icon SVGs to PNGs:
-        let svg_dir = PathBuf::from("src/mancer/texture/chip");
-        let mut png_paths = Vec::<PathBuf>::new();
-        let mut icon_names = Vec::<String>::new();
-        for entry in svg_dir.read_dir().unwrap() {
-            let svg_path = entry.unwrap().path();
-            if svg_path.extension() != Some("svg".as_ref()) {
-                continue;
-            }
-            let svg_name = svg_path.file_stem().unwrap();
-            let png_relpath =
-                PathBuf::from("chip").join(svg_name).with_extension("png");
-            let png_path = self.svg_to_png(
-                &svg_path,
-                &png_relpath,
-                icns::PixelFormat::Alpha,
-            );
-            png_paths.push(png_path);
-            icon_names.push(svg_name.to_str().unwrap().to_title_case());
-        }
-        png_paths.sort();
+        let png_paths = self.svgs_to_pngs(
+            &PathBuf::from("src/mancer/texture/chip"),
+            &PathBuf::from("chip"),
+            icns::PixelFormat::Alpha,
+        );
+        let mut icon_names: Vec<String> = png_paths
+            .iter()
+            .map(|path| {
+                path.file_stem().unwrap().to_str().unwrap().to_title_case()
+            })
+            .collect();
+        icon_names.sort();
 
         // Combine icon PNGs into a single texture PNG:
         self.sprite_images(
@@ -262,7 +259,6 @@ impl Converter {
         );
 
         // Generate ChipIcon enum:
-        icon_names.sort();
         let icon_rs_relpath = PathBuf::from("texture/chip_icons.rs");
         eprintln!("Generating: {:?}", icon_rs_relpath);
         let icon_rs_path = self.out_dir.join(&icon_rs_relpath);
@@ -278,26 +274,18 @@ impl Converter {
 
     fn generate_list_icons(&self) {
         // Convert list icon SVGs to PNGs:
-        let svg_dir = PathBuf::from("src/mancer/texture/listicon");
-        let mut png_paths = Vec::<PathBuf>::new();
-        let mut icon_names = Vec::<String>::new();
-        for entry in svg_dir.read_dir().unwrap() {
-            let svg_path = entry.unwrap().path();
-            if svg_path.extension() != Some("svg".as_ref()) {
-                continue;
-            }
-            let svg_name = svg_path.file_stem().unwrap();
-            let png_relpath =
-                PathBuf::from("listicon").join(svg_name).with_extension("png");
-            let png_path = self.svg_to_png(
-                &svg_path,
-                &png_relpath,
-                icns::PixelFormat::Alpha,
-            );
-            png_paths.push(png_path);
-            icon_names.push(svg_name.to_str().unwrap().to_title_case());
-        }
-        png_paths.sort();
+        let png_paths = self.svgs_to_pngs(
+            &PathBuf::from("src/mancer/texture/listicon"),
+            &PathBuf::from("listicon"),
+            icns::PixelFormat::Alpha,
+        );
+        let mut icon_names: Vec<String> = png_paths
+            .iter()
+            .map(|path| {
+                path.file_stem().unwrap().to_str().unwrap().to_title_case()
+            })
+            .collect();
+        icon_names.sort();
 
         // Combine icon PNGs into a single texture PNG:
         self.sprite_images(
@@ -313,7 +301,6 @@ impl Converter {
         );
 
         // Generate ListIcon enum:
-        icon_names.sort();
         let icon_rs_relpath = PathBuf::from("texture/list_icons.rs");
         eprintln!("Generating: {:?}", icon_rs_relpath);
         let icon_rs_path = self.out_dir.join(&icon_rs_relpath);
@@ -444,6 +431,29 @@ impl Converter {
         }
         image.write_png(File::create(&png_path).unwrap()).unwrap();
         return png_path;
+    }
+
+    fn svgs_to_pngs(
+        &self,
+        svg_dir_path: &Path,
+        png_dir_relpath: &Path,
+        pixel_format: icns::PixelFormat,
+    ) -> Vec<PathBuf> {
+        let mut png_paths = Vec::<PathBuf>::new();
+        for entry in svg_dir_path.read_dir().unwrap() {
+            let svg_path = entry.unwrap().path();
+            if svg_path.extension() != Some("svg".as_ref()) {
+                continue;
+            }
+            let svg_name = svg_path.file_stem().unwrap();
+            let png_relpath =
+                png_dir_relpath.join(svg_name).with_extension("png");
+            let png_path =
+                self.svg_to_png(&svg_path, &png_relpath, pixel_format);
+            png_paths.push(png_path);
+        }
+        png_paths.sort();
+        png_paths
     }
 
     fn create_parent_dir(&self, path: &Path) {

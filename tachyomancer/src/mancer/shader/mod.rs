@@ -19,6 +19,7 @@
 
 mod board;
 mod chip;
+mod diagram;
 mod frame;
 mod heightmap;
 mod icon;
@@ -31,6 +32,7 @@ mod wire;
 
 pub use self::board::BoardShader;
 pub use self::chip::ChipShader;
+pub use self::diagram::DiagramShader;
 pub use self::frame::FrameBufferShader;
 pub use self::heightmap::HeightmapShader;
 pub use self::icon::IconShader;
@@ -46,6 +48,7 @@ pub use self::wire::WireShader;
 pub struct Shaders {
     board: BoardShader,
     chip: ChipShader,
+    diagram: DiagramShader,
     frame: FrameBufferShader,
     heightmap: HeightmapShader,
     icon: IconShader,
@@ -62,6 +65,7 @@ impl Shaders {
         Ok(Shaders {
             board: BoardShader::new()?,
             chip: ChipShader::new()?,
+            diagram: DiagramShader::new()?,
             frame: FrameBufferShader::new()?,
             heightmap: HeightmapShader::new()?,
             icon: IconShader::new()?,
@@ -80,6 +84,10 @@ impl Shaders {
 
     pub fn chip(&self) -> &ChipShader {
         &self.chip
+    }
+
+    pub fn diagram(&self) -> &DiagramShader {
+        &self.diagram
     }
 
     pub fn frame(&self) -> &FrameBufferShader {

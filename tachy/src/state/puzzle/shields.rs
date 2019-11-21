@@ -25,22 +25,23 @@ use crate::state::{PortColor, PortFlow, WireSize};
 //===========================================================================//
 
 const BEAM_COOLDOWN: u32 = 20;
-const ENEMY_DAMAGE_FOR_VICTORY: u32 = 7 * BEAM_COOLDOWN;
+const BEAM_HITS_FOR_VICTORY: u32 = 7;
+const ENEMY_DAMAGE_FOR_VICTORY: u32 = BEAM_HITS_FOR_VICTORY * BEAM_COOLDOWN;
 const ENEMY_DIST_LOWER_BOUND: u32 = 180;
 const ENEMY_DIST_VARIATION: u32 = 45;
 const INITIAL_SHIELD_POWER: u32 = 30;
-const SHIP_DAMAGE_FOR_FAILURE: u32 = 3;
+const SHIP_DAMAGE_FOR_FAILURE: u32 = 4;
 
 // (time_step, speed)
 const TORPEDOES: &[(u32, u32)] = &[
-    (2, 10),
-    (15, 10),
-    (28, 10),
+    (2, 9),
+    (15, 9),
+    (28, 9),
     // gap
     (60, 12),
     (70, 12),
     // gap
-    (100, 10),
+    (100, 9),
     (115, 8),
     (130, 14),
     // gap
@@ -62,7 +63,7 @@ const TORPEDOES: &[(u32, u32)] = &[
     (375, 9),
     (385, 9),
     // gap
-    (410, 16),
+    (420, 16),
     (425, 7),
     (430, 13),
     // gap
@@ -82,7 +83,7 @@ const TORPEDOES: &[(u32, u32)] = &[
     (629, 12),
 ];
 
-fn enemy_dist(time_step: u32) -> u32 {
+fn enemy_dist_for_time_step(time_step: u32) -> u32 {
     let modulus = 2 * (ENEMY_DIST_VARIATION - 1);
     let remainder = time_step % modulus;
     let variation =
@@ -178,12 +179,14 @@ pub struct ShieldsEval {
     power_wire: usize,
     raise_port: (Coords, Direction),
     raise_wire: usize,
-    torpedoes: Vec<(u32, u32)>,
+    torpedoes: Vec<(u32, u32)>, // (dist, speed)
     num_torpedoes_fired: usize,
     beam_cooldown: u32,
     shield_power: u32,
+    shield_is_up: bool,
     ship_damage: u32,
     enemy_damage: u32,
+    enemy_dist: u32,
 }
 
 impl ShieldsEval {
@@ -204,21 +207,48 @@ impl ShieldsEval {
             num_torpedoes_fired: 0,
             beam_cooldown: 0,
             shield_power: INITIAL_SHIELD_POWER,
+            shield_is_up: false,
             ship_damage: 0,
             enemy_damage: 0,
+            enemy_dist: enemy_dist_for_time_step(0),
         }
     }
 
-    pub fn enemy_damage(&self) -> u32 {
-        self.enemy_damage
+    pub fn enemy_max_health() -> f32 {
+        BEAM_HITS_FOR_VICTORY as f32
     }
 
-    pub fn ship_damage(&self) -> u32 {
-        self.ship_damage
+    pub fn enemy_health(&self) -> f32 {
+        (BEAM_HITS_FOR_VICTORY as f32)
+            - (self.enemy_damage as f32) / (BEAM_COOLDOWN as f32)
+    }
+
+    pub fn initial_enemy_distance() -> u32 {
+        enemy_dist_for_time_step(0)
+    }
+
+    pub fn enemy_distance(&self) -> u32 {
+        self.enemy_dist
+    }
+
+    pub fn ship_max_health() -> f32 {
+        SHIP_DAMAGE_FOR_FAILURE as f32
+    }
+
+    pub fn ship_health(&self) -> f32 {
+        (SHIP_DAMAGE_FOR_FAILURE - self.ship_damage) as f32
+    }
+
+    pub fn initial_shield_power() -> u32 {
+        INITIAL_SHIELD_POWER
     }
 
     pub fn shield_power(&self) -> u32 {
         self.shield_power
+    }
+
+    pub fn shield_is_up(&self) -> bool {
+        self.shield_is_up
     }
 
     pub fn beam_cooldown(&self) -> u32 {
@@ -239,8 +269,8 @@ impl PuzzleEval for ShieldsEval {
         &mut self,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
-        let dist = enemy_dist(state.time_step());
-        state.send_behavior(self.dist_wire, dist);
+        self.enemy_dist = enemy_dist_for_time_step(state.time_step());
+        state.send_behavior(self.dist_wire, self.enemy_dist);
         state.send_behavior(self.power_wire, self.shield_power);
         if self.enemy_damage >= ENEMY_DAMAGE_FOR_VICTORY {
             Some(EvalScore::Value(state.time_step()))
@@ -249,7 +279,7 @@ impl PuzzleEval for ShieldsEval {
                 && TORPEDOES[self.num_torpedoes_fired].0 <= state.time_step()
             {
                 let (_, speed) = TORPEDOES[self.num_torpedoes_fired];
-                self.torpedoes.push((dist, speed));
+                self.torpedoes.push((self.enemy_dist, speed));
                 state.send_event(self.torp_wire, speed);
                 self.num_torpedoes_fired += 1;
             }
@@ -285,6 +315,7 @@ impl PuzzleEval for ShieldsEval {
                 shields_up = true;
             }
         }
+        self.shield_is_up = shields_up;
         // Torpedoes:
         for &mut (ref mut dist, speed) in self.torpedoes.iter_mut() {
             *dist = dist.saturating_sub(speed);

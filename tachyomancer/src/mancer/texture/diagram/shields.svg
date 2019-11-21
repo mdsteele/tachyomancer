@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="128" height="128">
+  <!-- Meter caps -->
+  <g transform="translate(0, 0)">
+    <path d="M 2,14 V 2 H 30 V 14
+             M 2,18 V 30 H 30 V 18"
+          fill="none" stroke="#a437fc" stroke-width="4"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Shield meter -->
+  <g transform="translate(0, 32)">
+    <rect x="6" y="0" width="20" height="32" fill="#51d9f9" stroke="none"/>
+    <rect x="9" y="0" width="14" height="32" fill="#65ebfb" stroke="none"/>
+  </g>
+  <!-- Armor meter -->
+  <g transform="translate(0, 64)">
+    <path d="M 6,4 L 9,1 H 23 L 26,4 V 14 L 23,17 H 9 L 6,14 Z"
+          fill="#f00" stroke="none"/>
+  </g>
+  <!-- Torpedo -->
+  <g transform="translate(0, 96)">
+    <path transform="translate(16, 16) rotate(-90)"
+          d="M 0,-5 A 5 5 0 0 0 0,5 L 10,0 Z"
+          fill="#0f0" stroke="none"/>
+  </g>
+  <!-- Beam -->
+  <g transform="translate(32, 96)">
+    <rect x="14" y="0" width="4" height="32" fill="#c00" stroke="none"/>
+    <rect x="15" y="0" width="2" height="32" fill="#f00" stroke="none"/>
+  </g>
+  <!-- Ship -->
+  <g transform="translate(32, 0)">
+    <path transform="translate(9, 10) rotate(-90, 15, 10)"
+          d="M 0,0 L 20,0 A 10 10 0 0 1 20,20 L 0,20 L 10,10 Z"
+          fill="none" stroke="#0f0" stroke-width="3"/>
+  </g>
+  <!-- Enemy -->
+  <g transform="translate(80, 0)">
+    <path transform="translate(9, 18) rotate(90, 15, 10)"
+          d="M 0,0 L 20,0 A 10 10 0 0 1 20,20 L 0,20 L 10,10 Z"
+          fill="none" stroke="#f00" stroke-width="3"/>
+  </g>
+  <!-- Shields -->
+  <g transform="translate(32, 48)">
+    <circle transform="translate(24, 24) scale(0.7, 1)"
+            cx="0" cy="0" r="22"
+            fill="none" stroke="#97f2fc" stroke-width="3"/>
+  </g>
+</svg>

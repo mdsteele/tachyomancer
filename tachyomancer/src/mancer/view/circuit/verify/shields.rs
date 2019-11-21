@@ -20,7 +20,7 @@
 use super::shared::PuzzleVerifyView;
 use crate::mancer::gui::Resources;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{AsFloat, Rect, RectSize};
+use tachy::geom::{AsFloat, Color3, Rect, RectSize};
 use tachy::state::{CircuitEval, ShieldsEval};
 
 //===========================================================================//
@@ -38,6 +38,7 @@ enum BarY {
 struct EvalData<'a> {
     enemy_dist: u32,
     enemy_health: f32,
+    enemy_explosion: f32,
     ship_health: f32,
     shield_power: u32,
     shield_is_up: bool,
@@ -89,9 +90,10 @@ impl ShieldsVerifyView {
         }
         // Enemy:
         let enemy_bottom = ship_top - (data.enemy_dist as f32);
-        resources.shaders().diagram().draw(
+        resources.shaders().diagram().draw_tinted(
             matrix,
             Rect::new(ship_left, enemy_bottom - 48.0, 48.0, 48.0),
+            &Color3::WHITE.with_alpha(1.0 - data.enemy_explosion),
             Rect::new(0.625, 0.0, 0.375, 0.375),
             resources.textures().diagram_shields(),
         );
@@ -280,6 +282,7 @@ impl PuzzleVerifyView for ShieldsVerifyView {
                 &EvalData {
                     enemy_dist: eval.enemy_distance(),
                     enemy_health: eval.enemy_health(),
+                    enemy_explosion: eval.enemy_explosion(),
                     ship_health: eval.ship_health(),
                     shield_power: eval.shield_power(),
                     shield_is_up: eval.shield_is_up(),
@@ -294,6 +297,7 @@ impl PuzzleVerifyView for ShieldsVerifyView {
                 &EvalData {
                     enemy_dist: ShieldsEval::initial_enemy_distance(),
                     enemy_health: ShieldsEval::enemy_max_health(),
+                    enemy_explosion: 0.0,
                     ship_health: ShieldsEval::ship_max_health(),
                     shield_power: ShieldsEval::initial_shield_power(),
                     shield_is_up: false,

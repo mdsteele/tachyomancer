@@ -29,6 +29,7 @@ const BEAM_HITS_FOR_VICTORY: u32 = 7;
 const ENEMY_DAMAGE_FOR_VICTORY: u32 = BEAM_HITS_FOR_VICTORY * BEAM_COOLDOWN;
 const ENEMY_DIST_LOWER_BOUND: u32 = 180;
 const ENEMY_DIST_VARIATION: u32 = 45;
+const ENEMY_EXPLOSION_FOR_VICTORY: u32 = 20;
 const INITIAL_SHIELD_POWER: u32 = 30;
 const SHIP_DAMAGE_FOR_FAILURE: u32 = 4;
 
@@ -97,7 +98,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Sensors Interface",
         description: "Connects to the ship's tactical sensors.",
-        side: Direction::East,
+        side: Direction::North,
         pos: InterfacePosition::Right(0),
         ports: &[
             InterfacePort {
@@ -124,7 +125,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Beam Interface",
         description: "Connects to the ship's defensive beam weapon.",
-        side: Direction::East,
+        side: Direction::North,
         pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
             name: "Fire",
@@ -141,7 +142,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Shields Interface",
         description: "Connects to the ship's deflector shields.",
-        side: Direction::South,
+        side: Direction::East,
         pos: InterfacePosition::Center,
         ports: &[
             InterfacePort {
@@ -187,6 +188,7 @@ pub struct ShieldsEval {
     ship_damage: u32,
     enemy_damage: u32,
     enemy_dist: u32,
+    enemy_explosion: u32,
 }
 
 impl ShieldsEval {
@@ -211,6 +213,7 @@ impl ShieldsEval {
             ship_damage: 0,
             enemy_damage: 0,
             enemy_dist: enemy_dist_for_time_step(0),
+            enemy_explosion: 0,
         }
     }
 
@@ -229,6 +232,11 @@ impl ShieldsEval {
 
     pub fn enemy_distance(&self) -> u32 {
         self.enemy_dist
+    }
+
+    pub fn enemy_explosion(&self) -> f32 {
+        (self.enemy_explosion.min(ENEMY_EXPLOSION_FOR_VICTORY) as f32)
+            / (ENEMY_EXPLOSION_FOR_VICTORY as f32)
     }
 
     pub fn ship_max_health() -> f32 {
@@ -272,9 +280,12 @@ impl PuzzleEval for ShieldsEval {
         self.enemy_dist = enemy_dist_for_time_step(state.time_step());
         state.send_behavior(self.dist_wire, self.enemy_dist);
         state.send_behavior(self.power_wire, self.shield_power);
-        if self.enemy_damage >= ENEMY_DAMAGE_FOR_VICTORY {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
+        if self.enemy_explosion >= ENEMY_EXPLOSION_FOR_VICTORY
+            && self.torpedoes.is_empty()
+        {
+            return Some(EvalScore::Value(state.time_step()));
+        }
+        if self.enemy_damage < ENEMY_DAMAGE_FOR_VICTORY {
             while self.num_torpedoes_fired < TORPEDOES.len()
                 && TORPEDOES[self.num_torpedoes_fired].0 <= state.time_step()
             {
@@ -283,8 +294,8 @@ impl PuzzleEval for ShieldsEval {
                 state.send_event(self.torp_wire, speed);
                 self.num_torpedoes_fired += 1;
             }
-            None
         }
+        return None;
     }
 
     fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
@@ -294,7 +305,7 @@ impl PuzzleEval for ShieldsEval {
                 let message =
                     format!("Cannot fire beam while it is still firing");
                 errors.push(state.fatal_port_error(self.fire_port, message));
-            } else {
+            } else if self.enemy_damage < ENEMY_DAMAGE_FOR_VICTORY {
                 self.beam_cooldown = BEAM_COOLDOWN;
             }
         }
@@ -303,6 +314,9 @@ impl PuzzleEval for ShieldsEval {
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let mut errors = Vec::<EvalError>::new();
+        if self.enemy_damage >= ENEMY_DAMAGE_FOR_VICTORY {
+            self.enemy_explosion += 1;
+        }
         // Shields:
         let mut shields_up = false;
         if state.recv_behavior(self.raise_wire) != 0 {

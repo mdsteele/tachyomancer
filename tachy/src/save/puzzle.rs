@@ -217,7 +217,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (8, 6),
                 score_units: "Time",
-                graph_bounds: (150, 150),
+                graph_bounds: (300, 500),
                 description:
                     "Operate a robotic arm in response to radio commands.",
                 instructions: "TODO",

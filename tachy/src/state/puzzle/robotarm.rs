@@ -19,7 +19,6 @@
 
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use super::iface::{Interface, InterfacePort, InterfacePosition};
-use super::rng::SimpleRng;
 use crate::geom::{Coords, Direction};
 use crate::state::{PortColor, PortFlow, WireSize};
 
@@ -31,10 +30,9 @@ const DEGREES_PER_TIME: u32 = 360 / (NUM_POSITIONS * TIME_PER_TURN);
 
 const TIME_PER_TURN: u32 = 3;
 const TIME_PER_MANIPULATE: u32 = 4;
+const TIME_BETWEEN_COMMANDS: u32 = 9;
 
-const NUM_COMMANDS_FOR_VICTORY: u32 = 15;
-const MIN_TIME_TO_NEXT_COMMAND: u32 = 8;
-const MAX_TIME_TO_NEXT_COMMAND: u32 = 15;
+const COMMANDS: &[u32] = &[3, 7, 5, 2, 0, 4, 1, 6, 3, 7, 5, 1, 6, 2];
 
 //===========================================================================//
 
@@ -123,7 +121,6 @@ enum MotorMovement {
 //===========================================================================//
 
 pub struct RobotArmEval {
-    rng: SimpleRng,
     recv_wire: usize,
     xmit_port: (Coords, Direction),
     xmit_wire: usize,
@@ -138,7 +135,7 @@ pub struct RobotArmEval {
     current_position_degrees: u32,
     time_to_next_command: Option<u32>,
     last_command: u32,
-    num_completed_commands: u32,
+    num_commands_sent: usize,
     has_completed_command: bool,
     has_sent_radio_reply: bool,
 }
@@ -149,7 +146,6 @@ impl RobotArmEval {
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 4);
         RobotArmEval {
-            rng: SimpleRng::new(0xd313_0a05_098a_98b5),
             recv_wire: slots[0][0].1,
             xmit_port: slots[0][1].0,
             xmit_wire: slots[0][1].1,
@@ -164,40 +160,62 @@ impl RobotArmEval {
             current_position_degrees: 0,
             time_to_next_command: Some(0),
             last_command: 0,
-            num_completed_commands: 0,
+            num_commands_sent: 0,
             has_completed_command: false,
             has_sent_radio_reply: false,
         }
     }
 
-    pub fn current_position(&self) -> u32 {
-        self.current_position
-    }
-
-    pub fn current_angle(&self) -> u32 {
+    pub fn arm_angle(&self) -> u32 {
         self.current_position_degrees
     }
 
-    pub fn last_command(&self) -> u32 {
-        self.last_command
+    pub fn arm_extension(&self) -> f32 {
+        match self.motor_movement {
+            MotorMovement::Manipulating(3) => 0.5,
+            MotorMovement::Manipulating(2) => 1.0,
+            MotorMovement::Manipulating(1) => 0.5,
+            _ => 0.0,
+        }
+    }
+
+    pub fn station_manipulation(&self) -> Option<(u32, f32)> {
+        match self.motor_movement {
+            MotorMovement::Manipulating(2) => {
+                Some((self.current_position, 0.333))
+            }
+            MotorMovement::Manipulating(1) => {
+                Some((self.current_position, 0.667))
+            }
+            _ => None,
+        }
+    }
+
+    pub fn current_command(&self) -> Option<u32> {
+        if self.has_completed_command || self.time_to_next_command.is_some() {
+            None
+        } else {
+            Some(self.last_command)
+        }
     }
 }
 
 impl PuzzleEval for RobotArmEval {
+    fn seconds_per_time_step(&self) -> f64 {
+        0.075
+    }
+
     fn begin_time_step(
         &mut self,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
         if self.time_to_next_command == Some(0) {
             self.time_to_next_command = None;
-            self.num_completed_commands += 1;
-            if self.num_completed_commands >= NUM_COMMANDS_FOR_VICTORY {
+            if self.num_commands_sent >= COMMANDS.len() {
                 return Some(EvalScore::Value(state.time_step()));
             }
-            let quarter = NUM_POSITIONS / 4;
-            self.last_command = (self.last_command
-                + self.rng.rand_int(quarter, 3 * quarter))
-                % NUM_POSITIONS;
+            self.last_command = COMMANDS[self.num_commands_sent];
+            self.num_commands_sent += 1;
             self.has_completed_command = false;
             self.has_sent_radio_reply = false;
             state.send_event(self.recv_wire, self.last_command);
@@ -262,11 +280,7 @@ impl PuzzleEval for RobotArmEval {
 
     fn end_time_step(&mut self, _state: &CircuitState) -> Vec<EvalError> {
         if self.has_sent_radio_reply && self.time_to_next_command.is_none() {
-            self.time_to_next_command =
-                Some(self.rng.rand_int(
-                    MIN_TIME_TO_NEXT_COMMAND,
-                    MAX_TIME_TO_NEXT_COMMAND,
-                ));
+            self.time_to_next_command = Some(TIME_BETWEEN_COMMANDS);
         }
         match self.motor_movement {
             MotorMovement::Stationary => {}

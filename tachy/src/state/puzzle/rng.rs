@@ -52,6 +52,7 @@ impl SimpleRng {
     }
 
     /// Returns a random value between lower and upper, inclusive.
+    #[allow(dead_code)]
     pub fn rand_int(&mut self, lower: u32, upper: u32) -> u32 {
         assert!(lower <= upper);
         if lower == u32::MIN && upper == u32::MAX {

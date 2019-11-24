@@ -30,6 +30,11 @@ fn automate_mining_robot() {
 }
 
 #[test]
+fn automate_robot_arm() {
+    test_solution("automate_robot_arm");
+}
+
+#[test]
 fn automate_sensors_fast() {
     test_solution("automate_sensors_fast");
 }

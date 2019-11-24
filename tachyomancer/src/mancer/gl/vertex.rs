@@ -53,6 +53,8 @@ pub struct VertexArray {
     phantom: PhantomData<*mut ()>,
 }
 
+assert_not_impl_any!(VertexArray: Send, Sync);
+
 impl VertexArray {
     pub fn new(size: GLuint) -> VertexArray {
         let mut name: GLuint = 0;
@@ -121,6 +123,8 @@ pub struct VertexBuffer<A> {
     // helps ensure that we keep all our OpenGL stuff on the main thread.
     phantom: PhantomData<*mut A>,
 }
+
+assert_not_impl_any!(VertexBuffer<f32>: Send, Sync);
 
 impl<A: VertexAtom> VertexBuffer<A> {
     pub fn new(data: &[A]) -> VertexBuffer<A> {

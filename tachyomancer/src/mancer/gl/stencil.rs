@@ -28,6 +28,8 @@ pub struct Stencil {
     phantom: PhantomData<*mut ()>,
 }
 
+assert_not_impl_any!(Stencil: Send, Sync);
+
 impl Stencil {
     /// Clears the stencil buffer, and enables the stencil test until the
     /// returned object is dropped.  At most one `Stencil` object should exist

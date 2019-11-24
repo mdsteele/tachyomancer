@@ -28,6 +28,8 @@ pub struct Depth {
     phantom: PhantomData<*mut ()>,
 }
 
+assert_not_impl_any!(Depth: Send, Sync);
+
 impl Depth {
     /// Clears the depth buffer, and enables the depth test and optional face
     /// culling until the returned object is dropped.  At most one `Depth`

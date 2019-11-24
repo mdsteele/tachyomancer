@@ -96,6 +96,8 @@ pub const INTERFACES: &[Interface] = &[
     },
 ];
 
+const_assert_eq!(INTERFACES[1].ports.len(), NUM_RODS);
+
 //===========================================================================//
 
 pub struct AutomateReactorEval {
@@ -175,18 +177,6 @@ impl PuzzleEval for AutomateReactorEval {
         self.current_power =
             self.current_power + DRIFT_FACTOR * imbalance_factor * power_delta;
         Vec::new()
-    }
-}
-
-//===========================================================================//
-
-#[cfg(test)]
-mod tests {
-    use super::{INTERFACES, NUM_RODS};
-
-    #[test]
-    fn num_rods() {
-        assert_eq!(NUM_RODS, INTERFACES[1].ports.len());
     }
 }
 

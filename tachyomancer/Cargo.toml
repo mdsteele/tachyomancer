@@ -32,6 +32,7 @@ rand = "0.6"
 sdl2 = { version = "0.32", features = ["use_mac_framework"] }
 serde = "1"
 serde_derive = "1"
+static_assertions = "1.1"
 strum = "0.16"
 strum_macros = "0.16"
 tachy = { path = "../tachy" }

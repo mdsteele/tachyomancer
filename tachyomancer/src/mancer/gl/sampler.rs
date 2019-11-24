@@ -32,6 +32,8 @@ pub struct ShaderSampler<T> {
     phantom: PhantomData<*mut T>,
 }
 
+assert_not_impl_any!(ShaderSampler<Texture2D>: Send, Sync);
+
 impl<T: SamplerValue> ShaderSampler<T> {
     pub(super) fn new(
         uniform: ShaderUniform<T::UniformType>,

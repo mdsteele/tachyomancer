@@ -36,6 +36,8 @@ pub struct FrameBuffer {
     phantom: PhantomData<*mut ()>,
 }
 
+assert_not_impl_any!(FrameBuffer: Send, Sync);
+
 impl FrameBuffer {
     pub fn new(width: usize, height: usize, depth: bool) -> FrameBuffer {
         let texture_width = width.next_power_of_two();

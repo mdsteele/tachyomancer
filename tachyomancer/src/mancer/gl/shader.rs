@@ -51,6 +51,8 @@ pub struct Shader {
     phantom: PhantomData<*mut ()>,
 }
 
+assert_not_impl_any!(Shader: Send, Sync);
+
 impl Shader {
     pub fn new(
         shader_type: ShaderType,

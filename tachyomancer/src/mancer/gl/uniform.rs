@@ -32,6 +32,8 @@ pub struct ShaderUniform<T> {
     phantom: PhantomData<*mut T>,
 }
 
+assert_not_impl_any!(ShaderUniform<f32>: Send, Sync);
+
 impl<T: UniformValue> ShaderUniform<T> {
     pub(super) fn new(loc: GLint) -> ShaderUniform<T> {
         ShaderUniform { loc, phantom: PhantomData }

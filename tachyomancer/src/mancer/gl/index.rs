@@ -33,6 +33,8 @@ pub struct IndexBuffer<A> {
     phantom: PhantomData<*mut A>,
 }
 
+assert_not_impl_any!(IndexBuffer<u8>: Send, Sync);
+
 impl<A: IndexAtom> IndexBuffer<A> {
     pub fn new(data: &[A]) -> IndexBuffer<A> {
         let mut name: GLuint = 0;

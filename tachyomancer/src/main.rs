@@ -30,6 +30,8 @@ extern crate sdl2;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate static_assertions;
 extern crate strum;
 #[macro_use]
 extern crate strum_macros;

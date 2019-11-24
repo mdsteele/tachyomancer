@@ -35,6 +35,8 @@ pub struct ShaderProgram {
     phantom: PhantomData<*mut ()>,
 }
 
+assert_not_impl_any!(ShaderProgram: Send, Sync);
+
 impl ShaderProgram {
     pub fn new(shaders: &[&Shader]) -> Result<ShaderProgram, String> {
         unsafe {

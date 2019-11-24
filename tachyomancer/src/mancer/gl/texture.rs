@@ -39,6 +39,8 @@ pub struct Texture1D {
     phantom: PhantomData<*mut ()>,
 }
 
+assert_not_impl_any!(Texture1D: Send, Sync);
+
 impl Texture1D {
     /// Creates a new RGBA texture.  The length of the data array must be a
     /// power of two, with four bytes for each pixel.
@@ -111,6 +113,8 @@ pub struct Texture2D {
     // helps ensure that we keep all our OpenGL stuff on the main thread.
     phantom: PhantomData<*mut ()>,
 }
+
+assert_not_impl_any!(Texture2D: Send, Sync);
 
 impl Texture2D {
     pub fn new_rgba(

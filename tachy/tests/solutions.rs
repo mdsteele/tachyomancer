@@ -50,6 +50,11 @@ fn automate_storage_depot() {
 }
 
 #[test]
+fn automate_translator() {
+    test_solution("automate_translator");
+}
+
+#[test]
 fn automate_x_unit() {
     test_solution("automate_x_unit");
 }

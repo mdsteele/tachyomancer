@@ -27,6 +27,7 @@ mod sensors;
 mod shared;
 mod shields;
 mod storage;
+mod translator;
 mod turret;
 
 use self::shared::{FabricationVerifyView, PuzzleVerifyView};
@@ -99,6 +100,9 @@ impl VerificationTray {
             }
             Puzzle::AutomateStorageDepot => {
                 self::storage::StorageDepotVerifyView::new(right_bottom)
+            }
+            Puzzle::AutomateTranslator => {
+                self::translator::TranslatorVerifyView::new(right_bottom)
             }
             Puzzle::AutomateXUnit => {
                 // TODO: Make a verification view for AutomateXUnit

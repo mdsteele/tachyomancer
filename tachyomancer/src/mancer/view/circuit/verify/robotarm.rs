@@ -31,15 +31,6 @@ const VIEW_HEIGHT: i32 = 220;
 
 //===========================================================================//
 
-struct EvalData {
-    angle: Deg<f32>,
-    arm_extension: f32,
-    station_manipulation: Option<(u32, f32)>,
-    current_command: Option<u32>,
-}
-
-//===========================================================================//
-
 pub struct RobotArmVerifyView {
     rect: Rect<f32>,
 }
@@ -167,6 +158,15 @@ impl PuzzleVerifyView for RobotArmVerifyView {
             );
         };
     }
+}
+
+//===========================================================================//
+
+struct EvalData {
+    angle: Deg<f32>,
+    arm_extension: f32,
+    station_manipulation: Option<(u32, f32)>,
+    current_command: Option<u32>,
 }
 
 //===========================================================================//

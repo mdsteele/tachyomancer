@@ -30,24 +30,6 @@ const VIEW_HEIGHT: i32 = 320;
 
 //===========================================================================//
 
-enum BarY {
-    Top(f32),
-    Bottom(f32),
-}
-
-struct EvalData<'a> {
-    enemy_dist: u32,
-    enemy_health: f32,
-    enemy_explosion: f32,
-    ship_health: f32,
-    shield_power: u32,
-    shield_is_up: bool,
-    beam_cooldown: u32,
-    torpedoes: &'a [(u32, u32)],
-}
-
-//===========================================================================//
-
 pub struct ShieldsVerifyView {
     rect: Rect<f32>,
 }
@@ -307,6 +289,24 @@ impl PuzzleVerifyView for ShieldsVerifyView {
             );
         };
     }
+}
+
+//===========================================================================//
+
+struct EvalData<'a> {
+    enemy_dist: u32,
+    enemy_health: f32,
+    enemy_explosion: f32,
+    ship_health: f32,
+    shield_power: u32,
+    shield_is_up: bool,
+    beam_cooldown: u32,
+    torpedoes: &'a [(u32, u32)],
+}
+
+enum BarY {
+    Top(f32),
+    Bottom(f32),
 }
 
 //===========================================================================//

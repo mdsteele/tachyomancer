@@ -21,7 +21,7 @@ use super::shared::PuzzleVerifyView;
 use crate::mancer::font::Align;
 use crate::mancer::gui::Resources;
 use cgmath::{Angle, Deg, Matrix4, Point2};
-use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
+use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
 use tachy::state::{CircuitEval, RobotArmEval};
 
 //===========================================================================//
@@ -68,16 +68,12 @@ impl RobotArmVerifyView {
                     rotation = Deg(manip * 90.0);
                 }
             }
-            let wheel_color = if data.current_command == Some(station) {
-                &Color4::YELLOW4
-            } else {
-                &Color4::ORANGE4
-            };
-            resources.shaders().diagram().draw_tinted(
+            let wheel_tex_x =
+                if data.current_command == Some(station) { 0.75 } else { 0.5 };
+            resources.shaders().diagram().draw(
                 &(station_matrix * Matrix4::from_angle_z(rotation)),
                 Rect::new(-12.0, -12.0, 24.0, 24.0),
-                wheel_color,
-                Rect::new(0.5, 0.75, 0.25, 0.25),
+                Rect::new(wheel_tex_x, 0.75, 0.25, 0.25),
                 resources.textures().diagram_storage(),
             );
             resources.fonts().roman().draw(

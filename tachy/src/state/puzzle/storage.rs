@@ -55,11 +55,11 @@ const DELAYS_AND_COMMANDS: &[(u32, Command)] = &[
     (9, Command::Store(46)),
     (7, Command::Store(1)),
     (6, Command::Store(60)),
-    (4, Command::Store(100)),
+    (4, Command::Store(32)),
     (7, Command::Store(71)),
     (8, Command::Retrieve(60)),
     (3, Command::Retrieve(1)),
-    (3, Command::Retrieve(100)),
+    (3, Command::Retrieve(32)),
     (8, Command::Retrieve(46)),
     (9, Command::Store(99)),
     (7, Command::Retrieve(71)),
@@ -82,7 +82,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Connects to the radio receiver.  Sends 0 when a crate is \
                      at the loading dock (position 0) waiting to be stored.  \
-                     Sends 1-100 when the crate with that number should be \
+                     Sends 1-99 when the crate with that number should be \
                      returned to the loading dock.",
                 flow: PortFlow::Send,
                 color: PortColor::Event,
@@ -117,7 +117,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Held",
                 description:
                     "Indicates the number of the currently-held crate \
-                     (1-100), or 0 if the arm isn't holding a crate.",
+                     (1-99), or 0 if the arm isn't holding a crate.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
@@ -224,12 +224,17 @@ impl StorageDepotEval {
         }
     }
 
-    pub fn current_position(&self) -> u32 {
-        self.current_position
+    pub fn arm_angle(&self) -> u32 {
+        self.current_position_degrees
     }
 
-    pub fn current_angle(&self) -> u32 {
-        self.current_position_degrees
+    pub fn arm_extension(&self) -> f32 {
+        match self.motor_movement {
+            MotorMovement::Extending(1) => 0.5,
+            MotorMovement::Retracting(2) => 1.0,
+            MotorMovement::Retracting(1) => 0.5,
+            _ => 0.0,
+        }
     }
 
     pub fn currently_holding(&self) -> u32 {
@@ -244,7 +249,13 @@ impl StorageDepotEval {
         if self.num_commands_completed < DELAYS_AND_COMMANDS.len() {
             match DELAYS_AND_COMMANDS[self.num_commands_completed].1 {
                 Command::Store(_) => None,
-                Command::Retrieve(crate_id) => Some(crate_id),
+                Command::Retrieve(crate_id) => {
+                    if self.num_commands_sent > self.num_commands_completed {
+                        Some(crate_id)
+                    } else {
+                        None
+                    }
+                }
             }
         } else {
             None
@@ -253,6 +264,10 @@ impl StorageDepotEval {
 }
 
 impl PuzzleEval for StorageDepotEval {
+    fn seconds_per_time_step(&self) -> f64 {
+        0.075
+    }
+
     fn begin_time_step(
         &mut self,
         state: &mut CircuitState,

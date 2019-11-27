@@ -1,0 +1,15 @@
+size = [3, 3]
+
+[chips]
+p0p1 = "f0-Not"
+p1p1 = "f0-Or"
+p1p2 = "f3-Not"
+p2p1 = "f0-Not"
+
+[wires]
+m1p1e = "Stub"
+p0p1e = "Stub"
+p1p1e = "Stub"
+p1p1s = "Stub"
+p1p2s = "Stub"
+p2p1e = "Stub"

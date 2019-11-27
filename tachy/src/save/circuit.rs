@@ -21,7 +21,8 @@ use super::chip::ChipType;
 use super::wire::WireShape;
 use crate::geom::{CoordsDelta, CoordsSize, Direction, Orientation};
 use serde::de::Error;
-use std::collections::{hash_map, BTreeMap, HashMap};
+use std::cmp::Ordering;
+use std::collections::{btree_map, BTreeMap};
 use std::fs;
 use std::i32;
 use std::path::Path;
@@ -40,8 +41,8 @@ impl CircuitData {
     pub fn new(width: i32, height: i32) -> CircuitData {
         CircuitData {
             size: CoordsSize::new(width, height),
-            chips: CircuitChipData(HashMap::new()),
-            wires: CircuitWireData(HashMap::new()),
+            chips: CircuitChipData(BTreeMap::new()),
+            wires: CircuitWireData(BTreeMap::new()),
         }
     }
 
@@ -82,7 +83,7 @@ impl CircuitData {
 //===========================================================================//
 
 #[derive(Clone)]
-pub struct CircuitChipData(HashMap<CoordsDelta, (ChipType, Orientation)>);
+pub struct CircuitChipData(BTreeMap<(i32, i32), (ChipType, Orientation)>);
 
 impl CircuitChipData {
     pub fn insert(
@@ -91,7 +92,7 @@ impl CircuitChipData {
         ctype: ChipType,
         orient: Orientation,
     ) {
-        self.0.insert(delta, (ctype, orient));
+        self.0.insert((delta.x, delta.y), (ctype, orient));
     }
 
     pub fn iter(&self) -> CircuitChipDataIter {
@@ -105,7 +106,7 @@ impl<'d> serde::Deserialize<'d> for CircuitChipData {
         D: serde::Deserializer<'d>,
     {
         let map = BTreeMap::<&str, &str>::deserialize(deserializer)?;
-        let mut chips = HashMap::with_capacity(map.len());
+        let mut chips = BTreeMap::new();
         for (key, chip_str) in map.into_iter() {
             let coords = key_string_delta(key).ok_or_else(|| {
                 D::Error::custom(format!("Invalid coords key: {:?}", key))
@@ -129,7 +130,7 @@ impl<'d> serde::Deserialize<'d> for CircuitChipData {
                     chip_str
                 )));
             }
-            chips.insert(coords, (ctype, orient));
+            chips.insert((coords.x, coords.y), (ctype, orient));
         }
         Ok(CircuitChipData(chips))
     }
@@ -142,8 +143,11 @@ impl serde::Serialize for CircuitChipData {
     {
         self.0
             .iter()
-            .map(|(&coords, &(ctype, orient))| {
-                (delta_key_string(coords), format!("{}-{}", orient, ctype))
+            .map(|(&(x, y), &(ctype, orient))| {
+                (
+                    delta_key_string(CoordsDelta::new(x, y)),
+                    format!("{}-{}", orient, ctype),
+                )
             })
             .collect::<BTreeMap<String, String>>()
             .serialize(serializer)
@@ -151,16 +155,16 @@ impl serde::Serialize for CircuitChipData {
 }
 
 pub struct CircuitChipDataIter<'a> {
-    inner: hash_map::Iter<'a, CoordsDelta, (ChipType, Orientation)>,
+    inner: btree_map::Iter<'a, (i32, i32), (ChipType, Orientation)>,
 }
 
 impl<'a> Iterator for CircuitChipDataIter<'a> {
     type Item = (CoordsDelta, ChipType, Orientation);
 
     fn next(&mut self) -> Option<(CoordsDelta, ChipType, Orientation)> {
-        self.inner
-            .next()
-            .map(|(&delta, &(ctype, orient))| (delta, ctype, orient))
+        self.inner.next().map(|(&(x, y), &(ctype, orient))| {
+            (CoordsDelta::new(x, y), ctype, orient)
+        })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -171,7 +175,7 @@ impl<'a> Iterator for CircuitChipDataIter<'a> {
 //===========================================================================//
 
 #[derive(Clone)]
-pub struct CircuitWireData(HashMap<(CoordsDelta, Direction), WireShape>);
+pub struct CircuitWireData(BTreeMap<(i32, i32, OrderedDir), WireShape>);
 
 impl CircuitWireData {
     pub fn insert(
@@ -180,7 +184,7 @@ impl CircuitWireData {
         dir: Direction,
         shape: WireShape,
     ) {
-        self.0.insert((delta, dir), shape);
+        self.0.insert((delta.x, delta.y, OrderedDir(dir)), shape);
     }
 
     pub fn iter(&self) -> CircuitWireDataIter {
@@ -194,12 +198,12 @@ impl<'d> serde::Deserialize<'d> for CircuitWireData {
         D: serde::Deserializer<'d>,
     {
         let map = BTreeMap::<&str, WireShape>::deserialize(deserializer)?;
-        let mut wires = HashMap::with_capacity(map.len());
+        let mut wires = BTreeMap::new();
         for (key, shape) in map.into_iter() {
-            let location = key_string_location(key).ok_or_else(|| {
+            let (delta, dir) = key_string_location(key).ok_or_else(|| {
                 D::Error::custom(format!("Invalid location key: {:?}", key))
             })?;
-            wires.insert(location, shape);
+            wires.insert((delta.x, delta.y, OrderedDir(dir)), shape);
         }
         Ok(CircuitWireData(wires))
     }
@@ -212,8 +216,8 @@ impl serde::Serialize for CircuitWireData {
     {
         self.0
             .iter()
-            .map(|(&(coords, dir), &shape)| {
-                (location_key_string(coords, dir), shape)
+            .map(|(&(x, y, OrderedDir(dir)), &shape)| {
+                (location_key_string(CoordsDelta::new(x, y), dir), shape)
             })
             .collect::<BTreeMap<String, WireShape>>()
             .serialize(serializer)
@@ -221,18 +225,37 @@ impl serde::Serialize for CircuitWireData {
 }
 
 pub struct CircuitWireDataIter<'a> {
-    inner: hash_map::Iter<'a, (CoordsDelta, Direction), WireShape>,
+    inner: btree_map::Iter<'a, (i32, i32, OrderedDir), WireShape>,
 }
 
 impl<'a> Iterator for CircuitWireDataIter<'a> {
     type Item = (CoordsDelta, Direction, WireShape);
 
     fn next(&mut self) -> Option<(CoordsDelta, Direction, WireShape)> {
-        self.inner.next().map(|(&(delta, dir), &shape)| (delta, dir, shape))
+        self.inner.next().map(|(&(x, y, OrderedDir(dir)), &shape)| {
+            (CoordsDelta::new(x, y), dir, shape)
+        })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.inner.size_hint()
+    }
+}
+
+//===========================================================================//
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct OrderedDir(Direction);
+
+impl PartialOrd for OrderedDir {
+    fn partial_cmp(&self, other: &OrderedDir) -> Option<Ordering> {
+        (self.0 as u32).partial_cmp(&(other.0 as u32))
+    }
+}
+
+impl Ord for OrderedDir {
+    fn cmp(&self, other: &OrderedDir) -> Ordering {
+        (self.0 as u32).cmp(&(other.0 as u32))
     }
 }
 
@@ -314,7 +337,7 @@ fn key_string_location(key: &str) -> Option<(CoordsDelta, Direction)> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ChipType, CircuitData, WireShape};
+    use super::{ChipType, CircuitData, OrderedDir, WireShape};
     use crate::geom::{CoordsDelta, CoordsSize, Direction, Orientation};
     use toml;
 
@@ -376,23 +399,20 @@ mod tests {
             data.chips.0,
             vec![
                 (
-                    CoordsDelta::new(1, 3),
+                    (1, 3),
                     (
                         ChipType::Button(None),
                         Orientation::default().flip_vert()
                     )
                 ),
                 (
-                    CoordsDelta::new(1, 4),
+                    (1, 4),
                     (
                         ChipType::Comment(*b"Press"),
                         Orientation::default().rotate_ccw()
                     )
                 ),
-                (
-                    CoordsDelta::new(2, 3),
-                    (ChipType::Break(true), Orientation::default())
-                ),
+                ((2, 3), (ChipType::Break(true), Orientation::default())),
             ]
             .into_iter()
             .collect()
@@ -400,8 +420,8 @@ mod tests {
         assert_eq!(
             data.wires.0,
             vec![
-                ((CoordsDelta::new(1, 3), Direction::East), WireShape::Stub),
-                ((CoordsDelta::new(2, 3), Direction::West), WireShape::Stub),
+                ((1, 3, OrderedDir(Direction::East)), WireShape::Stub),
+                ((2, 3, OrderedDir(Direction::West)), WireShape::Stub),
             ]
             .into_iter()
             .collect()

@@ -1,0 +1,11 @@
+size = [3, 3]
+
+[chips]
+
+[wires]
+m1p0e = "Stub"
+p0p1e = "Straight"
+p1p0s = "Straight"
+p1p1e = "Cross"
+p1p2s = "Straight"
+p2p1e = "Straight"

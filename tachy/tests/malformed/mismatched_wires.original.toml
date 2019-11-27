@@ -1,0 +1,9 @@
+size = [3, 3]
+
+[chips]
+
+[wires]
+p1p1e = "Cross"
+p1p1s = "Straight"
+p2p2e = "Straight"
+p2p2n = "TurnLeft"

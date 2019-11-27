@@ -95,6 +95,11 @@ impl EditGrid {
             modified_since: None,
         };
 
+        // Bounds:
+        let min_size = grid.min_bounds_size();
+        grid.bounds.width = grid.bounds.width.max(min_size.width);
+        grid.bounds.height = grid.bounds.height.max(min_size.height);
+
         // Chips:
         for (delta, ctype, orient) in data.chips.iter() {
             let change = GridChange::AddChip(origin + delta, ctype, orient);
@@ -106,8 +111,22 @@ impl EditGrid {
         // Wires:
         for (delta, dir, shape) in data.wires.iter() {
             let coords = origin + delta;
+            if !grid.bounds.contains_point(coords)
+                && !(shape == WireShape::Stub
+                    && grid.bounds.contains_point(coords + dir))
+            {
+                continue;
+            }
             if grid.has_frag(coords, dir) {
                 continue;
+            }
+            if let Some((chip_coords, ctype, orient)) = grid.chip_at(coords) {
+                if shape != WireShape::Stub
+                    || Rect::with_size(chip_coords, orient * ctype.size())
+                        .contains_point(coords + dir)
+                {
+                    continue;
+                }
             }
             match shape {
                 WireShape::Stub => {
@@ -187,8 +206,8 @@ impl EditGrid {
                 missing.push(loc);
             }
         }
-        for loc in missing {
-            grid.fragments.insert(loc, (WireShape::Stub, usize::MAX));
+        for (coords, dir) in missing {
+            grid.set_frag(coords, dir, WireShape::Stub);
         }
 
         grid.typecheck_wires();
@@ -1035,6 +1054,17 @@ impl EditGrid {
     fn validate_wire_fragments(&self) {
         for (&(coords, dir), &(shape, _)) in self.fragments.iter() {
             assert!(
+                self.bounds.contains_point(coords)
+                    || (shape == WireShape::Stub
+                        && self.bounds.contains_point(coords + dir)),
+                "{:?} at ({}, {}) {:?} is not in bounds {:?}",
+                shape,
+                coords.x,
+                coords.y,
+                dir,
+                self.bounds
+            );
+            assert!(
                 self.fragments.get(&(coords + dir, -dir)).is_some(),
                 "{:?} at ({}, {}) {:?} has nothing in adjacent cell",
                 shape,
@@ -1230,14 +1260,5 @@ impl<'a> ExactSizeIterator for WireFragmentsForWireIter<'a> {
         self.inner.len()
     }
 }
-
-//===========================================================================//
-
-// TODO: Tests for to/from_circuit_data:
-//   - Make sure data format can round-trip.
-//   - Make sure we enforce bounds for chips and wires.
-//   - Make sure we enforce no chips on top of wires or other chips.
-//   - Make sure we enforce is-this-chip-allowed-in-this-puzzle.
-//   - Make sure we enforce wire fragment validity.
 
 //===========================================================================//

@@ -1,0 +1,6 @@
+size = [6, 4]
+
+[chips]
+p3p2 = "f1-And"
+
+[wires]

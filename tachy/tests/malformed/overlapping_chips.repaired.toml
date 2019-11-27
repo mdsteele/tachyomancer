@@ -1,0 +1,7 @@
+size = [6, 4]
+
+[chips]
+p1p1 = "f0-Display"
+p4p2 = "f0-Ram"
+
+[wires]

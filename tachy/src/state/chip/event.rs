@@ -24,6 +24,64 @@ use crate::state::{PortColor, PortFlow, WireSize};
 
 //===========================================================================//
 
+pub const COUNTER_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Recv, PortColor::Event, (1, 0), Direction::North),
+        (PortFlow::Recv, PortColor::Event, (1, 0), Direction::South),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::North),
+    ],
+    constraints: &[
+        AbstractConstraint::Equal(0, 3),
+        AbstractConstraint::Exact(1, WireSize::Zero),
+        AbstractConstraint::Exact(2, WireSize::Zero),
+    ],
+    dependencies: &[(0, 3), (1, 3), (2, 3)],
+};
+
+pub struct CounterChipEval {
+    size: WireSize,
+    set: usize,
+    inc: usize,
+    dec: usize,
+    output: usize,
+    value: u32,
+}
+
+impl CounterChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), COUNTER_CHIP_DATA.ports.len());
+        let chip_eval = CounterChipEval {
+            size: slots[0].1,
+            set: slots[0].0,
+            inc: slots[1].0,
+            dec: slots[2].0,
+            output: slots[3].0,
+            value: 0,
+        };
+        vec![(3, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for CounterChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(value) = state.recv_event(self.set) {
+            self.value = value;
+        }
+        if state.has_event(self.inc) {
+            self.value = self.value.wrapping_add(1) & self.size.mask();
+        }
+        if state.has_event(self.dec) {
+            self.value = self.value.wrapping_sub(1) & self.size.mask();
+        }
+        state.send_behavior(self.output, self.value);
+    }
+}
+
+//===========================================================================//
+
 pub const DEMUX_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),

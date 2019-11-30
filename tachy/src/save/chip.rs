@@ -41,6 +41,7 @@ pub enum ChipType {
     CmpEq,
     Comment([u8; MAX_COMMENT_CHARS]),
     Const(u16),
+    Counter,
     Delay,
     Demux,
     Discard,
@@ -102,15 +103,16 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Filter,
         ChipType::Demux,
     ]),
+    ("Memory", &[
+        ChipType::Latest,
+        ChipType::Counter,
+        ChipType::Ram,
+    ]),
     ("Timing", &[
         ChipType::Delay,
         ChipType::Clock,
         ChipType::EggTimer,
         ChipType::Stopwatch,
-    ]),
-    ("Memory", &[
-        ChipType::Latest,
-        ChipType::Ram,
     ]),
     ("Debug", &[
         ChipType::Comment(*b"#    "),
@@ -126,9 +128,10 @@ impl ChipType {
     pub fn size(self) -> CoordsSize {
         match self {
             ChipType::Ram => CoordsSize::new(2, 2),
-            ChipType::Display | ChipType::EggTimer | ChipType::Stopwatch => {
-                CoordsSize::new(2, 1)
-            }
+            ChipType::Counter
+            | ChipType::Display
+            | ChipType::EggTimer
+            | ChipType::Stopwatch => CoordsSize::new(2, 1),
             _ => CoordsSize::new(1, 1),
         }
     }
@@ -299,6 +302,7 @@ impl str::FromStr for ChipType {
             "Clock" => Ok(ChipType::Clock),
             "Cmp" => Ok(ChipType::Cmp),
             "CmpEq" => Ok(ChipType::CmpEq),
+            "Counter" => Ok(ChipType::Counter),
             "Delay" => Ok(ChipType::Delay),
             "Demux" => Ok(ChipType::Demux),
             "Discard" => Ok(ChipType::Discard),

@@ -114,6 +114,7 @@ impl ChipExt for ChipType {
             }
             ChipType::Break(_)
             | ChipType::Clock
+            | ChipType::Counter
             | ChipType::Delay
             | ChipType::Demux
             | ChipType::Discard
@@ -227,6 +228,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::CmpEq => self::compare::CMPEQ_CHIP_DATA,
         ChipType::Comment(_) => self::special::COMMENT_CHIP_DATA,
         ChipType::Const(value) => self::value::const_chip_data(value),
+        ChipType::Counter => self::event::COUNTER_CHIP_DATA,
         ChipType::Delay => self::timing::DELAY_CHIP_DATA,
         ChipType::Demux => self::event::DEMUX_CHIP_DATA,
         ChipType::Discard => self::event::DISCARD_CHIP_DATA,
@@ -280,6 +282,7 @@ pub(super) fn new_chip_evals(
         ChipType::Const(value) => {
             self::value::ConstChipEval::new_evals(value, slots)
         }
+        ChipType::Counter => self::event::CounterChipEval::new_evals(slots),
         ChipType::Delay => self::timing::DelayChipEval::new_evals(slots),
         ChipType::Demux => self::event::DemuxChipEval::new_evals(slots),
         ChipType::Discard => self::event::DiscardChipEval::new_evals(slots),

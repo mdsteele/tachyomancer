@@ -21,6 +21,7 @@ mod beacon;
 mod drill;
 mod fab_arith;
 mod fab_clock;
+mod fab_event;
 mod grapple;
 mod heliostat;
 mod iface;
@@ -43,9 +44,10 @@ mod xunit;
 pub use self::beacon::BeaconEval;
 pub use self::drill::DrillingRigEval;
 pub use self::fab_arith::{
-    FabricateHalveEval, FabricateIncEval, FabricateMulEval, FabricateXorEval,
+    FabricateHalveEval, FabricateMulEval, FabricateXorEval,
 };
 pub use self::fab_clock::{FabricateEggTimerEval, FabricateStopwatchEval};
+pub use self::fab_event::{FabricateCounterEval, FabricateIncEval};
 pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
 pub use self::iface::Interface;
@@ -136,9 +138,10 @@ impl PuzzleExt for Puzzle {
             Puzzle::CommandLander => self::lander::INTERFACES,
             Puzzle::CommandShields => self::shields::INTERFACES,
             Puzzle::CommandTurret => self::turret::INTERFACES,
+            Puzzle::FabricateCounter => self::fab_event::COUNTER_INTERFACES,
             Puzzle::FabricateEggTimer => self::fab_clock::EGG_TIMER_INTERFACES,
             Puzzle::FabricateHalve => self::fab_arith::HALVE_INTERFACES,
-            Puzzle::FabricateInc => self::fab_arith::INC_INTERFACES,
+            Puzzle::FabricateInc => self::fab_event::INC_INTERFACES,
             Puzzle::FabricateMul => self::fab_arith::MUL_INTERFACES,
             Puzzle::FabricateStopwatch => {
                 self::fab_clock::STOPWATCH_INTERFACES
@@ -217,6 +220,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::CommandLander => Box::new(LanderEval::new(slots)),
         Puzzle::CommandShields => Box::new(ShieldsEval::new(slots)),
         Puzzle::CommandTurret => Box::new(TurretEval::new(slots)),
+        Puzzle::FabricateCounter => Box::new(FabricateCounterEval::new(slots)),
         Puzzle::FabricateEggTimer => {
             Box::new(FabricateEggTimerEval::new(slots))
         }

@@ -1,0 +1,39 @@
+puzzle = "FabricateCounter"
+score = 46
+time_steps = 20
+
+[circuit]
+size = [7, 3]
+
+[circuit.chips]
+p0p1 = "f3-Latest"
+p0p2 = "f3-Join"
+p1p2 = "f2-Delay"
+p2p2 = "f2-Inc"
+p3p1 = "t1-Sample"
+p3p2 = "f2-Join"
+p4p1 = "t2-Const(1)"
+p4p2 = "f2-Delay"
+p5p1 = "t1-Const(15)"
+p5p2 = "f2-Sample"
+
+[circuit.wires]
+p0p0e = "SplitTee"
+p0p1s = "Stub"
+p0p2e = "Stub"
+p0p2s = "Stub"
+p1p0e = "Straight"
+p1p2e = "Stub"
+p2p0s = "TurnLeft"
+p2p1s = "Straight"
+p2p2e = "Stub"
+p3p0e = "TurnLeft"
+p3p1e = "Stub"
+p3p1s = "Stub"
+p3p2e = "Stub"
+p4p0e = "Straight"
+p4p2e = "Stub"
+p5p0e = "Straight"
+p5p1s = "Stub"
+p6p0w = "TurnLeft"
+p6p2s = "TurnLeft"

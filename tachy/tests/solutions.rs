@@ -60,6 +60,11 @@ fn automate_x_unit() {
 }
 
 #[test]
+fn fabricate_counter() {
+    test_solution("fabricate_counter");
+}
+
+#[test]
 fn fabricate_egg_timer() {
     test_solution("fabricate_egg_timer");
 }

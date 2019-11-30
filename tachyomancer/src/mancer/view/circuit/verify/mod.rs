@@ -40,10 +40,10 @@ use cgmath::{vec2, Deg, Matrix4, Point2};
 use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::save::Puzzle;
 use tachy::state::{
-    CircuitEval, FabricateEggTimerEval, FabricateHalveEval, FabricateIncEval,
-    FabricateMulEval, FabricateStopwatchEval, FabricateXorEval,
-    TutorialAddEval, TutorialDemuxEval, TutorialMuxEval, TutorialOrEval,
-    TutorialSumEval,
+    CircuitEval, FabricateCounterEval, FabricateEggTimerEval,
+    FabricateHalveEval, FabricateIncEval, FabricateMulEval,
+    FabricateStopwatchEval, FabricateXorEval, TutorialAddEval,
+    TutorialDemuxEval, TutorialMuxEval, TutorialOrEval, TutorialSumEval,
 };
 
 //===========================================================================//
@@ -117,6 +117,9 @@ impl VerificationTray {
             Puzzle::CommandTurret => {
                 self::turret::TurretVerifyView::new(right_bottom)
             }
+            Puzzle::FabricateCounter => FabricationVerifyView::<
+                FabricateCounterEval,
+            >::new(right_bottom),
             Puzzle::FabricateEggTimer => FabricationVerifyView::<
                 FabricateEggTimerEval,
             >::new(right_bottom),

@@ -114,7 +114,6 @@ impl ChipExt for ChipType {
             }
             ChipType::Break(_)
             | ChipType::Clock
-            | ChipType::Counter
             | ChipType::Delay
             | ChipType::Demux
             | ChipType::Discard
@@ -126,6 +125,9 @@ impl ChipExt for ChipType {
             }
             ChipType::Inc => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateInc)
+            }
+            ChipType::Counter => {
+                ChipAvailability::UnlockedBy(Puzzle::FabricateCounter)
             }
             ChipType::EggTimer => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateEggTimer)

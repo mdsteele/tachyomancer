@@ -61,6 +61,7 @@ pub enum ChipType {
     Ram,
     Random,
     Sample,
+    Screen,
     Stopwatch,
     Sub,
     Toggle(bool),
@@ -105,6 +106,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Latest,
         ChipType::Counter,
         ChipType::Ram,
+        ChipType::Screen,
     ]),
     ("Timing", &[
         ChipType::Delay,
@@ -125,11 +127,12 @@ impl ChipType {
     /// Returns the width and height of the chip in its default orientation.
     pub fn size(self) -> CoordsSize {
         match self {
-            ChipType::Ram => CoordsSize::new(2, 2),
             ChipType::Counter
             | ChipType::Display
             | ChipType::EggTimer
             | ChipType::Stopwatch => CoordsSize::new(2, 1),
+            ChipType::Ram => CoordsSize::new(2, 2),
+            ChipType::Screen => CoordsSize::new(5, 5),
             _ => CoordsSize::new(1, 1),
         }
     }
@@ -316,6 +319,7 @@ impl str::FromStr for ChipType {
             "Ram" => Ok(ChipType::Ram),
             "Random" => Ok(ChipType::Random),
             "Sample" => Ok(ChipType::Sample),
+            "Screen" => Ok(ChipType::Screen),
             "Stopwatch" => Ok(ChipType::Stopwatch),
             "Sub" => Ok(ChipType::Sub),
             "Toggle(false)" => Ok(ChipType::Toggle(false)),

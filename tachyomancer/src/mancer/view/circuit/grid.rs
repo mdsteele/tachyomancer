@@ -424,6 +424,7 @@ impl EditGridView {
                     match grid.chip_at(coords) {
                         Some((_, ChipType::Break(_), _))
                         | Some((_, ChipType::Button(_), _))
+                        | Some((_, ChipType::Screen, _))
                         | Some((_, ChipType::Toggle(_), _)) => {
                             return Cursor::HandPointing;
                         }
@@ -687,15 +688,23 @@ impl EditGridView {
                     match grid.chip_at(grid_pt.as_i32_floor()) {
                         Some((coords, ChipType::Break(_), _)) => {
                             // TODO: Play sound for toggling breakpoint.
-                            grid.press_button(coords);
+                            grid.press_button(coords, 0);
+                            ui.request_redraw();
                         }
                         Some((coords, ChipType::Button(_), _)) => {
                             // TODO: Play sound for pressing button.
-                            grid.press_button(coords);
+                            grid.press_button(coords, 0);
+                        }
+                        Some((coords, ChipType::Screen, _)) => {
+                            if let Some(sublocation) =
+                                ChipModel::chip_screen_cell(coords, grid_pt)
+                            {
+                                grid.press_button(coords, sublocation);
+                            }
                         }
                         Some((coords, ChipType::Toggle(_), _)) => {
                             // TODO: Play sound for flipping toggle switch.
-                            grid.press_button(coords);
+                            grid.press_button(coords, 0);
                         }
                         _ => {}
                     }

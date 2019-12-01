@@ -838,9 +838,9 @@ impl EditGrid {
         }
     }
 
-    pub fn press_button(&mut self, coords: Coords) {
+    pub fn press_button(&mut self, coords: Coords, sublocation: u32) {
         if let Some(ref mut eval) = self.eval {
-            eval.press_button(coords);
+            eval.press_button(coords, sublocation);
         }
     }
 

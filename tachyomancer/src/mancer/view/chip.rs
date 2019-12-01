@@ -19,9 +19,9 @@
 
 use crate::mancer::font::{Align, Font};
 use crate::mancer::gui::Resources;
-use cgmath::{vec3, Matrix4};
+use cgmath::{vec2, vec3, Matrix4, Point2};
 use tachy::geom::{
-    AsFloat, Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
+    AsFloat, AsInt, Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
     Orientation, Rect, RectSize,
 };
 use tachy::save::ChipType;
@@ -117,9 +117,12 @@ impl ChipModel {
         let oriented_size = orient * chip_size;
 
         match ctype {
-            ChipType::Break(enabled) => {
-                // TODO: If eval is running, get `enabled` from the chip eval
-                //   rather than from the ChipType.
+            ChipType::Break(mut enabled) => {
+                if let Some(grid) = opt_grid {
+                    if let Some(eval) = grid.eval() {
+                        enabled = eval.display_data(coords)[0] != 0;
+                    }
+                }
                 draw_break_chip(resources, grid_matrix, coords, enabled);
             }
             ChipType::Comment(_) => {
@@ -158,6 +161,26 @@ impl ChipModel {
                     &Color4::YELLOW5,
                     &format!("{:05}", value),
                 );
+            }
+            ChipType::Screen => {
+                draw_chip_icon(
+                    resources,
+                    grid_matrix,
+                    coords,
+                    orient,
+                    chip_size,
+                    ChipIcon::Blank,
+                );
+                if let Some(grid) = opt_grid {
+                    if let Some(eval) = grid.eval() {
+                        draw_chip_screen(
+                            resources,
+                            grid_matrix,
+                            coords,
+                            eval.display_data(coords),
+                        );
+                    }
+                }
             }
             _ => {
                 let icon = chip_icon(ctype, orient);
@@ -221,6 +244,13 @@ impl ChipModel {
             }
             _ => {}
         }
+    }
+
+    pub fn chip_screen_cell(
+        coords: Coords,
+        grid_pt: Point2<f32>,
+    ) -> Option<u32> {
+        chip_screen_cell(coords, grid_pt)
     }
 }
 
@@ -440,6 +470,54 @@ fn draw_port(
         WireSize::Sixteen => 1.0,
     };
     shader.draw(width_scale);
+}
+
+//===========================================================================//
+
+// Margin around screen from edges of grid cells, in grid units:
+const SCREEN_MARGIN: f32 = 0.3;
+// Width/height of a screen chip, in grid units:
+const SCREEN_CHIP_SIZE: f32 = 5.0;
+// Width/height of one screen cell, in grid units:
+const SCREEN_CELL_SIZE: f32 = (SCREEN_CHIP_SIZE - 2.0 * SCREEN_MARGIN) / 16.0;
+
+fn chip_screen_cell(coords: Coords, grid_pt: Point2<f32>) -> Option<u32> {
+    let cell = (((grid_pt - coords.as_f32())
+        - vec2(SCREEN_MARGIN, SCREEN_MARGIN))
+        / SCREEN_CELL_SIZE)
+        .as_i32_floor();
+    if cell.x >= 0 && cell.x < 16 && cell.y >= 0 && cell.y < 16 {
+        Some((cell.x + 16 * cell.y) as u32)
+    } else {
+        None
+    }
+}
+
+fn draw_chip_screen(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    coords: Coords,
+    bytes: &[u8],
+) {
+    let font = resources.fonts().roman();
+    let matrix = grid_matrix
+        * Matrix4::from_translation(vec3(
+            0.5 * SCREEN_CHIP_SIZE + (coords.x as f32),
+            coords.y as f32,
+            0.101,
+        ))
+        * Matrix4::from_nonuniform_scale(font.ratio().recip(), 1.0, 1.0);
+    for row in 0..16 {
+        font.draw_chars(
+            &matrix,
+            SCREEN_CELL_SIZE,
+            Align::TopCenter,
+            (0.0, SCREEN_MARGIN + SCREEN_CELL_SIZE * (row as f32)),
+            &Color4::YELLOW5,
+            0.0,
+            &bytes[(16 * row)..(16 * (row + 1))],
+        );
+    }
 }
 
 //===========================================================================//

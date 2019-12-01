@@ -61,15 +61,28 @@ impl BreakChipEval {
 
 impl ChipEval for BreakChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        if state.pop_button_presses(self.coords) % 2 != 0 {
-            self.enabled = !self.enabled;
-        }
         if let Some(value) = state.recv_event(self.input) {
             state.send_event(self.output, value);
             if self.enabled {
                 state.breakpoint(self.coords);
             }
         }
+    }
+
+    fn coords(&self) -> Option<Coords> {
+        Some(self.coords)
+    }
+
+    fn display_data(&self) -> &[u8] {
+        if self.enabled {
+            &[1]
+        } else {
+            &[0]
+        }
+    }
+
+    fn on_press(&mut self, _sublocation: u32) {
+        self.enabled = !self.enabled;
     }
 }
 
@@ -107,7 +120,6 @@ impl ButtonChipEval {
 
 impl ChipEval for ButtonChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        self.press_count += state.pop_button_presses(self.coords);
         if let Some(code) = self.hotkey {
             self.press_count += state.pop_hotkey_presses(code);
         }
@@ -119,6 +131,14 @@ impl ChipEval for ButtonChipEval {
 
     fn needs_another_cycle(&mut self, _state: &CircuitState) -> bool {
         self.press_count > 0
+    }
+
+    fn coords(&self) -> Option<Coords> {
+        Some(self.coords)
+    }
+
+    fn on_press(&mut self, _sublocation: u32) {
+        self.press_count += 1;
     }
 }
 
@@ -261,6 +281,137 @@ impl ChipEval for RandomChipEval {
 
 //===========================================================================//
 
+pub const SCREEN_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Behavior, (2, 0), Direction::North),
+        (PortFlow::Recv, PortColor::Event, (3, 0), Direction::North),
+        (PortFlow::Send, PortColor::Behavior, (1, 0), Direction::North),
+        (PortFlow::Recv, PortColor::Behavior, (0, 2), Direction::West),
+        (PortFlow::Recv, PortColor::Event, (0, 1), Direction::West),
+        (PortFlow::Send, PortColor::Behavior, (0, 3), Direction::West),
+        (PortFlow::Recv, PortColor::Behavior, (2, 4), Direction::South),
+        (PortFlow::Recv, PortColor::Event, (1, 4), Direction::South),
+        (PortFlow::Send, PortColor::Behavior, (3, 4), Direction::South),
+        (PortFlow::Send, PortColor::Event, (4, 2), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Eight),
+        AbstractConstraint::Exact(1, WireSize::Eight),
+        AbstractConstraint::Exact(2, WireSize::Eight),
+        AbstractConstraint::Exact(3, WireSize::Eight),
+        AbstractConstraint::Exact(4, WireSize::Eight),
+        AbstractConstraint::Exact(5, WireSize::Eight),
+        AbstractConstraint::Exact(6, WireSize::Eight),
+        AbstractConstraint::Exact(7, WireSize::Eight),
+        AbstractConstraint::Exact(8, WireSize::Eight),
+        AbstractConstraint::Exact(9, WireSize::Eight),
+    ],
+    dependencies: &[
+        (0, 2),
+        (1, 2),
+        (3, 2),
+        (4, 2),
+        (6, 2),
+        (7, 2),
+        (0, 5),
+        (1, 5),
+        (3, 5),
+        (4, 5),
+        (6, 5),
+        (7, 5),
+        (0, 8),
+        (1, 8),
+        (3, 8),
+        (4, 8),
+        (6, 8),
+        (7, 8),
+        (0, 9),
+        (1, 9),
+        (3, 9),
+        (4, 9),
+        (6, 9),
+        (7, 9),
+    ],
+};
+
+pub struct ScreenChipEval {
+    coords: Coords,
+    input_b1: usize,
+    input_e1: usize,
+    output1: usize,
+    input_b2: usize,
+    input_e2: usize,
+    output2: usize,
+    input_b3: usize,
+    input_e3: usize,
+    output3: usize,
+    touch: usize,
+    values: Vec<u8>,
+    pressed: Option<u32>,
+}
+
+impl ScreenChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+        coords: Coords,
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), SCREEN_CHIP_DATA.ports.len());
+        let chip_eval = ScreenChipEval {
+            coords,
+            input_b1: slots[0].0,
+            input_e1: slots[1].0,
+            output1: slots[2].0,
+            input_b2: slots[3].0,
+            input_e2: slots[4].0,
+            output2: slots[5].0,
+            input_b3: slots[6].0,
+            input_e3: slots[7].0,
+            output3: slots[8].0,
+            touch: slots[9].0,
+            values: vec![0u8; 256],
+            pressed: None,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for ScreenChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let addr1 = state.recv_behavior(self.input_b1) as usize;
+        let addr2 = state.recv_behavior(self.input_b2) as usize;
+        let addr3 = state.recv_behavior(self.input_b3) as usize;
+        if let Some(value1) = state.recv_event(self.input_e1) {
+            self.values[addr1] = value1 as u8;
+        }
+        if let Some(value2) = state.recv_event(self.input_e2) {
+            self.values[addr2] = value2 as u8;
+        }
+        if let Some(value3) = state.recv_event(self.input_e3) {
+            self.values[addr3] = value3 as u8;
+        }
+        state.send_behavior(self.output1, self.values[addr1] as u32);
+        state.send_behavior(self.output2, self.values[addr2] as u32);
+        state.send_behavior(self.output3, self.values[addr3] as u32);
+        if let Some(value) = self.pressed.take() {
+            state.send_event(self.touch, value);
+        }
+    }
+
+    fn coords(&self) -> Option<Coords> {
+        Some(self.coords)
+    }
+
+    fn display_data(&self) -> &[u8] {
+        &self.values
+    }
+
+    fn on_press(&mut self, sublocation: u32) {
+        self.pressed = Some(sublocation);
+    }
+}
+
+//===========================================================================//
+
 pub const TOGGLE_CHIP_DATA: &ChipData = &ChipData {
     ports: &[(PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East)],
     constraints: &[AbstractConstraint::Exact(0, WireSize::One)],
@@ -287,10 +438,15 @@ impl ToggleChipEval {
 
 impl ChipEval for ToggleChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
-        if state.pop_button_presses(self.coords) % 2 != 0 {
-            self.value = !self.value;
-        }
         state.send_behavior(self.output, self.value.into());
+    }
+
+    fn coords(&self) -> Option<Coords> {
+        Some(self.coords)
+    }
+
+    fn on_press(&mut self, _sublocation: u32) {
+        self.value = !self.value;
     }
 }
 

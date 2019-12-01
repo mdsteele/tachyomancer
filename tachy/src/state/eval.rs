@@ -64,6 +64,8 @@ pub struct CircuitEval {
     chips: Vec<Vec<Box<dyn ChipEval>>>,
     puzzle: Box<dyn PuzzleEval>,
     state: CircuitState,
+    // Maps from coords to indices into the chips vec for chips that need it.
+    coords_map: HashMap<Coords, (usize, usize)>,
 }
 
 impl CircuitEval {
@@ -73,6 +75,14 @@ impl CircuitEval {
         chip_groups: Vec<Vec<Box<dyn ChipEval>>>,
         puzzle: Box<dyn PuzzleEval>,
     ) -> CircuitEval {
+        let mut coords_map = HashMap::new();
+        for (group_index, group) in chip_groups.iter().enumerate() {
+            for (chip_index, chip_eval) in group.iter().enumerate() {
+                if let Some(coords) = chip_eval.coords() {
+                    coords_map.insert(coords, (group_index, chip_index));
+                }
+            }
+        }
         CircuitEval {
             cycle: 0,
             subcycle: 0,
@@ -80,6 +90,7 @@ impl CircuitEval {
             chips: chip_groups,
             puzzle,
             state: CircuitState::new(num_wires, null_wires),
+            coords_map,
         }
     }
 
@@ -105,8 +116,10 @@ impl CircuitEval {
         &self.errors
     }
 
-    pub fn press_button(&mut self, coords: Coords) {
-        self.state.press_button(coords);
+    pub fn press_button(&mut self, coords: Coords, sublocation: u32) {
+        if let Some(&(group, index)) = self.coords_map.get(&coords) {
+            self.chips[group][index].on_press(sublocation);
+        }
     }
 
     pub fn press_hotkey(&mut self, code: HotkeyCode) {
@@ -123,6 +136,15 @@ impl CircuitEval {
 
     pub fn wire_has_change(&self, wire_index: usize) -> bool {
         self.state.values[wire_index].1
+    }
+
+    /// Returns display data for the chip at the given coordinates, if any.
+    pub fn display_data(&self, coords: Coords) -> &[u8] {
+        if let Some(&(group, index)) = self.coords_map.get(&coords) {
+            self.chips[group][index].display_data()
+        } else {
+            &[]
+        }
     }
 
     /// Appends the given errors and returns true if any were fatal.
@@ -257,7 +279,6 @@ pub struct CircuitState {
     null_wires: HashSet<usize>,
     values: Vec<(u32, bool)>,
     breakpoints: Vec<Coords>,
-    button_presses: HashMap<Coords, i32>,
     hotkey_presses: HashMap<HotkeyCode, i32>,
     changed: bool,
 }
@@ -269,7 +290,6 @@ impl CircuitState {
             null_wires,
             values: vec![(0, false); num_values],
             breakpoints: vec![],
-            button_presses: HashMap::new(),
             hotkey_presses: HashMap::new(),
             changed: false,
         }
@@ -316,16 +336,8 @@ impl CircuitState {
         self.breakpoints.push(coords);
     }
 
-    fn press_button(&mut self, coords: Coords) {
-        self.button_presses.entry(coords).and_modify(|n| *n += 1).or_insert(1);
-    }
-
     fn press_hotkey(&mut self, code: HotkeyCode) {
         self.hotkey_presses.entry(code).and_modify(|n| *n += 1).or_insert(1);
-    }
-
-    pub fn pop_button_presses(&mut self, coords: Coords) -> i32 {
-        self.button_presses.remove(&coords).unwrap_or(0)
     }
 
     pub fn pop_hotkey_presses(&mut self, code: HotkeyCode) -> i32 {
@@ -454,6 +466,27 @@ pub trait ChipEval {
     /// Updates internal chip state between time steps.  The default
     /// implementation is a no-op.
     fn on_time_step(&mut self) {}
+
+    /// Returns the coords that this chip is at.  Chip types that override
+    /// `display_data` or `on_press` must also override this to return a
+    /// non-`None` value; other chips don't need to implement this.
+    fn coords(&self) -> Option<Coords> {
+        None
+    }
+
+    /// Provides chip-type-specific data used to help draw the state of the
+    /// chip during evaluation.  For example, the `Screen` chip uses this to
+    /// provide the contents of the screen cells.
+    fn display_data(&self) -> &[u8] {
+        &[]
+    }
+
+    /// Handle the chip being clicked with the mouse during evaluation.  The
+    /// `sublocation` parameter is a chip-type-specific way to indicate which
+    /// part of the chip was clicked, for chip types that have multiple
+    /// clickable parts.  For example, the `Screen` chip uses the sublocation
+    /// to know which cell of the screen was clicked.
+    fn on_press(&mut self, _sublocation: u32) {}
 }
 
 //===========================================================================//

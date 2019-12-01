@@ -140,6 +140,11 @@ impl ChipExt for ChipType {
             ChipType::Random => {
                 ChipAvailability::OnlyIn(&[Puzzle::SandboxEvent])
             }
+            ChipType::Screen => {
+                // TODO: Only unlock Screen chip for sandbox once the RAM
+                //   tutorial is solved.
+                ChipAvailability::OnlyIn(&[Puzzle::SandboxEvent])
+            }
         }
     }
 
@@ -249,6 +254,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Ram => self::special::RAM_CHIP_DATA,
         ChipType::Random => self::special::RANDOM_CHIP_DATA,
         ChipType::Sample => self::event::SAMPLE_CHIP_DATA,
+        ChipType::Screen => self::special::SCREEN_CHIP_DATA,
         ChipType::Stopwatch => self::timing::STOPWATCH_CHIP_DATA,
         ChipType::Sub => self::arith::SUB_CHIP_DATA,
         ChipType::Toggle(_) => self::special::TOGGLE_CHIP_DATA,
@@ -302,6 +308,9 @@ pub(super) fn new_chip_evals(
         ChipType::Ram => self::special::RamChipEval::new_evals(slots),
         ChipType::Random => self::special::RandomChipEval::new_evals(slots),
         ChipType::Sample => self::event::SampleChipEval::new_evals(slots),
+        ChipType::Screen => {
+            self::special::ScreenChipEval::new_evals(slots, coords)
+        }
         ChipType::Stopwatch => {
             self::timing::StopwatchChipEval::new_evals(slots)
         }

@@ -40,12 +40,13 @@ pub const DEMUX_INTERFACES: &[Interface] = &[
             description: "",
             flow: PortFlow::Send,
             color: PortColor::Event,
-            size: WireSize::One,
+            size: WireSize::Zero,
         }],
     },
     Interface {
         name: "Ctrl",
-        description: "Indicates which output the event should be sent to.",
+        description:
+            "Indicates which output (0-3) the event should be sent to.",
         side: Direction::North,
         pos: InterfacePosition::Center,
         ports: &[InterfacePort {
@@ -53,34 +54,46 @@ pub const DEMUX_INTERFACES: &[Interface] = &[
             description: "",
             flow: PortFlow::Send,
             color: PortColor::Behavior,
-            size: WireSize::One,
+            size: WireSize::Two,
         }],
     },
     Interface {
-        name: "Out0",
-        description: "Input events should be sent here when $*Ctrl$* is 0.",
+        name: "Out",
+        description:
+            "Input events should be sent to $*Out0$* when $*Ctrl$* is 0, to \
+             $*Out1$* when $*Ctrl$* is 1, and so on.",
         side: Direction::East,
         pos: InterfacePosition::Center,
-        ports: &[InterfacePort {
-            name: "Out0",
-            description: "",
-            flow: PortFlow::Recv,
-            color: PortColor::Event,
-            size: WireSize::One,
-        }],
-    },
-    Interface {
-        name: "Out1",
-        description: "Input events should be sent here when $*Ctrl$* is 1.",
-        side: Direction::South,
-        pos: InterfacePosition::Center,
-        ports: &[InterfacePort {
-            name: "Out1",
-            description: "",
-            flow: PortFlow::Recv,
-            color: PortColor::Event,
-            size: WireSize::One,
-        }],
+        ports: &[
+            InterfacePort {
+                name: "Out0",
+                description: "",
+                flow: PortFlow::Recv,
+                color: PortColor::Event,
+                size: WireSize::Zero,
+            },
+            InterfacePort {
+                name: "Out1",
+                description: "",
+                flow: PortFlow::Recv,
+                color: PortColor::Event,
+                size: WireSize::Zero,
+            },
+            InterfacePort {
+                name: "Out2",
+                description: "",
+                flow: PortFlow::Recv,
+                color: PortColor::Event,
+                size: WireSize::Zero,
+            },
+            InterfacePort {
+                name: "Out3",
+                description: "",
+                flow: PortFlow::Recv,
+                color: PortColor::Event,
+                size: WireSize::Zero,
+            },
+        ],
     },
 ];
 
@@ -92,9 +105,8 @@ pub const DEMUX_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
     ),
     (
         TutorialBubblePosition::Bounds(Direction::East),
-        "Splitting an event wire allows sending the same event to multiple \
-         receiver ports.  Then each copy of the event can be filtered \
-         separately.",
+        "A single $*Demux$* chip can direct an event to one of two places.  \
+         A chain of multiple $*Demux$* chips can bifurcate even further.",
     ),
 ];
 
@@ -102,33 +114,36 @@ pub struct TutorialDemuxEval {
     table_values: Vec<u64>,
     input_wire: usize,
     control_wire: usize,
-    output0_wire: usize,
-    output0_port: (Coords, Direction),
-    output1_wire: usize,
-    output1_port: (Coords, Direction),
-    has_received_output0_event: bool,
-    has_received_output1_event: bool,
+    output_ports: [(Coords, Direction); 4],
+    output_wires: [usize; 4],
+    has_received_output_event: [bool; 4],
 }
 
 impl TutorialDemuxEval {
     pub fn new(
         slots: Vec<Vec<((Coords, Direction), usize)>>,
     ) -> TutorialDemuxEval {
-        debug_assert_eq!(slots.len(), 4);
+        debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);
-        debug_assert_eq!(slots[2].len(), 1);
-        debug_assert_eq!(slots[3].len(), 1);
+        debug_assert_eq!(slots[2].len(), 4);
         TutorialDemuxEval {
             table_values: TutorialDemuxEval::expected_table_values().to_vec(),
             input_wire: slots[0][0].1,
             control_wire: slots[1][0].1,
-            output0_wire: slots[2][0].1,
-            output0_port: slots[2][0].0,
-            output1_wire: slots[3][0].1,
-            output1_port: slots[3][0].0,
-            has_received_output0_event: false,
-            has_received_output1_event: false,
+            output_ports: [
+                slots[2][0].0,
+                slots[2][1].0,
+                slots[2][2].0,
+                slots[2][3].0,
+            ],
+            output_wires: [
+                slots[2][0].1,
+                slots[2][1].1,
+                slots[2][2].1,
+                slots[2][3].1,
+            ],
+            has_received_output_event: [false; 4],
         }
     }
 }
@@ -138,10 +153,9 @@ impl PuzzleEval for TutorialDemuxEval {
         &mut self,
         state: &mut CircuitState,
     ) -> Option<EvalScore> {
-        self.has_received_output0_event = false;
-        self.has_received_output1_event = false;
+        self.has_received_output_event = [false; 4];
         let expected = TutorialDemuxEval::expected_table_values();
-        let start = (state.time_step() as usize) * 4;
+        let start = (state.time_step() as usize) * 6;
         if start >= expected.len() {
             Some(EvalScore::WireLength)
         } else {
@@ -156,80 +170,230 @@ impl PuzzleEval for TutorialDemuxEval {
 
     fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let expected_table = TutorialDemuxEval::expected_table_values();
-        let start = (state.time_step() as usize) * 4;
+        let start = (state.time_step() as usize) * 6;
         if start >= expected_table.len() {
             return vec![];
         }
-        let expected_output0 = expected_table[start + 2];
-        let expected_output1 = expected_table[start + 3];
-
-        let opt_output0 = state.recv_event(self.output0_wire);
-        self.table_values[start + 2] = shared::opt_u32_to_u64(opt_output0);
-        let opt_output1 = state.recv_event(self.output1_wire);
-        self.table_values[start + 3] = shared::opt_u32_to_u64(opt_output1);
-
         let mut errors = Vec::new();
-        shared::end_cycle_check_event_output(
-            state,
-            opt_output0,
-            expected_output0,
-            &mut self.has_received_output0_event,
-            self.output0_port,
-            &mut errors,
-        );
-        shared::end_cycle_check_event_output(
-            state,
-            opt_output1,
-            expected_output1,
-            &mut self.has_received_output1_event,
-            self.output1_port,
-            &mut errors,
-        );
+        for index in 0..4 {
+            let expected_output = expected_table[start + 2 + index];
+            let opt_output = state.recv_event(self.output_wires[index]);
+            self.table_values[start + 2 + index] =
+                shared::opt_u32_to_u64(opt_output);
+            shared::end_cycle_check_event_output(
+                state,
+                opt_output,
+                expected_output,
+                &mut self.has_received_output_event[index],
+                self.output_ports[index],
+                &mut errors,
+            );
+        }
         return errors;
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
         let expected_table = TutorialDemuxEval::expected_table_values();
-        let start = (state.time_step() as usize) * 4;
+        let start = (state.time_step() as usize) * 6;
         if start >= expected_table.len() {
             return vec![];
         }
-        let expected_output0 = expected_table[start + 2];
-        let expected_output1 = expected_table[start + 3];
-
         let mut errors = Vec::new();
-        shared::end_time_step_check_event_output(
-            state,
-            expected_output0,
-            self.has_received_output0_event,
-            self.output0_port,
-            &mut errors,
-        );
-        shared::end_time_step_check_event_output(
-            state,
-            expected_output1,
-            self.has_received_output1_event,
-            self.output1_port,
-            &mut errors,
-        );
+        for index in 0..4 {
+            let expected_output = expected_table[start + 2 + index];
+            shared::end_time_step_check_event_output(
+                state,
+                expected_output,
+                self.has_received_output_event[index],
+                self.output_ports[index],
+                &mut errors,
+            );
+        }
         return errors;
     }
 }
 
 impl FabricationEval for TutorialDemuxEval {
     fn table_column_names() -> &'static [&'static str] {
-        &["In", "Ctrl", "Out0", "Out1"]
+        &["In", "Ctrl", "Out0", "Out1", "Out2", "Out3"]
     }
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn expected_table_values() -> &'static [u64] {
         &[
-            0, 0, 0, u64::MAX,
-            0, 1, u64::MAX, 0,
-            u64::MAX, 0, u64::MAX, u64::MAX,
-            1, 1, u64::MAX, 1,
-            1, 0, 1, u64::MAX,
-            u64::MAX, 1, u64::MAX, u64::MAX,
+            0, 0, 0, u64::MAX, u64::MAX, u64::MAX,
+            u64::MAX, 0, u64::MAX, u64::MAX, u64::MAX, u64::MAX,
+            0, 1, u64::MAX, 0, u64::MAX, u64::MAX,
+            u64::MAX, 1, u64::MAX, u64::MAX, u64::MAX, u64::MAX,
+            0, 2, u64::MAX, u64::MAX, 0, u64::MAX,
+            u64::MAX, 2, u64::MAX, u64::MAX, u64::MAX, u64::MAX,
+            0, 3, u64::MAX, u64::MAX, u64::MAX, 0,
+            u64::MAX, 3, u64::MAX, u64::MAX, u64::MAX, u64::MAX,
+        ]
+    }
+
+    fn table_values(&self) -> &[u64] {
+        &self.table_values
+    }
+}
+
+//===========================================================================//
+
+pub const AMP_INTERFACES: &[Interface] = &[
+    Interface {
+        name: "In",
+        description: "Input events arrive here.",
+        side: Direction::West,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "In",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Four,
+        }],
+    },
+    Interface {
+        name: "Out",
+        description:
+            "Output events should be sent here.  The output value should be \
+             twice the input value, unless that would be more than 10, in \
+             which case no output value should be sent.",
+        side: Direction::East,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Event,
+            size: WireSize::Four,
+        }],
+    },
+];
+
+pub const AMP_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
+    (
+        TutorialBubblePosition::Bounds(Direction::North),
+        "Splitting an event wire sends the same event to multiple \
+         receiver ports.  Then each copy of the event can be used \
+         separately.",
+    ),
+    (
+        TutorialBubblePosition::Bounds(Direction::South),
+        "A $*Demux$* chip can be used to filter out unwanted events by \
+         ignoring one of its two output ports.",
+    ),
+];
+
+pub struct TutorialAmpEval {
+    table_values: Vec<u64>,
+    input_wire: usize,
+    output_wire: usize,
+    output_port: (Coords, Direction),
+    has_received_output_event: bool,
+}
+
+impl TutorialAmpEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), usize)>>,
+    ) -> TutorialAmpEval {
+        debug_assert_eq!(slots.len(), 2);
+        debug_assert_eq!(slots[0].len(), 1);
+        debug_assert_eq!(slots[1].len(), 1);
+        TutorialAmpEval {
+            table_values: TutorialAmpEval::expected_table_values().to_vec(),
+            input_wire: slots[0][0].1,
+            output_wire: slots[1][0].1,
+            output_port: slots[1][0].0,
+            has_received_output_event: false,
+        }
+    }
+}
+
+impl PuzzleEval for TutorialAmpEval {
+    fn begin_time_step(
+        &mut self,
+        state: &mut CircuitState,
+    ) -> Option<EvalScore> {
+        self.has_received_output_event = false;
+        let expected = TutorialAmpEval::expected_table_values();
+        let start = (state.time_step() as usize) * 2;
+        if start >= expected.len() {
+            Some(EvalScore::WireLength)
+        } else {
+            let slice = &expected[start..];
+            if slice[0] < (u32::MAX as u64) {
+                state.send_event(self.input_wire, slice[0] as u32);
+            }
+            None
+        }
+    }
+
+    fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let expected_table = TutorialAmpEval::expected_table_values();
+        let start = (state.time_step() as usize) * 2;
+        if start >= expected_table.len() {
+            return vec![];
+        }
+        let expected_output = expected_table[start + 1];
+
+        let opt_output = state.recv_event(self.output_wire);
+        self.table_values[start + 1] = shared::opt_u32_to_u64(opt_output);
+
+        let mut errors = Vec::new();
+        shared::end_cycle_check_event_output(
+            state,
+            opt_output,
+            expected_output,
+            &mut self.has_received_output_event,
+            self.output_port,
+            &mut errors,
+        );
+        return errors;
+    }
+
+    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
+        let expected_table = TutorialAmpEval::expected_table_values();
+        let start = (state.time_step() as usize) * 2;
+        if start >= expected_table.len() {
+            return vec![];
+        }
+        let expected_output = expected_table[start + 1];
+
+        let mut errors = Vec::new();
+        shared::end_time_step_check_event_output(
+            state,
+            expected_output,
+            self.has_received_output_event,
+            self.output_port,
+            &mut errors,
+        );
+        return errors;
+    }
+}
+
+impl FabricationEval for TutorialAmpEval {
+    fn table_column_names() -> &'static [&'static str] {
+        &["In", "Out"]
+    }
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn expected_table_values() -> &'static [u64] {
+        &[
+            3, 6,
+            u64::MAX, u64::MAX,
+            1, 2,
+            5, 10,
+            6, u64::MAX,
+            4, 8,
+            7, u64::MAX,
+            0, 0,
+            u64::MAX, u64::MAX,
+            2, 4,
+            1, 2,
+            6, u64::MAX,
+            3, 6,
+            5, 10,
         ]
     }
 
@@ -285,7 +449,11 @@ pub const SUM_INTERFACES: &[Interface] = &[
     },
 ];
 
-pub const SUM_BUBBLES: &[(TutorialBubblePosition, &str)] = &[];
+pub const SUM_BUBBLES: &[(TutorialBubblePosition, &str)] = &[(
+    TutorialBubblePosition::Bounds(Direction::South),
+    "A $*Latest$* chip can act as a memory cell.  Use it in a loop with a \
+     $*Delay$* chip to set a new value based on the old one.",
+)];
 
 pub struct TutorialSumEval {
     table_values: Vec<u64>,

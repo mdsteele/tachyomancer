@@ -61,7 +61,9 @@ pub use self::storage::StorageDepotEval;
 pub use self::translator::TranslatorEval;
 pub use self::turret::TurretEval;
 pub use self::tutor_bvr::{TutorialAddEval, TutorialMuxEval, TutorialOrEval};
-pub use self::tutor_evt::{TutorialDemuxEval, TutorialSumEval};
+pub use self::tutor_evt::{
+    TutorialAmpEval, TutorialDemuxEval, TutorialSumEval,
+};
 pub use self::xunit::XUnitEval;
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
@@ -104,7 +106,9 @@ impl PuzzleExt for Puzzle {
             Puzzle::TutorialAdd | Puzzle::TutorialMux | Puzzle::TutorialOr => {
                 &[Conversation::Basics]
             }
-            Puzzle::TutorialDemux => &[Conversation::AdvancedCircuits],
+            Puzzle::TutorialDemux
+            | Puzzle::TutorialAmp
+            | Puzzle::TutorialSum => &[Conversation::AdvancedCircuits],
             Puzzle::CommandTurret => &[Conversation::UnexpectedCompany],
             _ => &[], // TODO: origin_conversations for other puzzles
         }
@@ -150,6 +154,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_INTERFACES,
+            Puzzle::TutorialAmp => self::tutor_evt::AMP_INTERFACES,
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_INTERFACES,
             Puzzle::TutorialMux => self::tutor_bvr::MUX_INTERFACES,
             Puzzle::TutorialOr => self::tutor_bvr::OR_INTERFACES,
@@ -162,6 +167,7 @@ impl PuzzleExt for Puzzle {
     ) -> &'static [(TutorialBubblePosition, &'static str)] {
         match self {
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_BUBBLES,
+            Puzzle::TutorialAmp => self::tutor_evt::AMP_BUBBLES,
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_BUBBLES,
             Puzzle::TutorialMux => self::tutor_bvr::MUX_BUBBLES,
             Puzzle::TutorialOr => self::tutor_bvr::OR_BUBBLES,
@@ -238,6 +244,7 @@ pub(super) fn new_puzzle_eval(
             Box::new(self::sandbox::SandboxEventEval::new(slots))
         }
         Puzzle::TutorialAdd => Box::new(TutorialAddEval::new(slots)),
+        Puzzle::TutorialAmp => Box::new(TutorialAmpEval::new(slots)),
         Puzzle::TutorialDemux => Box::new(TutorialDemuxEval::new(slots)),
         Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
         Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),

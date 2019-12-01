@@ -1,0 +1,36 @@
+puzzle = "TutorialSum"
+score = 54
+time_steps = 12
+
+[circuit]
+size = [6, 4]
+
+[circuit.chips]
+p1p0 = "f0-Discard"
+p1p2 = "f0-Latest"
+p2p0 = "f0-Sample"
+p2p2 = "t3-Add"
+p4p0 = "f0-Delay"
+p4p1 = "f0-Sample"
+p4p2 = "f2-Latest"
+p5p1 = "f1-Join"
+
+[circuit.wires]
+p0p0e = "TurnLeft"
+p0p1w = "SplitTee"
+p0p2n = "TurnLeft"
+p1p0e = "Stub"
+p1p2e = "Stub"
+p2p1s = "Straight"
+p2p3n = "TurnLeft"
+p3p0e = "Straight"
+p3p0s = "Straight"
+p3p1n = "TurnLeft"
+p3p2e = "TurnLeft"
+p3p3n = "SplitTee"
+p4p1e = "Stub"
+p4p3e = "Straight"
+p5p0s = "TurnLeft"
+p5p2e = "TurnLeft"
+p5p2w = "TurnLeft"
+p5p3w = "TurnLeft"

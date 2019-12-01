@@ -48,7 +48,6 @@ pub enum ChipType {
     Display,
     EggTimer,
     Eq,
-    Filter,
     Halve,
     Inc,
     Join,
@@ -100,7 +99,6 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Or,
         ChipType::Xor,
         ChipType::Mux,
-        ChipType::Filter,
         ChipType::Demux,
     ]),
     ("Memory", &[
@@ -201,10 +199,6 @@ impl ChipType {
             }
             ChipType::Eq => {
                 "Outputs 1 if the two inputs are equal; outputs 0 otherwise."
-            }
-            ChipType::Filter => {
-                "When the behavior wire is 0, events pass through unchanged.  \
-                 When the behavior wire is 1, incoming events are ignored."
             }
             ChipType::Halve => "Outputs half the input, rounded down.",
             ChipType::Join => {
@@ -309,7 +303,6 @@ impl str::FromStr for ChipType {
             "Display" => Ok(ChipType::Display),
             "EggTimer" => Ok(ChipType::EggTimer),
             "Eq" => Ok(ChipType::Eq),
-            "Filter" => Ok(ChipType::Filter),
             "Halve" => Ok(ChipType::Halve),
             "Inc" => Ok(ChipType::Inc),
             "Join" => Ok(ChipType::Join),

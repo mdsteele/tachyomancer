@@ -255,7 +255,6 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         ChipType::Demux => ChipIcon::Demux,
         ChipType::Discard => ChipIcon::Discard,
         ChipType::Eq => ChipIcon::Eq,
-        ChipType::Filter => ChipIcon::Filter,
         ChipType::Halve => ChipIcon::Halve,
         ChipType::Inc => ChipIcon::Inc,
         ChipType::Join => ChipIcon::Join,
@@ -299,7 +298,6 @@ fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
         | ChipIcon::Delay
         | ChipIcon::Demux
         | ChipIcon::Discard
-        | ChipIcon::Filter
         | ChipIcon::Inc
         | ChipIcon::Join
         | ChipIcon::Latest

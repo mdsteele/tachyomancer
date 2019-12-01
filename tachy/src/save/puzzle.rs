@@ -60,6 +60,7 @@ pub enum Puzzle {
     AutomateSensors,
     CommandLander,
     TutorialDemux,
+    TutorialAmp,
     TutorialSum,
     FabricateInc,
     FabricateCounter,
@@ -466,23 +467,34 @@ impl Puzzle {
                      2-bit adders can accept.  Remember to handle carry \
                      bits appropriately.",
             },
-            Puzzle::TutorialDemux => &PuzzleData {
-                title: "1-Bit DEMUX",
+            Puzzle::TutorialAmp => &PuzzleData {
+                title: "Signal Amplifier",
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
-                init_size: (5, 5),
+                init_size: (6, 5),
                 score_units: "Wire Length",
-                graph_bounds: (50, 50),
+                graph_bounds: (150, 150),
                 description:
-                    "Tutorial: Build a 1-bit $*DEMUX$* using event filter \
-                     chips.\n\n\
-                     Once this task is completed, you will be able to use \
-                     $*DEMUX$* chips in future tasks.",
+                    "Construct a signal amplifier with an automatic safety \
+                     cutoff for overly-intense signals.",
                 instructions:
-                    "* $!Your goal is to construct a 1-bit DEMUX.\n\
-                     * $!When an event arrives on $*In$*, it should be \
-                     sent to $*Out0$* if $*Ctrl$* is 0, or to $*Out1$* \
-                     if $*Ctrl$* is 1.",
+                    "* $!When an event arrives on the left side of the board, \
+                     double its value and send it out the right side of the \
+                     board.\n\
+                     * $!However, if the doubled value is greater than 10, no \
+                     event should be sent.",
+            },
+            Puzzle::TutorialDemux => &PuzzleData {
+                title: "Four-Way Demux",
+                kind: PuzzleKind::Tutorial,
+                allow_events: true,
+                init_size: (6, 4),
+                score_units: "Wire Length",
+                graph_bounds: (150, 200),
+                description:
+                    "Route incoming events to one of four destinations, based \
+                     on a 2-bit control value.",
+                instructions: "TODO",
             },
             Puzzle::TutorialMux => &PuzzleData {
                 title: "1-Bit MUX",
@@ -524,7 +536,7 @@ impl Puzzle {
                      NOT ((NOT $/a$/) AND (NOT $/b$/)).",
             },
             Puzzle::TutorialSum => &PuzzleData {
-                title: "Resettable Sum",
+                title: "Running Total",
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
                 init_size: (7, 7),
@@ -532,9 +544,7 @@ impl Puzzle {
                 graph_bounds: (50, 100),
                 description:
                     "Tutorial: Build a circuit for tracking a running \
-                     total, and that can also be reset back to zero.\n\n\
-                     Once this task is completed, you will be able to use \
-                     $*Sum$* chips in future tasks.",
+                     total, and that can also be reset back to zero.",
                 instructions:
                     "* $!The output should start at zero.  When an input \
                      event arrives, its value should be added to the \

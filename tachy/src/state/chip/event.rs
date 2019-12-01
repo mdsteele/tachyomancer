@@ -172,51 +172,6 @@ impl ChipEval for DiscardChipEval {
 
 //===========================================================================//
 
-pub const FILTER_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::North),
-    ],
-    constraints: &[
-        AbstractConstraint::Equal(0, 1),
-        AbstractConstraint::Exact(2, WireSize::One),
-    ],
-    dependencies: &[(0, 1), (2, 1)],
-};
-
-pub struct FilterChipEval {
-    input: usize,
-    output: usize,
-    control: usize,
-}
-
-impl FilterChipEval {
-    pub fn new_evals(
-        slots: &[(usize, WireSize)],
-    ) -> Vec<(usize, Box<dyn ChipEval>)> {
-        debug_assert_eq!(slots.len(), FILTER_CHIP_DATA.ports.len());
-        let chip_eval = FilterChipEval {
-            input: slots[0].0,
-            output: slots[1].0,
-            control: slots[2].0,
-        };
-        vec![(1, Box::new(chip_eval))]
-    }
-}
-
-impl ChipEval for FilterChipEval {
-    fn eval(&mut self, state: &mut CircuitState) {
-        if let Some(value) = state.recv_event(self.input) {
-            if state.recv_behavior(self.control) == 0 {
-                state.send_event(self.output, value);
-            }
-        }
-    }
-}
-
-//===========================================================================//
-
 pub const INC_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),

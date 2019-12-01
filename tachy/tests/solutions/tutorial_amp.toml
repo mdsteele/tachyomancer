@@ -1,0 +1,30 @@
+puzzle = "TutorialAmp"
+score = 42
+time_steps = 14
+
+[circuit]
+size = [6, 3]
+
+[circuit.chips]
+p1p0 = "f0-Discard"
+p1p2 = "f0-Latest"
+p2p0 = "f0-Sample"
+p2p1 = "f3-Add"
+p4p0 = "t0-Demux"
+p4p2 = "t2-Cmp"
+p5p2 = "t2-Const(5)"
+
+[circuit.wires]
+p0p0e = "TurnLeft"
+p0p1w = "SplitTee"
+p0p2n = "TurnLeft"
+p1p0e = "Stub"
+p2p0s = "Stub"
+p2p2n = "SplitTee"
+p3p0e = "Straight"
+p3p1s = "TurnLeft"
+p3p2n = "SplitTee"
+p4p1s = "Straight"
+p4p2e = "Stub"
+p5p0s = "TurnLeft"
+p5p1n = "TurnLeft"

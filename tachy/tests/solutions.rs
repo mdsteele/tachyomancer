@@ -95,6 +95,16 @@ fn tutorial_add() {
 }
 
 #[test]
+fn tutorial_amp() {
+    test_solution("tutorial_amp");
+}
+
+#[test]
+fn tutorial_demux() {
+    test_solution("tutorial_demux");
+}
+
+#[test]
 fn tutorial_mux() {
     test_solution("tutorial_mux");
 }
@@ -102,6 +112,11 @@ fn tutorial_mux() {
 #[test]
 fn tutorial_or() {
     test_solution("tutorial_or");
+}
+
+#[test]
+fn tutorial_sum() {
+    test_solution("tutorial_sum");
 }
 
 fn test_solution(name: &str) {

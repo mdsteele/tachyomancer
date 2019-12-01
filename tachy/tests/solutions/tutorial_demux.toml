@@ -1,0 +1,31 @@
+puzzle = "TutorialDemux"
+score = 52
+time_steps = 8
+
+[circuit]
+size = [4, 7]
+
+[circuit.chips]
+p1p2 = "f0-Demux"
+p2p0 = "t1-Unpack"
+p2p4 = "f0-Demux"
+p3p2 = "f0-Demux"
+
+[circuit.wires]
+p0p2e = "TurnLeft"
+p0p3w = "TurnLeft"
+p1p0e = "TurnLeft"
+p1p1s = "Straight"
+p1p3s = "Straight"
+p1p4n = "TurnLeft"
+p2m1s = "Stub"
+p2p1e = "SplitTee"
+p2p2e = "Straight"
+p2p2s = "Straight"
+p2p3s = "Straight"
+p2p5n = "TurnLeft"
+p3p1s = "TurnLeft"
+p3p2e = "Stub"
+p3p3n = "TurnLeft"
+p3p4e = "Straight"
+p3p5e = "Straight"

@@ -150,7 +150,7 @@ impl ConversationBuilder {
             puzzles.iter().all(|&puzzle| puzzle
                 .origin_conversations()
                 .contains(&self.conv)),
-            "conv={:?} puzzles={:?}",
+            "Conversation {:?} isn't the origin for all of {:?}",
             self.conv,
             puzzles
         );

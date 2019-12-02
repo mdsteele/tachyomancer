@@ -19,14 +19,18 @@
 
 use super::types::ConversationBuilder;
 use crate::mancer::save::Profile;
+use tachy::save::Puzzle;
 
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub(super) fn keeping_time(_profile: &Profile,
-                           builder: &mut ConversationBuilder)
-                           -> Result<(), ()> {
+pub(super) fn keeping_time(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
     builder.esra("Time to learn about clocks.");
+    builder.puzzle(profile, Puzzle::TutorialClock)?;
+    builder.esra("Good job.");
     Ok(())
 }
 

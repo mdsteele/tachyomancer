@@ -1,0 +1,47 @@
+puzzle = "TutorialClock"
+score = 66
+time_steps = 19
+
+[circuit]
+size = [9, 4]
+
+[circuit.chips]
+p0p1 = "t0-Demux"
+p1p1 = "f0-Delay"
+p3p0 = "t0-Latest"
+p3p1 = "t0-Discard"
+p3p2 = "t0-Const(1)"
+p3p3 = "t2-Latest"
+p4p2 = "f1-Sample"
+p4p3 = "f2-Join"
+p5p1 = "t0-Clock"
+p5p3 = "f2-Sample"
+p6p1 = "t0-Clock"
+p8p2 = "t0-Sample"
+
+[circuit.wires]
+m1p1e = "Stub"
+p0p1e = "Stub"
+p0p2s = "Straight"
+p0p3n = "TurnLeft"
+p1p3e = "Straight"
+p2p0e = "TurnLeft"
+p2p1n = "SplitTee"
+p2p3e = "Straight"
+p3p2e = "Stub"
+p3p3e = "Stub"
+p4p0e = "Straight"
+p4p1s = "SplitTee"
+p4p2s = "Stub"
+p4p3e = "Stub"
+p5p0e = "Straight"
+p5p1e = "Stub"
+p6p0e = "Straight"
+p6p3e = "Straight"
+p7p0e = "Straight"
+p7p1s = "TurnLeft"
+p7p2e = "SplitTee"
+p7p3w = "TurnLeft"
+p8p0s = "TurnLeft"
+p8p1s = "Straight"
+p8p2e = "Stub"

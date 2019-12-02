@@ -70,6 +70,7 @@ pub enum Puzzle {
     CommandTurret,
     AutomateTranslator,
     AutomateStorageDepot,
+    TutorialClock,
     FabricateEggTimer,
     FabricateStopwatch,
     AutomateDrillingRig,
@@ -483,6 +484,23 @@ impl Puzzle {
                      board.\n\
                      * $!However, if the doubled value is greater than 10, no \
                      event should be sent.",
+            },
+            Puzzle::TutorialClock => &PuzzleData {
+                title: "Noise Filter",
+                kind: PuzzleKind::Tutorial,
+                allow_events: true,
+                init_size: (6, 5),
+                score_units: "Wire Length",
+                graph_bounds: (150, 200),
+                description:
+                    "Construct a simple signal processor that filters out \
+                     overly-noisy inputs.",
+                instructions:
+                    "* $!When an event arrives on the left side of the board, \
+                     send it out the right side of the board after a delay of \
+                     two time steps.\n\
+                     * $!If another event arrives in the middle of this delay \
+                     period, it should be ignored.",
             },
             Puzzle::TutorialDemux => &PuzzleData {
                 title: "Four-Way Demux",

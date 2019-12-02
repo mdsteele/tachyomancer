@@ -100,6 +100,11 @@ fn tutorial_amp() {
 }
 
 #[test]
+fn tutorial_clock() {
+    test_solution("tutorial_clock");
+}
+
+#[test]
 fn tutorial_demux() {
     test_solution("tutorial_demux");
 }

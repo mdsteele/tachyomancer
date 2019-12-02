@@ -43,8 +43,8 @@ use tachy::state::{
     CircuitEval, FabricateCounterEval, FabricateEggTimerEval,
     FabricateHalveEval, FabricateIncEval, FabricateMulEval,
     FabricateStopwatchEval, FabricateXorEval, TutorialAddEval,
-    TutorialAmpEval, TutorialDemuxEval, TutorialMuxEval, TutorialOrEval,
-    TutorialSumEval,
+    TutorialAmpEval, TutorialClockEval, TutorialDemuxEval, TutorialMuxEval,
+    TutorialOrEval, TutorialSumEval,
 };
 
 //===========================================================================//
@@ -146,6 +146,9 @@ impl VerificationTray {
             }
             Puzzle::TutorialAmp => {
                 FabricationVerifyView::<TutorialAmpEval>::new(right_bottom)
+            }
+            Puzzle::TutorialClock => {
+                FabricationVerifyView::<TutorialClockEval>::new(right_bottom)
             }
             Puzzle::TutorialDemux => {
                 FabricationVerifyView::<TutorialDemuxEval>::new(right_bottom)

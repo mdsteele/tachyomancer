@@ -38,6 +38,7 @@ mod storage;
 mod translator;
 mod turret;
 mod tutor_bvr;
+mod tutor_clock;
 mod tutor_evt;
 mod xunit;
 
@@ -61,6 +62,7 @@ pub use self::storage::StorageDepotEval;
 pub use self::translator::TranslatorEval;
 pub use self::turret::TurretEval;
 pub use self::tutor_bvr::{TutorialAddEval, TutorialMuxEval, TutorialOrEval};
+pub use self::tutor_clock::TutorialClockEval;
 pub use self::tutor_evt::{
     TutorialAmpEval, TutorialDemuxEval, TutorialSumEval,
 };
@@ -100,16 +102,17 @@ impl PuzzleExt for Puzzle {
                 &[Conversation::WhereAreWe, Conversation::LowVisibility]
             }
             Puzzle::CommandLander => &[Conversation::Descent],
+            Puzzle::CommandTurret => &[Conversation::UnexpectedCompany],
             Puzzle::FabricateHalve
             | Puzzle::FabricateMul
             | Puzzle::FabricateXor => &[Conversation::MoreComponents],
             Puzzle::TutorialAdd | Puzzle::TutorialMux | Puzzle::TutorialOr => {
                 &[Conversation::Basics]
             }
-            Puzzle::TutorialDemux
-            | Puzzle::TutorialAmp
+            Puzzle::TutorialAmp
+            | Puzzle::TutorialDemux
             | Puzzle::TutorialSum => &[Conversation::AdvancedCircuits],
-            Puzzle::CommandTurret => &[Conversation::UnexpectedCompany],
+            Puzzle::TutorialClock => &[Conversation::KeepingTime],
             _ => &[], // TODO: origin_conversations for other puzzles
         }
     }
@@ -155,6 +158,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_INTERFACES,
             Puzzle::TutorialAmp => self::tutor_evt::AMP_INTERFACES,
+            Puzzle::TutorialClock => self::tutor_clock::CLOCK_INTERFACES,
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_INTERFACES,
             Puzzle::TutorialMux => self::tutor_bvr::MUX_INTERFACES,
             Puzzle::TutorialOr => self::tutor_bvr::OR_INTERFACES,
@@ -168,6 +172,7 @@ impl PuzzleExt for Puzzle {
         match self {
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_BUBBLES,
             Puzzle::TutorialAmp => self::tutor_evt::AMP_BUBBLES,
+            Puzzle::TutorialClock => self::tutor_clock::CLOCK_BUBBLES,
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_BUBBLES,
             Puzzle::TutorialMux => self::tutor_bvr::MUX_BUBBLES,
             Puzzle::TutorialOr => self::tutor_bvr::OR_BUBBLES,
@@ -245,6 +250,7 @@ pub(super) fn new_puzzle_eval(
         }
         Puzzle::TutorialAdd => Box::new(TutorialAddEval::new(slots)),
         Puzzle::TutorialAmp => Box::new(TutorialAmpEval::new(slots)),
+        Puzzle::TutorialClock => Box::new(TutorialClockEval::new(slots)),
         Puzzle::TutorialDemux => Box::new(TutorialDemuxEval::new(slots)),
         Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
         Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),

@@ -21,8 +21,9 @@ use super::change::GridChange;
 use super::check::{self, WireColor, WireError, WireInfo};
 use super::chip::{new_chip_evals, ChipExt};
 use super::eval::{ChipEval, CircuitEval};
+use super::interface::Interface;
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
-use super::puzzle::{new_puzzle_eval, Interface, PuzzleExt};
+use super::puzzle::{new_puzzle_eval, PuzzleExt};
 use super::size::WireSize;
 use crate::geom::{
     Coords, CoordsDelta, CoordsRect, CoordsSize, Direction, Orientation, Rect,

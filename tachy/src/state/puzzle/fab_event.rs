@@ -17,19 +17,19 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{
-    CircuitState, EvalError, EvalScore, FabricationEval, PuzzleEval,
-};
-use super::iface::{Interface, InterfacePort, InterfacePosition};
-use super::shared;
-use crate::geom::{Coords, Direction};
+use super::super::interface::{Interface, InterfacePort, InterfacePosition};
+use super::shared::{FabricationData, NIL};
+use crate::geom::Direction;
 use crate::state::{PortColor, PortFlow, WireSize};
-use std::u32;
-use std::u64;
 
 //===========================================================================//
 
-pub const COUNTER_INTERFACES: &[Interface] = &[
+pub const FABRICATE_COUNTER_DATA: &FabricationData = &FabricationData {
+    interfaces: COUNTER_INTERFACES,
+    expected_table_values: COUNTER_EXPECTED_TABLE_VALUES,
+};
+
+pub(super) const COUNTER_INTERFACES: &[Interface] = &[
     Interface {
         name: "Set",
         description:
@@ -91,121 +91,38 @@ pub const COUNTER_INTERFACES: &[Interface] = &[
     },
 ];
 
-pub struct FabricateCounterEval {
-    table_values: Vec<u64>,
-    set_wire: usize,
-    inc_wire: usize,
-    dec_wire: usize,
-    out_wire: usize,
-    out_port: (Coords, Direction),
-}
-
-impl FabricateCounterEval {
-    pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
-    ) -> FabricateCounterEval {
-        debug_assert_eq!(slots.len(), 4);
-        debug_assert_eq!(slots[0].len(), 1);
-        debug_assert_eq!(slots[1].len(), 1);
-        debug_assert_eq!(slots[2].len(), 1);
-        debug_assert_eq!(slots[3].len(), 1);
-        FabricateCounterEval {
-            table_values: FabricateCounterEval::expected_table_values()
-                .to_vec(),
-            set_wire: slots[0][0].1,
-            inc_wire: slots[1][0].1,
-            dec_wire: slots[2][0].1,
-            out_wire: slots[3][0].1,
-            out_port: slots[3][0].0,
-        }
-    }
-}
-
-impl PuzzleEval for FabricateCounterEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        let expected = FabricateCounterEval::expected_table_values();
-        let start = (state.time_step() as usize) * 4;
-        if start >= expected.len() {
-            Some(EvalScore::WireLength)
-        } else {
-            let slice = &expected[start..];
-            if slice[0] <= (u32::MAX as u64) {
-                state.send_event(self.set_wire, slice[0] as u32);
-            }
-            if slice[1] <= (u32::MAX as u64) {
-                state.send_event(self.inc_wire, slice[1] as u32);
-            }
-            if slice[2] <= (u32::MAX as u64) {
-                state.send_event(self.dec_wire, slice[2] as u32);
-            }
-            None
-        }
-    }
-
-    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let expected_table = FabricateCounterEval::expected_table_values();
-        let start = (state.time_step() as usize) * 4;
-        if start >= expected_table.len() {
-            return vec![];
-        }
-        let expected_output = expected_table[start + 3] as u32;
-        let actual_output = state.recv_behavior(self.out_wire);
-        if actual_output != expected_output {
-            let message = format!(
-                "Expected output {} at time step {}, but output was {}",
-                expected_output,
-                state.time_step(),
-                actual_output
-            );
-            vec![state.port_error(self.out_port, message)]
-        } else {
-            vec![]
-        }
-    }
-}
-
-impl FabricationEval for FabricateCounterEval {
-    fn table_column_names() -> &'static [&'static str] {
-        &["Set", "Inc", "Dec", "Out"]
-    }
-
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn expected_table_values() -> &'static [u64] {
-        &[
-            u64::MAX, u64::MAX, u64::MAX,  0,
-            u64::MAX,        0, u64::MAX,  1,
-            u64::MAX,        0, u64::MAX,  2,
-            u64::MAX,        0, u64::MAX,  3,
-            u64::MAX, u64::MAX,        0,  2,
-            u64::MAX, u64::MAX,        0,  1,
-            u64::MAX, u64::MAX,        0,  0,
-            u64::MAX, u64::MAX,        0, 15,
-            u64::MAX, u64::MAX,        0, 14,
-            u64::MAX,        0, u64::MAX, 15,
-            u64::MAX,        0, u64::MAX,  0,
-            u64::MAX,        0, u64::MAX,  1,
-                   7, u64::MAX, u64::MAX,  7,
-            u64::MAX,        0, u64::MAX,  8,
-                  11, u64::MAX, u64::MAX, 11,
-            u64::MAX, u64::MAX,        0, 10,
-                   3,        0, u64::MAX,  4,
-                  13, u64::MAX,        0, 12,
-            u64::MAX,        0,        0, 12,
-                   5,        0,        0,  5,
-        ]
-    }
-
-    fn table_values(&self) -> &[u64] {
-        &self.table_values
-    }
-}
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const COUNTER_EXPECTED_TABLE_VALUES: &[u32] = &[
+    NIL, NIL, NIL,  0,
+    NIL,   0, NIL,  1,
+    NIL,   0, NIL,  2,
+    NIL,   0, NIL,  3,
+    NIL, NIL,   0,  2,
+    NIL, NIL,   0,  1,
+    NIL, NIL,   0,  0,
+    NIL, NIL,   0, 15,
+    NIL, NIL,   0, 14,
+    NIL,   0, NIL, 15,
+    NIL,   0, NIL,  0,
+    NIL,   0, NIL,  1,
+      7, NIL, NIL,  7,
+    NIL,   0, NIL,  8,
+     11, NIL, NIL, 11,
+    NIL, NIL,   0, 10,
+      3,   0, NIL,  4,
+     13, NIL,   0, 12,
+    NIL,   0,   0, 12,
+      5,   0,   0,  5,
+];
 
 //===========================================================================//
 
-pub const INC_INTERFACES: &[Interface] = &[
+pub const FABRICATE_INC_DATA: &FabricationData = &FabricationData {
+    interfaces: INC_INTERFACES,
+    expected_table_values: INC_EXPECTED_TABLE_VALUES,
+};
+
+pub(super) const INC_INTERFACES: &[Interface] = &[
     Interface {
         name: "InE",
         description: "Input events arrive here.",
@@ -249,121 +166,16 @@ pub const INC_INTERFACES: &[Interface] = &[
     },
 ];
 
-pub struct FabricateIncEval {
-    table_values: Vec<u64>,
-    input_e_wire: usize,
-    input_b_wire: usize,
-    output_wire: usize,
-    output_port: (Coords, Direction),
-    has_received_output_event: bool,
-}
-
-impl FabricateIncEval {
-    pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
-    ) -> FabricateIncEval {
-        debug_assert_eq!(slots.len(), 3);
-        debug_assert_eq!(slots[0].len(), 1);
-        debug_assert_eq!(slots[1].len(), 1);
-        debug_assert_eq!(slots[2].len(), 1);
-        FabricateIncEval {
-            table_values: FabricateIncEval::expected_table_values().to_vec(),
-            input_e_wire: slots[0][0].1,
-            input_b_wire: slots[1][0].1,
-            output_wire: slots[2][0].1,
-            output_port: slots[2][0].0,
-            has_received_output_event: false,
-        }
-    }
-}
-
-impl PuzzleEval for FabricateIncEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        self.has_received_output_event = false;
-        let expected = FabricateIncEval::expected_table_values();
-        let start = (state.time_step() as usize) * 3;
-        if start >= expected.len() {
-            Some(EvalScore::WireLength)
-        } else {
-            let slice = &expected[start..];
-            if slice[0] <= (u32::MAX as u64) {
-                state.send_event(self.input_e_wire, slice[0] as u32);
-            }
-            state.send_behavior(self.input_b_wire, slice[1] as u32);
-            None
-        }
-    }
-
-    fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
-        let expected_table = FabricateIncEval::expected_table_values();
-        let start = (time_step as usize) * 3;
-        if start >= expected_table.len() {
-            return vec![];
-        }
-        let expected_output = expected_table[start + 2];
-
-        let opt_actual_output = state.recv_event(self.output_wire);
-        self.table_values[start + 2] =
-            shared::opt_u32_to_u64(opt_actual_output);
-
-        let mut errors = Vec::new();
-        shared::end_cycle_check_event_output(
-            state,
-            opt_actual_output,
-            expected_output,
-            &mut self.has_received_output_event,
-            self.output_port,
-            &mut errors,
-        );
-        return errors;
-    }
-
-    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let expected_table = FabricateIncEval::expected_table_values();
-        let start = (state.time_step() as usize) * 3;
-        if start >= expected_table.len() {
-            return vec![];
-        }
-        let expected_output = expected_table[start + 2];
-
-        let mut errors = Vec::new();
-        shared::end_time_step_check_event_output(
-            state,
-            expected_output,
-            self.has_received_output_event,
-            self.output_port,
-            &mut errors,
-        );
-        return errors;
-    }
-}
-
-impl FabricationEval for FabricateIncEval {
-    fn table_column_names() -> &'static [&'static str] {
-        &["InE", "InB", "Out"]
-    }
-
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn expected_table_values() -> &'static [u64] {
-        &[
-            4, 7, 11,
-            u64::MAX, 12, u64::MAX,
-            6, 0, 6,
-            9, 1, 10,
-            u64::MAX, 8, u64::MAX,
-            0, 14, 14,
-            1, 2, 3,
-            5, 10, 15,
-        ]
-    }
-
-    fn table_values(&self) -> &[u64] {
-        &self.table_values
-    }
-}
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const INC_EXPECTED_TABLE_VALUES: &[u32] = &[
+      4,  7,  11,
+    NIL, 12, NIL,
+      6,  0,   6,
+      9,  1,  10,
+    NIL,  8, NIL,
+      0, 14,  14,
+      1,  2,   3,
+      5, 10,  15,
+];
 
 //===========================================================================//

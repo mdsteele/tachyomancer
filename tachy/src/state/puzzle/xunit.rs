@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
-use super::iface::{Interface, InterfacePort, InterfacePosition};
+use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::state::{PortColor, PortFlow, WireSize};
 use std::collections::{BTreeSet, HashMap};

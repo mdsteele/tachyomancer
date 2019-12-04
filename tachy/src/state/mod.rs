@@ -22,6 +22,7 @@ mod check;
 mod chip;
 mod edit;
 mod eval;
+mod interface;
 mod port;
 mod puzzle;
 mod size;
@@ -34,9 +35,8 @@ pub use self::check::{
 };
 pub use self::chip::ChipExt;
 pub use self::edit::{ChipsIter, EditGrid, WireFragmentsIter};
-pub use self::eval::{
-    CircuitEval, EvalError, EvalResult, EvalScore, FabricationEval,
-};
+pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore};
+pub use self::interface::{Interface, InterfacePort};
 pub use self::port::{
     PortColor, PortConstraint, PortDependency, PortFlow, PortSpec,
 };

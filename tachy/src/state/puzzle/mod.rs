@@ -24,7 +24,6 @@ mod fab_clock;
 mod fab_event;
 mod grapple;
 mod heliostat;
-mod iface;
 mod lander;
 mod mining;
 mod reactor;
@@ -45,30 +44,36 @@ mod xunit;
 pub use self::beacon::BeaconEval;
 pub use self::drill::DrillingRigEval;
 pub use self::fab_arith::{
-    FabricateHalveEval, FabricateMulEval, FabricateXorEval,
+    FABRICATE_HALVE_DATA, FABRICATE_MUL_DATA, FABRICATE_XOR_DATA,
 };
-pub use self::fab_clock::{FabricateEggTimerEval, FabricateStopwatchEval};
-pub use self::fab_event::{FabricateCounterEval, FabricateIncEval};
+pub use self::fab_clock::{
+    FABRICATE_EGG_TIMER_DATA, FABRICATE_STOPWATCH_DATA,
+};
+pub use self::fab_event::{FABRICATE_COUNTER_DATA, FABRICATE_INC_DATA};
 pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
-pub use self::iface::Interface;
 pub use self::lander::LanderEval;
 pub use self::mining::MiningRobotEval;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
-pub use self::shared::TutorialBubblePosition;
+pub use self::shared::{
+    FabricationData, FabricationEval, TutorialBubblePosition,
+};
 pub use self::shields::ShieldsEval;
 pub use self::storage::StorageDepotEval;
 pub use self::translator::TranslatorEval;
 pub use self::turret::TurretEval;
-pub use self::tutor_bvr::{TutorialAddEval, TutorialMuxEval, TutorialOrEval};
-pub use self::tutor_clock::TutorialClockEval;
+pub use self::tutor_bvr::{
+    TUTORIAL_ADD_DATA, TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA,
+};
+pub use self::tutor_clock::TUTORIAL_CLOCK_DATA;
 pub use self::tutor_evt::{
-    TutorialAmpEval, TutorialDemuxEval, TutorialSumEval,
+    TUTORIAL_AMP_DATA, TUTORIAL_DEMUX_DATA, TUTORIAL_SUM_DATA,
 };
 pub use self::xunit::XUnitEval;
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
+use super::interface::Interface;
 use crate::geom::{Coords, Direction};
 use crate::save::{
     ChipSet, ChipType, Conversation, Puzzle, PuzzleKind, CHIP_CATEGORIES,
@@ -231,30 +236,54 @@ pub(super) fn new_puzzle_eval(
         Puzzle::CommandLander => Box::new(LanderEval::new(slots)),
         Puzzle::CommandShields => Box::new(ShieldsEval::new(slots)),
         Puzzle::CommandTurret => Box::new(TurretEval::new(slots)),
-        Puzzle::FabricateCounter => Box::new(FabricateCounterEval::new(slots)),
+        Puzzle::FabricateCounter => {
+            Box::new(FabricationEval::new(FABRICATE_COUNTER_DATA, slots))
+        }
         Puzzle::FabricateEggTimer => {
-            Box::new(FabricateEggTimerEval::new(slots))
+            Box::new(FabricationEval::new(FABRICATE_EGG_TIMER_DATA, slots))
         }
-        Puzzle::FabricateHalve => Box::new(FabricateHalveEval::new(slots)),
-        Puzzle::FabricateInc => Box::new(FabricateIncEval::new(slots)),
-        Puzzle::FabricateMul => Box::new(FabricateMulEval::new(slots)),
+        Puzzle::FabricateHalve => {
+            Box::new(FabricationEval::new(FABRICATE_HALVE_DATA, slots))
+        }
+        Puzzle::FabricateInc => {
+            Box::new(FabricationEval::new(FABRICATE_INC_DATA, slots))
+        }
+        Puzzle::FabricateMul => {
+            Box::new(FabricationEval::new(FABRICATE_MUL_DATA, slots))
+        }
         Puzzle::FabricateStopwatch => {
-            Box::new(FabricateStopwatchEval::new(slots))
+            Box::new(FabricationEval::new(FABRICATE_STOPWATCH_DATA, slots))
         }
-        Puzzle::FabricateXor => Box::new(FabricateXorEval::new(slots)),
+        Puzzle::FabricateXor => {
+            Box::new(FabricationEval::new(FABRICATE_XOR_DATA, slots))
+        }
         Puzzle::SandboxBehavior => {
             Box::new(self::sandbox::SandboxBehaviorEval::new(slots))
         }
         Puzzle::SandboxEvent => {
             Box::new(self::sandbox::SandboxEventEval::new(slots))
         }
-        Puzzle::TutorialAdd => Box::new(TutorialAddEval::new(slots)),
-        Puzzle::TutorialAmp => Box::new(TutorialAmpEval::new(slots)),
-        Puzzle::TutorialClock => Box::new(TutorialClockEval::new(slots)),
-        Puzzle::TutorialDemux => Box::new(TutorialDemuxEval::new(slots)),
-        Puzzle::TutorialMux => Box::new(TutorialMuxEval::new(slots)),
-        Puzzle::TutorialOr => Box::new(TutorialOrEval::new(slots)),
-        Puzzle::TutorialSum => Box::new(TutorialSumEval::new(slots)),
+        Puzzle::TutorialAdd => {
+            Box::new(FabricationEval::new(TUTORIAL_ADD_DATA, slots))
+        }
+        Puzzle::TutorialAmp => {
+            Box::new(FabricationEval::new(TUTORIAL_AMP_DATA, slots))
+        }
+        Puzzle::TutorialClock => {
+            Box::new(FabricationEval::new(TUTORIAL_CLOCK_DATA, slots))
+        }
+        Puzzle::TutorialDemux => {
+            Box::new(FabricationEval::new(TUTORIAL_DEMUX_DATA, slots))
+        }
+        Puzzle::TutorialMux => {
+            Box::new(FabricationEval::new(TUTORIAL_MUX_DATA, slots))
+        }
+        Puzzle::TutorialOr => {
+            Box::new(FabricationEval::new(TUTORIAL_OR_DATA, slots))
+        }
+        Puzzle::TutorialSum => {
+            Box::new(FabricationEval::new(TUTORIAL_SUM_DATA, slots))
+        }
     }
 }
 

@@ -31,12 +31,12 @@ pub(super) enum InterfacePosition {
 
 //===========================================================================//
 
-pub(super) struct InterfacePort {
-    pub(super) name: &'static str,
-    pub(super) description: &'static str,
-    pub(super) flow: PortFlow,
-    pub(super) color: PortColor,
-    pub(super) size: WireSize,
+pub struct InterfacePort {
+    pub name: &'static str,
+    pub description: &'static str,
+    pub flow: PortFlow,
+    pub color: PortColor,
+    pub size: WireSize,
 }
 
 //===========================================================================//

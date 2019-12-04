@@ -442,16 +442,6 @@ impl_downcast!(PuzzleEval);
 
 //===========================================================================//
 
-pub trait FabricationEval: PuzzleEval {
-    fn table_column_names() -> &'static [&'static str];
-
-    fn expected_table_values() -> &'static [u64];
-
-    fn table_values(&self) -> &[u64];
-}
-
-//===========================================================================//
-
 pub trait ChipEval {
     /// Called once per cycle, sometime during this chip's subcycle; updates
     /// outputs and/or internal state based on inputs.

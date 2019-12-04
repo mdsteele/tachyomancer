@@ -40,11 +40,11 @@ use cgmath::{vec2, Deg, Matrix4, Point2};
 use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::save::Puzzle;
 use tachy::state::{
-    CircuitEval, FabricateCounterEval, FabricateEggTimerEval,
-    FabricateHalveEval, FabricateIncEval, FabricateMulEval,
-    FabricateStopwatchEval, FabricateXorEval, TutorialAddEval,
-    TutorialAmpEval, TutorialClockEval, TutorialDemuxEval, TutorialMuxEval,
-    TutorialOrEval, TutorialSumEval,
+    CircuitEval, FABRICATE_COUNTER_DATA, FABRICATE_EGG_TIMER_DATA,
+    FABRICATE_HALVE_DATA, FABRICATE_INC_DATA, FABRICATE_MUL_DATA,
+    FABRICATE_STOPWATCH_DATA, FABRICATE_XOR_DATA, TUTORIAL_ADD_DATA,
+    TUTORIAL_AMP_DATA, TUTORIAL_CLOCK_DATA, TUTORIAL_DEMUX_DATA,
+    TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA, TUTORIAL_SUM_DATA,
 };
 
 //===========================================================================//
@@ -118,49 +118,52 @@ impl VerificationTray {
             Puzzle::CommandTurret => {
                 self::turret::TurretVerifyView::new(right_bottom)
             }
-            Puzzle::FabricateCounter => FabricationVerifyView::<
-                FabricateCounterEval,
-            >::new(right_bottom),
-            Puzzle::FabricateEggTimer => FabricationVerifyView::<
-                FabricateEggTimerEval,
-            >::new(right_bottom),
+            Puzzle::FabricateCounter => FabricationVerifyView::new(
+                right_bottom,
+                FABRICATE_COUNTER_DATA,
+            ),
+            Puzzle::FabricateEggTimer => FabricationVerifyView::new(
+                right_bottom,
+                FABRICATE_EGG_TIMER_DATA,
+            ),
             Puzzle::FabricateHalve => {
-                FabricationVerifyView::<FabricateHalveEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, FABRICATE_HALVE_DATA)
             }
             Puzzle::FabricateInc => {
-                FabricationVerifyView::<FabricateIncEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, FABRICATE_INC_DATA)
             }
             Puzzle::FabricateMul => {
-                FabricationVerifyView::<FabricateMulEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, FABRICATE_MUL_DATA)
             }
-            Puzzle::FabricateStopwatch => FabricationVerifyView::<
-                FabricateStopwatchEval,
-            >::new(right_bottom),
+            Puzzle::FabricateStopwatch => FabricationVerifyView::new(
+                right_bottom,
+                FABRICATE_STOPWATCH_DATA,
+            ),
             Puzzle::FabricateXor => {
-                FabricationVerifyView::<FabricateXorEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, FABRICATE_XOR_DATA)
             }
             Puzzle::SandboxBehavior => self::shared::NullVerifyView::new(),
             Puzzle::SandboxEvent => self::shared::NullVerifyView::new(),
             Puzzle::TutorialAdd => {
-                FabricationVerifyView::<TutorialAddEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, TUTORIAL_ADD_DATA)
             }
             Puzzle::TutorialAmp => {
-                FabricationVerifyView::<TutorialAmpEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, TUTORIAL_AMP_DATA)
             }
             Puzzle::TutorialClock => {
-                FabricationVerifyView::<TutorialClockEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, TUTORIAL_CLOCK_DATA)
             }
             Puzzle::TutorialDemux => {
-                FabricationVerifyView::<TutorialDemuxEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, TUTORIAL_DEMUX_DATA)
             }
             Puzzle::TutorialMux => {
-                FabricationVerifyView::<TutorialMuxEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, TUTORIAL_MUX_DATA)
             }
             Puzzle::TutorialOr => {
-                FabricationVerifyView::<TutorialOrEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, TUTORIAL_OR_DATA)
             }
             Puzzle::TutorialSum => {
-                FabricationVerifyView::<TutorialSumEval>::new(right_bottom)
+                FabricationVerifyView::new(right_bottom, TUTORIAL_SUM_DATA)
             }
         };
         let subview_size = subview.size();

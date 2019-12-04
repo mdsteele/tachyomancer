@@ -17,18 +17,19 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{
-    CircuitState, EvalError, EvalScore, FabricationEval, PuzzleEval,
-};
-use super::iface::{Interface, InterfacePort, InterfacePosition};
-use crate::geom::{Coords, Direction};
+use super::super::interface::{Interface, InterfacePort, InterfacePosition};
+use super::shared::FabricationData;
+use crate::geom::Direction;
 use crate::state::{PortColor, PortFlow, WireSize};
-use std::u32;
-use std::u64;
 
 //===========================================================================//
 
-pub const XOR_INTERFACES: &[Interface] = &[
+pub const FABRICATE_XOR_DATA: &FabricationData = &FabricationData {
+    interfaces: XOR_INTERFACES,
+    expected_table_values: XOR_EXPECTED_TABLE_VALUES,
+};
+
+pub(super) const XOR_INTERFACES: &[Interface] = &[
     Interface {
         name: "In1",
         description: "First input (0 or 1).",
@@ -71,87 +72,22 @@ pub const XOR_INTERFACES: &[Interface] = &[
     },
 ];
 
-pub struct FabricateXorEval {
-    table_values: Vec<u64>,
-    input1_wire: usize,
-    input2_wire: usize,
-    output_wire: usize,
-    output_port: (Coords, Direction),
-}
-
-impl FabricateXorEval {
-    pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
-    ) -> FabricateXorEval {
-        debug_assert_eq!(slots.len(), 3);
-        debug_assert_eq!(slots[0].len(), 1);
-        debug_assert_eq!(slots[1].len(), 1);
-        debug_assert_eq!(slots[2].len(), 1);
-        FabricateXorEval {
-            table_values: FabricateXorEval::expected_table_values().to_vec(),
-            input1_wire: slots[0][0].1,
-            input2_wire: slots[1][0].1,
-            output_wire: slots[2][0].1,
-            output_port: slots[2][0].0,
-        }
-    }
-}
-
-impl PuzzleEval for FabricateXorEval {
-    fn seconds_per_time_step(&self) -> f64 {
-        0.2
-    }
-
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        let time_step = state.time_step();
-        if time_step >= 4 {
-            Some(EvalScore::WireLength)
-        } else {
-            state.send_behavior(self.input1_wire, time_step & 0x1);
-            state.send_behavior(self.input2_wire, (time_step & 0x2) >> 1);
-            None
-        }
-    }
-
-    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let input1 = state.recv_behavior(self.input1_wire);
-        let input2 = state.recv_behavior(self.input2_wire);
-        let expected = input1 ^ input2;
-        let actual = state.recv_behavior(self.output_wire);
-        self.table_values[3 * (state.time_step() as usize) + 2] =
-            actual as u64;
-        if actual != expected {
-            let message = format!(
-                "Expected output {} for inputs {} and {}, but output was {}",
-                expected, input1, input2, actual
-            );
-            vec![state.port_error(self.output_port, message)]
-        } else {
-            vec![]
-        }
-    }
-}
-
-impl FabricationEval for FabricateXorEval {
-    fn table_column_names() -> &'static [&'static str] {
-        &["In1", "In2", "Out"]
-    }
-
-    fn expected_table_values() -> &'static [u64] {
-        &[0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0]
-    }
-
-    fn table_values(&self) -> &[u64] {
-        &self.table_values
-    }
-}
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const XOR_EXPECTED_TABLE_VALUES: &[u32] = &[
+    0, 0, 0,
+    1, 0, 1,
+    0, 1, 1,
+    1, 1, 0,
+];
 
 //===========================================================================//
 
-pub const MUL_INTERFACES: &[Interface] = &[
+pub const FABRICATE_MUL_DATA: &FabricationData = &FabricationData {
+    interfaces: MUL_INTERFACES,
+    expected_table_values: MUL_EXPECTED_TABLE_VALUES,
+};
+
+pub(super) const MUL_INTERFACES: &[Interface] = &[
     Interface {
         name: "In1",
         description: "First input (from 0 to 255).",
@@ -195,97 +131,28 @@ pub const MUL_INTERFACES: &[Interface] = &[
     },
 ];
 
-pub struct FabricateMulEval {
-    table_values: Vec<u64>,
-    input1_wire: usize,
-    input2_wire: usize,
-    output_wire: usize,
-    output_port: (Coords, Direction),
-}
-
-impl FabricateMulEval {
-    pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
-    ) -> FabricateMulEval {
-        debug_assert_eq!(slots.len(), 3);
-        debug_assert_eq!(slots[0].len(), 1);
-        debug_assert_eq!(slots[1].len(), 1);
-        debug_assert_eq!(slots[2].len(), 1);
-        FabricateMulEval {
-            table_values: FabricateMulEval::expected_table_values().to_vec(),
-            input1_wire: slots[0][0].1,
-            input2_wire: slots[1][0].1,
-            output_wire: slots[2][0].1,
-            output_port: slots[2][0].0,
-        }
-    }
-}
-
-impl PuzzleEval for FabricateMulEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        let expected = FabricateMulEval::expected_table_values();
-        let start = (state.time_step() as usize) * 3;
-        if start >= expected.len() {
-            Some(EvalScore::WireLength)
-        } else {
-            let slice = &expected[start..];
-            state.send_behavior(self.input1_wire, slice[0] as u32);
-            state.send_behavior(self.input2_wire, slice[1] as u32);
-            None
-        }
-    }
-
-    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let input1 = state.recv_behavior(self.input1_wire);
-        let input2 = state.recv_behavior(self.input2_wire);
-        let expected = input1 * input2;
-        let actual = state.recv_behavior(self.output_wire);
-        self.table_values[3 * (state.time_step() as usize) + 2] =
-            actual as u64;
-        if actual != expected {
-            let message = format!(
-                "Expected output {} for inputs {} and {}, but output was {}",
-                expected, input1, input2, actual
-            );
-            vec![state.port_error(self.output_port, message)]
-        } else {
-            vec![]
-        }
-    }
-}
-
-impl FabricationEval for FabricateMulEval {
-    fn table_column_names() -> &'static [&'static str] {
-        &["In1", "In2", "Out"]
-    }
-
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn expected_table_values() -> &'static [u64] {
-        &[
-            4, 3, 12,
-            3, 10, 30,
-            20, 12, 240,
-            1, 197, 197,
-            83, 0, 0,
-            13, 19, 247,
-            12, 1, 12,
-            2, 73, 146,
-            0, 7, 0,
-            7, 13, 91,
-        ]
-    }
-
-    fn table_values(&self) -> &[u64] {
-        &self.table_values
-    }
-}
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const MUL_EXPECTED_TABLE_VALUES: &[u32] = &[
+     4,   3,  12,
+     3,  10,  30,
+    20,  12, 240,
+     1, 197, 197,
+    83,   0,   0,
+    13,  19, 247,
+    12,   1,  12,
+     2,  73, 146,
+     0,   7,   0,
+     7,  13,  91,
+];
 
 //===========================================================================//
 
-pub const HALVE_INTERFACES: &[Interface] = &[
+pub const FABRICATE_HALVE_DATA: &FabricationData = &FabricationData {
+    interfaces: HALVE_INTERFACES,
+    expected_table_values: HALVE_EXPECTED_TABLE_VALUES,
+};
+
+pub(super) const HALVE_INTERFACES: &[Interface] = &[
     Interface {
         name: "In",
         description: "Input (from 0 to 15).",
@@ -314,76 +181,24 @@ pub const HALVE_INTERFACES: &[Interface] = &[
     },
 ];
 
-pub struct FabricateHalveEval {
-    table_values: Vec<u64>,
-    input_wire: usize,
-    output_wire: usize,
-    output_port: (Coords, Direction),
-}
-
-impl FabricateHalveEval {
-    pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
-    ) -> FabricateHalveEval {
-        debug_assert_eq!(slots.len(), 2);
-        debug_assert_eq!(slots[0].len(), 1);
-        debug_assert_eq!(slots[1].len(), 1);
-        FabricateHalveEval {
-            table_values: FabricateHalveEval::expected_table_values().to_vec(),
-            input_wire: slots[0][0].1,
-            output_wire: slots[1][0].1,
-            output_port: slots[1][0].0,
-        }
-    }
-}
-
-impl PuzzleEval for FabricateHalveEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        let expected = FabricateHalveEval::expected_table_values();
-        let start = (state.time_step() as usize) * 2;
-        if start >= expected.len() {
-            Some(EvalScore::WireLength)
-        } else {
-            state.send_behavior(self.input_wire, expected[start] as u32);
-            None
-        }
-    }
-
-    fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let time_step = state.time_step();
-        let input = state.recv_behavior(self.input_wire);
-        let expected = input >> 1;
-        let actual = state.recv_behavior(self.output_wire);
-        self.table_values[2 * (time_step as usize) + 1] = actual as u64;
-        if actual != expected {
-            let message = format!(
-                "Expected output {} for input {}, but output was {}",
-                expected, input, actual
-            );
-            vec![state.port_error(self.output_port, message)]
-        } else {
-            vec![]
-        }
-    }
-}
-
-impl FabricationEval for FabricateHalveEval {
-    fn table_column_names() -> &'static [&'static str] {
-        &["In", "Out"]
-    }
-
-    #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn expected_table_values() -> &'static [u64] {
-        &[0, 0, 1, 0, 2, 1, 3, 1, 4, 2, 5, 2, 6, 3, 7, 3,
-          8, 4, 9, 4, 10, 5, 11, 5, 12, 6, 13, 6, 14, 7, 15, 7]
-    }
-
-    fn table_values(&self) -> &[u64] {
-        &self.table_values
-    }
-}
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const HALVE_EXPECTED_TABLE_VALUES: &[u32] = &[
+     0, 0,
+     1, 0,
+     2, 1,
+     3, 1,
+     4, 2,
+     5, 2,
+     6, 3,
+     7, 3,
+     8, 4,
+     9, 4,
+    10, 5,
+    11, 5,
+    12, 6,
+    13, 6,
+    14, 7,
+    15, 7,
+];
 
 //===========================================================================//

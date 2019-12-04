@@ -43,7 +43,9 @@ pub enum ChipAvailability {
     InteractiveOnly,
     OnlyIn(&'static [Puzzle]),
     StartingWith(Puzzle),
+    StartingWithButNotIn(Puzzle, &'static [Puzzle]),
     UnlockedBy(Puzzle),
+    UnlockedByButOnlyIn(Puzzle, &'static [Puzzle]),
 }
 
 //===========================================================================//
@@ -116,10 +118,7 @@ impl ChipExt for ChipType {
             ChipType::Discard | ChipType::Latest | ChipType::Sample => {
                 ChipAvailability::StartingWith(Puzzle::TutorialAmp)
             }
-            ChipType::Clock
-            | ChipType::Delay
-            | ChipType::Join
-            | ChipType::Ram => {
+            ChipType::Delay | ChipType::Join => {
                 ChipAvailability::StartingWith(Puzzle::TutorialSum)
             }
             ChipType::Inc => {
@@ -127,6 +126,19 @@ impl ChipExt for ChipType {
             }
             ChipType::Counter => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateCounter)
+            }
+            ChipType::Ram => ChipAvailability::StartingWithButNotIn(
+                Puzzle::TutorialRam,
+                &[
+                    Puzzle::TutorialClock,
+                    Puzzle::FabricateEggTimer,
+                    Puzzle::FabricateStopwatch,
+                    Puzzle::AutomateDrillingRig,
+                    Puzzle::CommandShields,
+                ],
+            ),
+            ChipType::Clock => {
+                ChipAvailability::StartingWith(Puzzle::TutorialClock)
             }
             ChipType::EggTimer => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateEggTimer)
@@ -137,14 +149,14 @@ impl ChipExt for ChipType {
             ChipType::Button(_) | ChipType::Toggle(_) => {
                 ChipAvailability::InteractiveOnly
             }
-            ChipType::Random => {
-                ChipAvailability::OnlyIn(&[Puzzle::SandboxEvent])
-            }
-            ChipType::Screen => {
-                // TODO: Only unlock Screen chip for sandbox once the RAM
-                //   tutorial is solved.
-                ChipAvailability::OnlyIn(&[Puzzle::SandboxEvent])
-            }
+            ChipType::Random => ChipAvailability::UnlockedByButOnlyIn(
+                Puzzle::TutorialAmp,
+                &[Puzzle::SandboxEvent],
+            ),
+            ChipType::Screen => ChipAvailability::UnlockedByButOnlyIn(
+                Puzzle::TutorialRam,
+                &[Puzzle::SandboxEvent],
+            ),
         }
     }
 

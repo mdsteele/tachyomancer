@@ -120,6 +120,11 @@ fn tutorial_or() {
 }
 
 #[test]
+fn tutorial_ram() {
+    test_solution("tutorial_ram");
+}
+
+#[test]
 fn tutorial_sum() {
     test_solution("tutorial_sum");
 }

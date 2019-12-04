@@ -19,14 +19,18 @@
 
 use super::types::ConversationBuilder;
 use crate::mancer::save::Profile;
+use tachy::save::Puzzle;
 
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub(super) fn memory(_profile: &Profile,
-                     builder: &mut ConversationBuilder)
-                     -> Result<(), ()> {
+pub(super) fn memory(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
     builder.esra("Time to learn about RAM.");
+    builder.puzzle(profile, Puzzle::TutorialRam)?;
+    builder.esra("Good job.");
     Ok(())
 }
 

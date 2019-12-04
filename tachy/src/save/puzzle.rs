@@ -68,6 +68,7 @@ pub enum Puzzle {
     AutomateBeacon,
     AutomateRobotArm,
     CommandTurret,
+    TutorialRam,
     AutomateTranslator,
     AutomateStorageDepot,
     TutorialClock,
@@ -552,6 +553,16 @@ impl Puzzle {
                      be 1 if either input is 1, or 0 if both inputs are 0.\n\
                      * $!Note that ($/a$/ OR $/b$/) is equivalent to \
                      NOT ((NOT $/a$/) AND (NOT $/b$/)).",
+            },
+            Puzzle::TutorialRam => &PuzzleData {
+                title: "Stack Storage",
+                kind: PuzzleKind::Tutorial,
+                allow_events: true,
+                init_size: (6, 5),
+                score_units: "Wire Length",
+                graph_bounds: (150, 200),
+                description: "TODO",
+                instructions: "TODO",
             },
             Puzzle::TutorialSum => &PuzzleData {
                 title: "Running Total",

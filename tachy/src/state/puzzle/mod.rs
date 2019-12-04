@@ -39,6 +39,7 @@ mod turret;
 mod tutor_bvr;
 mod tutor_clock;
 mod tutor_evt;
+mod tutor_ram;
 mod xunit;
 
 pub use self::beacon::BeaconEval;
@@ -70,6 +71,7 @@ pub use self::tutor_clock::TUTORIAL_CLOCK_DATA;
 pub use self::tutor_evt::{
     TUTORIAL_AMP_DATA, TUTORIAL_DEMUX_DATA, TUTORIAL_SUM_DATA,
 };
+pub use self::tutor_ram::TUTORIAL_RAM_DATA;
 pub use self::xunit::XUnitEval;
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
@@ -118,6 +120,7 @@ impl PuzzleExt for Puzzle {
             | Puzzle::TutorialDemux
             | Puzzle::TutorialSum => &[Conversation::AdvancedCircuits],
             Puzzle::TutorialClock => &[Conversation::KeepingTime],
+            Puzzle::TutorialRam => &[Conversation::Memory],
             _ => &[], // TODO: origin_conversations for other puzzles
         }
     }
@@ -167,6 +170,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_INTERFACES,
             Puzzle::TutorialMux => self::tutor_bvr::MUX_INTERFACES,
             Puzzle::TutorialOr => self::tutor_bvr::OR_INTERFACES,
+            Puzzle::TutorialRam => self::tutor_ram::RAM_INTERFACES,
             Puzzle::TutorialSum => self::tutor_evt::SUM_INTERFACES,
         }
     }
@@ -181,6 +185,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_BUBBLES,
             Puzzle::TutorialMux => self::tutor_bvr::MUX_BUBBLES,
             Puzzle::TutorialOr => self::tutor_bvr::OR_BUBBLES,
+            Puzzle::TutorialRam => self::tutor_ram::RAM_BUBBLES,
             Puzzle::TutorialSum => self::tutor_evt::SUM_BUBBLES,
             _ => &[],
         }
@@ -204,9 +209,17 @@ fn is_chip_allowed_in(
             PuzzleKind::Command | PuzzleKind::Sandbox => true,
         },
         ChipAvailability::OnlyIn(puzzles) => puzzles.contains(&puzzle),
-        ChipAvailability::StartingWith(other_puzzle) => puzzle >= other_puzzle,
-        ChipAvailability::UnlockedBy(other_puzzle) => {
-            puzzle > other_puzzle && solved_puzzles.contains(&other_puzzle)
+        // TODO: StartingWith should require other_puzzle to be unlocked (so
+        // that SandboxEvent doesn't immediately have all chip types)
+        ChipAvailability::StartingWith(other) => puzzle >= other,
+        ChipAvailability::StartingWithButNotIn(other, puzzles) => {
+            puzzle >= other && !puzzles.contains(&puzzle)
+        }
+        ChipAvailability::UnlockedBy(other) => {
+            puzzle > other && solved_puzzles.contains(&other)
+        }
+        ChipAvailability::UnlockedByButOnlyIn(other, puzzles) => {
+            puzzles.contains(&puzzle) && solved_puzzles.contains(&other)
         }
     }
 }
@@ -280,6 +293,9 @@ pub(super) fn new_puzzle_eval(
         }
         Puzzle::TutorialOr => {
             Box::new(FabricationEval::new(TUTORIAL_OR_DATA, slots))
+        }
+        Puzzle::TutorialRam => {
+            Box::new(FabricationEval::new(TUTORIAL_RAM_DATA, slots))
         }
         Puzzle::TutorialSum => {
             Box::new(FabricationEval::new(TUTORIAL_SUM_DATA, slots))

@@ -44,7 +44,7 @@ use tachy::state::{
     FABRICATE_HALVE_DATA, FABRICATE_INC_DATA, FABRICATE_MUL_DATA,
     FABRICATE_STOPWATCH_DATA, FABRICATE_XOR_DATA, TUTORIAL_ADD_DATA,
     TUTORIAL_AMP_DATA, TUTORIAL_CLOCK_DATA, TUTORIAL_DEMUX_DATA,
-    TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA, TUTORIAL_SUM_DATA,
+    TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA, TUTORIAL_RAM_DATA, TUTORIAL_SUM_DATA,
 };
 
 //===========================================================================//
@@ -161,6 +161,9 @@ impl VerificationTray {
             }
             Puzzle::TutorialOr => {
                 FabricationVerifyView::new(right_bottom, TUTORIAL_OR_DATA)
+            }
+            Puzzle::TutorialRam => {
+                FabricationVerifyView::new(right_bottom, TUTORIAL_RAM_DATA)
             }
             Puzzle::TutorialSum => {
                 FabricationVerifyView::new(right_bottom, TUTORIAL_SUM_DATA)

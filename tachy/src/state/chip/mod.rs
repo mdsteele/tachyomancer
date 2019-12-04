@@ -20,9 +20,9 @@
 mod arith;
 mod compare;
 mod data;
-mod event;
+mod debug;
 mod logic;
-mod special;
+mod memory;
 mod timing;
 mod value;
 
@@ -239,37 +239,37 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Add => self::arith::ADD_CHIP_DATA,
         ChipType::Add2Bit => self::arith::ADD_2BIT_CHIP_DATA,
         ChipType::And => self::logic::AND_CHIP_DATA,
-        ChipType::Break(_) => self::special::BREAK_CHIP_DATA,
-        ChipType::Button(_) => self::special::BUTTON_CHIP_DATA,
+        ChipType::Break(_) => self::debug::BREAK_CHIP_DATA,
+        ChipType::Button(_) => self::debug::BUTTON_CHIP_DATA,
         ChipType::Clock => self::timing::CLOCK_CHIP_DATA,
         ChipType::Cmp => self::compare::CMP_CHIP_DATA,
         ChipType::CmpEq => self::compare::CMPEQ_CHIP_DATA,
-        ChipType::Comment(_) => self::special::COMMENT_CHIP_DATA,
+        ChipType::Comment(_) => self::debug::COMMENT_CHIP_DATA,
         ChipType::Const(value) => self::value::const_chip_data(value),
-        ChipType::Counter => self::event::COUNTER_CHIP_DATA,
+        ChipType::Counter => self::memory::COUNTER_CHIP_DATA,
         ChipType::Delay => self::timing::DELAY_CHIP_DATA,
-        ChipType::Demux => self::event::DEMUX_CHIP_DATA,
-        ChipType::Discard => self::event::DISCARD_CHIP_DATA,
-        ChipType::Display => self::special::DISPLAY_CHIP_DATA,
+        ChipType::Demux => self::logic::DEMUX_CHIP_DATA,
+        ChipType::Discard => self::value::DISCARD_CHIP_DATA,
+        ChipType::Display => self::debug::DISPLAY_CHIP_DATA,
         ChipType::EggTimer => self::timing::EGG_TIMER_CHIP_DATA,
         ChipType::Eq => self::compare::EQ_CHIP_DATA,
         ChipType::Halve => self::arith::HALVE_CHIP_DATA,
-        ChipType::Inc => self::event::INC_CHIP_DATA,
-        ChipType::Join => self::event::JOIN_CHIP_DATA,
-        ChipType::Latest => self::event::LATEST_CHIP_DATA,
+        ChipType::Inc => self::arith::INC_CHIP_DATA,
+        ChipType::Join => self::value::JOIN_CHIP_DATA,
+        ChipType::Latest => self::memory::LATEST_CHIP_DATA,
         ChipType::Mul => self::arith::MUL_CHIP_DATA,
         ChipType::Mul4Bit => self::arith::MUL_4BIT_CHIP_DATA,
         ChipType::Mux => self::logic::MUX_CHIP_DATA,
         ChipType::Not => self::logic::NOT_CHIP_DATA,
         ChipType::Or => self::logic::OR_CHIP_DATA,
         ChipType::Pack => self::value::PACK_CHIP_DATA,
-        ChipType::Ram => self::special::RAM_CHIP_DATA,
-        ChipType::Random => self::special::RANDOM_CHIP_DATA,
-        ChipType::Sample => self::event::SAMPLE_CHIP_DATA,
-        ChipType::Screen => self::special::SCREEN_CHIP_DATA,
+        ChipType::Ram => self::memory::RAM_CHIP_DATA,
+        ChipType::Random => self::value::RANDOM_CHIP_DATA,
+        ChipType::Sample => self::value::SAMPLE_CHIP_DATA,
+        ChipType::Screen => self::memory::SCREEN_CHIP_DATA,
         ChipType::Stopwatch => self::timing::STOPWATCH_CHIP_DATA,
         ChipType::Sub => self::arith::SUB_CHIP_DATA,
-        ChipType::Toggle(_) => self::special::TOGGLE_CHIP_DATA,
+        ChipType::Toggle(_) => self::debug::TOGGLE_CHIP_DATA,
         ChipType::Unpack => self::value::UNPACK_CHIP_DATA,
         ChipType::Xor => self::logic::XOR_CHIP_DATA,
     }
@@ -288,10 +288,10 @@ pub(super) fn new_chip_evals(
         ChipType::Add2Bit => self::arith::Add2BitChipEval::new_evals(slots),
         ChipType::And => self::logic::AndChipEval::new_evals(slots),
         ChipType::Break(enabled) => {
-            self::special::BreakChipEval::new_evals(enabled, slots, coords)
+            self::debug::BreakChipEval::new_evals(enabled, slots, coords)
         }
         ChipType::Button(hotkey) => {
-            self::special::ButtonChipEval::new_evals(hotkey, slots, coords)
+            self::debug::ButtonChipEval::new_evals(hotkey, slots, coords)
         }
         ChipType::Clock => self::timing::ClockChipEval::new_evals(slots),
         ChipType::Cmp => self::compare::CmpChipEval::new_evals(slots),
@@ -300,35 +300,35 @@ pub(super) fn new_chip_evals(
         ChipType::Const(value) => {
             self::value::ConstChipEval::new_evals(value, slots)
         }
-        ChipType::Counter => self::event::CounterChipEval::new_evals(slots),
+        ChipType::Counter => self::memory::CounterChipEval::new_evals(slots),
         ChipType::Delay => self::timing::DelayChipEval::new_evals(slots),
-        ChipType::Demux => self::event::DemuxChipEval::new_evals(slots),
-        ChipType::Discard => self::event::DiscardChipEval::new_evals(slots),
+        ChipType::Demux => self::logic::DemuxChipEval::new_evals(slots),
+        ChipType::Discard => self::value::DiscardChipEval::new_evals(slots),
         ChipType::Display => vec![],
         ChipType::EggTimer => self::timing::EggTimerChipEval::new_evals(slots),
         ChipType::Eq => self::compare::EqChipEval::new_evals(slots),
         ChipType::Halve => self::arith::HalveChipEval::new_evals(slots),
-        ChipType::Inc => self::event::IncChipEval::new_evals(slots),
-        ChipType::Join => self::event::JoinChipEval::new_evals(slots),
-        ChipType::Latest => self::event::LatestChipEval::new_evals(slots),
+        ChipType::Inc => self::arith::IncChipEval::new_evals(slots),
+        ChipType::Join => self::value::JoinChipEval::new_evals(slots),
+        ChipType::Latest => self::memory::LatestChipEval::new_evals(slots),
         ChipType::Mul => self::arith::MulChipEval::new_evals(slots),
         ChipType::Mul4Bit => self::arith::Mul4BitChipEval::new_evals(slots),
         ChipType::Mux => self::logic::MuxChipEval::new_evals(slots),
         ChipType::Not => self::logic::NotChipEval::new_evals(slots),
         ChipType::Or => self::logic::OrChipEval::new_evals(slots),
         ChipType::Pack => self::value::PackChipEval::new_evals(slots),
-        ChipType::Ram => self::special::RamChipEval::new_evals(slots),
-        ChipType::Random => self::special::RandomChipEval::new_evals(slots),
-        ChipType::Sample => self::event::SampleChipEval::new_evals(slots),
+        ChipType::Ram => self::memory::RamChipEval::new_evals(slots),
+        ChipType::Random => self::value::RandomChipEval::new_evals(slots),
+        ChipType::Sample => self::value::SampleChipEval::new_evals(slots),
         ChipType::Screen => {
-            self::special::ScreenChipEval::new_evals(slots, coords)
+            self::memory::ScreenChipEval::new_evals(slots, coords)
         }
         ChipType::Stopwatch => {
             self::timing::StopwatchChipEval::new_evals(slots)
         }
         ChipType::Sub => self::arith::SubChipEval::new_evals(slots),
         ChipType::Toggle(value) => {
-            self::special::ToggleChipEval::new_evals(value, slots, coords)
+            self::debug::ToggleChipEval::new_evals(value, slots, coords)
         }
         ChipType::Unpack => self::value::UnpackChipEval::new_evals(slots),
         ChipType::Xor => self::logic::XorChipEval::new_evals(slots),

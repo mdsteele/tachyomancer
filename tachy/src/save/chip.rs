@@ -117,8 +117,8 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
     ("Debug", &[
         ChipType::Comment(*b"#    "),
         ChipType::Display,
-        ChipType::Toggle(false),
         ChipType::Break(true),
+        ChipType::Toggle(false),
         ChipType::Button(None),
     ]),
 ];

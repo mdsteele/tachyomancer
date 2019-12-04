@@ -20,140 +20,100 @@
 use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::{Coords, Direction};
-use crate::save::HotkeyCode;
 use crate::state::{PortColor, PortFlow, WireSize};
-use rand;
 
 //===========================================================================//
 
-pub const BREAK_CHIP_DATA: &ChipData = &ChipData {
+pub const COUNTER_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Recv, PortColor::Event, (1, 0), Direction::North),
+        (PortFlow::Recv, PortColor::Event, (1, 0), Direction::South),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::North),
+    ],
+    constraints: &[
+        AbstractConstraint::Equal(0, 3),
+        AbstractConstraint::Exact(1, WireSize::Zero),
+        AbstractConstraint::Exact(2, WireSize::Zero),
+    ],
+    dependencies: &[(0, 3), (1, 3), (2, 3)],
+};
+
+pub struct CounterChipEval {
+    size: WireSize,
+    set: usize,
+    inc: usize,
+    dec: usize,
+    output: usize,
+    value: u32,
+}
+
+impl CounterChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), COUNTER_CHIP_DATA.ports.len());
+        let chip_eval = CounterChipEval {
+            size: slots[0].1,
+            set: slots[0].0,
+            inc: slots[1].0,
+            dec: slots[2].0,
+            output: slots[3].0,
+            value: 0,
+        };
+        vec![(3, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for CounterChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if let Some(value) = state.recv_event(self.set) {
+            self.value = value;
+        }
+        if state.has_event(self.inc) {
+            self.value = self.value.wrapping_add(1) & self.size.mask();
+        }
+        if state.has_event(self.dec) {
+            self.value = self.value.wrapping_sub(1) & self.size.mask();
+        }
+        state.send_behavior(self.output, self.value);
+    }
+}
+
+//===========================================================================//
+
+pub const LATEST_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
     ],
     constraints: &[AbstractConstraint::Equal(0, 1)],
     dependencies: &[(0, 1)],
 };
 
-pub struct BreakChipEval {
-    enabled: bool,
+pub struct LatestChipEval {
     input: usize,
     output: usize,
-    coords: Coords,
 }
 
-impl BreakChipEval {
+impl LatestChipEval {
     pub fn new_evals(
-        enabled: bool,
         slots: &[(usize, WireSize)],
-        coords: Coords,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
-        debug_assert_eq!(slots.len(), BREAK_CHIP_DATA.ports.len());
-        let chip_eval = BreakChipEval {
-            enabled,
-            input: slots[0].0,
-            output: slots[1].0,
-            coords,
-        };
+        debug_assert_eq!(slots.len(), LATEST_CHIP_DATA.ports.len());
+        let chip_eval =
+            LatestChipEval { input: slots[0].0, output: slots[1].0 };
         vec![(1, Box::new(chip_eval))]
     }
 }
 
-impl ChipEval for BreakChipEval {
+impl ChipEval for LatestChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         if let Some(value) = state.recv_event(self.input) {
-            state.send_event(self.output, value);
-            if self.enabled {
-                state.breakpoint(self.coords);
-            }
+            state.send_behavior(self.output, value);
         }
     }
-
-    fn coords(&self) -> Option<Coords> {
-        Some(self.coords)
-    }
-
-    fn display_data(&self) -> &[u8] {
-        if self.enabled {
-            &[1]
-        } else {
-            &[0]
-        }
-    }
-
-    fn on_press(&mut self, _sublocation: u32) {
-        self.enabled = !self.enabled;
-    }
 }
-
-//===========================================================================//
-
-pub const BUTTON_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Send, PortColor::Event, (0, 0), Direction::East)],
-    constraints: &[AbstractConstraint::Exact(0, WireSize::Zero)],
-    dependencies: &[],
-};
-
-pub struct ButtonChipEval {
-    output: usize,
-    coords: Coords,
-    hotkey: Option<HotkeyCode>,
-    press_count: i32,
-}
-
-impl ButtonChipEval {
-    pub fn new_evals(
-        hotkey: Option<HotkeyCode>,
-        slots: &[(usize, WireSize)],
-        coords: Coords,
-    ) -> Vec<(usize, Box<dyn ChipEval>)> {
-        debug_assert_eq!(slots.len(), BUTTON_CHIP_DATA.ports.len());
-        let chip_eval = ButtonChipEval {
-            output: slots[0].0,
-            coords,
-            hotkey,
-            press_count: 0,
-        };
-        vec![(0, Box::new(chip_eval))]
-    }
-}
-
-impl ChipEval for ButtonChipEval {
-    fn eval(&mut self, state: &mut CircuitState) {
-        if let Some(code) = self.hotkey {
-            self.press_count += state.pop_hotkey_presses(code);
-        }
-        if self.press_count > 0 {
-            self.press_count -= 1;
-            state.send_event(self.output, 0);
-        }
-    }
-
-    fn needs_another_cycle(&mut self, _state: &CircuitState) -> bool {
-        self.press_count > 0
-    }
-
-    fn coords(&self) -> Option<Coords> {
-        Some(self.coords)
-    }
-
-    fn on_press(&mut self, _sublocation: u32) {
-        self.press_count += 1;
-    }
-}
-
-//===========================================================================//
-
-pub const COMMENT_CHIP_DATA: &ChipData =
-    &ChipData { ports: &[], constraints: &[], dependencies: &[] };
-
-//===========================================================================//
-
-pub const DISPLAY_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South)],
-    constraints: &[],
-    dependencies: &[],
-};
 
 //===========================================================================//
 
@@ -233,49 +193,6 @@ impl ChipEval for RamChipEval {
         }
         state.send_behavior(self.output1, self.values[addr1]);
         state.send_behavior(self.output2, self.values[addr2]);
-    }
-}
-
-//===========================================================================//
-
-pub const RANDOM_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
-    ],
-    constraints: &[
-        AbstractConstraint::Exact(0, WireSize::Zero),
-        AbstractConstraint::AtLeast(1, WireSize::One),
-    ],
-    dependencies: &[(0, 1)],
-};
-
-pub struct RandomChipEval {
-    input: usize,
-    output: usize,
-    size: WireSize,
-}
-
-impl RandomChipEval {
-    pub fn new_evals(
-        slots: &[(usize, WireSize)],
-    ) -> Vec<(usize, Box<dyn ChipEval>)> {
-        debug_assert_eq!(slots.len(), RANDOM_CHIP_DATA.ports.len());
-        let chip_eval = RandomChipEval {
-            input: slots[0].0,
-            output: slots[1].0,
-            size: slots[1].1,
-        };
-        vec![(1, Box::new(chip_eval))]
-    }
-}
-
-impl ChipEval for RandomChipEval {
-    fn eval(&mut self, state: &mut CircuitState) {
-        if state.has_event(self.input) {
-            let value = rand::random::<u32>() & self.size.mask();
-            state.send_event(self.output, value);
-        }
     }
 }
 
@@ -407,46 +324,6 @@ impl ChipEval for ScreenChipEval {
 
     fn on_press(&mut self, sublocation: u32) {
         self.pressed = Some(sublocation);
-    }
-}
-
-//===========================================================================//
-
-pub const TOGGLE_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East)],
-    constraints: &[AbstractConstraint::Exact(0, WireSize::One)],
-    dependencies: &[],
-};
-
-pub struct ToggleChipEval {
-    output: usize,
-    value: bool,
-    coords: Coords,
-}
-
-impl ToggleChipEval {
-    pub fn new_evals(
-        value: bool,
-        slots: &[(usize, WireSize)],
-        coords: Coords,
-    ) -> Vec<(usize, Box<dyn ChipEval>)> {
-        debug_assert_eq!(slots.len(), TOGGLE_CHIP_DATA.ports.len());
-        let chip_eval = ToggleChipEval { output: slots[0].0, value, coords };
-        vec![(0, Box::new(chip_eval))]
-    }
-}
-
-impl ChipEval for ToggleChipEval {
-    fn eval(&mut self, state: &mut CircuitState) {
-        state.send_behavior(self.output, self.value.into());
-    }
-
-    fn coords(&self) -> Option<Coords> {
-        Some(self.coords)
-    }
-
-    fn on_press(&mut self, _sublocation: u32) {
-        self.value = !self.value;
     }
 }
 

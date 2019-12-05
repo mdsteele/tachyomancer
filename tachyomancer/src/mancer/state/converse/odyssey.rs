@@ -639,9 +639,44 @@ pub(super) fn sensor_results(profile: &Profile,
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn descent(profile: &Profile, builder: &mut ConversationBuilder)
                       -> Result<(), ()> {
-    builder.esra("TODO");
+    builder.henry("\
+        I've been patching up the lander, Captain.  It's pretty banged up, \
+        but life support's fine and I've got the thrusters working again.");
+    builder.lisa("\
+        Good work, Chief.  How soon can you have it ready for descent?");
+    builder.henry("\
+        Well, there's one problem.  The instruments on it got all fouled up, \
+        and we don't have replacements.  I don't think we can trust the \
+        current autopilot at all.  So we'd be taking it down on manual.");
+    builder.esra("That would be extremely inadvisable.");
+    builder.lisa("\
+        Yeah, this time I think the ESRA's right.  Manual descent on an \
+        unfamiliar planet is very unlikely to go well, and we don't have any \
+        spare landers if we crash this one.\n\n\
+        Also, everyone aboard would probably die.");
+    builder.you("\
+        Maybe I could make a new circuit to automate the landing.  Or at \
+        least, semi-automate it, to make a manual landing more feasible.");
+    builder.lisa("\
+        That might be our best chance.  See what you can do, and then have \
+        the Chief install it once you're done.");
     builder.puzzle(profile, Puzzle::CommandLander)?;
-    builder.esra("TODO");
+    builder.henry("The lander's prepped and ready to go, Captain.");
+    builder.lisa("\
+        All right, here's the plan.  Commander, you'll be leading an away \
+        team down to the surface to extract materials and start synthesizing \
+        hyperfuel.  Take Chief Walker with you.  Chief, I want you to pick \
+        two of your best from Mechanical to go with you and the Commander.");
+    builder.henry("\
+        Yes, ma'am.  Uh, for this job that'd probably be Crewman Jiménez and \
+        Crewman Patel.");
+    builder.lisa("\
+        Good.  I'll stay with the ship and supervise the remaining repairs up \
+        here.  We'll maintain radio contact as much as possible, but you'll \
+        be on point while you're down there, Commander.  No pressure or \
+        anything, but our survival and our chances of finding the rest of the \
+        convoy are absolutely dependent on your success.");
+    builder.you("Aye, Captain.");
     Ok(())
 }
 

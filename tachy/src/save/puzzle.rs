@@ -555,7 +555,7 @@ impl Puzzle {
                      NOT ((NOT $/a$/) AND (NOT $/b$/)).",
             },
             Puzzle::TutorialRam => &PuzzleData {
-                title: "Stack Storage",
+                title: "Stack Memory",
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
                 init_size: (6, 5),

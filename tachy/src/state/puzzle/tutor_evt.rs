@@ -203,19 +203,6 @@ pub const TUTORIAL_SUM_DATA: &FabricationData = &FabricationData {
 
 pub(super) const SUM_INTERFACES: &[Interface] = &[
     Interface {
-        name: "In",
-        description: "Input events arrive here.",
-        side: Direction::West,
-        pos: InterfacePosition::Center,
-        ports: &[InterfacePort {
-            name: "In",
-            description: "",
-            flow: PortFlow::Send,
-            color: PortColor::Event,
-            size: WireSize::Four,
-        }],
-    },
-    Interface {
         name: "Reset",
         description: "When an event arrives here, the output sum should be \
                       reset to zero.",
@@ -230,14 +217,27 @@ pub(super) const SUM_INTERFACES: &[Interface] = &[
         }],
     },
     Interface {
-        name: "Out",
+        name: "In",
+        description: "Input events arrive here.",
+        side: Direction::West,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "In",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Four,
+        }],
+    },
+    Interface {
+        name: "Total",
         description:
             "Should equal the sum of all input events since the last \
              reset.",
         side: Direction::East,
         pos: InterfacePosition::Center,
         ports: &[InterfacePort {
-            name: "Out",
+            name: "Total",
             description: "",
             flow: PortFlow::Recv,
             color: PortColor::Behavior,
@@ -249,17 +249,19 @@ pub(super) const SUM_INTERFACES: &[Interface] = &[
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const SUM_EXPECTED_TABLE_VALUES: &[u32] = &[
     NIL, NIL,  0,
-      5, NIL,  5,
-      7, NIL, 12,
+    NIL,   5,  5,
+    NIL,   7, 12,
     NIL, NIL, 12,
-      1, NIL, 13,
-    NIL,   0,  0,
-      6, NIL,  6,
-      2,   0,  2,
-      3, NIL,  5,
-      9, NIL, 14,
-    NIL,   0,  0,
-    NIL,   0,  0,
+    NIL,   1, 13,
+      0, NIL,  0,
+    NIL,   6,  6,
+      0,   2,  2,
+    NIL,   3,  5,
+    NIL,   9, 14,
+      0, NIL,  0,
+      0, NIL,  0,
+      0,  15, 15,
+      0,   8,  8,
 ];
 
 pub(super) const SUM_BUBBLES: &[(TutorialBubblePosition, &str)] = &[(

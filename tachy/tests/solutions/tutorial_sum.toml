@@ -1,6 +1,6 @@
 puzzle = "TutorialSum"
 score = 54
-time_steps = 12
+time_steps = 14
 
 [circuit]
 size = [6, 4]

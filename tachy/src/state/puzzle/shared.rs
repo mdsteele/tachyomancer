@@ -20,8 +20,8 @@
 use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort};
 use super::super::port::{PortColor, PortFlow};
-use super::super::size::WireSize;
 use crate::geom::{Coords, Direction};
+use crate::save::WireSize;
 use std::collections::HashSet;
 use std::u32;
 

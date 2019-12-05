@@ -20,7 +20,8 @@
 use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::{Coords, Direction};
-use crate::state::{PortColor, PortFlow, WireSize};
+use crate::save::WireSize;
+use crate::state::{PortColor, PortFlow};
 
 //===========================================================================//
 

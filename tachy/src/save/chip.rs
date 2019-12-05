@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::hotkey::HotkeyCode;
+use super::size::WireSize;
 use crate::geom::CoordsSize;
 use std::collections::HashSet;
 use std::fmt;
@@ -39,6 +40,7 @@ pub enum ChipType {
     Clock,
     Cmp,
     CmpEq,
+    Coerce(WireSize),
     Comment([u8; MAX_COMMENT_CHARS]),
     Const(u16),
     Counter,
@@ -78,6 +80,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Discard,
         ChipType::Sample,
         ChipType::Join,
+        ChipType::Coerce(WireSize::Eight),
         ChipType::Random,
     ]),
     ("Arithmetic", &[
@@ -142,6 +145,9 @@ impl ChipType {
             ChipType::Add2Bit => "2-Bit Add".to_string(),
             ChipType::Break(false) => "Breakpoint (disabled)".to_string(),
             ChipType::Break(true) => "Breakpoint (enabled)".to_string(),
+            ChipType::Coerce(size) => {
+                format!("Coerce ({}-bit)", size.num_bits())
+            }
             ChipType::Comment(_) => "Comment".to_string(),
             ChipType::Const(value) => format!("Constant ({})", value),
             ChipType::EggTimer => "Egg Timer".to_string(),
@@ -177,6 +183,11 @@ impl ChipType {
             ChipType::CmpEq => {
                 "Outputs 1 if the one input is less than or equal to the \
                  other; outputs 0 otherwise."
+            }
+            ChipType::Coerce(_) => {
+                "Passes the value through unchanged.  Use this to force a \
+                 wire to be a particular size.\n\
+                 $'Right-click' on the chip to change the wire size."
             }
             ChipType::Comment(_) => {
                 "Visually annotates part of the circuit with a short label, \
@@ -276,6 +287,9 @@ impl fmt::Display for ChipType {
             ChipType::Button(Some(code)) => {
                 formatter.pad(&format!("Button({:?})", code))
             }
+            ChipType::Coerce(size) => {
+                formatter.pad(&format!("Coerce({})", size.num_bits()))
+            }
             ChipType::Comment(bytes) => formatter
                 .pad(&format!("Comment('{}')", escape(bytes).trim_end())),
             _ => fmt::Debug::fmt(self, formatter),
@@ -299,6 +313,16 @@ impl str::FromStr for ChipType {
             "Clock" => Ok(ChipType::Clock),
             "Cmp" => Ok(ChipType::Cmp),
             "CmpEq" => Ok(ChipType::CmpEq),
+            "Coerce(1)" => Ok(ChipType::Coerce(WireSize::One)),
+            "Coerce(2)" => Ok(ChipType::Coerce(WireSize::Two)),
+            "Coerce(4)" => Ok(ChipType::Coerce(WireSize::Four)),
+            "Coerce(8)" => Ok(ChipType::Coerce(WireSize::Eight)),
+            "Coerce(16)" => Ok(ChipType::Coerce(WireSize::Sixteen)),
+            "Coerce(One)" => Ok(ChipType::Coerce(WireSize::One)),
+            "Coerce(Two)" => Ok(ChipType::Coerce(WireSize::Two)),
+            "Coerce(Four)" => Ok(ChipType::Coerce(WireSize::Four)),
+            "Coerce(Eight)" => Ok(ChipType::Coerce(WireSize::Eight)),
+            "Coerce(Sixteen)" => Ok(ChipType::Coerce(WireSize::Sixteen)),
             "Counter" => Ok(ChipType::Counter),
             "Delay" => Ok(ChipType::Delay),
             "Demux" => Ok(ChipType::Demux),
@@ -444,6 +468,9 @@ impl ChipSet {
             ChipType::Button(_) => {
                 self.ctypes.contains(&ChipType::Button(None))
             }
+            ChipType::Coerce(_) => {
+                self.ctypes.contains(&ChipType::Coerce(WireSize::One))
+            }
             ChipType::Comment(_) => {
                 self.ctypes.contains(&ChipType::Comment(*b"     "))
             }
@@ -462,6 +489,9 @@ impl ChipSet {
             }
             ChipType::Button(_) => {
                 self.ctypes.insert(ChipType::Button(None));
+            }
+            ChipType::Coerce(_) => {
+                self.ctypes.insert(ChipType::Coerce(WireSize::One));
             }
             ChipType::Comment(_) => {
                 self.ctypes.insert(ChipType::Comment(*b"     "));
@@ -484,6 +514,7 @@ impl ChipSet {
 #[cfg(test)]
 mod tests {
     use super::super::hotkey::HotkeyCode;
+    use super::super::size::WireSize;
     use super::{ChipSet, ChipType, CHIP_CATEGORIES};
     use std::u16;
 
@@ -493,6 +524,10 @@ mod tests {
             ChipType::Break(false),
             ChipType::Button(Some(HotkeyCode::M)),
             ChipType::Button(Some(HotkeyCode::Kp5)),
+            ChipType::Coerce(WireSize::One),
+            ChipType::Coerce(WireSize::Two),
+            ChipType::Coerce(WireSize::Four),
+            ChipType::Coerce(WireSize::Sixteen),
             ChipType::Comment(*b"Blarg"),
             ChipType::Comment(*b" \x1b\"~ "),
             ChipType::Const(0),
@@ -542,6 +577,10 @@ mod tests {
         assert!(!set.contains(ChipType::Break(false)));
         set.insert(ChipType::Break(true));
         assert!(set.contains(ChipType::Break(false)));
+
+        assert!(!set.contains(ChipType::Coerce(WireSize::Two)));
+        set.insert(ChipType::Coerce(WireSize::Four));
+        assert!(set.contains(ChipType::Coerce(WireSize::Two)));
 
         assert!(!set.contains(ChipType::Comment(*b"foo  ")));
         set.insert(ChipType::Comment(*b"bar  "));

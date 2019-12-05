@@ -20,7 +20,8 @@
 use super::super::eval::{CircuitState, EvalScore, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
-use crate::state::{PortColor, PortFlow, WireSize};
+use crate::save::WireSize;
+use crate::state::{PortColor, PortFlow};
 
 //===========================================================================//
 

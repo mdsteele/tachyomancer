@@ -24,11 +24,12 @@ use super::eval::{ChipEval, CircuitEval};
 use super::interface::Interface;
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
 use super::puzzle::{new_puzzle_eval, PuzzleExt};
-use super::size::WireSize;
 use crate::geom::{
     Coords, CoordsDelta, CoordsRect, CoordsSize, Direction, Orientation, Rect,
 };
-use crate::save::{ChipSet, ChipType, CircuitData, Puzzle, WireShape};
+use crate::save::{
+    ChipSet, ChipType, CircuitData, Puzzle, WireShape, WireSize,
+};
 use std::collections::{hash_map, hash_set, HashMap, HashSet};
 use std::mem;
 use std::time::{Duration, Instant};

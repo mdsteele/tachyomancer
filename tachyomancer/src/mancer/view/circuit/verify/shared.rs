@@ -23,9 +23,9 @@ use cgmath::{Matrix4, Point2};
 use std::collections::HashSet;
 use std::u32;
 use tachy::geom::{AsFloat, Color3, Rect, RectSize};
+use tachy::save::WireSize;
 use tachy::state::{
     CircuitEval, EvalError, FabricationData, FabricationEval, InterfacePort,
-    WireSize,
 };
 
 //===========================================================================//

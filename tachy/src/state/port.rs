@@ -17,8 +17,8 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::size::WireSize;
 use crate::geom::{Coords, Direction};
+use crate::save::WireSize;
 
 //===========================================================================//
 

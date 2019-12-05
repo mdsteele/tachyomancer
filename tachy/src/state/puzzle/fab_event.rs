@@ -20,7 +20,8 @@
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use super::shared::{FabricationData, NIL};
 use crate::geom::Direction;
-use crate::state::{PortColor, PortFlow, WireSize};
+use crate::save::WireSize;
+use crate::state::{PortColor, PortFlow};
 
 //===========================================================================//
 

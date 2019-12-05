@@ -21,7 +21,8 @@ use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use super::rng::SimpleRng;
 use crate::geom::{Coords, Direction};
-use crate::state::{PortColor, PortFlow, WireSize};
+use crate::save::WireSize;
+use crate::state::{PortColor, PortFlow};
 use cgmath::Point2;
 use num_integer::Roots;
 

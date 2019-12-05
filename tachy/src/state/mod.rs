@@ -25,7 +25,6 @@ mod eval;
 mod interface;
 mod port;
 mod puzzle;
-mod size;
 mod verify;
 
 pub use self::change::GridChange;
@@ -41,7 +40,6 @@ pub use self::port::{
     PortColor, PortConstraint, PortDependency, PortFlow, PortSpec,
 };
 pub use self::puzzle::*;
-pub use self::size::{WireSize, WireSizeInterval};
 pub use self::verify::verify_solution;
 
 //===========================================================================//

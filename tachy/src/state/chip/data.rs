@@ -18,7 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 use crate::geom::{Coords, CoordsSize, Direction, Orientation};
-use crate::state::{PortColor, PortConstraint, PortFlow, WireSize};
+use crate::save::WireSize;
+use crate::state::{PortColor, PortConstraint, PortFlow};
 
 //===========================================================================//
 

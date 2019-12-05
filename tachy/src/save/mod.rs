@@ -23,6 +23,7 @@ mod converse;
 mod hotkey;
 mod puzzle;
 mod score;
+mod size;
 mod solution;
 mod wire;
 
@@ -34,6 +35,7 @@ pub use self::converse::{
 pub use self::hotkey::HotkeyCode;
 pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
 pub use self::score::{ScoreCurve, ScoreCurveMap};
+pub use self::size::{WireSize, WireSizeInterval};
 pub use self::solution::SolutionData;
 pub use self::wire::WireShape;
 

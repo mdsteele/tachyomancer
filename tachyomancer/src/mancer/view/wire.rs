@@ -20,8 +20,8 @@
 use crate::mancer::gui::Resources;
 use cgmath::Matrix4;
 use tachy::geom::{Color3, Color4, Coords, Direction, MatrixExt};
-use tachy::save::WireShape;
-use tachy::state::{WireColor, WireSize};
+use tachy::save::{WireShape, WireSize};
+use tachy::state::WireColor;
 
 //===========================================================================//
 

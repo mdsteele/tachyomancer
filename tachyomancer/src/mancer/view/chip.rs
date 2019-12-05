@@ -24,9 +24,9 @@ use tachy::geom::{
     AsFloat, AsInt, Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
     Orientation, Rect, RectSize,
 };
-use tachy::save::ChipType;
+use tachy::save::{ChipType, WireSize};
 use tachy::state::{
-    ChipExt, EditGrid, Interface, PortColor, PortFlow, PortSpec, WireSize,
+    ChipExt, EditGrid, Interface, PortColor, PortFlow, PortSpec,
 };
 
 //===========================================================================//

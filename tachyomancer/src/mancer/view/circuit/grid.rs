@@ -42,7 +42,7 @@ use tachy::geom::{
     AsFloat, AsInt, Color3, Color4, Coords, CoordsRect, Direction, MatrixExt,
     Orientation, Rect, RectSize,
 };
-use tachy::save::{ChipType, HotkeyCode};
+use tachy::save::{ChipType, HotkeyCode, WireSize};
 use tachy::state::{EditGrid, GridChange, WireColor};
 
 //===========================================================================//
@@ -67,6 +67,7 @@ const ZOOM_PER_KEYDOWN: f32 = 1.415; // slightly more than sqrt(2)
 
 pub enum EditGridAction {
     EditButton(Coords, Option<HotkeyCode>),
+    EditCoerce(Coords, WireSize),
     EditComment(Coords, String),
     EditConst(Coords, u16),
 }
@@ -821,6 +822,9 @@ impl EditGridView {
                     }
                     Some((_, ChipType::Button(code), _)) => {
                         return Some(EditGridAction::EditButton(coords, code));
+                    }
+                    Some((_, ChipType::Coerce(size), _)) => {
+                        return Some(EditGridAction::EditCoerce(coords, size));
                     }
                     Some((_, ChipType::Comment(bytes), _)) => {
                         let string: String =

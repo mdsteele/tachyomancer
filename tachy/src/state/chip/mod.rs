@@ -31,9 +31,8 @@ use super::eval::ChipEval;
 use super::port::{
     PortColor, PortConstraint, PortDependency, PortFlow, PortSpec,
 };
-use super::size::WireSize;
 use crate::geom::{Coords, Orientation};
-use crate::save::{ChipType, Puzzle};
+use crate::save::{ChipType, Puzzle, WireSize};
 use cgmath::Bounded;
 
 //===========================================================================//
@@ -82,6 +81,7 @@ impl ChipExt for ChipType {
         match *self {
             ChipType::And
             | ChipType::Break(_)
+            | ChipType::Coerce(_)
             | ChipType::Comment(_)
             | ChipType::Const(_)
             | ChipType::Display
@@ -244,6 +244,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Clock => self::timing::CLOCK_CHIP_DATA,
         ChipType::Cmp => self::compare::CMP_CHIP_DATA,
         ChipType::CmpEq => self::compare::CMPEQ_CHIP_DATA,
+        ChipType::Coerce(size) => self::value::coerce_chip_data(size),
         ChipType::Comment(_) => self::debug::COMMENT_CHIP_DATA,
         ChipType::Const(value) => self::value::const_chip_data(value),
         ChipType::Counter => self::memory::COUNTER_CHIP_DATA,
@@ -296,6 +297,7 @@ pub(super) fn new_chip_evals(
         ChipType::Clock => self::timing::ClockChipEval::new_evals(slots),
         ChipType::Cmp => self::compare::CmpChipEval::new_evals(slots),
         ChipType::CmpEq => self::compare::CmpEqChipEval::new_evals(slots),
+        ChipType::Coerce(_) => self::value::CoerceChipEval::new_evals(slots),
         ChipType::Comment(_) => vec![],
         ChipType::Const(value) => {
             self::value::ConstChipEval::new_evals(value, slots)

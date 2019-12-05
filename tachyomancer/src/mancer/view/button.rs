@@ -400,11 +400,11 @@ pub struct RadioCheckbox<T> {
 
 impl<T: Clone + PartialEq> RadioCheckbox<T> {
     pub fn new(
-        mid_left: Point2<i32>,
+        top_left: Point2<i32>,
         label: String,
         value: T,
     ) -> RadioCheckbox<T> {
-        RadioCheckbox { inner: Checkbox::new(mid_left, label), value }
+        RadioCheckbox { inner: Checkbox::new(top_left, label), value }
     }
 
     pub fn draw(

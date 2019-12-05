@@ -40,6 +40,7 @@ use self::tutorial::TutorialBubble;
 use self::verify::VerificationTray;
 use super::dialog::{
     ButtonDialogBox, DialogAction, HotkeyDialogBox, TextDialogBox,
+    WireSizeDialogBox,
 };
 use super::paragraph::Paragraph;
 use super::tooltip::Tooltip;
@@ -48,7 +49,9 @@ use crate::mancer::save::Prefs;
 use cgmath;
 use std::u16;
 use tachy::geom::{Coords, Direction, RectSize};
-use tachy::save::{ChipType, HotkeyCode, SolutionData, MAX_COMMENT_CHARS};
+use tachy::save::{
+    ChipType, HotkeyCode, SolutionData, WireSize, MAX_COMMENT_CHARS,
+};
 use tachy::state::{
     EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
     TutorialBubblePosition,
@@ -111,6 +114,7 @@ pub struct CircuitView {
     controls_status: ControlsStatus,
     tooltip: Tooltip<CircuitTooltipTag>,
     edit_button_dialog: Option<(HotkeyDialogBox, Coords)>,
+    edit_coerce_dialog: Option<(WireSizeDialogBox, Coords)>,
     edit_comment_dialog: Option<(TextDialogBox, Coords)>,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
     failed_save_dialog: Option<ButtonDialogBox<FailedSaveDialogAction>>,
@@ -172,6 +176,7 @@ impl CircuitView {
             controls_status: ControlsStatus::Stopped,
             tooltip: Tooltip::new(window_size),
             edit_button_dialog: None,
+            edit_coerce_dialog: None,
             edit_comment_dialog: None,
             edit_const_dialog: None,
             failed_save_dialog: None,
@@ -195,6 +200,8 @@ impl CircuitView {
         self.edit_grid.draw_dragged(resources);
         self.tooltip.draw(resources, &projection);
         if let Some((ref dialog, _)) = self.edit_button_dialog {
+            dialog.draw(resources, &projection);
+        } else if let Some((ref dialog, _)) = self.edit_coerce_dialog {
             dialog.draw(resources, &projection);
         } else if let Some((ref dialog, _)) = self.edit_comment_dialog {
             dialog.draw(resources, &projection, |_| true);
@@ -228,6 +235,17 @@ impl CircuitView {
                 }
                 Some(DialogAction::Cancel) => {}
                 None => self.edit_button_dialog = Some((dialog, coords)),
+            }
+            return None;
+        }
+
+        if let Some((mut dialog, coords)) = self.edit_coerce_dialog.take() {
+            match dialog.on_event(event, ui) {
+                Some(DialogAction::Value(size)) => {
+                    change_coerce_chip_size(ui, grid, coords, size);
+                }
+                Some(DialogAction::Cancel) => {}
+                None => self.edit_coerce_dialog = Some((dialog, coords)),
             }
             return None;
         }
@@ -469,6 +487,18 @@ impl CircuitView {
                 self.edit_button_dialog = Some((dialog, coords));
                 ui.request_redraw();
             }
+            Some(EditGridAction::EditCoerce(coords, wire_size)) => {
+                let size =
+                    RectSize::new(self.width as i32, self.height as i32);
+                let dialog = WireSizeDialogBox::new(
+                    size,
+                    prefs,
+                    "Choose new wire size:",
+                    wire_size,
+                );
+                self.edit_coerce_dialog = Some((dialog, coords));
+                ui.request_redraw();
+            }
             Some(EditGridAction::EditComment(coords, string)) => {
                 let size =
                     RectSize::new(self.width as i32, self.height as i32);
@@ -629,6 +659,27 @@ fn change_button_chip_hotkey(
             ui.request_redraw();
         } else {
             debug_warn!("change_button_chip_hotkey mutation failed");
+        }
+    }
+}
+
+fn change_coerce_chip_size(
+    ui: &mut Ui,
+    grid: &mut EditGrid,
+    coords: Coords,
+    new_size: WireSize,
+) {
+    if let Some((coords, ChipType::Coerce(old_size), orient)) =
+        grid.chip_at(coords)
+    {
+        let changes = vec![
+            GridChange::RemoveChip(coords, ChipType::Coerce(old_size), orient),
+            GridChange::AddChip(coords, ChipType::Coerce(new_size), orient),
+        ];
+        if grid.try_mutate(changes) {
+            ui.request_redraw();
+        } else {
+            debug_warn!("change_coerce_chip_size mutation failed");
         }
     }
 }

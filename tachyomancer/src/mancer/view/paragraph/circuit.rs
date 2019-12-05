@@ -28,9 +28,9 @@ use std::usize;
 use tachy::geom::{
     Color4, Coords, CoordsSize, Direction, MatrixExt, Orientation,
 };
-use tachy::save::{ChipType, CircuitData, WireShape};
+use tachy::save::{ChipType, CircuitData, WireShape, WireSize};
 use tachy::state::{
-    self, ChipExt, PortColor, PortConstraint, PortFlow, WireInfo, WireSize,
+    self, ChipExt, PortColor, PortConstraint, PortFlow, WireInfo,
 };
 
 //===========================================================================//

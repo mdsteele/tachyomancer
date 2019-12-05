@@ -20,8 +20,94 @@
 use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, AbstractPort, ChipData};
 use crate::geom::Direction;
-use crate::state::{PortColor, PortFlow, WireSize};
+use crate::save::WireSize;
+use crate::state::{PortColor, PortFlow};
 use rand;
+
+//===========================================================================//
+
+const COERCE_PORTS: &[AbstractPort] = &[
+    (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
+    (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+];
+
+const COERCE_CHIP_DATA_1: &ChipData = &ChipData {
+    ports: COERCE_PORTS,
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::One),
+        AbstractConstraint::Exact(1, WireSize::One),
+    ],
+    dependencies: &[(0, 1)],
+};
+
+const COERCE_CHIP_DATA_2: &ChipData = &ChipData {
+    ports: COERCE_PORTS,
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Two),
+        AbstractConstraint::Exact(1, WireSize::Two),
+    ],
+    dependencies: &[(0, 1)],
+};
+
+const COERCE_CHIP_DATA_4: &ChipData = &ChipData {
+    ports: COERCE_PORTS,
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Four),
+        AbstractConstraint::Exact(1, WireSize::Four),
+    ],
+    dependencies: &[(0, 1)],
+};
+
+const COERCE_CHIP_DATA_8: &ChipData = &ChipData {
+    ports: COERCE_PORTS,
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Eight),
+        AbstractConstraint::Exact(1, WireSize::Eight),
+    ],
+    dependencies: &[(0, 1)],
+};
+
+const COERCE_CHIP_DATA_16: &ChipData = &ChipData {
+    ports: COERCE_PORTS,
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Sixteen),
+        AbstractConstraint::Exact(1, WireSize::Sixteen),
+    ],
+    dependencies: &[(0, 1)],
+};
+
+pub fn coerce_chip_data(size: WireSize) -> &'static ChipData {
+    match size {
+        WireSize::Zero | WireSize::One => COERCE_CHIP_DATA_1,
+        WireSize::Two => COERCE_CHIP_DATA_2,
+        WireSize::Four => COERCE_CHIP_DATA_4,
+        WireSize::Eight => COERCE_CHIP_DATA_8,
+        WireSize::Sixteen => COERCE_CHIP_DATA_16,
+    }
+}
+
+pub struct CoerceChipEval {
+    input: usize,
+    output: usize,
+}
+
+impl CoerceChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), 2);
+        let chip_eval =
+            CoerceChipEval { input: slots[0].0, output: slots[1].0 };
+        vec![(1, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for CoerceChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let value = state.recv_behavior(self.input);
+        state.send_behavior(self.output, value);
+    }
+}
 
 //===========================================================================//
 

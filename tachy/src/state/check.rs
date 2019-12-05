@@ -18,9 +18,8 @@
 // +--------------------------------------------------------------------------+
 
 use super::port::{PortColor, PortConstraint, PortDependency, PortFlow};
-use super::size::{WireSize, WireSizeInterval};
 use crate::geom::{Coords, Direction};
-use crate::save::WireShape;
+use crate::save::{WireShape, WireSize, WireSizeInterval};
 use indexmap::IndexMap;
 use pathfinding::prelude::{
     strongly_connected_components, topological_sort_into_groups,

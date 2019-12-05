@@ -27,8 +27,8 @@ use tachy::geom::{
     AsFloat, AsInt, Color3, Color4, Coords, CoordsDelta, CoordsRect,
     CoordsSize, Direction, MatrixExt, Orientation, Rect,
 };
-use tachy::save::{ChipSet, ChipType, CircuitData, WireShape};
-use tachy::state::{ChipExt, EditGrid, GridChange, WireColor, WireSize};
+use tachy::save::{ChipSet, ChipType, CircuitData, WireShape, WireSize};
+use tachy::state::{ChipExt, EditGrid, GridChange, WireColor};
 
 //===========================================================================//
 

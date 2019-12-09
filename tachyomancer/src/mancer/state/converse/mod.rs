@@ -74,6 +74,24 @@ impl ConversationExt for Conversation {
             Conversation::AdvancedCircuits => {
                 planetfall::advanced_circuits(profile, &mut builder)
             }
+            Conversation::AdditionalChips => {
+                planetfall::additional_chips(profile, &mut builder)
+            }
+            Conversation::ScoutReport => {
+                planetfall::scout_report(profile, &mut builder)
+            }
+            Conversation::MakingFuel => {
+                planetfall::making_fuel(profile, &mut builder)
+            }
+            Conversation::OneMoreThing => {
+                planetfall::one_more_thing(profile, &mut builder)
+            }
+            Conversation::WeFoundSomething => {
+                planetfall::we_found_something(profile, &mut builder)
+            }
+            Conversation::ANewProblem => {
+                planetfall::a_new_problem(profile, &mut builder)
+            }
             Conversation::UnexpectedCompany => {
                 planetfall::unexpected_company(profile, &mut builder)
             }

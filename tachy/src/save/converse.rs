@@ -83,6 +83,12 @@ pub enum Conversation {
     Descent,
     // Planetfall:
     AdvancedCircuits,
+    ScoutReport,
+    AdditionalChips,
+    MakingFuel,
+    OneMoreThing,
+    WeFoundSomething,
+    ANewProblem,
     UnexpectedCompany,
     // Calliope:
     Memory,
@@ -125,6 +131,12 @@ impl Conversation {
             Conversation::Descent => "Descent",
             // Planetfall:
             Conversation::AdvancedCircuits => "Advanced Circuits",
+            Conversation::ScoutReport => "Scout Report",
+            Conversation::AdditionalChips => "Additional Chips",
+            Conversation::MakingFuel => "Making Fuel",
+            Conversation::OneMoreThing => "One More Thing",
+            Conversation::WeFoundSomething => "We Found Something",
+            Conversation::ANewProblem => "A New Problem",
             Conversation::UnexpectedCompany => "Unexpected Company",
             // Calliope:
             Conversation::Memory => "Memory",
@@ -152,6 +164,12 @@ impl Conversation {
             | Conversation::SensorResults
             | Conversation::Descent => Chapter::Odyssey,
             Conversation::AdvancedCircuits
+            | Conversation::ScoutReport
+            | Conversation::AdditionalChips
+            | Conversation::MakingFuel
+            | Conversation::OneMoreThing
+            | Conversation::WeFoundSomething
+            | Conversation::ANewProblem
             | Conversation::UnexpectedCompany => Chapter::Planetfall,
             Conversation::Memory => Chapter::Calliope,
             Conversation::KeepingTime => Chapter::Orpheus,
@@ -207,7 +225,41 @@ impl Conversation {
             Conversation::Descent => {
                 &Prereq::Complete(Conversation::SensorResults)
             }
-            _ => &Prereq::Complete(Conversation::Descent), // TODO
+            // Planetfall:
+            Conversation::AdvancedCircuits => {
+                &Prereq::Complete(Conversation::Descent)
+            }
+            Conversation::ScoutReport
+            | Conversation::AdditionalChips
+            | Conversation::MakingFuel
+            | Conversation::OneMoreThing => {
+                &Prereq::Complete(Conversation::AdvancedCircuits)
+            }
+            Conversation::WeFoundSomething => {
+                &Prereq::Complete(Conversation::ScoutReport)
+            }
+            Conversation::ANewProblem => {
+                &Prereq::Complete(Conversation::MakingFuel)
+            }
+            Conversation::UnexpectedCompany => &Prereq::All(&[
+                Prereq::Complete(Conversation::ScoutReport),
+                Prereq::Complete(Conversation::MakingFuel),
+                Prereq::Complete(Conversation::OneMoreThing),
+                Prereq::Complete(Conversation::WeFoundSomething),
+                Prereq::Complete(Conversation::ANewProblem),
+            ]),
+            // Calliope:
+            Conversation::Memory => {
+                &Prereq::Complete(Conversation::UnexpectedCompany) // TODO
+            }
+            // Orpheus:
+            Conversation::KeepingTime => {
+                &Prereq::Complete(Conversation::UnexpectedCompany) // TODO
+            }
+            // Lorelei:
+            Conversation::CatchingUp => {
+                &Prereq::Complete(Conversation::UnexpectedCompany) // TODO
+            }
         }
     }
 }

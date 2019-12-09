@@ -277,10 +277,11 @@ pub(super) fn more_components(profile: &Profile,
         challenging than what you've already done.  You should consider these \
         tasks optional, but again, any that you can complete will provide new \
         parts that you can use for other tasks.");
-    builder.puzzles(profile,
-                    &[Puzzle::FabricateXor,
-                      Puzzle::FabricateHalve,
-                      Puzzle::FabricateMul])?;
+    builder.puzzles(profile, &[
+        Puzzle::FabricateXor,
+        Puzzle::FabricateHalve,
+        Puzzle::FabricateMul,
+    ])?;
     builder.esra("\
         Excellent work, Commander.  I will let you know in the future if \
         there are any other good opportunities for fabricating useful \

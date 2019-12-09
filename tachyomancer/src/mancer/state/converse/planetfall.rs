@@ -24,9 +24,10 @@ use tachy::save::Puzzle;
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub(super) fn advanced_circuits(profile: &Profile,
-                                builder: &mut ConversationBuilder)
-                                -> Result<(), ()> {
+pub(super) fn advanced_circuits(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
     builder.esra("\
         Congratulations on your safe arrival to the planet surface, \
         Commander.  As the other members of the away team are still setting \
@@ -205,16 +206,222 @@ pub(super) fn advanced_circuits(profile: &Profile,
         That was a lot to absorb, so I suggest you try one final exercise to \
         practice using these concepts.");
     builder.puzzle(profile, Puzzle::TutorialSum)?;
-    builder.esra("Well done.");
+    builder.henry("\
+        Commander!  The base is all set up, and I think we're ready to get \
+        started on mining, on your orders.");
+    builder.you("Thank you, Chief.  Please proceed.");
     Ok(())
 }
 
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub(super) fn unexpected_company(profile: &Profile,
-                                 builder: &mut ConversationBuilder)
-                                 -> Result<(), ()> {
+pub(super) fn scout_report(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
+    builder.henry("\
+        Well, Commander, I'm happy to report that the first batch of raw \
+        materials is coming in.  It's slow going though, and it'll take a \
+        while to collect as much as we need.");
+    builder.you("Anything we can do to make things more efficient?");
+    builder.henry("\
+        Actually, Commander, there might be.  See, we've got a handful of \
+        basic scout robots, and Crewman Jiménez has been setting them up to \
+        travel outwards from the base and radio back to us when they find \
+        mineral deposits.  Then we go and and dig 'em up.");
+    builder.henry("\
+        Anyway, I was thinking we should get the robots to do the digging for \
+        us.  She and I could get them fitted with the right attachments, but \
+        it's not really what they're programmed for.  But we could swap in \
+        new logic boards easy, if you were to design one.");
+    builder.you("I'll take a look and let you know.");
+    builder.puzzle(profile, Puzzle::AutomateMiningRobot)?;
+    builder.henry("\
+        Thanks, Commander, these'll be perfect.  We'll get those robots \
+        retrofitted right away.");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn additional_chips(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
+    builder.esra("\
+        Now that you've mastered event-based circuits, Commander, there are \
+        some additional chips you could fabricate that might be useful in \
+        your future designs.  I will send the relevant specifications, in \
+        case you choose to do that.");
+    builder.puzzles(profile, &[
+        Puzzle::FabricateInc,
+        Puzzle::FabricateCounter,
+    ])?;
+    builder.esra("\
+        Well done, Commander.  Those are all the chip specifications I have \
+        available for now, but I will let you know if any others become \
+        available in the future.");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn making_fuel(
+    _profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
+    builder.you("How is progress on fuel-making, Chief?");
+    builder.henry("\
+        We've got a good start.  Crewman Patel's got the catalysis equipment \
+        set up, and he'll be managing the synthesis process as we bring in \
+        materials.");
+    // TODO puzzle link
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn one_more_thing(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
+    builder.lisa("\
+        Commander, do you read me?  How are things going down there?");
+    builder.you("\
+        Going smoothly so far, Captain.  We've started extracting materials, \
+        and the Chief is overseeing fuel synthesis work.");
+    builder.lisa("\
+        Good.  Listen, there's something else you need to do while you're \
+        down there.  I've been trying to raise the other convoy ships on \
+        subspace, but I haven't picked up any signals yet.  So I need your \
+        team to construct a wide-array subspace beacon on the planet \
+        surface, to give us a better chance of finding them.");
+    builder.you("How's that work?");
+    builder.lisa("\
+        It should be straightforward.  Have the Fabricator manufacture a \
+        bunch of subspace reflector panels, and lay them out in an array in \
+        a flat area, over the space or a square kilometer or so.  Obviously, \
+        that's a much wider array then we could ever fit on the ship, so it \
+        should give us a much better chance of establishing a signal, if any \
+        of the missing ships are in a nearby star system.");
+    builder.you("Aye, Captain.  We'll get to work on it.");
+    builder.lisa("\
+        The only trick is that you'll need to automate the array to track any \
+        signals we find.  Have the Chief and the two Crewmen get started on \
+        the panels, and meanwhile I'll send you the specs you'll need for \
+        making the control circuit.  Jackson out.");
+    builder.puzzle(profile, Puzzle::AutomateBeacon)?;
+    builder.henry("We've got the array set up, Commander.");
+    builder.you("\
+        Good work.  Go ahead and install this controller board, and have it \
+        start scanning.  Report to me as soon we find anything.");
+    builder.henry("Aye, Commander, will do.");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn we_found_something(
+    _profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
+    builder.henry("\
+        Sorry to bother you, Commander, but Crewman Jiménez just discovered \
+        something, and I thought you'd want to hear it right away.");
+    builder.you("What is it, Chief?");
+    builder.henry("\
+        Well, she's been managing all the scouting and mining robots we've \
+        been sending out from the base, and one of them came back with some \
+        unexpected readings, so she went out to check it out herself.");
+    builder.henry("\
+        Turns out, there are some $/ruins$/ about 40 klicks north of the \
+        base.  Someone used to live around here; a lot of someones, in fact.  \
+        And judging from her report, I'd hazard that whoever it was was at a \
+        comparible level of technological development as ourselves.  This was \
+        probably one of their colony planets.");
+    builder.you("\
+        Do you think any of them are still around?");
+    builder.henry("\
+        I doubt it.  Active civilization at that level of development?  We \
+        would've seen signs of it from orbit.  City lights at night, radio \
+        transmissions, that sort of thing.");
+    builder.henry("\
+        The thing is, though, these ruins...Jiménez showed me the phototypes \
+        she took of the site, and, well, I've served in campaigns before, \
+        Commander.  From the look of it, I'm pretty sure that city was \
+        bombed.  $/From orbit.$/  And not even all that long ago - maybe a \
+        year or two?");
+    builder.you("\
+        So, we may have just stumbled into the middle of an interplanetary \
+        war.");
+    builder.henry("\
+        Kinda puts a terrifying new spin on our situation, doesn't it?");
+    builder.you("\
+        I'll forward this information to Captain Jackson.  In the meantime, \
+        let's get that hyperfuel finished, on the double.");
+    builder.henry("Aye, Commander.");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn a_new_problem(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
+    builder.henry("\
+        Do you have a minute, Commander?  We've got a slightly embarrassing \
+        problem with the fuel synthesis, and I was hoping you could help.");
+    builder.you("What's the trouble?");
+    builder.henry("\
+        It's kind of silly, actually.  The fuel processing tanks have to be \
+        kept below a certain pressure so they don't rupture.  Normally they \
+        stay well below that threshold, but because of atomospheric \
+        conditions on this planet...well, I'll spare you the details, but \
+        anyway, the pressure keeps getting a little too high.");
+    builder.you("Aren't there safety valves, to relieve the pressure?");
+    builder.henry("\
+        Of course!  And normally they'd do their job, and this would all be \
+        a non-issue.  But the darn things keep getting jammed.  Something \
+        about the composition of the dust on this planet, getting into the \
+        bearings.  So anyway, I've been having Crewman Patel stand by the \
+        tanks and manually unjam the valves every so often, so that we don't \
+        have to keep pausing the synthesis process.  Pretty standard \
+        percussive maintenance - just give 'em a good whack, basically.");
+    builder.you("Okay...");
+    builder.henry("\
+        But we don't really have hands to spare right now, and I need him \
+        working on other things!  So I want to detatch the external \
+        manipulator arm from the lander and set it up next to the tanks to \
+        unstick the valves automatically.  It's a ridiculous kludge, but I \
+        think it might actually be the quickest solution at this point.");
+    builder.you("\
+        So we're going to use a highly-sophisticated spaceflight robotic arm \
+        to...whack some valves periodically.");
+    builder.henry("\
+        That was my thinking, yes.  But we would need you to make a new \
+        control circuit for it to work.  I hate to ask, Commander, but...");
+    builder.you("Don't worry about it Chief.  I'll see what I can do.");
+    builder.puzzle(profile, Puzzle::AutomateRobotArm)?;
+    builder.henry("\
+        Thanks so much Commander, you're a life-saver.  We should have all \
+        the fuel we need in no time.");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn unexpected_company(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
     builder.henry("Enemies approaching!");
     builder.puzzle(profile, Puzzle::CommandTurret)?;
     builder.henry("Which ship should we scan for first?");

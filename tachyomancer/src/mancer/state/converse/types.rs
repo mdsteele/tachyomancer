@@ -117,7 +117,6 @@ impl ConversationBuilder {
         self.npc(Portrait::Liu, text);
     }
 
-    #[allow(dead_code)]
     pub(super) fn purge(&mut self, text: &str) {
         self.npc(Portrait::Purge, text);
     }

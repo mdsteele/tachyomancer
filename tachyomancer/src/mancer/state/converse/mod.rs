@@ -92,6 +92,9 @@ impl ConversationExt for Conversation {
             Conversation::ANewProblem => {
                 planetfall::a_new_problem(profile, &mut builder)
             }
+            Conversation::IncomingSignal => {
+                planetfall::incoming_signal(profile, &mut builder)
+            }
             Conversation::UnexpectedCompany => {
                 planetfall::unexpected_company(profile, &mut builder)
             }

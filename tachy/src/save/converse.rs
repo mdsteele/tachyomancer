@@ -89,6 +89,7 @@ pub enum Conversation {
     OneMoreThing,
     WeFoundSomething,
     ANewProblem,
+    IncomingSignal,
     UnexpectedCompany,
     // Calliope:
     Memory,
@@ -137,6 +138,7 @@ impl Conversation {
             Conversation::OneMoreThing => "One More Thing",
             Conversation::WeFoundSomething => "We Found Something",
             Conversation::ANewProblem => "A New Problem",
+            Conversation::IncomingSignal => "Incoming Signal",
             Conversation::UnexpectedCompany => "Unexpected Company",
             // Calliope:
             Conversation::Memory => "Memory",
@@ -170,6 +172,7 @@ impl Conversation {
             | Conversation::OneMoreThing
             | Conversation::WeFoundSomething
             | Conversation::ANewProblem
+            | Conversation::IncomingSignal
             | Conversation::UnexpectedCompany => Chapter::Planetfall,
             Conversation::Memory => Chapter::Calliope,
             Conversation::KeepingTime => Chapter::Orpheus,
@@ -241,13 +244,16 @@ impl Conversation {
             Conversation::ANewProblem => {
                 &Prereq::Complete(Conversation::MakingFuel)
             }
-            Conversation::UnexpectedCompany => &Prereq::All(&[
+            Conversation::IncomingSignal => &Prereq::All(&[
                 Prereq::Complete(Conversation::ScoutReport),
                 Prereq::Complete(Conversation::MakingFuel),
                 Prereq::Complete(Conversation::OneMoreThing),
                 Prereq::Complete(Conversation::WeFoundSomething),
                 Prereq::Complete(Conversation::ANewProblem),
             ]),
+            Conversation::UnexpectedCompany => {
+                &Prereq::Complete(Conversation::IncomingSignal)
+            }
             // Calliope:
             Conversation::Memory => {
                 &Prereq::Complete(Conversation::UnexpectedCompany) // TODO

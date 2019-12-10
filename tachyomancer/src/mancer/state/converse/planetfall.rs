@@ -403,7 +403,7 @@ pub(super) fn a_new_problem(
         think it might actually be the quickest solution at this point.");
     builder.you("\
         So we're going to use a highly-sophisticated spaceflight robotic arm \
-        to...whack some valves periodically.");
+        to...whack some valves periodically?");
     builder.henry("\
         That was my thinking, yes.  But we would need you to make a new \
         control circuit for it to work.  I hate to ask, Commander, but...");
@@ -418,23 +418,132 @@ pub(super) fn a_new_problem(
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn incoming_signal(
+    _profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
+    builder.henry("\
+        Commander, I think we're getting a signal on the subspace beacon!  \
+        A bunch of them, actually.");
+    builder.you("Is it the other convoy ships?");
+    builder.henry("\
+        I think so?  Two of the signals do look like they have IFC carrier \
+        waves, but they're really faint.  Could take hours to establish a \
+        proper lock.");
+    builder.you("Are the identifier codes coming through?");
+    builder.henry("\
+        Let me see...yes.  This first one looks like the $/H.L.S. \
+        Calliope$/.  That's the ship that Lt. Cara Powart had acting command \
+        of for this mission.  Er, I know you just recently joined us, \
+        Commander, so I guess you might not know the other officers well \
+        yet.  Lt. Powart is our medical officier, but she's also a \
+        xenolinguist.  It's a shame she's not here, because she might be \
+        able to make more sense of those ruins we found.");
+    builder.you("And the second one?");
+    builder.henry("\
+        Second one...looks like the $/H.L.S. Orpheus$/.  Lt. Cmdr. Andrei \
+        Sholokhov had that one.  He's our communications officer, and if he \
+        were here, he would be doing a much better job isolating these \
+        signals than I can.\n\n\
+        Unfortunately, I can't find any sign of the last convoy ship.");
+    builder.you("\
+        I'm sure you're doing fine, Chief.  What about the other subspace \
+        signals you were seeing?");
+    builder.henry("\
+        They could be random noise, but they could also be alien vessels, \
+        presumably native to this galaxy.  And, uh, there's definitely a \
+        chance that they're going to notice our beacon transmissions.");
+    builder.you("We'll have to take that risk.");
+    builder.henry("\
+        Understood, Commander.  I'll keep trying to get a better fix on the \
+        convoy ships, see if I can determine their locations.");
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn unexpected_company(
     profile: &Profile,
     builder: &mut ConversationBuilder,
 ) -> Result<(), ()> {
-    builder.henry("Enemies approaching!");
+    builder.esra("\
+        DANGER, DANGER.  Commander, please come in.  Orbital radar is \
+        detecting a large number of ground objects moving towards your base \
+        from all directions, and long range scans are detecting an unknown \
+        vessel on course towards this planet.");
+    builder.lisa("\
+        What's going on down there?");
+    builder.henry("\
+        Captain?  Commander?  We're getting an incoming subspace \
+        transmission!");
+    builder.lisa("From one of the convoy ships?");
+    builder.henry("Er, I don't think so...");
+    builder.purge("WE ARE THE PURGE.  YOU DO NOT BELONG.");
+    builder.you("You speak our language?");
+    builder.purge("\
+        WE HAVE ALREADY ANALYZED YOUR LANGUAGE AND SPECIES.  YOU DO NOT \
+        BELONG.");
+    builder.you("Looks like our beacon got some unwanted attention.");
+    builder.lisa("\
+        Greetings, Purge.  My name is Captain Lisa Jackson of the Human \
+        vessel $/H.L.S. Odyssey$/.  Please accept my regrets for our \
+        intrusion.  We mean you no harm.");
+    builder.purge("UNACCEPTABLE.  YOU DO NOT BELONG.  YOU MUST BE DESTROYED.");
+    builder.henry("Well, they seem like nice fellas.");
+    builder.you("Shouldn't we be preparting to fight back?");
+    builder.lisa("\
+        Only if we have to.  Look, we may not be here by choice, but if we're \
+        trespassing in their space, I can't blame them for not wanting us \
+        here.  And if we've stepped into the middle of their war, I \
+        $/definitely$/ don't want to get involved.");
+    builder.lisa("\
+        Purge, there is no need for conflict here.  We do not wish to \
+        trespass.  We were brought here by accident, and we intend to depart \
+        your territory, peacefully, as soon as possible.");
+    builder.purge("\
+        TERRITORY IS IRRELEVANT.  YOU DO NOT BELONG TO US, AND THEREFORE YOU \
+        MUST BE DESTROYED, JUST AS WE DESTROYED THE OTHER VERMIN THAT \
+        INHABITED THIS STAR SYSTEM.");
+    builder.lisa("Beg pardon?");
+    builder.henry("Like I said: nice fellas.");
+    builder.purge("$/ALL$/ THAT ARE NOT OF THE PURGE MUST BE ERADIC-");
+    builder.lisa("\
+        Yeah, no.  End transmission.  Okay, new plan: screw these losers.  \
+        Chief, what've you got down there for guns?");
+    builder.henry("\
+        Uh, the lander's pulse cannon still works.  I could rig it up on a \
+        rotating turret, but we'd need to improvise a fire control system.");
+    builder.lisa("\
+        Do it.  Commander, slap together a control board.  We don't have any \
+        orbital weapons up here to speak of, so you're going to have to hold \
+        off their ground forces on your own until the beacon can get a lock \
+        on the other convoy ships.  Then get in the lander and get back up \
+        here so we can all get the heck out of this system before that Purge \
+        ship arrives.");
     builder.puzzle(profile, Puzzle::CommandTurret)?;
-    builder.henry("Which ship should we scan for first?");
+    builder.henry("\
+        Commander!  The beacon's almost got a lock, but I don't think we can \
+        hold out for long enough to get a fix on both ships.  Which one \
+        should we scan for?");
     let chapter = builder
         .choice(profile, "chapter")
-        .option("calliope", "\"Scan for the Calliope.\"")
-        .option("orpheus", "\"Scan for the Orpheus.\"")
+        .option("calliope",
+                "\"Scan for the $/Calliope$/ first.  We'll need Lt. Powart's \
+                 expertise for dealing with these aliens.\"")
+        .option("orpheus",
+                "\"Scan for the $/Orpheus$/ first.  We'll need Lt. Cmdr. \
+                 Sholokhov's help finding the other convoy ships.\"")
         .done()?;
     if chapter == "orpheus" {
-        builder.henry("Okay, scanning for the Orpheus.");
+        builder.henry("Aye aye, Commander, scanning for the $/Orpheus$/.");
     } else {
-        builder.henry("Okay, scanning for the Calliope.");
+        builder.henry("Aye aye, Commander, scanning for the $/Calliope$/.");
     }
+    builder.you("\
+        Have the Crewmen start packing, and get to the lander as soon as \
+        you've got a location fix.  I'll keep the Purge off your back until \
+        you do.");
     Ok(())
 }
 

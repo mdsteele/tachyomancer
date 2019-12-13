@@ -276,6 +276,13 @@ impl MenuView {
                     }
                 }
             }
+            Event::Debug(key, value) if key == "SetBackground" => {
+                if let Ok(chapter) = value.parse::<Chapter>() {
+                    self.background =
+                        background_for_chapter(chapter, self.size.as_f32());
+                    ui.request_redraw();
+                }
+            }
             Event::Debug(key, value) if key == "ResetScores" => {
                 if value.is_empty() {
                     state.reset_local_scores(state.current_puzzle());

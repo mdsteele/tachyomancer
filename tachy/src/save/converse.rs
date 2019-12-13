@@ -42,7 +42,9 @@ pub enum Prereq {
 
 //===========================================================================//
 
-#[derive(Clone, Copy, Debug, Eq, Hash, IntoStaticStr, PartialEq)]
+#[derive(
+    Clone, Copy, Debug, EnumString, Eq, Hash, IntoStaticStr, PartialEq,
+)]
 pub enum Chapter {
     Odyssey,
     Planetfall,

@@ -21,7 +21,7 @@ use super::shared::BackgroundView;
 use crate::mancer::gl::{
     Depth, HeightmapModel, Model, ModelBuilder, ModelBuilderContext,
 };
-use crate::mancer::gui::{Event, Keycode, Resources, Ui};
+use crate::mancer::gui::{Event, Resources, Ui};
 use cgmath::{self, vec3, Deg, Matrix4, Point3, Vector3};
 use tachy::geom::{Color3, Rect, RectSize};
 
@@ -32,7 +32,6 @@ pub struct PlanetfallBackgroundView {
     habitat_model: Model,
     terrain_model: HeightmapModel,
     sky_model: Model,
-    look_y: f32,
 }
 
 impl PlanetfallBackgroundView {
@@ -59,7 +58,6 @@ impl PlanetfallBackgroundView {
             habitat_model: habitat.build(),
             terrain_model: HeightmapModel::new(128),
             sky_model: sky.build(),
-            look_y: 8.8,
         }
     }
 }
@@ -70,7 +68,7 @@ impl BackgroundView for PlanetfallBackgroundView {
 
         let v_matrix = Matrix4::look_at(
             Point3::new(0.0, 15.0, 90.0),
-            Point3::new(0.0, self.look_y, 0.0),
+            Point3::new(0.0, 8.8, 0.0),
             Vector3::unit_y(),
         );
         let light_dir_world_space = Vector3::new(-3.0, 30.0, 10.0);
@@ -116,24 +114,7 @@ impl BackgroundView for PlanetfallBackgroundView {
         depth.disable();
     }
 
-    fn on_event(&mut self, event: &Event, ui: &mut Ui) {
-        match event {
-            Event::KeyDown(key) => {
-                match key.code {
-                    Keycode::Up => {
-                        self.look_y += 0.1;
-                    }
-                    Keycode::Down => {
-                        self.look_y -= 0.1;
-                    }
-                    _ => {}
-                }
-                debug_log!("look_y = {}", self.look_y);
-                ui.request_redraw();
-            }
-            _ => {}
-        }
-    }
+    fn on_event(&mut self, _event: &Event, _ui: &mut Ui) {}
 }
 
 //===========================================================================//
@@ -179,9 +160,9 @@ fn make_dome(ctx: &mut ModelBuilderContext, radius: f32) {
     );
     ctx.with_transform(
         Matrix4::from_translation(vec3(0.0, cyl_height, 0.0))
-            * Matrix4::from_nonuniform_scale(1.0, 0.5, 1.0),
+            * Matrix4::from_nonuniform_scale(radius, 0.5 * radius, radius),
     )
-    .sphere(ORIGIN, radius, 20, Color3::WHITE);
+    .unit_hemisphere(20, Color3::WHITE);
 }
 
 fn make_tunnel<'a>(

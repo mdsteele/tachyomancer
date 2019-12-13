@@ -29,6 +29,8 @@ use tachy::geom::{Color3, RectSize};
 
 const FLOATS_PER_VERTEX: usize = 11;
 
+const ORIGIN: Point3<f32> = Point3 { x: 0.0, y: 0.0, z: 0.0 };
+
 //===========================================================================//
 
 pub struct Model {
@@ -71,18 +73,6 @@ impl ModelBuilder {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn cylinder(
-        &mut self,
-        c1: Point3<f32>,
-        c2: Point3<f32>,
-        radius: f32,
-        num_faces: u16,
-        color: Color3,
-    ) {
-        self.context().cylinder(c1, c2, radius, num_faces, color);
-    }
-
     pub fn plane(
         &mut self,
         center: Point3<f32>,
@@ -91,16 +81,6 @@ impl ModelBuilder {
         color: Color3,
     ) {
         self.context().plane(center, size, normal, color);
-    }
-
-    pub fn sphere(
-        &mut self,
-        center: Point3<f32>,
-        radius: f32,
-        num_steps: u16,
-        color: Color3,
-    ) {
-        self.context().sphere(center, radius, num_steps, color);
     }
 
     pub fn build(self) -> Model {
@@ -140,8 +120,10 @@ impl<'a> ModelBuilderContext<'a> {
     ) {
         let vertex =
             Point3::from_homogeneous(self.matrix * vertex.to_homogeneous());
-        // TODO: Apply current inversion to normal
-        let normal = (self.matrix * normal.extend(0.0)).truncate();
+        let mut normal = (self.matrix * normal.extend(0.0)).truncate();
+        if self.matrix.determinant() < 0.0 {
+            normal = -normal;
+        }
         let floats = &[
             vertex.x,
             vertex.y,
@@ -160,7 +142,6 @@ impl<'a> ModelBuilderContext<'a> {
     }
 
     fn push_triangle(&mut self, i0: u16, i1: u16, i2: u16) {
-        // TODO: If inverted, flip ordering
         self.indices.push(i0);
         self.indices.push(i1);
         self.indices.push(i2);
@@ -243,19 +224,92 @@ impl<'a> ModelBuilderContext<'a> {
         self.push_triangle(start + 2, start + 1, start + 3);
     }
 
-    pub fn sphere(
-        &mut self,
-        center: Point3<f32>,
-        radius: f32,
-        num_steps: u16,
-        color: Color3,
-    ) {
+    /// Creates a unit circle, centered at the origin, with its normal in the
+    /// positive-Y direction.
+    pub fn unit_circle(&mut self, num_steps: u16, color: Color3) {
+        debug_assert!(num_steps >= 3);
+        let start = self.start_index();
+        let step = Rad::full_turn() / (num_steps as f32);
+        for index in 0..num_steps {
+            let theta = step * (index as f32);
+            let vertex = ORIGIN
+                + Quaternion::from_angle_y(theta)
+                    .rotate_vector(Vector3::unit_x());
+            let texture_uv =
+                Point2::new(0.5 + vertex.x * 0.5, 0.5 + vertex.z * 0.5);
+            self.push_vertex(vertex, Vector3::unit_y(), color, texture_uv);
+        }
+        for index in 1..(num_steps - 1) {
+            self.push_triangle(start, start + index, start + index + 1);
+        }
+    }
+
+    /// Creates a unit hemisphere, with the sphere center at the origin, and
+    /// the hemisphere occupying the positive-Y portion of space.
+    pub fn unit_hemisphere(&mut self, num_long_steps: u16, color: Color3) {
+        debug_assert!(num_long_steps >= 3);
+        let num_lat_steps = (num_long_steps + 1) / 2;
+        let start = self.start_index();
+
+        let north_pole = start;
+        self.push_vertex(
+            ORIGIN + Vector3::unit_y(),
+            Vector3::unit_y(),
+            color,
+            Point2::new(0.5, 1.0),
+        );
+
+        // Vertices:
+        let longitude_step = Rad::full_turn() / (num_long_steps as f32);
+        let latitude_step = Rad::turn_div_4() / (num_lat_steps as f32);
+        for longitude_index in 0..(num_long_steps + 1) {
+            let longitude = longitude_step * (longitude_index as f32);
+            let texture_u = (longitude_index as f32) / (num_long_steps as f32);
+
+            for latitude_index in 1..(num_lat_steps + 1) {
+                let latitude = Rad::turn_div_4()
+                    - latitude_step * (latitude_index as f32);
+                let normal = Quaternion::from_angle_y(longitude)
+                    .rotate_vector(
+                        Quaternion::from_angle_z(latitude)
+                            .rotate_vector(Vector3::unit_x()),
+                    );
+                let vertex = ORIGIN + normal;
+                let texture_v =
+                    (latitude_index as f32) / (num_lat_steps as f32);
+                let texture_uv = Point2::new(texture_u, texture_v);
+                self.push_vertex(vertex, normal, color, texture_uv);
+            }
+        }
+
+        // Indices:
+        for longitude_index in 0..num_long_steps {
+            let curr_long_start = start + 1 + num_lat_steps * longitude_index;
+            let next_long_start = curr_long_start + num_lat_steps;
+            self.push_triangle(north_pole, curr_long_start, next_long_start);
+            for latitude_index in 0..(num_lat_steps - 1) {
+                self.push_triangle(
+                    next_long_start + latitude_index,
+                    curr_long_start + latitude_index,
+                    next_long_start + latitude_index + 1,
+                );
+                self.push_triangle(
+                    curr_long_start + latitude_index,
+                    curr_long_start + latitude_index + 1,
+                    next_long_start + latitude_index + 1,
+                );
+            }
+        }
+    }
+
+    /// Creates a unit sphere, centered at the origin.
+    pub fn unit_sphere(&mut self, num_steps: u16, color: Color3) {
         debug_assert!(num_steps >= 3);
         let start = self.start_index();
 
         let north_pole = start;
         self.push_vertex(
-            center + Vector3::unit_y() * radius,
+            ORIGIN + Vector3::unit_y(),
             Vector3::unit_y(),
             color,
             Point2::new(0.5, 1.0),
@@ -263,7 +317,7 @@ impl<'a> ModelBuilderContext<'a> {
 
         let south_pole = start + 1;
         self.push_vertex(
-            center - Vector3::unit_y() * radius,
+            ORIGIN - Vector3::unit_y(),
             -Vector3::unit_y(),
             color,
             Point2::new(0.5, 0.0),
@@ -284,7 +338,7 @@ impl<'a> ModelBuilderContext<'a> {
                         Quaternion::from_angle_z(latitude)
                             .rotate_vector(Vector3::unit_x()),
                     );
-                let vertex = center + normal * radius;
+                let vertex = ORIGIN + normal;
                 let texture_v = (latitude_index as f32) / (num_steps as f32);
                 let texture_uv = Point2::new(texture_u, texture_v);
                 self.push_vertex(vertex, normal, color, texture_uv);

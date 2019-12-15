@@ -110,14 +110,6 @@ impl MenuView {
             size.height - SECTION_TOP - SECTION_MARGIN_BOTTOM,
         );
 
-        let prefs_view = PrefsView::new(section_rect, window, state);
-        let mut ui = window.ui();
-        let navigation_view =
-            NavigationView::new(size.as_f32(), section_rect, &mut ui, state);
-        let converse_view = ConverseView::new(section_rect, &mut ui, state);
-        let puzzles_view =
-            PuzzlesView::new(size, section_rect, &mut ui, state);
-
         let unlocked_chapters: HashSet<Chapter> = Conversation::all()
             .filter(|&conv| state.is_conversation_unlocked(conv))
             .map(|conv| conv.chapter())
@@ -129,6 +121,14 @@ impl MenuView {
             .filter(|chapter| unlocked_chapters.contains(chapter))
             .last()
             .unwrap_or(first_chapter);
+
+        let prefs_view = PrefsView::new(section_rect, window, state);
+        let mut ui = window.ui();
+        let navigation_view =
+            NavigationView::new(size.as_f32(), state, latest_chapter);
+        let converse_view = ConverseView::new(section_rect, &mut ui, state);
+        let puzzles_view =
+            PuzzlesView::new(size, section_rect, &mut ui, state);
 
         MenuView {
             size,
@@ -188,7 +188,7 @@ impl MenuView {
     ) {
         match section {
             MenuSection::Navigation => {
-                self.navigation_view.draw(resources, matrix, state);
+                self.navigation_view.draw(resources, matrix);
             }
             MenuSection::Messages => {
                 self.converse_view.draw(resources, matrix, state);
@@ -280,6 +280,7 @@ impl MenuView {
                 if let Ok(chapter) = value.parse::<Chapter>() {
                     self.background =
                         background_for_chapter(chapter, self.size.as_f32());
+                    self.navigation_view.refresh_indicators(state, chapter);
                     ui.request_redraw();
                 }
             }
@@ -357,7 +358,7 @@ impl MenuView {
     ) -> Option<MenuAction> {
         match state.menu_section() {
             MenuSection::Navigation => {
-                self.navigation_view.on_event(event, ui, state);
+                self.navigation_view.on_event(event, ui);
             }
             MenuSection::Messages => {
                 match self.converse_view.on_event(event, ui, state) {
@@ -534,7 +535,7 @@ impl MenuView {
     }
 
     fn unfocus(&mut self, ui: &mut Ui, state: &mut GameState) {
-        self.navigation_view.on_event(&Event::Unfocus, ui, state);
+        self.navigation_view.on_event(&Event::Unfocus, ui);
         self.converse_view.on_event(&Event::Unfocus, ui, state);
         self.prefs_view.on_event(&Event::Unfocus, ui, state);
         self.puzzles_view.on_event(&Event::Unfocus, ui, state);

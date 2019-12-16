@@ -75,7 +75,7 @@ impl ChipModel {
         interface: &Interface,
     ) {
         // Draw body:
-        draw_chip_icon(
+        draw_basic_chip(
             resources,
             grid_matrix,
             coords,
@@ -128,8 +128,11 @@ impl ChipModel {
             ChipType::Comment(_) => {
                 draw_comment_chip(resources, grid_matrix, coords, orient);
             }
+            ChipType::Discard => {
+                draw_discard_chip(resources, grid_matrix, coords, orient);
+            }
             ChipType::Display | ChipType::EggTimer | ChipType::Stopwatch => {
-                draw_chip_icon(
+                draw_basic_chip(
                     resources,
                     grid_matrix,
                     coords,
@@ -163,7 +166,7 @@ impl ChipModel {
                 );
             }
             ChipType::Screen => {
-                draw_chip_icon(
+                draw_basic_chip(
                     resources,
                     grid_matrix,
                     coords,
@@ -184,7 +187,7 @@ impl ChipModel {
             }
             _ => {
                 let icon = chip_icon(ctype, orient);
-                draw_chip_icon(
+                draw_basic_chip(
                     resources,
                     grid_matrix,
                     coords,
@@ -384,7 +387,26 @@ fn draw_comment_chip(
     );
 }
 
-fn draw_chip_icon(
+fn draw_discard_chip(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    coords: Coords,
+    orient: Orientation,
+) {
+    let matrix = grid_matrix
+        * Matrix4::trans2((coords.x as f32) + 0.5, (coords.y as f32) + 0.5)
+        * orient.matrix();
+    let icon = ChipIcon::Discard;
+    resources.shaders().chip().draw_discard(
+        &matrix,
+        RectSize::new(1.0, 1.0).expand(-CHIP_MARGIN),
+        icon as u32,
+        chip_icon_color(icon),
+        resources.textures().chip_icons(),
+    );
+}
+
+fn draw_basic_chip(
     resources: &Resources,
     grid_matrix: &Matrix4<f32>,
     coords: Coords,
@@ -465,9 +487,9 @@ fn draw_port(
         WireSize::Zero => 0.25,
         WireSize::One => 0.4,
         WireSize::Two => 0.5,
-        WireSize::Four => 0.65,
-        WireSize::Eight => 0.8,
-        WireSize::Sixteen => 1.0,
+        WireSize::Four => 0.6,
+        WireSize::Eight => 0.75,
+        WireSize::Sixteen => 0.9,
     };
     shader.draw(width_scale);
 }

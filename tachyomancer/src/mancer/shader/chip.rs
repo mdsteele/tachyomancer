@@ -109,6 +109,39 @@ const COMMENT_CORNER_DATA: &[u8] = &[
 
 //===========================================================================//
 
+//    1-.
+//   /|  '-3
+//  0-2-.  |\
+//  | |  '-5-4
+//  | |  .-8-6
+// 10-11'  |/
+//   \|  .-7
+//    9-'
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const DISCARD_INDEX_DATA: &[u8] = BASIC_INDEX_DATA;
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const DISCARD_VERTEX_DATA: &[f32] = &[
+     0.00,  0.06, 0.05,  TEX_MIN, TEX_MIN,
+     0.06,  0.00, 0.05,  TEX_MIN, TEX_MIN,
+     0.06,  0.06, 0.10,  TEX_MIN, TEX_MIN,
+    -0.06,  0.20, 0.05,  TEX_MAX, 0.31543,
+     0.00,  0.26, 0.05,  TEX_MAX, 0.31543,
+    -0.06,  0.26, 0.10,  TEX_MAX, 0.31543,
+     0.00, -0.26, 0.05,  TEX_MAX, 0.68457,
+    -0.06, -0.20, 0.05,  TEX_MAX, 0.68457,
+    -0.06, -0.26, 0.10,  TEX_MAX, 0.68457,
+     0.06,  0.00, 0.05,  TEX_MIN, TEX_MAX,
+     0.00, -0.06, 0.05,  TEX_MIN, TEX_MAX,
+     0.06, -0.06, 0.10,  TEX_MIN, TEX_MAX,
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const DISCARD_CORNER_DATA: &[u8] = BASIC_CORNER_DATA;
+
+//===========================================================================//
+
 struct ChipModel {
     ibuffer: IndexBuffer<u8>,
     _vertex_vbuffer: VertexBuffer<f32>,
@@ -156,6 +189,7 @@ pub struct ChipShader {
     icon_texture: ShaderSampler<Texture2D>,
     basic_model: ChipModel,
     comment_model: ChipModel,
+    discard_model: ChipModel,
 }
 
 impl ChipShader {
@@ -192,6 +226,11 @@ impl ChipShader {
                 COMMENT_INDEX_DATA,
                 COMMENT_VERTEX_DATA,
                 COMMENT_CORNER_DATA,
+            ),
+            discard_model: ChipModel::new(
+                DISCARD_INDEX_DATA,
+                DISCARD_VERTEX_DATA,
+                DISCARD_CORNER_DATA,
             ),
         })
     }
@@ -234,6 +273,26 @@ impl ChipShader {
             icon_texture,
         );
         self.comment_model.draw();
+    }
+
+    /// The matrix should place the origin at the center of the chip.
+    pub fn draw_discard(
+        &self,
+        matrix: &Matrix4<f32>,
+        size: RectSize<f32>,
+        icon_index: u32,
+        icon_color: Color3,
+        icon_texture: &Texture2D,
+    ) {
+        self.bind(
+            matrix,
+            &size,
+            &BASIC_PLASTIC_COLOR,
+            icon_index,
+            &icon_color,
+            icon_texture,
+        );
+        self.discard_model.draw();
     }
 
     fn bind(

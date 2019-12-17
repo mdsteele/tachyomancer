@@ -35,21 +35,25 @@ impl CompiledLine {
         &self.pieces
     }
 
+    /// Draws part of the line, up to `num_millis` worth.  If the whole line is
+    /// drawn, subtracts the millis consumed from `num_millis` and returns
+    /// zero.  Otherwise, returns the number of additional millis needed to
+    /// draw anything more.
     pub fn draw(
         &self,
         resources: &Resources,
         paragraph_matrix: &Matrix4<f32>,
         font_size: f32,
         num_millis: &mut usize,
-    ) -> bool {
+    ) -> usize {
         for piece in self.pieces.iter() {
-            let drew_full_piece =
+            let needed_for_next =
                 piece.draw(resources, paragraph_matrix, font_size, num_millis);
-            if !drew_full_piece {
-                return false;
+            if needed_for_next > 0 {
+                return needed_for_next;
             }
         }
-        return true;
+        return 0;
     }
 }
 
@@ -62,13 +66,17 @@ pub trait CompiledPiece {
 
     fn add_y_offset(&mut self, y_offset: f32);
 
+    /// Draws part of the piece, up to `num_millis` worth.  If the whole piece
+    /// is drawn, subtracts the millis consumed from `num_millis` and returns
+    /// zero.  Otherwise, returns the number of additional millis needed to
+    /// draw anything more.
     fn draw(
         &self,
         resources: &Resources,
         paragraph_matrix: &Matrix4<f32>,
         font_size: f32,
         millis_remaining: &mut usize,
-    ) -> bool;
+    ) -> usize;
 
     fn debug_string(&self) -> String;
 }

@@ -179,16 +179,18 @@ impl CompiledPiece for CompiledTextPiece {
         paragraph_matrix: &Matrix4<f32>,
         font_size: f32,
         millis_remaining: &mut usize,
-    ) -> bool {
+    ) -> usize {
         let text_millis = self.chars.len() * self.millis_per_char;
-        let (chars, finished) = if text_millis <= *millis_remaining {
+        let (chars, needed_for_next) = if text_millis <= *millis_remaining {
             *millis_remaining -= text_millis;
-            (self.chars.as_slice(), true)
+            (self.chars.as_slice(), 0)
         } else {
             debug_assert!(self.millis_per_char > 0);
             let substring_chars = *millis_remaining / self.millis_per_char;
             debug_assert!(substring_chars < self.chars.len());
-            (&self.chars[..substring_chars], false)
+            let needed_for_next = self.millis_per_char
+                - *millis_remaining % self.millis_per_char;
+            (&self.chars[..substring_chars], needed_for_next)
         };
         let font = resources.fonts().get(self.font);
         font.draw_chars(
@@ -200,7 +202,7 @@ impl CompiledPiece for CompiledTextPiece {
             self.slant,
             chars,
         );
-        finished
+        needed_for_next
     }
 
     fn debug_string(&self) -> String {

@@ -168,9 +168,9 @@ impl CompiledPiece for CompiledCircuitPiece {
         paragraph_matrix: &Matrix4<f32>,
         _font_size: f32,
         millis_remaining: &mut usize,
-    ) -> bool {
+    ) -> usize {
         if *millis_remaining < self.num_millis {
-            return false;
+            return self.num_millis - *millis_remaining;
         }
         *millis_remaining -= self.num_millis;
         let grid_matrix = paragraph_matrix
@@ -204,7 +204,7 @@ impl CompiledPiece for CompiledCircuitPiece {
             );
         }
         depth.disable();
-        return true;
+        return 0;
     }
 
     fn debug_string(&self) -> String {

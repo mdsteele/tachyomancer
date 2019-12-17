@@ -23,6 +23,7 @@ use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui};
 use crate::mancer::save::Prefs;
 use crate::mancer::state::{CutsceneScript, Portrait, Theater};
 use cgmath::{self, Matrix4, Point2};
+use std::cell::Cell;
 use std::collections::BTreeMap;
 use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
 
@@ -254,6 +255,7 @@ struct TalkBubble {
     portrait: Portrait,
     paragraph: Paragraph,
     millis: f64,
+    millis_for_next: Cell<f64>,
 }
 
 impl TalkBubble {
@@ -285,7 +287,13 @@ impl TalkBubble {
             width,
             height,
         );
-        TalkBubble { rect, portrait, paragraph, millis: 0.0 }
+        TalkBubble {
+            rect,
+            portrait,
+            paragraph,
+            millis: 0.0,
+            millis_for_next: Cell::new(0.0),
+        }
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -311,17 +319,21 @@ impl TalkBubble {
             (self.rect.x + TALK_PORTRAIT_WIDTH + 2 * TALK_INNER_MARGIN) as f32;
         let top = (self.rect.y + TALK_INNER_MARGIN) as f32;
         let millis = self.millis as usize;
-        self.paragraph.draw_partial(resources, matrix, (left, top), millis);
+        let needed_for_next = self.paragraph.draw_partial(
+            resources,
+            matrix,
+            (left, top),
+            millis,
+        );
+        self.millis_for_next.set((millis + needed_for_next) as f64);
     }
 
     fn tick(&mut self, elapsed: f64, ui: &mut Ui) {
         if self.millis < self.paragraph.total_millis() as f64 {
             self.millis += elapsed * 1000.0;
-            // TODO: Ideally, this would only redraw if a the millis increase
-            //   actually causes more characters to be displayed in the
-            //   paragraph.  As an approximation, maybe we could simply request
-            //   only 30 FPS instead of 60.
-            ui.request_redraw();
+            if self.millis >= self.millis_for_next.get() {
+                ui.request_redraw();
+            }
         }
     }
 

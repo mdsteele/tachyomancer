@@ -170,6 +170,7 @@ impl Paragraph {
         self.total_millis
     }
 
+    /// Draws the whole paragraph.
     pub fn draw(
         &self,
         resources: &Resources,
@@ -179,25 +180,30 @@ impl Paragraph {
         self.draw_partial(resources, matrix, left_top, self.total_millis);
     }
 
+    /// Draws part of the paragraph, up to `num_millis` worth.  Returns the
+    /// minimum number of additional millis needed to draw anything more (or
+    /// zero if the whole paragraph was drawn).
     pub fn draw_partial(
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
         left_top: (f32, f32),
         mut num_millis: usize,
-    ) {
+    ) -> usize {
         let (left, top) = left_top;
         let paragraph_matrix = matrix * Matrix4::trans2(left, top);
         for line in self.lines.iter() {
-            if !line.draw(
+            let needed_for_next = line.draw(
                 resources,
                 &paragraph_matrix,
                 self.font_size,
                 &mut num_millis,
-            ) {
-                break;
+            );
+            if needed_for_next > 0 {
+                return needed_for_next;
             }
         }
+        return 0;
     }
 }
 

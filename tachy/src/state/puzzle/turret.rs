@@ -40,9 +40,9 @@ const ENEMIES: &[(u32, u32, u32)] = &[
     (0, 5, 2),
     (10, 3, 3),
     (60, 6, 2),
-    (80, 2, 3),
-    (90, 7, 3),
-    (100, 0, 4),
+    (100, 2, 3),
+    (120, 7, 3),
+    (150, 0, 4),
     // TODO: add more enemies for CommandTurret puzzle
 ];
 
@@ -166,7 +166,7 @@ pub struct TurretEval {
     turret_position: u32,
     turret_position_degrees: u32,
     movement_is_done: bool,
-    enemies: Vec<(u32, u32, u32)>,
+    enemies: Vec<(u32, u32, u32)>, // (sector, distance, speed)
     num_enemies_appeared: usize,
     base_damage: u32,
 }
@@ -201,20 +201,16 @@ impl TurretEval {
         }
     }
 
-    pub fn turret_position(&self) -> u32 {
-        self.turret_position
-    }
-
     pub fn turret_angle(&self) -> u32 {
         self.turret_position_degrees
     }
 
-    pub fn cannon_cooldown(&self) -> u32 {
-        self.cannon_cooldown
+    pub fn cannon_cooldown(&self) -> f32 {
+        (self.cannon_cooldown as f32) / (CANNON_COOLDOWN_TIME as f32)
     }
 
-    pub fn base_damage(&self) -> u32 {
-        self.base_damage
+    pub fn base_health(&self) -> u32 {
+        BASE_DAMAGE_FOR_FAILURE.saturating_sub(self.base_damage)
     }
 
     /// Returns list of (position, distance, speed) tuples for enemies.

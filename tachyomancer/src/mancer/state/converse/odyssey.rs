@@ -535,7 +535,35 @@ pub(super) fn low_visibility(profile: &Profile,
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn an_idea(profile: &Profile, builder: &mut ConversationBuilder)
                       -> Result<(), ()> {
-    builder.lisa("TODO");
+    builder.lisa("\"Commander.  I know where we can get more power.\"");
+    builder.you("\"Yes, Captain?\"");
+    builder.lisa("\
+        \"The lander.  It has an independant power source.  Not nearly enough \
+        to power the $/Odyssey$/, but enough to boost life support and thaw \
+        out Chief Walker, so he can help us fix the backup reactor.\"");
+    builder.esra("\
+        Unfortunately, Captain, the lander was torn off the ship when the \
+        disaster occurred.  Otherwise I would already have suggested using it \
+        for auxiliary power.");
+    builder.lisa("\
+        \"Thank you, ESRA, but I already know that, because I saw it drift by \
+        my window five minutes ago.\"");
+    builder.you("\"Come again?\"");
+    builder.lisa("\
+        \"The lander is adrift, but it's not lost; it looks like it's \
+        orbiting the planet, just like the $/Odyssey$/.  If we can grapple \
+        it as it goes by, we could use its power source.\"");
+    builder.esra("\
+        Unfortunately, Captain, the grapple launch coils are badly damaged.  \
+        In addition, it would by inadvisable to attempt to grapple something \
+        that large until the ship's engines have been properly-");
+    builder.lisa("\
+        \"$/Thank you$/, ESRA, but I don't care if it's inadvisable, because \
+        it's the only chance we have right now.  And I already checked on the \
+        grapple launcher before I messaged the Commander.  Enough of the \
+        coils are still working that I think we can make do, if we rebuild \
+        the control circuit to compensate.  Commander $'YOURNAME'?\"");
+    builder.you("\"I'll see to it, Captain.\"");
     builder.puzzle(profile, Puzzle::AutomateGrapple)?;
     builder.lisa("TODO");
     Ok(())
@@ -544,9 +572,45 @@ pub(super) fn an_idea(profile: &Profile, builder: &mut ConversationBuilder)
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn more_power(profile: &Profile, builder: &mut ConversationBuilder)
                          -> Result<(), ()> {
-    builder.lisa("TODO");
+    builder.henry("\
+        \"Oi, that still smarts.  You know, I've been in cryo dozens of \
+        times, and I'm almost positive that coming out of it isn't supposed \
+        to hurt this much.\"");
+    builder.lisa("\
+        \"Yes, well, unfortunately we've all been frozen for nine months \
+        straight.  There's a reason that IFC regulations say we're not \
+        supposed to go for more than six.\"");
+    builder.henry("\
+        \"Oh!  Good morning, Captain!  I'm not quite sure what's been going \
+        on while I was asleep, but I do seem to have missed out on some kind \
+        of delightfully horrifying catastrophe.\"");
+    builder.lisa("\
+        \"That you have, Chief, and we're badly in need of your talents right \
+        now.  Has the ESRA filled you in already?\"");
+    builder.henry("\
+        \"Yes, ma'am, and I've already been in to take a look.  The LTF core \
+        got smashed up pretty good, but the backup reactor seems salvagable.  \
+        I've even still got parts here to fix most of it.  Problem is, the \
+        regulator board got proper fried, and I don't know the first thing \
+        about electronics.  Without a replacement, we're out of luck.\"");
+    builder.lisa("\
+        \"Commander $'YOURNAME' here should be able to create a new regulator \
+        board, if you can handle the mechanical repairs.\"");
+    builder.henry("\
+        \"Ah, glad to hear it!  I'll send the relevant specs to you, \
+        Commander.  It shouldn't be too bad; the reactor knows how much power \
+        it's currently generating, and the ship knows how much power it \
+        needs.  The circuit just needs to adjust the reactor control rods to \
+        make those match.\"");
     builder.puzzle(profile, Puzzle::AutomateReactor)?;
-    builder.lisa("TODO");
+    builder.you("\"One reactor control board, coming up.\"");
+    builder.henry("\
+        \"Great!  Reactor's ready to go as soon as we can get it slotted \
+        in.\"");
+    builder.lisa("\
+        \"Good work, both of you.  Let's get that reactor fired up, and \
+        start thawing out the rest of the crew.  Or at least, whomever we \
+        still have left.\"");
     Ok(())
 }
 

@@ -23,6 +23,7 @@ use super::super::paragraph::Paragraph;
 use super::super::wire::WireModel;
 use super::graph::ScoreGraphView;
 use super::list::{ListIcon, ListView};
+use crate::mancer::font::Align;
 use crate::mancer::gl::{Depth, FrameBuffer};
 use crate::mancer::gui::{Event, Resources, Ui};
 use crate::mancer::save::Prefs;
@@ -44,6 +45,8 @@ const DESCRIPTION_FONT_SIZE: f32 = 20.0;
 const DESCRIPTION_INNER_MARGIN_HORZ: f32 = 14.0;
 const DESCRIPTION_INNER_MARGIN_VERT: f32 = 10.0;
 const DESCRIPTION_LINE_HEIGHT: f32 = 22.0;
+const DESCRIPTION_TITLE_FONT_SIZE: f32 = 26.0;
+const DESCRIPTION_TITLE_MARGIN_BOTTOM: f32 = 14.0;
 
 const PREVIEW_INNER_MARGIN: f32 = 14.0;
 const PREVIEW_MAX_GRID_CELL_SIZE: f32 = 48.0;
@@ -146,7 +149,7 @@ impl PuzzlesView {
                 circuit_list_items(state),
                 state.circuit_name(),
             ),
-            description: DescriptionView::new(description_rect),
+            description: DescriptionView::new(window_size, description_rect),
             graph: ScoreGraphView::new(window_size, graph_rect),
             preview: CircuitPreviewView::new(window_size, preview_rect),
             edit_button,
@@ -173,7 +176,7 @@ impl PuzzlesView {
     ) {
         let puzzle = state.current_puzzle();
         self.puzzle_list.draw(resources, matrix, &puzzle);
-        self.description.draw(resources, matrix, puzzle, state.prefs());
+        self.description.draw(resources, matrix, state);
         self.back_button.draw(resources, matrix, true);
         self.graph.draw(resources, matrix, state);
         self.circuit_list.draw(resources, matrix, state.circuit_name());
@@ -281,22 +284,35 @@ fn puzzle_list_items(
 
 //===========================================================================//
 
+struct DescriptionCache {
+    profile_name: Option<String>,
+    puzzle: Puzzle,
+    fbo: FrameBuffer,
+}
+
 struct DescriptionView {
+    window_size: RectSize<i32>,
     rect: Rect<f32>,
-    cache: RefCell<Option<(Puzzle, Paragraph)>>,
+    cache: RefCell<Option<DescriptionCache>>,
 }
 
 impl DescriptionView {
-    pub fn new(rect: Rect<i32>) -> DescriptionView {
-        DescriptionView { rect: rect.as_f32(), cache: RefCell::new(None) }
+    pub fn new(
+        window_size: RectSize<i32>,
+        rect: Rect<i32>,
+    ) -> DescriptionView {
+        DescriptionView {
+            window_size,
+            rect: rect.as_f32(),
+            cache: RefCell::new(None),
+        }
     }
 
     pub fn draw(
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
-        puzzle: Puzzle,
-        prefs: &Prefs,
+        state: &GameState,
     ) {
         resources.shaders().ui().draw_box2(
             matrix,
@@ -305,47 +321,129 @@ impl DescriptionView {
             &Color4::CYAN2,
             &Color4::PURPLE0_TRANSLUCENT,
         );
+        let profile_name = state.profile().map(|profile| profile.name());
+        let puzzle = state.current_puzzle();
 
-        let mut cached = self.cache.borrow_mut();
-        match cached.as_ref() {
-            Some(&(puzz, ref paragraph)) if puzz == puzzle => {
-                self.draw_text(resources, matrix, paragraph);
+        let mut opt_cache = self.cache.borrow_mut();
+        if let Some(cache) = opt_cache.as_ref() {
+            if cache.profile_name.as_ref().map(String::as_str) == profile_name
+                && cache.puzzle == puzzle
+            {
+                self.draw_fbo(resources, matrix, &cache.fbo);
                 return;
             }
-            _ => {}
         }
 
-        debug_log!("Recompiling description paragraph");
-        let width = self.rect.width - 2.0 * DESCRIPTION_INNER_MARGIN_HORZ;
-        let paragraph = Paragraph::compile(
-            DESCRIPTION_FONT_SIZE,
-            DESCRIPTION_LINE_HEIGHT,
-            width,
-            prefs,
-            puzzle.description(),
-        );
-        self.draw_text(resources, matrix, &paragraph);
-        *cached = Some((puzzle, paragraph));
+        let fbo = self.generate_fbo(resources, state, puzzle);
+        self.draw_fbo(resources, matrix, &fbo);
+        *opt_cache = Some(DescriptionCache {
+            profile_name: profile_name.map(str::to_string),
+            puzzle,
+            fbo,
+        });
     }
 
-    fn draw_text(
+    fn draw_fbo(
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
-        paragraph: &Paragraph,
+        fbo: &FrameBuffer,
     ) {
-        let left = self.rect.x + DESCRIPTION_INNER_MARGIN_HORZ;
-        let top = self.rect.y + DESCRIPTION_INNER_MARGIN_VERT;
-        paragraph.draw(resources, matrix, (left, top));
+        let left_top = self.rect.top_left()
+            + vec2(
+                DESCRIPTION_INNER_MARGIN_HORZ,
+                DESCRIPTION_INNER_MARGIN_VERT,
+            );
+        let grayscale = false;
+        resources.shaders().frame().draw(matrix, fbo, left_top, grayscale);
+    }
+
+    fn generate_fbo(
+        &self,
+        resources: &Resources,
+        state: &GameState,
+        puzzle: Puzzle,
+    ) -> FrameBuffer {
+        debug_log!("Regenerating puzzle description");
+        let fbo_size = self.rect.size().expand2(
+            -DESCRIPTION_INNER_MARGIN_HORZ,
+            -DESCRIPTION_INNER_MARGIN_VERT,
+        );
+        let fbo = FrameBuffer::new(
+            fbo_size.width as usize,
+            fbo_size.height as usize,
+            false,
+        );
+        fbo.bind();
+        DescriptionView::draw_description(
+            resources,
+            fbo_size,
+            puzzle,
+            state.prefs(),
+        );
+        fbo.unbind(self.window_size);
+        fbo
+    }
+
+    fn draw_description(
+        resources: &Resources,
+        fbo_size: RectSize<f32>,
+        puzzle: Puzzle,
+        prefs: &Prefs,
+    ) {
+        let matrix = cgmath::ortho(
+            0.0,
+            fbo_size.width,
+            0.0,
+            fbo_size.height,
+            -10.0,
+            10.0,
+        );
+        let label = format!("{:?}: {}", puzzle.kind(), puzzle.title());
+        let font = resources.fonts().bold();
+        font.draw(
+            &matrix,
+            DESCRIPTION_TITLE_FONT_SIZE,
+            Align::TopLeft,
+            (0.0, 0.0),
+            &label,
+        );
+        resources.shaders().solid().fill_rect(
+            &matrix,
+            Color3::WHITE,
+            Rect::new(
+                1.0,
+                DESCRIPTION_TITLE_FONT_SIZE,
+                font.str_width(DESCRIPTION_TITLE_FONT_SIZE, &label) - 2.0,
+                1.0,
+            ),
+        );
+        let paragraph = Paragraph::compile(
+            DESCRIPTION_FONT_SIZE,
+            DESCRIPTION_LINE_HEIGHT,
+            fbo_size.width,
+            prefs,
+            puzzle.description(),
+        );
+        let paragraph_top =
+            DESCRIPTION_TITLE_FONT_SIZE + DESCRIPTION_TITLE_MARGIN_BOTTOM;
+        paragraph.draw(resources, &matrix, (0.0, paragraph_top));
     }
 }
 
 //===========================================================================//
 
+struct CircuitPreviewCache {
+    profile_name: Option<String>,
+    puzzle: Puzzle,
+    circuit_name: String,
+    fbo: FrameBuffer,
+}
+
 struct CircuitPreviewView {
     window_size: RectSize<i32>,
     rect: Rect<f32>,
-    cache: RefCell<Option<(Option<String>, Puzzle, String, FrameBuffer)>>,
+    cache: RefCell<Option<CircuitPreviewCache>>,
 }
 
 impl CircuitPreviewView {
@@ -377,27 +475,25 @@ impl CircuitPreviewView {
         let puzzle = state.current_puzzle();
         let circuit_name = state.circuit_name();
 
-        let mut cached = self.cache.borrow_mut();
-        match cached.as_ref() {
-            Some(&(ref pname, puzz, ref cname, ref fbo))
-                if pname.as_ref().map(String::as_str) == profile_name
-                    && puzz == puzzle
-                    && cname == circuit_name =>
+        let mut opt_cache = self.cache.borrow_mut();
+        if let Some(cache) = opt_cache.as_ref() {
+            if cache.profile_name.as_ref().map(String::as_str) == profile_name
+                && cache.puzzle == puzzle
+                && cache.circuit_name == circuit_name
             {
-                self.draw_fbo(resources, matrix, fbo);
+                self.draw_fbo(resources, matrix, &cache.fbo);
                 return;
             }
-            _ => {}
         }
 
         let fbo = self.generate_fbo(resources, state, puzzle, circuit_name);
         self.draw_fbo(resources, matrix, &fbo);
-        *cached = Some((
-            profile_name.map(str::to_string),
+        *opt_cache = Some(CircuitPreviewCache {
+            profile_name: profile_name.map(str::to_string),
             puzzle,
-            circuit_name.to_string(),
+            circuit_name: circuit_name.to_string(),
             fbo,
-        ));
+        });
     }
 
     fn draw_fbo(

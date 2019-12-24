@@ -422,7 +422,7 @@ impl Puzzle {
                      ($/a$/ OR $/b$/) AND NOT ($/a$/ AND $/b$/).",
             },
             Puzzle::SandboxBehavior => &PuzzleData {
-                title: "Behavior Sandbox",
+                title: "Behavior Lab",
                 kind: PuzzleKind::Sandbox,
                 allow_events: false,
                 init_size: (8, 6),
@@ -435,7 +435,7 @@ impl Puzzle {
                 instructions: "",
             },
             Puzzle::SandboxEvent => &PuzzleData {
-                title: "Event Sandbox",
+                title: "Event Lab",
                 kind: PuzzleKind::Sandbox,
                 allow_events: true,
                 init_size: (8, 6),

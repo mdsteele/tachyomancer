@@ -46,6 +46,13 @@ impl<T: BaseNum> RectSize<T> {
         let margin2 = margin + margin;
         RectSize::new(self.width + margin2, self.height + margin2)
     }
+
+    pub fn expand2(&self, horz_margin: T, vert_margin: T) -> RectSize<T> {
+        RectSize::new(
+            self.width + (horz_margin + horz_margin),
+            self.height + (vert_margin + vert_margin),
+        )
+    }
 }
 
 impl AsFloat for RectSize<i32> {
@@ -185,8 +192,8 @@ impl<T: BaseNum> Rect<T> {
         Rect::new(
             self.x - horz_margin,
             self.y - vert_margin,
-            self.width + horz_margin + horz_margin,
-            self.height + vert_margin + vert_margin,
+            self.width + (horz_margin + horz_margin),
+            self.height + (vert_margin + vert_margin),
         )
     }
 

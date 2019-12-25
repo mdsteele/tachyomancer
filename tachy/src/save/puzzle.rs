@@ -134,7 +134,9 @@ impl Puzzle {
                 init_size: (8, 6),
                 score_units: "Time",
                 graph_bounds: (150, 150),
-                description: "TODO",
+                description:
+                    "Adjust the beacon transmission angle to track the \
+                     detected signal.",
                 instructions:
                     "* $!Your goal is TODO.\n\
                      * $!The optimal position is given by the sensor \
@@ -151,7 +153,9 @@ impl Puzzle {
                 init_size: (5, 7),
                 score_units: "Time",
                 graph_bounds: (100, 200),
-                description: "TODO",
+                description:
+                    "Regulate the speed of the drill to avoid breaking the \
+                     drill head.",
                 instructions: "TODO",
             },
             Puzzle::AutomateGrapple => &PuzzleData {
@@ -161,7 +165,9 @@ impl Puzzle {
                 init_size: (6, 8),
                 score_units: "Time",
                 graph_bounds: (150, 150),
-                description: "TODO",
+                description:
+                    "Regulate the discharge of the grapple launcher's \
+                     magnetic coils.",
                 instructions: "TODO",
             },
             Puzzle::AutomateHeliostat => &PuzzleData {
@@ -172,7 +178,7 @@ impl Puzzle {
                 score_units: "Time",
                 graph_bounds: (50, 150),
                 description:
-                    "Automate the ship's heliostat to reflect sunlight \
+                    "Position the ship's heliostat to reflect sunlight \
                      onto the solar panels at the optimal angle.",
                 instructions:
                     "* $!Your goal is to fill the energy meter by always \
@@ -192,7 +198,9 @@ impl Puzzle {
                 init_size: (8, 6),
                 score_units: "Time",
                 graph_bounds: (100, 250),
-                description: "TODO",
+                description:
+                    "Program the scout robot to pick up ore deposits and \
+                     carry them back to the base.",
                 instructions:
                     "* $!Your goal is carry all the ore back to the base.\n\
                      * $!The robot will depart from the base in a straight \
@@ -234,7 +242,9 @@ impl Puzzle {
                 init_size: (6, 7),
                 score_units: "Time",
                 graph_bounds: (100, 150),
-                description: "TODO",
+                description:
+                    "Narrow the sensor sweep to zero in on a given signal of \
+                     interest.",
                 instructions:
                     "* $!The two inputs indicate the current upper and \
                      lower bounds (inclusive) of the scan range.\n\
@@ -297,7 +307,9 @@ impl Puzzle {
                 init_size: (6, 8),
                 score_units: "Time",
                 graph_bounds: (150, 150),
-                description: "TODO",
+                description:
+                    "Operate the lander thrusters during descent for a soft \
+                     landing.",
                 instructions: "TODO",
             },
             Puzzle::CommandShields => &PuzzleData {
@@ -307,7 +319,9 @@ impl Puzzle {
                 init_size: (9, 7),
                 score_units: "Time",
                 graph_bounds: (400, 600),
-                description: "TODO",
+                description:
+                    "Control the ship's shields to block incoming enemy \
+                     torpedoes, then return fire.",
                 instructions: "TODO",
             },
             Puzzle::CommandTurret => &PuzzleData {
@@ -317,7 +331,9 @@ impl Puzzle {
                 init_size: (9, 7),
                 score_units: "Time",
                 graph_bounds: (200, 200),
-                description: "TODO",
+                description:
+                    "Aim and fire the pulse cannon turret to fend off waves \
+                     of enemy attackers.",
                 instructions: "TODO",
             },
             Puzzle::FabricateCounter => &PuzzleData {
@@ -327,7 +343,9 @@ impl Puzzle {
                 init_size: (7, 5),
                 score_units: "Wire Length",
                 graph_bounds: (150, 150),
-                description: "TODO",
+                description:
+                    "Build a memory chip that can increment or decrement its \
+                     value in response to events.",
                 instructions: "TODO",
             },
             Puzzle::FabricateEggTimer => &PuzzleData {
@@ -337,11 +355,13 @@ impl Puzzle {
                 init_size: (7, 7),
                 score_units: "Wire Length",
                 graph_bounds: (100, 150),
-                description: "TODO",
+                description:
+                    "Build a timing chip that counts down from a given time \
+                     and then fires an event at zero.",
                 instructions: "TODO",
             },
             Puzzle::FabricateHalve => &PuzzleData {
-                title: "4-Bit Halver",
+                title: "Halver",
                 kind: PuzzleKind::Fabricate,
                 allow_events: false,
                 init_size: (7, 5),
@@ -359,7 +379,7 @@ impl Puzzle {
                      of the input into the lowest three wires of the output.",
             },
             Puzzle::FabricateInc => &PuzzleData {
-                title: "4-Bit Incrementor",
+                title: "Incrementor",
                 kind: PuzzleKind::Fabricate,
                 allow_events: true,
                 init_size: (5, 5),
@@ -377,7 +397,7 @@ impl Puzzle {
                      and emit an output event with the sum.",
             },
             Puzzle::FabricateMul => &PuzzleData {
-                title: "8-Bit Multiplier",
+                title: "Multiplier",
                 kind: PuzzleKind::Fabricate,
                 allow_events: false,
                 init_size: (7, 7),
@@ -399,11 +419,13 @@ impl Puzzle {
                 init_size: (7, 7),
                 score_units: "Wire Length",
                 graph_bounds: (100, 150),
-                description: "TODO",
+                description:
+                    "Build a timing chip that counts upwards from zero, and \
+                     that can be paused or reset.",
                 instructions: "TODO",
             },
             Puzzle::FabricateXor => &PuzzleData {
-                title: "1-Bit XOR Gate",
+                title: "XOR Gate",
                 kind: PuzzleKind::Fabricate,
                 allow_events: false,
                 init_size: (5, 5),
@@ -449,15 +471,15 @@ impl Puzzle {
                 instructions: "",
             },
             Puzzle::TutorialAdd => &PuzzleData {
-                title: "4-Bit Adder",
+                title: "Adder",
                 kind: PuzzleKind::Tutorial,
                 allow_events: false,
                 init_size: (5, 5),
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "Tutorial: Build a 4-bit adder using 2-bit adders, \
-                     packers and unpackers.\n\n\
+                    "Build a 4-bit adder using 2-bit adders, packers, and \
+                     unpackers.\n\n\
                      Once this task is completed, you will be able to use \
                      generic $*Add$* chips in future tasks.",
                 instructions:
@@ -516,35 +538,34 @@ impl Puzzle {
                 instructions: "TODO",
             },
             Puzzle::TutorialMux => &PuzzleData {
-                title: "1-Bit MUX",
+                title: "Two-Way Mux",
                 kind: PuzzleKind::Tutorial,
                 allow_events: false,
                 init_size: (5, 5),
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "Tutorial: Build a 1-bit $*MUX$* using other logic \
-                     gates.\n\n\
+                    "Build a 1-bit multiplexer using other logic gates.\n\n\
                      Once this task is completed, you will be able to use \
-                     $*MUX$* chips in future tasks.",
+                     $*Mux$* chips in future tasks.",
                 instructions:
-                    "* $!Your goal is to construct a 1-bit MUX.\n\
+                    "* $!Your goal is to construct a 1-bit Mux.\n\
                      * $!The output should be the value of $*in0$* if \
                      $*ctrl$* is 0, or of $*in1$* if $*ctrl$* is 1.\n\
                      * $!If $/a$/ and $/b$/ are the inputs and $/c$/ is \
-                     the control, then a MUX is    \
+                     the control, then a Mux is    \
                      ($/a$/ AND NOT $/c$/) OR ($/b$/ AND $/c$/).",
             },
             Puzzle::TutorialOr => &PuzzleData {
-                title: "1-Bit OR Gate",
+                title: "OR Gate",
                 kind: PuzzleKind::Tutorial,
                 allow_events: false,
                 init_size: (5, 5),
                 score_units: "Wire Length",
                 graph_bounds: (50, 50),
                 description:
-                    "Tutorial: Build a 1-bit $*OR$* gate out of $*AND$* \
-                     and $*NOT$* gates.\n\n\
+                    "Build a 1-bit $*OR$* gate out of $*AND$* and $*NOT$* \
+                     gates.\n\n\
                      Once this task is completed, you will be able to use \
                      $*OR$* gates in future tasks.",
                 instructions:
@@ -572,8 +593,8 @@ impl Puzzle {
                 score_units: "Wire Length",
                 graph_bounds: (50, 100),
                 description:
-                    "Tutorial: Build a circuit for tracking a running \
-                     total, and that can also be reset back to zero.",
+                    "Build a circuit for tracking a running total and \
+                     resetting it back to zero.",
                 instructions:
                     "* $!The output should start at zero.  When an input \
                      event arrives, its value should be added to the \

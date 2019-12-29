@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::ModeChange;
-use crate::mancer::gui::{Event, Music, Window};
+use crate::mancer::gui::{Event, Window};
 use crate::mancer::state::GameState;
 use crate::mancer::view::{MenuAction, MenuView};
 
@@ -26,7 +26,6 @@ use crate::mancer::view::{MenuAction, MenuView};
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
-    window.ui().audio().play_music(Music::MorningCruise);
     let mut view = MenuView::new(window, state);
     loop {
         match window.next_event() {

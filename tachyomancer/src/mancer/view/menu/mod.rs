@@ -32,8 +32,9 @@ use self::puzzle::{PuzzlesAction, PuzzlesView};
 use super::background::{background_for_chapter, BackgroundView};
 use super::button::RadioButton;
 use super::dialog::{ButtonDialogBox, DialogAction, TextDialogBox};
+use super::paragraph::Paragraph;
 use crate::mancer::gui::{
-    ClockEventData, Cursor, Event, Keycode, Resources, Ui, Window,
+    ClockEventData, Cursor, Event, Keycode, Music, Resources, Ui, Window,
     WindowOptions,
 };
 use crate::mancer::save::{MenuSection, CIRCUIT_NAME_MAX_CHARS};
@@ -129,6 +130,8 @@ impl MenuView {
         let converse_view = ConverseView::new(section_rect, &mut ui, state);
         let puzzles_view =
             PuzzlesView::new(size, section_rect, &mut ui, state);
+
+        ui.audio().play_music(music_for_chapter(latest_chapter));
 
         MenuView {
             size,
@@ -400,7 +403,7 @@ impl MenuView {
                         self.unfocus(ui, state);
                         let format = format!(
                             "Really delete {}?",
-                            escape(state.circuit_name())
+                            Paragraph::escape(state.circuit_name())
                         );
                         let cancel_button =
                             ("Cancel", None, Some(Keycode::Escape));
@@ -451,7 +454,7 @@ impl MenuView {
                              to delete all progress\n\
                              on profile \"{}\"?\n\n\
                              This cannot be undone!",
-                            escape(state.profile().unwrap().name())
+                            Paragraph::escape(state.profile().unwrap().name())
                         );
                         let cancel_button =
                             ("Cancel", None, Some(Keycode::Escape));
@@ -489,7 +492,7 @@ impl MenuView {
         let format = format!(
             "$R$*ERROR:$*$D Unable to {}.\n\n{}",
             unable,
-            escape(error)
+            Paragraph::escape(error)
         );
         let buttons = &[("OK", None, Some(Keycode::Return))];
         let dialog =
@@ -544,8 +547,11 @@ impl MenuView {
 
 //===========================================================================//
 
-fn escape(string: &str) -> String {
-    string.replace('$', "$$")
+fn music_for_chapter(chapter: Chapter) -> Vec<Music> {
+    match chapter {
+        Chapter::Odyssey => vec![Music::PitchBlack],
+        _ => vec![Music::Aduro], // TODO: specify music for other chapters
+    }
 }
 
 fn section_button(

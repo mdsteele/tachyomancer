@@ -18,16 +18,20 @@
 // +--------------------------------------------------------------------------+
 
 use super::shared::ModeChange;
-use crate::mancer::gui::{Event, Window};
+use crate::mancer::gui::{Event, Music, Window};
 use crate::mancer::state::GameState;
 use crate::mancer::view::{CircuitAction, CircuitView};
-use tachy::save::SolutionData;
+use tachy::save::{Puzzle, SolutionData};
 
 //===========================================================================//
 
 pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
     debug_assert!(state.profile().is_some());
     debug_assert!(state.edit_grid().is_some());
+    window
+        .ui()
+        .audio()
+        .play_music(music_for_puzzle(state.edit_grid().unwrap().puzzle()));
     let mut view = {
         let grid = state.edit_grid().unwrap();
         CircuitView::new(window, grid, state.prefs())
@@ -68,6 +72,46 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 state.maybe_autosave_circuit();
             }
         }
+    }
+}
+
+fn music_for_puzzle(puzzle: Puzzle) -> Vec<Music> {
+    match puzzle {
+        Puzzle::AutomateBeacon => {
+            vec![Music::PitchBlack, Music::BeyondTheStars]
+        }
+        Puzzle::AutomateMiningRobot => {
+            vec![Music::MorningCruise, Music::EcstaticWave]
+        }
+        Puzzle::AutomateReactor => {
+            vec![Music::AfterlifeCity, Music::InfectedEuphoria]
+        }
+        Puzzle::AutomateRobotArm => {
+            vec![Music::InfectedEuphoria, Music::FireWithin]
+        }
+        Puzzle::AutomateStorageDepot => {
+            vec![Music::AfterlifeCity, Music::FireWithin]
+        }
+        Puzzle::AutomateTranslator => {
+            vec![Music::TheHyperboreanMenace, Music::SettingSail]
+        }
+        Puzzle::AutomateXUnit => {
+            vec![Music::DerelictShip, Music::BeyondTheStars]
+        }
+        Puzzle::CommandLander => {
+            vec![Music::BeyondTheStars, Music::SettingSail]
+        }
+        Puzzle::CommandShields => {
+            vec![Music::LockAndLoad, Music::InfectedEuphoria]
+        }
+        Puzzle::CommandTurret => {
+            vec![Music::LockAndLoad, Music::InfectedEuphoria]
+        }
+        Puzzle::SandboxBehavior | Puzzle::SandboxEvent => {
+            vec![Music::MorningCruise, Music::InfectedEuphoria]
+        }
+        // TODO: specify music for other puzzles
+        _ => vec![Music::EcstaticWave],
     }
 }
 

@@ -23,7 +23,10 @@ use lewton::inside_ogg::OggStreamReader;
 use lewton::samples::InterleavedSamples;
 use sdl2;
 use sdl2::audio::AudioFormatNum;
+use std::collections::VecDeque;
 use std::io::Cursor;
+use std::mem;
+use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 
 //===========================================================================//
@@ -52,13 +55,37 @@ pub enum Sound {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Music {
+    Aduro,
+    AfterlifeCity,
+    BeyondTheStars,
+    DerelictShip,
+    EcstaticWave,
+    FireWithin,
+    InfectedEuphoria,
+    LockAndLoad,
     MorningCruise,
+    PitchBlack,
+    SettingSail,
+    TheHyperboreanMenace,
 }
 
 impl Music {
     fn ogg_data(&self) -> &'static [u8] {
         match *self {
+            Music::Aduro => music::ADURO_OGG_DATA,
+            Music::AfterlifeCity => music::AFTERLIFE_CITY_OGG_DATA,
+            Music::BeyondTheStars => music::BEYOND_THE_STARS_OGG_DATA,
+            Music::DerelictShip => music::DERELICT_SHIP_OGG_DATA,
+            Music::EcstaticWave => music::ECSTATIC_WAVE_OGG_DATA,
+            Music::FireWithin => music::FIRE_WITHIN_OGG_DATA,
+            Music::InfectedEuphoria => music::INFECTED_EUPHORIA_OGG_DATA,
+            Music::LockAndLoad => music::LOCK_AND_LOAD_OGG_DATA,
             Music::MorningCruise => music::MORNING_CRUISE_OGG_DATA,
+            Music::PitchBlack => music::PITCH_BLACK_OGG_DATA,
+            Music::SettingSail => music::SETTING_SAIL_OGG_DATA,
+            Music::TheHyperboreanMenace => {
+                music::THE_HYPERBOREAN_MENACE_OGG_DATA
+            }
         }
     }
 }
@@ -68,7 +95,7 @@ impl Music {
 pub struct AudioQueue {
     sounds: Vec<Sound>,
     sound_volume: Option<f32>, // 0.0 to 1.0
-    music: Option<Music>,
+    music: Option<Vec<Music>>,
     music_volume: Option<f32>, // 0.0 to 1.0
 }
 
@@ -86,7 +113,7 @@ impl AudioQueue {
         self.sounds.push(sound);
     }
 
-    pub fn play_music(&mut self, music: Music) {
+    pub fn play_music(&mut self, music: Vec<Music>) {
         self.music = Some(music);
     }
 
@@ -101,7 +128,9 @@ impl AudioQueue {
     pub(super) fn merge(&mut self, other: AudioQueue) {
         self.sounds.extend(other.sounds);
         self.sound_volume = other.sound_volume.or(self.sound_volume);
-        self.music = other.music.or(self.music);
+        if other.music.is_some() {
+            self.music = other.music;
+        }
         self.music_volume = other.music_volume.or(self.music_volume);
     }
 }
@@ -175,11 +204,6 @@ impl MusicStream {
         }
     }
 
-    pub fn restart(&mut self) -> Result<(), String> {
-        *self = MusicStream::new(self.music)?;
-        Ok(())
-    }
-
     pub fn read(&mut self, out: &mut [f32]) -> Result<usize, String> {
         while self.samples.is_empty() {
             match self
@@ -219,7 +243,8 @@ pub struct AudioMixer {
     active_sounds: Vec<(Sound, usize)>,
     sound_volume: f32, // 0.0 to 1.0
     current_music: Option<MusicStream>,
-    next_music: Option<(Music, f32)>,
+    music_fade: Option<f32>,
+    next_music: VecDeque<Music>,
     music_volume: f32, // 0.0 to 1.0
 }
 
@@ -234,7 +259,8 @@ impl AudioMixer {
             active_sounds: Vec::new(),
             sound_volume: 0.0,
             current_music: None,
-            next_music: None,
+            music_fade: None,
+            next_music: VecDeque::new(),
             music_volume: 0.0,
         };
         mixer.drain_queue();
@@ -277,8 +303,32 @@ impl AudioMixer {
         return Ok(device);
     }
 
+    fn start_next_music(&mut self) {
+        if let Some(music) = self.next_music.pop_front() {
+            match MusicStream::new(music) {
+                Ok(stream) => {
+                    self.current_music = Some(stream);
+                    self.music_fade = None;
+                    self.next_music.push_back(music);
+                }
+                Err(error) => {
+                    debug_warn!("Failed to start music: {}", error);
+                    self.current_music = None;
+                    self.music_fade = None;
+                    self.next_music.clear();
+                }
+            }
+        } else {
+            self.current_music = None;
+            self.music_fade = None;
+        }
+    }
+
     fn drain_queue(&mut self) {
-        let mut audio_queue = self.audio_queue.lock().unwrap();
+        let mut audio_queue = mem::replace(
+            self.audio_queue.lock().unwrap().deref_mut(),
+            AudioQueue::new(),
+        );
         for sound in audio_queue.sounds.drain(..) {
             self.active_sounds.push((sound, 0));
         }
@@ -289,27 +339,18 @@ impl AudioMixer {
             self.music_volume = volume;
         }
         if let Some(new_music) = audio_queue.music.take() {
+            self.next_music = new_music.into();
             if let Some(ref music_stream) = self.current_music {
-                if music_stream.music != new_music {
-                    match self.next_music {
-                        Some((next_music, _)) if next_music == new_music => {}
-                        Some((_, fade)) => {
-                            self.next_music = Some((new_music, fade));
-                        }
-                        None => self.next_music = Some((new_music, 1.0)),
-                    }
+                if self.next_music.front() == Some(&music_stream.music) {
+                    // TODO: fade back in if fading out
+                    self.music_fade = None;
+                    self.next_music.rotate_left(1);
+                } else if self.music_fade.is_none() {
+                    self.music_fade = Some(1.0);
                 }
             } else {
-                match MusicStream::new(new_music) {
-                    Ok(stream) => self.current_music = Some(stream),
-                    Err(error) => {
-                        debug_warn!(
-                            "Failed to start {:?} music: {}",
-                            new_music,
-                            error
-                        );
-                    }
-                }
+                debug_assert_eq!(self.music_fade, None);
+                self.start_next_music();
             }
         }
     }
@@ -328,60 +369,38 @@ impl sdl2::audio::AudioCallback for AudioMixer {
             }
         } else {
             let mut start: usize = 0;
-            if let Some(ref mut music_stream) = self.current_music {
-                while start < out.len() {
+            while start < out.len() {
+                if let Some(ref mut music_stream) = self.current_music {
                     match music_stream.read(&mut out[start..]) {
-                        Ok(0) => match music_stream.restart() {
-                            Ok(()) => {}
-                            Err(error) => {
-                                debug_warn!(
-                                    "Failed to restart music: {}",
-                                    error
-                                );
-                                self.current_music = None;
-                                self.next_music = None;
-                                break;
-                            }
-                        },
+                        Ok(0) => self.start_next_music(),
                         Ok(num_samples) => {
                             start += num_samples;
                         }
                         Err(error) => {
                             debug_warn!("Failed to stream music: {}", error);
                             self.current_music = None;
-                            self.next_music = None;
+                            self.music_fade = None;
+                            self.next_music.clear();
                             break;
                         }
                     }
+                } else {
+                    debug_assert!(self.next_music.is_empty());
+                    break;
                 }
-            } else {
-                debug_assert!(self.next_music.is_none());
             }
             for sample in out[start..].iter_mut() {
                 *sample = 0.0;
             }
         }
-        let fade = if let Some((music, old_fade)) = self.next_music {
+        let fade = if let Some(old_fade) = self.music_fade {
             let new_fade = old_fade
                 - (out.len() as f32)
                     / ((DESIRED_AUDIO_RATE as f32) * MUSIC_FADE_OUT_SECONDS);
             if new_fade > 0.0 {
-                self.next_music = Some((music, new_fade));
+                self.music_fade = Some(new_fade);
             } else {
-                self.next_music = None;
-                match MusicStream::new(music) {
-                    Ok(music_stream) => {
-                        self.current_music = Some(music_stream);
-                    }
-                    Err(error) => {
-                        debug_warn!(
-                            "Failed to start {:?} music: {}",
-                            music,
-                            error
-                        );
-                        self.current_music = None;
-                    }
-                }
+                self.start_next_music();
             }
             old_fade
         } else {

@@ -1,0 +1,9 @@
+name = "Fire Within"
+artist = "Jens Kiilstofte"
+license = "CC-BY 4.0"
+year = 2013
+url = "https://machinimasound.com/legacy-tracks"
+comments = """
+This file was modified from the original by (1) mixing stereo down to mono, and
+(2) converting from MP3 to Ogg Vorbis.
+"""

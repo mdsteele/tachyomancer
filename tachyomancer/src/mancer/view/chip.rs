@@ -100,6 +100,7 @@ impl ChipModel {
                 Font::Roman,
                 0.25,
                 &INTERFACE_LABEL_COLOR,
+                Orientation::default(),
                 name,
             );
         }
@@ -140,6 +141,14 @@ impl ChipModel {
                     chip_size,
                     ChipIcon::Blank,
                 );
+                let text_orient = match orient * Direction::North {
+                    Direction::North | Direction::South => {
+                        Orientation::default()
+                    }
+                    Direction::East | Direction::West => {
+                        Orientation::default().rotate_ccw()
+                    }
+                };
                 let mut value: u32 = 0;
                 if let Some(grid) = opt_grid {
                     if grid.eval().is_some() {
@@ -162,6 +171,7 @@ impl ChipModel {
                     Font::Led,
                     0.5,
                     &Color4::YELLOW5,
+                    text_orient,
                     &format!("{:05}", value),
                 );
             }
@@ -204,6 +214,7 @@ impl ChipModel {
                         Font::Roman,
                         0.3,
                         &Color4::WHITE,
+                        Orientation::default(),
                         &format!("{}", ctype),
                     );
                 }
@@ -226,6 +237,7 @@ impl ChipModel {
                     Font::Roman,
                     0.25,
                     &Color4::WHITE,
+                    Orientation::default(),
                     string.trim_end(),
                 );
             }
@@ -233,7 +245,7 @@ impl ChipModel {
                 let label = value.to_string();
                 let font = Font::Roman;
                 let font_size =
-                    0.5 / ((label.len() as f32) * font.ratio()).max(1.0);
+                    0.4 / ((label.len() as f32) * font.ratio()).max(1.0);
                 draw_chip_string(
                     resources,
                     &grid_matrix,
@@ -242,6 +254,7 @@ impl ChipModel {
                     font,
                     font_size,
                     &Color4::ORANGE4,
+                    Orientation::default(),
                     &label,
                 );
             }
@@ -446,17 +459,22 @@ fn draw_chip_string(
     font: Font,
     font_size: f32,
     color: &Color4,
+    text_orient: Orientation,
     string: &str,
 ) {
-    let matrix =
-        grid_matrix * Matrix4::from_translation(vec3(0.0, 0.0, 0.101));
-    let (width, height) = (chip_size.width as f32, chip_size.height as f32);
+    let matrix = grid_matrix
+        * Matrix4::from_translation(vec3(
+            (coords.x as f32) + 0.5 * (chip_size.width as f32),
+            (coords.y as f32) + 0.5 * (chip_size.height as f32),
+            0.101,
+        ))
+        * text_orient.matrix();
     let font = resources.fonts().get(font);
     font.draw_style(
         &matrix,
         font_size,
         Align::MidCenter,
-        ((coords.x as f32) + 0.5 * width, (coords.y as f32) + 0.5 * height),
+        (0.0, 0.0),
         color,
         0.0,
         string,

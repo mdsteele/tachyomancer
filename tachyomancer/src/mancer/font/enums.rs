@@ -17,20 +17,37 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use tachy::geom::RectSize;
+
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const GALACTICO_PNG_DATA: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/font/galactico.png"));
+    include_bytes!(concat!(env!("OUT_DIR"), "/font/galactico_64.png"));
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const GALACTICO_METRICS: (u32, u32, u32, u32) =
+    include!(concat!(env!("OUT_DIR"), "/font/galactico_64_metrics.rs"));
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const INCONSOLATA_BOLD_PNG_DATA: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata-bold.png"));
+    include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata-bold_64.png"));
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const INCONSOLATA_BOLD_METRICS: (u32, u32, u32, u32) =
+    include!(concat!(env!("OUT_DIR"), "/font/inconsolata-bold_64_metrics.rs"));
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const INCONSOLATA_REGULAR_PNG_DATA: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata-regular.png"));
+    include_bytes!(concat!(env!("OUT_DIR"), "/font/inconsolata-regular_64.png"));
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const INCONSOLATA_REGULAR_METRICS: (u32, u32, u32, u32) =
+    include!(concat!(env!("OUT_DIR"), "/font/inconsolata-regular_64_metrics.rs"));
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const SEGMENT7_PNG_DATA: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/font/segment7.png"));
+    include_bytes!(concat!(env!("OUT_DIR"), "/font/segment7_64.png"));
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const SEGMENT7_METRICS: (u32, u32, u32, u32) =
+    include!(concat!(env!("OUT_DIR"), "/font/segment7_64_metrics.rs"));
 
 //===========================================================================//
 
@@ -57,12 +74,8 @@ pub enum Font {
 
 impl Font {
     pub fn ratio(self) -> f32 {
-        match self {
-            Font::Alien => 0.7,
-            Font::Bold => 0.5,
-            Font::Led => 0.5,
-            Font::Roman => 0.5,
-        }
+        let (char_width, char_height, _, _) = self.metrics();
+        (char_width as f32) / (char_height as f32)
     }
 
     pub fn str_width(&self, height: f32, text: &str) -> f32 {
@@ -85,6 +98,23 @@ impl Font {
             Font::Roman => {
                 ("font/inconsolata-regular", INCONSOLATA_REGULAR_PNG_DATA)
             }
+        }
+    }
+
+    pub(super) fn char_tex_size(self) -> RectSize<f32> {
+        let (char_width, char_height, tex_width, tex_height) = self.metrics();
+        RectSize::new(
+            (char_width as f32) / (tex_width as f32),
+            (char_height as f32) / (tex_height as f32),
+        )
+    }
+
+    pub fn metrics(self) -> (u32, u32, u32, u32) {
+        match self {
+            Font::Alien => GALACTICO_METRICS,
+            Font::Bold => INCONSOLATA_BOLD_METRICS,
+            Font::Led => SEGMENT7_METRICS,
+            Font::Roman => INCONSOLATA_REGULAR_METRICS,
         }
     }
 }

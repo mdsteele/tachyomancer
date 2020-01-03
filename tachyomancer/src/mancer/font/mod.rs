@@ -26,7 +26,7 @@ use crate::mancer::gl::{
 };
 use cgmath::{Matrix4, Vector2};
 use std::rc::Rc;
-use tachy::geom::{Color4, MatrixExt};
+use tachy::geom::{Color4, MatrixExt, RectSize};
 
 //===========================================================================//
 
@@ -92,13 +92,19 @@ pub struct FontData {
     shader: Rc<TextShader>,
     texture: Texture2D,
     ratio: f32,
+    char_tex_size: RectSize<f32>,
 }
 
 impl FontData {
     fn new(font: Font, shader: &Rc<TextShader>) -> Result<FontData, String> {
         let (png_name, png_data) = font.png_name_and_data();
         let texture = Texture2D::from_png(png_name, png_data)?;
-        Ok(FontData { shader: shader.clone(), texture, ratio: font.ratio() })
+        Ok(FontData {
+            shader: shader.clone(),
+            texture,
+            ratio: font.ratio(),
+            char_tex_size: font.char_tex_size(),
+        })
     }
 
     pub fn ratio(&self) -> f32 {
@@ -146,7 +152,7 @@ impl FontData {
         slant: f32,
         chars: &[u8],
     ) {
-        let size = (self.ratio * height, height);
+        let size = (self.ratio() * height, height);
         self.shader.draw(
             matrix,
             size,
@@ -154,6 +160,7 @@ impl FontData {
             start,
             color,
             slant,
+            self.char_tex_size,
             &self.texture,
             chars,
         );
@@ -168,6 +175,7 @@ struct TextShader {
     mvp: ShaderUniform<Matrix4<f32>>,
     text: ShaderUniform<[u32; MAX_CHARS]>,
     slant: ShaderUniform<f32>,
+    char_tex_size: ShaderUniform<RectSize<f32>>,
     font: ShaderSampler<Texture2D>,
     varray: VertexArray,
     _vbuffer: VertexBuffer<u8>,
@@ -185,6 +193,7 @@ impl TextShader {
         let mvp = program.get_uniform("MVP")?;
         let text = program.get_uniform("Text")?;
         let slant = program.get_uniform("Slant")?;
+        let char_tex_size = program.get_uniform("CharTexSize")?;
         let font = program.get_sampler(0, "Font")?;
 
         // Set up vertex data:
@@ -210,6 +219,7 @@ impl TextShader {
             mvp,
             text,
             slant,
+            char_tex_size,
             font,
             varray,
             _vbuffer: vbuffer,
@@ -224,6 +234,7 @@ impl TextShader {
         start: (f32, f32),
         color: &Color4,
         slant: f32,
+        char_tex_size: RectSize<f32>,
         font: &Texture2D,
         chars: &[u8],
     ) {
@@ -231,6 +242,7 @@ impl TextShader {
         self.varray.bind();
         self.color.set(color);
         self.slant.set(&slant);
+        self.char_tex_size.set(&char_tex_size);
         self.font.set(font);
 
         let num_chars = chars.len();

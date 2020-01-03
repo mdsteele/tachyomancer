@@ -49,10 +49,10 @@ fn main() {
             "src/mancer/texture/scene",
         ],
     );
-    converter.font_to_texture("galactico", true);
-    converter.font_to_texture("inconsolata-bold", true);
-    converter.font_to_texture("inconsolata-regular", true);
-    converter.font_to_texture("segment7", false);
+    converter.rasterize_font("galactico", 64);
+    converter.rasterize_font("inconsolata-bold", 64);
+    converter.rasterize_font("inconsolata-regular", 64);
+    converter.rasterize_font("segment7", 64);
     converter.generate_chip_icons();
     converter.generate_list_icons();
     converter.generate_portraits_texture();
@@ -80,9 +80,6 @@ fn main() {
 }
 
 //===========================================================================//
-
-const GLYPH_HIRES_SIZE: usize = 64;
-const DIST_SPREAD: usize = 6;
 
 const CHIP_ICON_SIZE: usize = 64;
 const CHIP_TEXTURE_COLS: usize = 8;
@@ -151,11 +148,12 @@ impl Converter {
         writeln!(out_file, "];").unwrap();
     }
 
-    fn font_to_texture(&self, font_name: &str, centered: bool) {
+    fn rasterize_font(&self, font_name: &str, char_height: usize) {
         // Check if the output PNG file is already up-to-date:
         let font_path =
             PathBuf::from(format!("src/mancer/font/{}.ttf", font_name));
-        let png_relpath = PathBuf::from(format!("font/{}.png", font_name));
+        let png_relpath =
+            PathBuf::from(format!("font/{}_{}.png", font_name, char_height));
         let png_path = self.out_dir.join(&png_relpath);
         if self.is_up_to_date(&png_path, &font_path) {
             eprintln!("Up-to-date: {:?}", png_relpath);
@@ -167,52 +165,49 @@ impl Converter {
         // Load the input TTF file and determine metrics:
         let font_data = fs::read(&font_path).unwrap();
         let font = rusttype::Font::from_bytes(font_data).unwrap();
-        let scale = {
-            let y = (GLYPH_HIRES_SIZE - 2 * DIST_SPREAD) as f32;
-            let vmetrics = font.v_metrics(rusttype::Scale::uniform(y));
-            let glyph = font.glyph(rusttype::Codepoint(b'W' as u32));
-            let scaled = glyph.scaled(rusttype::Scale::uniform(y));
-            let bounds = scaled.exact_bounding_box().unwrap();
-            let x =
-                ((vmetrics.ascent - vmetrics.descent) / bounds.width()) * y;
-            rusttype::Scale { x, y }
-        };
+        let char_padding = 0.025 * (char_height as f32);
+        let scale = rusttype::Scale::uniform(
+            (char_height as f32) - 2.0 * char_padding,
+        );
+        let char_width: usize = (b'A'..b'Z')
+            .map(|byte| {
+                let glyph = font.glyph(rusttype::Codepoint(byte as u32));
+                if let Some(bounds) = glyph.scaled(scale).exact_bounding_box()
+                {
+                    (bounds.width() + 2.0 * char_padding).ceil() as usize
+                } else {
+                    1
+                }
+            })
+            .max()
+            .unwrap();
         let ascent = font.v_metrics(scale).ascent.ceil() as i32;
 
-        // Render glyphs at high resolution:
-        let mut hires = vec![0u8; 256 * GLYPH_HIRES_SIZE * GLYPH_HIRES_SIZE];
+        // Render glyphs:
+        let bitmap_width = (16 * char_width).next_power_of_two();
+        let bitmap_height = (16 * char_height).next_power_of_two();
+        let mut bitmap = vec![0u8; bitmap_width * bitmap_height];
         for codepoint in 0..256 {
             let glyph = font.glyph(rusttype::Codepoint(codepoint));
             let scaled = glyph.scaled(scale);
             let positioned =
                 scaled.positioned(rusttype::Point { x: 0.0, y: 0.0 });
             if let Some(bounds) = positioned.pixel_bounding_box() {
-                let mut xoff = ((codepoint % 16) as i32)
-                    * (GLYPH_HIRES_SIZE as i32)
-                    + (DIST_SPREAD as i32);
-                let xpadding = (GLYPH_HIRES_SIZE as i32)
-                    - 2 * (DIST_SPREAD as i32)
-                    - bounds.width();
-                if centered {
-                    xoff += xpadding / 2;
-                } else {
-                    xoff += xpadding;
-                }
-                let yoff = ((codepoint / 16) as i32)
-                    * (GLYPH_HIRES_SIZE as i32)
-                    + (DIST_SPREAD as i32)
+                let xoff = ((codepoint % 16) as i32) * (char_width as i32)
+                    + bounds.min.x;
+                let yoff = ((codepoint / 16) as i32) * (char_height as i32)
+                    + (char_padding as i32)
                     + ascent
                     + bounds.min.y;
                 positioned.draw(|x, y, v| {
                     let value = (255.0 * v) as u8;
                     let x = xoff + (x as i32);
                     let y = yoff + (y as i32);
-                    if (x >= 0 && (x as usize) < 16 * GLYPH_HIRES_SIZE)
-                        && (y >= 0 && (y as usize) < 16 * GLYPH_HIRES_SIZE)
+                    if (x >= 0 && (x as usize) < bitmap_width)
+                        && (y >= 0 && (y as usize) < bitmap_height)
                     {
-                        let index = (x as usize)
-                            + (y as usize) * 16 * GLYPH_HIRES_SIZE;
-                        hires[index] = value;
+                        let index = (x as usize) + (y as usize) * bitmap_width;
+                        bitmap[index] = value;
                     }
                 });
             }
@@ -222,12 +217,27 @@ impl Converter {
         let png_file = File::create(&png_path).unwrap();
         let mut encoder = png::Encoder::new(
             png_file,
-            16 * GLYPH_HIRES_SIZE as u32,
-            16 * GLYPH_HIRES_SIZE as u32,
+            bitmap_width as u32,
+            bitmap_height as u32,
         );
         encoder.set(png::ColorType::Grayscale).set(png::BitDepth::Eight);
         let mut writer = encoder.write_header().unwrap();
-        writer.write_image_data(&hires).unwrap();
+        writer.write_image_data(&bitmap).unwrap();
+
+        // Generate metrics tuple:
+        let metrics_rs_relpath = PathBuf::from(format!(
+            "font/{}_{}_metrics.rs",
+            font_name, char_height
+        ));
+        eprintln!("Generating: {:?}", metrics_rs_relpath);
+        let metrics_rs_path = self.out_dir.join(&metrics_rs_relpath);
+        let mut metrics_rs = File::create(&metrics_rs_path).unwrap();
+        writeln!(
+            metrics_rs,
+            "({}, {}, {}, {})",
+            char_width, char_height, bitmap_width, bitmap_height
+        )
+        .unwrap();
     }
 
     fn generate_chip_icons(&self) {

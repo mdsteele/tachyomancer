@@ -34,6 +34,8 @@ const CHECKBOX_BOX_SPACING: i32 = 8;
 const CHECKBOX_FONT: Font = Font::Roman;
 const CHECKBOX_FONT_SIZE: f32 = 20.0;
 
+const GRAYED_OUT_COLOR: Color4 = Color4::new(0.5, 0.5, 0.5, 0.5);
+
 pub const HOTKEY_BOX_HEIGHT: i32 = 28;
 pub const HOTKEY_BOX_WIDTH: i32 = 68;
 const HOTKEY_BOX_SPACING: i32 = 8;
@@ -93,12 +95,10 @@ impl Checkbox {
             CHECKBOX_HEIGHT,
         );
         let bg_color = if !enabled {
-            Color4::new(1.0, 1.0, 1.0, 0.1)
+            GRAYED_OUT_COLOR
         } else {
-            Color4::PURPLE0_TRANSLUCENT.mix(
-                Color4::PURPLE3_TRANSLUCENT,
-                self.hover_pulse.brightness(),
-            )
+            Color4::CYAN0_TRANSLUCENT
+                .mix(Color4::CYAN3_TRANSLUCENT, self.hover_pulse.brightness())
         };
         ui.draw_checkbox(
             matrix,
@@ -199,12 +199,10 @@ impl HotkeyBox {
             HOTKEY_BOX_HEIGHT,
         );
         let bg_color = if self.listening {
-            Color4::PURPLE5
+            Color4::CYAN5
         } else {
-            Color4::PURPLE0_TRANSLUCENT.mix(
-                Color4::PURPLE3_TRANSLUCENT,
-                self.hover_pulse.brightness(),
-            )
+            Color4::CYAN0_TRANSLUCENT
+                .mix(Color4::CYAN3_TRANSLUCENT, self.hover_pulse.brightness())
         };
         ui.draw_scroll_handle(
             matrix,
@@ -493,9 +491,9 @@ impl Scrollbar {
                 &Color4::PURPLE0_TRANSLUCENT,
             );
             let (fg_color, bg_color) = if self.drag.is_some() {
-                (&Color4::ORANGE4, &Color4::PURPLE3)
+                (&Color4::ORANGE4, &Color4::CYAN3)
             } else {
-                (&Color4::ORANGE3, &Color4::PURPLE1)
+                (&Color4::ORANGE3, &Color4::CYAN1)
             };
             ui.draw_scroll_handle(
                 matrix,
@@ -611,12 +609,12 @@ impl Slider {
             &Color4::PURPLE0_TRANSLUCENT,
         );
         let (fg_color, bg_color) = if self.drag.is_some() {
-            (&Color4::ORANGE5, Color4::PURPLE3)
+            (&Color4::ORANGE5, Color4::CYAN3)
         } else {
             (
                 &Color4::ORANGE4,
-                Color4::PURPLE1
-                    .mix(Color4::PURPLE3, self.hover_pulse.brightness()),
+                Color4::CYAN1
+                    .mix(Color4::CYAN3, self.hover_pulse.brightness()),
             )
         };
         ui.draw_scroll_handle(
@@ -938,12 +936,10 @@ impl<T: Clone> TextButton<T> {
         enabled: bool,
     ) {
         let bg_color = if !enabled {
-            Color4::new(1.0, 1.0, 1.0, 0.1)
+            GRAYED_OUT_COLOR
         } else {
-            Color4::PURPLE0_TRANSLUCENT.mix(
-                Color4::PURPLE3_TRANSLUCENT,
-                self.hover_pulse.brightness(),
-            )
+            Color4::CYAN0_TRANSLUCENT
+                .mix(Color4::CYAN3_TRANSLUCENT, self.hover_pulse.brightness())
         };
         let rect = self.rect.as_f32();
         resources.shaders().ui().draw_box4(

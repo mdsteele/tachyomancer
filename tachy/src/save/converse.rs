@@ -26,7 +26,6 @@ use strum::IntoEnumIterator;
 
 //===========================================================================//
 
-#[allow(dead_code)]
 pub enum Prereq {
     Complete(Conversation),
     All(&'static [Prereq]),

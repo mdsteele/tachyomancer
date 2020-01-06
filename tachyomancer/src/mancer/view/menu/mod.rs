@@ -365,25 +365,8 @@ impl MenuView {
             }
             MenuSection::Messages => {
                 match self.converse_view.on_event(event, ui, state) {
-                    Some(ConverseAction::Complete) => {
-                        state.mark_current_conversation_complete();
-                        self.converse_view.update_conversation_list(ui, state);
-                        self.converse_view
-                            .update_conversation_bubbles(ui, state);
-                    }
                     Some(ConverseAction::GoToPuzzle(puzzle)) => {
                         return Some(MenuAction::GoToPuzzle(puzzle));
-                    }
-                    Some(ConverseAction::Increment) => {
-                        state.increment_current_conversation_progress();
-                        self.converse_view
-                            .update_conversation_bubbles(ui, state);
-                    }
-                    Some(ConverseAction::MakeChoice(key, value)) => {
-                        state.set_current_conversation_choice(key, value);
-                        state.increment_current_conversation_progress();
-                        self.converse_view
-                            .update_conversation_bubbles(ui, state);
                     }
                     Some(ConverseAction::PlayCutscene(cutscene)) => {
                         return Some(MenuAction::PlayCutscene(cutscene));

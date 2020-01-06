@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::button::{HoverPulse, Scrollbar};
+use super::super::button::{HoverPulse, Scrollbar, TextButton};
 use super::super::paragraph::Paragraph;
 use super::list::{list_height_for_num_items, ListIcon, ListView};
 use crate::mancer::font::Align;
@@ -63,12 +63,8 @@ const SCROLLBAR_MARGIN: i32 = 8;
 
 //===========================================================================//
 
-#[derive(Clone)]
 pub enum ConverseAction {
-    Complete,
     GoToPuzzle(Puzzle),
-    Increment,
-    MakeChoice(String, String),
     PlayCutscene(Cutscene),
 }
 
@@ -163,7 +159,6 @@ impl ConverseView {
             state.set_current_conversation(conv);
             ui.request_redraw();
             self.update_conversation_bubbles(ui, state);
-            None
         } else if let Some(chapter) = self.chapter_list.on_event(
             event,
             ui,
@@ -175,15 +170,36 @@ impl ConverseView {
                         && state.is_conversation_unlocked(conv)
                 })
                 .unwrap_or(Conversation::first());
-
             state.set_current_conversation(conv);
             ui.request_redraw();
             self.update_conversation_list(ui, state);
             self.update_conversation_bubbles(ui, state);
-            None
         } else {
-            self.bubbles_list.on_event(event, ui)
+            match self.bubbles_list.on_event(event, ui) {
+                Some(BubblesAction::Complete) => {
+                    state.mark_current_conversation_complete();
+                    self.update_conversation_list(ui, state);
+                    self.update_conversation_bubbles(ui, state);
+                }
+                Some(BubblesAction::GoToPuzzle(puzzle)) => {
+                    return Some(ConverseAction::GoToPuzzle(puzzle));
+                }
+                Some(BubblesAction::Increment) => {
+                    state.increment_current_conversation_progress();
+                    self.update_conversation_bubbles(ui, state);
+                }
+                Some(BubblesAction::MakeChoice(key, value)) => {
+                    state.set_current_conversation_choice(key, value);
+                    state.increment_current_conversation_progress();
+                    self.update_conversation_bubbles(ui, state);
+                }
+                Some(BubblesAction::PlayCutscene(cutscene)) => {
+                    return Some(ConverseAction::PlayCutscene(cutscene));
+                }
+                None => {}
+            }
         }
+        return None;
     }
 
     pub fn update_conversation_bubbles(
@@ -235,6 +251,17 @@ fn conv_list_items(
             (conv, label, !state.is_conversation_complete(conv), None)
         })
         .collect()
+}
+
+//===========================================================================//
+
+#[derive(Clone)]
+enum BubblesAction {
+    Complete,
+    GoToPuzzle(Puzzle),
+    Increment,
+    MakeChoice(String, String),
+    PlayCutscene(Cutscene),
 }
 
 //===========================================================================//
@@ -316,7 +343,7 @@ impl BubblesListView {
         &mut self,
         event: &Event,
         ui: &mut Ui,
-    ) -> Option<ConverseAction> {
+    ) -> Option<BubblesAction> {
         // Handle scrollbar events:
         self.scrollbar.on_event(event, ui);
         match event {
@@ -338,14 +365,14 @@ impl BubblesListView {
         if let Some(ref mut button) = self.more_button {
             if button.on_event(&bubble_event, ui) {
                 if self.num_bubbles_shown + 1 < self.bubbles.len() {
-                    return Some(ConverseAction::Increment);
+                    return Some(BubblesAction::Increment);
                 }
                 if let Some(ref bubble) = self.bubbles.last() {
                     if bubble.is_choice_or_puzzle() {
-                        return Some(ConverseAction::Increment);
+                        return Some(BubblesAction::Increment);
                     }
                 }
-                return Some(ConverseAction::Complete);
+                return Some(BubblesAction::Complete);
             }
         }
         return None;
@@ -534,7 +561,7 @@ trait BubbleView {
         &mut self,
         _event: &Event,
         _ui: &mut Ui,
-    ) -> Option<ConverseAction> {
+    ) -> Option<BubblesAction> {
         None
     }
 }
@@ -543,16 +570,19 @@ trait BubbleView {
 
 struct CutsceneBubbleView {
     rect: Rect<i32>,
-    cutscene: Cutscene,
-    hover_pulse: HoverPulse,
+    button: TextButton<BubblesAction>,
 }
 
 impl CutsceneBubbleView {
     fn new(width: i32, top: i32, cutscene: Cutscene) -> Box<dyn BubbleView> {
+        let rect = Rect::new(0, top, width, CUTSCENE_BUBBLE_HEIGHT);
         let view = CutsceneBubbleView {
-            rect: Rect::new(0, top, width, CUTSCENE_BUBBLE_HEIGHT),
-            cutscene,
-            hover_pulse: HoverPulse::new(),
+            rect,
+            button: TextButton::new(
+                rect,
+                "Replay cutscene",
+                BubblesAction::PlayCutscene(cutscene),
+            ),
         };
         Box::new(view)
     }
@@ -564,50 +594,15 @@ impl BubbleView for CutsceneBubbleView {
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let rect = self.rect.as_f32();
-        let bg_color = Color4::CYAN0_TRANSLUCENT
-            .mix(Color4::CYAN3_TRANSLUCENT, self.hover_pulse.brightness());
-        resources.shaders().ui().draw_box4(
-            &matrix,
-            &rect,
-            &Color4::ORANGE5,
-            &Color4::CYAN3,
-            &bg_color,
-        );
-        resources.fonts().bold().draw(
-            &matrix,
-            BUBBLE_FONT_SIZE,
-            Align::MidCenter,
-            (rect.x + 0.5 * rect.width, rect.y + 0.5 * rect.height),
-            "Replay cutscene",
-        );
+        self.button.draw(resources, matrix, true);
     }
 
     fn on_event(
         &mut self,
         event: &Event,
         ui: &mut Ui,
-    ) -> Option<ConverseAction> {
-        match event {
-            Event::ClockTick(tick) => {
-                self.hover_pulse.on_clock_tick(tick, ui);
-            }
-            Event::MouseDown(mouse) => {
-                if self.rect.contains_point(mouse.pt) {
-                    self.hover_pulse.on_click(ui);
-                    return Some(ConverseAction::PlayCutscene(self.cutscene));
-                }
-            }
-            Event::MouseMove(mouse) => {
-                let hovering = self.rect.contains_point(mouse.pt);
-                if self.hover_pulse.set_hovering(hovering, ui) {
-                    ui.audio().play_sound(Sound::ButtonHover);
-                }
-            }
-            Event::Unfocus => self.hover_pulse.unfocus(),
-            _ => {}
-        }
-        return None;
+    ) -> Option<BubblesAction> {
+        self.button.on_event(event, ui, true)
     }
 }
 
@@ -749,7 +744,7 @@ impl BubbleView for PuzzleBubbleView {
         &mut self,
         event: &Event,
         ui: &mut Ui,
-    ) -> Option<ConverseAction> {
+    ) -> Option<BubblesAction> {
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick, ui);
@@ -757,7 +752,7 @@ impl BubbleView for PuzzleBubbleView {
             Event::MouseDown(mouse) => {
                 if self.rect.contains_point(mouse.pt) {
                     self.hover_pulse.on_click(ui);
-                    return Some(ConverseAction::GoToPuzzle(self.puzzle));
+                    return Some(BubblesAction::GoToPuzzle(self.puzzle));
                 }
             }
             Event::MouseMove(mouse) => {
@@ -859,13 +854,13 @@ impl BubbleView for YouChoiceBubbleView {
         &mut self,
         event: &Event,
         ui: &mut Ui,
-    ) -> Option<ConverseAction> {
+    ) -> Option<BubblesAction> {
         match event {
             Event::MouseDown(mouse) => {
                 if let Some(index) = self.choice_for_pt(mouse.pt) {
                     let key = self.key.clone();
                     let value = self.choices[index].0.clone();
-                    return Some(ConverseAction::MakeChoice(key, value));
+                    return Some(BubblesAction::MakeChoice(key, value));
                 }
             }
             Event::MouseMove(mouse) => {

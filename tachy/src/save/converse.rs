@@ -57,7 +57,8 @@ impl Chapter {
         self.into()
     }
 
-    pub fn first() -> Chapter {
+    /// Returns the first chapter in the game, which is always unlocked.
+    pub const fn first() -> Chapter {
         Chapter::Odyssey
     }
 
@@ -121,7 +122,7 @@ pub enum Conversation {
 
 impl Conversation {
     /// Returns the first conversation in the game, which is always unlocked.
-    pub fn first() -> Conversation {
+    pub const fn first() -> Conversation {
         Conversation::WakeUp
     }
 

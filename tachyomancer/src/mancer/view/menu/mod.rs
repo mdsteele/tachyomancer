@@ -482,8 +482,7 @@ impl MenuView {
     ) {
         self.unfocus(ui, state);
         state.set_menu_section(MenuSection::Messages);
-        self.converse_view.update_conversation_list(ui, state);
-        self.converse_view.update_conversation_bubbles(ui, state);
+        self.converse_view.reset_for_current_conversation(ui, state);
     }
 
     pub fn go_to_current_puzzle(

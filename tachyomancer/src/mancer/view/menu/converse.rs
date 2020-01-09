@@ -29,7 +29,6 @@ use crate::mancer::state::{
 };
 use cgmath::{vec2, Matrix4, Point2};
 use num_integer::div_mod_floor;
-use std::collections::HashSet;
 use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect};
 use tachy::save::{Chapter, Conversation, Puzzle};
 
@@ -146,6 +145,7 @@ impl ConverseView {
         ui: &mut Ui,
         state: &mut GameState,
     ) -> Option<ConverseAction> {
+        // Debug events:
         match event {
             Event::Debug(key, _) if key == "ResetConv" => {
                 state.reset_current_conversation_progress();
@@ -153,13 +153,19 @@ impl ConverseView {
             }
             _ => {}
         }
+
+        // Conversations list:
         if let Some(conv) =
             self.conv_list.on_event(event, ui, &state.current_conversation())
         {
             state.set_current_conversation(conv);
             ui.request_redraw();
-            self.update_conversation_bubbles(ui, state);
-        } else if let Some(chapter) = self.chapter_list.on_event(
+            self.bubbles_list.update_conversation(ui, state);
+            return None;
+        }
+
+        // Chapters list:
+        if let Some(chapter) = self.chapter_list.on_event(
             event,
             ui,
             &state.current_conversation().chapter(),
@@ -172,45 +178,37 @@ impl ConverseView {
                 .unwrap_or(Conversation::first());
             state.set_current_conversation(conv);
             ui.request_redraw();
-            self.update_conversation_list(ui, state);
-            self.update_conversation_bubbles(ui, state);
-        } else {
-            match self.bubbles_list.on_event(event, ui) {
-                Some(BubblesAction::Complete) => {
-                    state.mark_current_conversation_complete();
-                    self.update_conversation_list(ui, state);
-                    self.update_conversation_bubbles(ui, state);
-                }
-                Some(BubblesAction::GoToPuzzle(puzzle)) => {
-                    return Some(ConverseAction::GoToPuzzle(puzzle));
-                }
-                Some(BubblesAction::Increment) => {
-                    state.increment_current_conversation_progress();
-                    self.update_conversation_bubbles(ui, state);
-                }
-                Some(BubblesAction::MakeChoice(key, value)) => {
-                    state.set_current_conversation_choice(key, value);
-                    state.increment_current_conversation_progress();
-                    self.update_conversation_bubbles(ui, state);
-                }
-                Some(BubblesAction::PlayCutscene(cutscene)) => {
-                    return Some(ConverseAction::PlayCutscene(cutscene));
-                }
-                None => {}
+            self.reset_for_current_conversation(ui, state);
+            return None;
+        }
+
+        // Bubbles list:
+        match self.bubbles_list.on_event(event, ui) {
+            Some(BubblesAction::Complete) => {
+                state.mark_current_conversation_complete();
+                self.reset_for_current_conversation(ui, state);
             }
+            Some(BubblesAction::GoToPuzzle(puzzle)) => {
+                return Some(ConverseAction::GoToPuzzle(puzzle));
+            }
+            Some(BubblesAction::Increment) => {
+                state.increment_current_conversation_progress();
+                self.bubbles_list.update_conversation(ui, state);
+            }
+            Some(BubblesAction::MakeChoice(key, value)) => {
+                state.set_current_conversation_choice(key, value);
+                state.increment_current_conversation_progress();
+                self.bubbles_list.update_conversation(ui, state);
+            }
+            Some(BubblesAction::PlayCutscene(cutscene)) => {
+                return Some(ConverseAction::PlayCutscene(cutscene));
+            }
+            None => {}
         }
         return None;
     }
 
-    pub fn update_conversation_bubbles(
-        &mut self,
-        ui: &mut Ui,
-        state: &GameState,
-    ) {
-        self.bubbles_list.update_conversation(ui, state);
-    }
-
-    pub fn update_conversation_list(
+    pub fn reset_for_current_conversation(
         &mut self,
         ui: &mut Ui,
         state: &GameState,
@@ -220,20 +218,16 @@ impl ConverseView {
             conv_list_items(state),
             &state.current_conversation(),
         );
+        self.bubbles_list.update_conversation(ui, state);
     }
 }
 
 fn chapter_list_items(
     state: &GameState,
 ) -> Vec<(Chapter, String, bool, Option<ListIcon>)> {
-    let chapters: HashSet<Chapter> = Conversation::all()
-        .filter(|&conv| state.is_conversation_unlocked(conv))
-        .map(|conv| conv.chapter())
-        .collect();
     state
-        .chapter_order()
+        .unlocked_chapters()
         .into_iter()
-        .filter(|chapter| chapters.contains(chapter))
         .map(|chapter| (chapter, chapter.title().to_string(), false, None))
         .collect()
 }

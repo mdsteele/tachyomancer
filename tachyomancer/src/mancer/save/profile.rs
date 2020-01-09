@@ -182,7 +182,7 @@ impl Profile {
         &self.name
     }
 
-    pub fn chapter_order(&self) -> Vec<Chapter> {
+    fn chapter_order(&self) -> Vec<Chapter> {
         Chapter::order_with_orpheus_first(
             self.get_conversation_choice(
                 Conversation::UnexpectedCompany,
@@ -191,18 +191,19 @@ impl Profile {
         )
     }
 
-    pub fn latest_chapter(&self) -> Chapter {
-        let unlocked_chapters: HashSet<Chapter> = Conversation::all()
+    pub fn unlocked_chapters(&self) -> Vec<Chapter> {
+        let chapters: HashSet<Chapter> = Conversation::all()
             .filter(|&conv| self.is_conversation_unlocked(conv))
             .map(|conv| conv.chapter())
             .collect();
-        let all_chapters = self.chapter_order();
-        let first_chapter = all_chapters[0];
-        all_chapters
+        self.chapter_order()
             .into_iter()
-            .filter(|chapter| unlocked_chapters.contains(chapter))
-            .last()
-            .unwrap_or(first_chapter)
+            .filter(|chapter| chapters.contains(chapter))
+            .collect()
+    }
+
+    pub fn latest_chapter(&self) -> Chapter {
+        self.unlocked_chapters().last().copied().unwrap_or(Chapter::first())
     }
 
     pub fn current_conversation(&self) -> Conversation {

@@ -266,11 +266,11 @@ impl GameState {
         }
     }
 
-    pub fn chapter_order(&self) -> Vec<Chapter> {
+    pub fn unlocked_chapters(&self) -> Vec<Chapter> {
         if let Some(ref profile) = self.profile {
-            profile.chapter_order()
+            profile.unlocked_chapters()
         } else {
-            Chapter::order_with_orpheus_first(false)
+            vec![Chapter::first()]
         }
     }
 

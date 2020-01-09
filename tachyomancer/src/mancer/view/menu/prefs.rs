@@ -27,11 +27,12 @@ use super::list::{ListIcon, ListView};
 use crate::mancer::font::Align;
 use crate::mancer::gl::Stencil;
 use crate::mancer::gui::{Event, Resources, Sound, Ui, Window, WindowOptions};
-use crate::mancer::save::{Hotkey, Prefs, HOTKEY_CATEGORIES};
+use crate::mancer::save::{Hotkey, Prefs, Profile, HOTKEY_CATEGORIES};
 use crate::mancer::state::GameState;
 use cgmath::{Matrix4, Point2};
 use num_integer::Roots;
-use tachy::geom::{AsFloat, Color4, Rect, RectSize};
+use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
+use tachy::save::Puzzle;
 
 //===========================================================================//
 
@@ -55,6 +56,16 @@ const HOTKEY_CATEGORY_SPACING: i32 = 32;
 const HOTKEY_BUTTON_WIDTH: i32 = 200;
 const HOTKEY_BUTTON_HEIGHT: i32 = 40;
 
+const PROFILES_LIST_WIDTH: i32 = 240;
+const PROFILES_BUTTON_WIDTH: i32 = 180;
+const PROFILES_BUTTON_HEIGHT: i32 = 40;
+const PROFILES_FRAME_PADDING: i32 = AV_CATEGORY_FRAME_PADDING;
+const PROFILES_FRAME_SPACING: i32 = AV_CATEGORY_FRAME_SPACING;
+const PROFILES_TITLE_FONT_SIZE: f32 = 26.0;
+const PROFILES_TITLE_MARGIN_BOTTOM: f32 = 14.0;
+const PROFILES_PARAGRAPH_FONT_SIZE: f32 = 20.0;
+const PROFILES_PARAGRAPH_LINE_HEIGHT: f32 = 22.0;
+
 const CREDITS_FRAME_PADDING: i32 = AV_CATEGORY_FRAME_PADDING;
 const CREDITS_PARAGRAPH_SPACING: i32 = 50;
 const CREDITS_SCROLLBAR_WIDTH: i32 = 20;
@@ -70,7 +81,7 @@ pub enum PrefsAction {
     RebootWindow(WindowOptions),
     NewProfile,
     SwitchProfile(String),
-    DeleteProfile,
+    DeleteProfile(String),
     QuitGame,
 }
 
@@ -243,10 +254,6 @@ impl PrefsView {
             }
             PrefsPane::Credits => self.credits_pane.on_event(event, ui),
         }
-    }
-
-    pub fn update_profile_list(&mut self, ui: &mut Ui, state: &GameState) {
-        self.profiles_pane.update_profile_list(ui, state);
     }
 }
 
@@ -614,8 +621,11 @@ impl HotkeysPane {
 
 pub struct ProfilesPane {
     profile_list: ListView<String>,
-    new_button: TextButton<PrefsAction>,
-    delete_button: TextButton<PrefsAction>,
+    frame_rect: Rect<f32>,
+    selected_profile_name: String,
+    summary_paragraph: Paragraph,
+    switch_button: TextButton<()>,
+    delete_button: TextButton<()>,
 }
 
 impl ProfilesPane {
@@ -625,23 +635,58 @@ impl ProfilesPane {
         state: &GameState,
     ) -> ProfilesPane {
         debug_assert!(state.profile().is_some());
+        let selected_profile_name =
+            state.profile().unwrap().name().to_string();
         let profile_list = ListView::new(
-            Rect::new(rect.x, rect.y, 300, rect.height),
+            Rect::new(rect.x, rect.y, PROFILES_LIST_WIDTH, rect.height),
             ui,
             profile_list_items(state),
-            state.profile().unwrap().name(),
+            &selected_profile_name,
         );
-        let new_button = TextButton::new(
-            Rect::new(rect.right() - 150, rect.y, 150, 40),
-            "New Profile",
-            PrefsAction::NewProfile,
+        let frame_rect = Rect::new(
+            rect.x + PROFILES_LIST_WIDTH + PROFILES_FRAME_SPACING,
+            rect.y,
+            rect.width - PROFILES_LIST_WIDTH - PROFILES_FRAME_SPACING,
+            rect.height,
+        );
+        let button_top = frame_rect.bottom()
+            - PROFILES_FRAME_PADDING
+            - PROFILES_BUTTON_HEIGHT;
+        let switch_button = TextButton::new(
+            Rect::new(
+                frame_rect.x + PROFILES_FRAME_PADDING,
+                button_top,
+                PROFILES_BUTTON_WIDTH,
+                PROFILES_BUTTON_HEIGHT,
+            ),
+            "Switch Profile",
+            (),
         );
         let delete_button = TextButton::new(
-            Rect::new(rect.right() - 150, rect.bottom() - 40, 150, 40),
+            Rect::new(
+                frame_rect.right()
+                    - PROFILES_FRAME_PADDING
+                    - PROFILES_BUTTON_WIDTH,
+                button_top,
+                PROFILES_BUTTON_WIDTH,
+                PROFILES_BUTTON_HEIGHT,
+            ),
             "Delete Profile",
-            PrefsAction::DeleteProfile,
+            (),
         );
-        ProfilesPane { profile_list, new_button, delete_button }
+        let summary_paragraph = ProfilesPane::compile_summary_paragraph(
+            &selected_profile_name,
+            (frame_rect.width - 2 * PROFILES_FRAME_PADDING) as f32,
+            state,
+        );
+        ProfilesPane {
+            profile_list,
+            frame_rect: frame_rect.as_f32(),
+            selected_profile_name,
+            summary_paragraph,
+            switch_button,
+            delete_button,
+        }
     }
 
     pub fn draw(
@@ -650,10 +695,65 @@ impl ProfilesPane {
         matrix: &Matrix4<f32>,
         state: &GameState,
     ) {
+        debug_assert!(state.profile().is_some());
         let current_profile_name = state.profile().unwrap().name();
-        self.profile_list.draw(resources, matrix, current_profile_name);
-        self.new_button.draw(resources, matrix, true);
-        self.delete_button.draw(resources, matrix, true);
+        self.profile_list.draw(resources, matrix, &self.selected_profile_name);
+        resources.shaders().ui().draw_bubble(
+            matrix,
+            &self.frame_rect,
+            &Color4::CYAN1,
+            &Color4::ORANGE1,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
+
+        let title = if self.selected_profile_name.is_empty() {
+            "New Profile".to_string()
+        } else {
+            format!("Commander {}", self.selected_profile_name)
+        };
+        let title_left = self.frame_rect.x + (PROFILES_FRAME_PADDING as f32);
+        let title_top = self.frame_rect.y + (PROFILES_FRAME_PADDING as f32);
+        let font = resources.fonts().bold();
+        font.draw(
+            &matrix,
+            PROFILES_TITLE_FONT_SIZE,
+            Align::TopLeft,
+            (title_left, title_top),
+            &title,
+        );
+        resources.shaders().solid().fill_rect(
+            &matrix,
+            Color3::WHITE,
+            Rect::new(
+                title_left + 1.0,
+                title_top + PROFILES_TITLE_FONT_SIZE,
+                font.str_width(PROFILES_TITLE_FONT_SIZE, &title) - 2.0,
+                1.0,
+            ),
+        );
+
+        self.summary_paragraph.draw(
+            resources,
+            matrix,
+            (
+                self.frame_rect.x + (PROFILES_FRAME_PADDING as f32),
+                self.frame_rect.y
+                    + (PROFILES_FRAME_PADDING as f32)
+                    + PROFILES_TITLE_FONT_SIZE
+                    + PROFILES_TITLE_MARGIN_BOTTOM,
+            ),
+        );
+
+        self.switch_button.draw(
+            resources,
+            matrix,
+            self.selected_profile_name != current_profile_name,
+        );
+        self.delete_button.draw(
+            resources,
+            matrix,
+            !self.selected_profile_name.is_empty(),
+        );
     }
 
     pub fn on_event(
@@ -662,37 +762,109 @@ impl ProfilesPane {
         ui: &mut Ui,
         state: &mut GameState,
     ) -> Option<PrefsAction> {
+        debug_assert!(state.profile().is_some());
         let current_profile_name = state.profile().unwrap().name();
         if let Some(profile_name) =
-            self.profile_list.on_event(event, ui, current_profile_name)
+            self.profile_list.on_event(event, ui, &self.selected_profile_name)
         {
-            return Some(PrefsAction::SwitchProfile(profile_name));
+            self.summary_paragraph = ProfilesPane::compile_summary_paragraph(
+                &profile_name,
+                self.frame_rect.width - 2.0 * (PROFILES_FRAME_PADDING as f32),
+                state,
+            );
+            self.selected_profile_name = profile_name;
+            ui.request_redraw();
         }
-        if let Some(action) = self.new_button.on_event(event, ui, true) {
-            return Some(action);
+        if let Some(()) = self.switch_button.on_event(
+            event,
+            ui,
+            self.selected_profile_name != current_profile_name,
+        ) {
+            if self.selected_profile_name.is_empty() {
+                return Some(PrefsAction::NewProfile);
+            } else {
+                return Some(PrefsAction::SwitchProfile(
+                    self.selected_profile_name.clone(),
+                ));
+            }
         }
-        if let Some(action) = self.delete_button.on_event(event, ui, true) {
-            return Some(action);
+        if let Some(()) = self.delete_button.on_event(
+            event,
+            ui,
+            !self.selected_profile_name.is_empty(),
+        ) {
+            return Some(PrefsAction::DeleteProfile(
+                self.selected_profile_name.clone(),
+            ));
         }
         return None;
     }
 
-    pub fn update_profile_list(&mut self, ui: &mut Ui, state: &GameState) {
-        self.profile_list.set_items(
-            ui,
-            profile_list_items(state),
-            state.profile().unwrap().name(),
-        );
+    fn compile_summary_paragraph(
+        profile_name: &str,
+        max_width: f32,
+        state: &GameState,
+    ) -> Paragraph {
+        debug_log!("Regenerating profile summary");
+        let format = if profile_name.is_empty() {
+            "Press \"Switch Profile\" to begin a new profile.".to_string()
+        } else if state.current_profile_is(profile_name) {
+            ProfilesPane::profile_summary_format(state.profile().unwrap())
+        } else {
+            match state.load_profile(profile_name) {
+                Ok(profile) => ProfilesPane::profile_summary_format(&profile),
+                Err(error) => {
+                    format!("$R$*ERROR:$*$D {}", Paragraph::escape(&error))
+                }
+            }
+        };
+        Paragraph::compile(
+            PROFILES_PARAGRAPH_FONT_SIZE,
+            PROFILES_PARAGRAPH_LINE_HEIGHT,
+            max_width,
+            state.prefs(),
+            &format,
+        )
+    }
+
+    fn profile_summary_format(profile: &Profile) -> String {
+        let mut num_puzzles_unlocked = 0;
+        let mut num_puzzles_solved = 0;
+        for puzzle in Puzzle::all() {
+            if profile.is_puzzle_unlocked(puzzle) {
+                num_puzzles_unlocked += 1;
+                if profile.is_puzzle_solved(puzzle) {
+                    num_puzzles_solved += 1;
+                }
+            }
+        }
+        format!(
+            "        Chapter: {}\n\
+             Tasks available: {}\n\
+             Tasks completed: {}",
+            profile.latest_chapter().title(),
+            num_puzzles_unlocked,
+            num_puzzles_solved,
+        )
     }
 }
 
 fn profile_list_items(
     state: &GameState,
 ) -> Vec<(String, String, bool, Option<ListIcon>)> {
-    state
-        .profile_names()
-        .map(|name| (name.to_string(), name.to_string(), false, None))
-        .collect()
+    debug_assert!(state.profile().is_some());
+    let current_profile_name = state.profile().unwrap().name();
+    let mut items =
+        vec![("".to_string(), "    [New Profile]".to_string(), false, None)];
+    items.extend(state.profile_names().map(|name| {
+        (
+            name.to_string(),
+            name.to_string(),
+            name == current_profile_name,
+            None,
+        )
+    }));
+    items
 }
 
 //===========================================================================//

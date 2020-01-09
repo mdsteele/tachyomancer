@@ -30,7 +30,7 @@ pub use self::dir::{ProfileNamesIter, SaveDir};
 pub use self::hotkey::{Hotkey, HotkeyCodeExt, HotkeyIter, HOTKEY_CATEGORIES};
 pub use self::menu::MenuSection;
 pub use self::prefs::Prefs;
-pub use self::profile::Profile;
+pub use self::profile::{Profile, PROFILE_NAME_MAX_CHARS};
 pub use self::progress::{CircuitNamesIter, CIRCUIT_NAME_MAX_CHARS};
 pub use self::score::GlobalScoresDir;
 

@@ -39,7 +39,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                 match view.on_event(&event, &mut window.ui(), state) {
                     Some(BeginAction::CreateProfile(name)) => {
                         debug_log!("Creating profile {:?}", name);
-                        match state.create_or_load_profile(name) {
+                        match state.create_or_load_and_set_profile(&name) {
                             Ok(()) => {
                                 state.set_menu_section(MenuSection::Messages);
                                 state.set_cutscene(Cutscene::Intro.script());

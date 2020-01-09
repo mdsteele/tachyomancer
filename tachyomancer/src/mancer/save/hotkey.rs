@@ -69,7 +69,7 @@ pub const HOTKEY_CATEGORIES: &[(&str, &[Hotkey])] = &[
         Hotkey::ZoomOut,
         Hotkey::ZoomDefault,
     ]),
-    ("Evalulation", &[
+    ("Evaluation", &[
         Hotkey::EvalReset,
         Hotkey::EvalRunPause,
         Hotkey::EvalStepTime,

@@ -25,13 +25,22 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use tachy::save::{
-    CircuitData, Conversation, ConversationProgress, Prereq, Puzzle,
+    Chapter, CircuitData, Conversation, ConversationProgress, Prereq, Puzzle,
     PuzzleKind, ScoreCurve,
 };
 
 //===========================================================================//
 
+/// Maximum permitted number of characters in a profile name.
+pub const PROFILE_NAME_MAX_CHARS: usize = 20;
+
 const DATA_FILE_NAME: &str = "profile.toml";
+
+//===========================================================================//
+
+pub fn is_valid_profile_name(name: &str) -> bool {
+    !name.is_empty() && name.chars().count() <= PROFILE_NAME_MAX_CHARS
+}
 
 //===========================================================================//
 
@@ -169,22 +178,31 @@ impl Profile {
         Ok(())
     }
 
-    pub fn delete(&mut self) -> Result<(), String> {
-        debug_log!(
-            "Deleting profile {:?} from {:?}",
-            self.name,
-            self.base_path
-        );
-        fs::remove_dir_all(&self.base_path).map_err(|err| {
-            format!(
-                "Could not delete profile {:?} data from {:?}: {}",
-                self.name, self.base_path, err
-            )
-        })
-    }
-
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn chapter_order(&self) -> Vec<Chapter> {
+        Chapter::order_with_orpheus_first(
+            self.get_conversation_choice(
+                Conversation::UnexpectedCompany,
+                "chapter",
+            ) == Some("orpheus"),
+        )
+    }
+
+    pub fn latest_chapter(&self) -> Chapter {
+        let unlocked_chapters: HashSet<Chapter> = Conversation::all()
+            .filter(|&conv| self.is_conversation_unlocked(conv))
+            .map(|conv| conv.chapter())
+            .collect();
+        let all_chapters = self.chapter_order();
+        let first_chapter = all_chapters[0];
+        all_chapters
+            .into_iter()
+            .filter(|chapter| unlocked_chapters.contains(chapter))
+            .last()
+            .unwrap_or(first_chapter)
     }
 
     pub fn current_conversation(&self) -> Conversation {

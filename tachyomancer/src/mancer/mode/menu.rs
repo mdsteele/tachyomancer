@@ -152,13 +152,8 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     }
                     Some(MenuAction::SwitchProfile(name)) => {
                         debug_log!("Switching to profile {:?}", name);
-                        match state.create_or_load_profile(name) {
-                            Ok(()) => {
-                                let mut ui = window.ui();
-                                view.update_conversation(&mut ui, state);
-                                view.update_puzzle_list(&mut ui, state);
-                                view.update_circuit_list(&mut ui, state);
-                            }
+                        match state.create_or_load_and_set_profile(&name) {
+                            Ok(()) => return ModeChange::Next,
                             Err(err) => {
                                 view.show_error(
                                     &mut window.ui(),
@@ -169,19 +164,10 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                             }
                         }
                     }
-                    Some(MenuAction::DeleteProfile) => {
-                        match state.delete_current_profile() {
-                            Ok(()) => {
-                                if state.profile().is_none() {
-                                    return ModeChange::Next;
-                                } else {
-                                    let mut ui = window.ui();
-                                    view.update_profile_list(&mut ui, state);
-                                    view.update_conversation(&mut ui, state);
-                                    view.update_puzzle_list(&mut ui, state);
-                                    view.update_circuit_list(&mut ui, state);
-                                }
-                            }
+                    Some(MenuAction::DeleteProfile(name)) => {
+                        debug_log!("Deleting profile {:?}", name);
+                        match state.delete_profile(&name) {
+                            Ok(()) => return ModeChange::Next,
                             Err(err) => {
                                 view.show_error(
                                     &mut window.ui(),

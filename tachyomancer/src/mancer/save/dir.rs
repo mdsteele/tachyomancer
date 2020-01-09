@@ -19,7 +19,7 @@
 
 use super::encode::{decode_name, encode_name};
 use super::prefs::Prefs;
-use super::profile::Profile;
+use super::profile::{is_valid_profile_name, Profile};
 use super::score::GlobalScoresDir;
 use app_dirs::{self, AppDataType, AppDirsError, AppInfo};
 use std::collections::{btree_set, BTreeSet};
@@ -84,7 +84,9 @@ impl SaveDir {
                 continue;
             }
             let profile_name = decode_name(&entry.file_name());
-            profile_names.insert(UniCase::new(profile_name));
+            if is_valid_profile_name(&profile_name) {
+                profile_names.insert(UniCase::new(profile_name));
+            }
         }
 
         // Repair prefs.current_profile if necessary.
@@ -129,11 +131,31 @@ impl SaveDir {
         ProfileNamesIter { inner: self.profile_names.iter() }
     }
 
+    /// Returns true if a profile with the given name already exists, ignoring
+    /// case.
     pub fn has_profile(&self, name: &str) -> bool {
         // It would be nice to avoid the string copy here (and elsewhere in
         // this file) if UniCase ever implements the Borrow trait
         // (https://github.com/seanmonstar/unicase/issues/22).
         self.profile_names.contains(&UniCase::new(name.to_string()))
+    }
+
+    /// Returns true if the current profile has the given name, ignoring case.
+    pub fn current_profile_is(&self, name: &str) -> bool {
+        match self.prefs.current_profile() {
+            None => false,
+            Some(other) => UniCase::new(name) == UniCase::new(other),
+        }
+    }
+
+    /// If the given profile name exists (ignoring case), returns the name of
+    /// that profile (in its actual case); otherwise, returns the given name
+    /// unchanged.
+    fn canonicalize_profile_name(&self, name: &str) -> String {
+        match self.profile_names.get(&UniCase::new(name.to_string())) {
+            Some(unicase_name) => unicase_name.clone().into_inner(),
+            None => name.to_string(),
+        }
     }
 
     pub fn load_current_profile_if_any(
@@ -148,11 +170,28 @@ impl SaveDir {
         }
     }
 
-    pub fn create_or_load_profile(
+    pub fn load_profile(&self, name: &str) -> Result<Profile, String> {
+        if !is_valid_profile_name(name) {
+            return Err(format!("Invalid profile name: {:?}", name));
+        }
+        if !self.has_profile(name) {
+            return Err(format!("No such profile: {:?}", name));
+        }
+        let name = self.canonicalize_profile_name(name);
+        let path = self.base_path.join(encode_name(&name));
+        let profile = Profile::create_or_load(name, &path)?;
+        return Ok(profile);
+    }
+
+    pub fn create_or_load_and_set_profile(
         &mut self,
-        name: String,
+        name: &str,
     ) -> Result<Profile, String> {
-        let is_current_profile = self.prefs.current_profile() == Some(&name);
+        if !is_valid_profile_name(name) {
+            return Err(format!("Invalid profile name: {:?}", name));
+        }
+        let name = self.canonicalize_profile_name(name);
+        let is_current_profile = self.current_profile_is(&name);
         let path = self.base_path.join(encode_name(&name));
         let profile = Profile::create_or_load(name, &path)?;
         if !is_current_profile {
@@ -160,14 +199,33 @@ impl SaveDir {
             self.prefs.save()?;
         }
         self.profile_names.insert(UniCase::new(profile.name().to_string()));
-        Ok(profile)
+        return Ok(profile);
     }
 
-    pub fn remove_profile(&mut self, name: String) {
-        if self.prefs.current_profile() == Some(&name) {
-            self.prefs.set_current_profile(None);
+    pub fn delete_profile(&mut self, name: &str) -> Result<(), String> {
+        if !is_valid_profile_name(name) {
+            return Err(format!("Invalid profile name: {:?}", name));
         }
-        self.profile_names.remove(&UniCase::new(name));
+        if !self.has_profile(name) {
+            return Err(format!("No such profile: {:?}", name));
+        }
+        let name = self.canonicalize_profile_name(name);
+        let is_current_profile = self.current_profile_is(&name);
+        self.profile_names.remove(&UniCase::new(name.clone()));
+        if is_current_profile {
+            self.prefs.set_current_profile(
+                self.profile_names().next().map(str::to_string),
+            );
+        }
+        let path = self.base_path.join(encode_name(&name));
+        debug_log!("Deleting profile {:?} from {:?}", name, path);
+        fs::remove_dir_all(&path).map_err(|err| {
+            format!(
+                "Could not delete profile {:?} data from {:?}: {}",
+                name, path, err
+            )
+        })?;
+        return Ok(());
     }
 
     pub fn create_or_load_global_scores(

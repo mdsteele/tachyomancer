@@ -40,7 +40,6 @@ use crate::mancer::gui::{
 use crate::mancer::save::{MenuSection, CIRCUIT_NAME_MAX_CHARS};
 use crate::mancer::state::{Cutscene, GameState};
 use cgmath::{self, Matrix4};
-use std::collections::HashSet;
 use tachy::geom::{AsFloat, MatrixExt, Rect, RectSize};
 use tachy::save::{Chapter, Conversation, Puzzle};
 
@@ -71,7 +70,7 @@ pub enum MenuAction {
     RebootWindow(WindowOptions),
     NewProfile,
     SwitchProfile(String),
-    DeleteProfile,
+    DeleteProfile(String),
     QuitGame,
 }
 
@@ -111,17 +110,7 @@ impl MenuView {
             size.height - SECTION_TOP - SECTION_MARGIN_BOTTOM,
         );
 
-        let unlocked_chapters: HashSet<Chapter> = Conversation::all()
-            .filter(|&conv| state.is_conversation_unlocked(conv))
-            .map(|conv| conv.chapter())
-            .collect();
-        let all_chapters = state.chapter_order();
-        let first_chapter = all_chapters[0];
-        let latest_chapter = all_chapters
-            .into_iter()
-            .filter(|chapter| unlocked_chapters.contains(chapter))
-            .last()
-            .unwrap_or(first_chapter);
+        let latest_chapter = state.latest_chapter();
 
         let prefs_view = PrefsView::new(section_rect, window, state);
         let mut ui = window.ui();
@@ -430,19 +419,22 @@ impl MenuView {
                     Some(PrefsAction::SwitchProfile(name)) => {
                         return Some(MenuAction::SwitchProfile(name));
                     }
-                    Some(PrefsAction::DeleteProfile) => {
+                    Some(PrefsAction::DeleteProfile(name)) => {
                         self.unfocus(ui, state);
                         let format = format!(
                             "Are you sure you want \
                              to delete all progress\n\
                              on profile \"{}\"?\n\n\
                              This cannot be undone!",
-                            Paragraph::escape(state.profile().unwrap().name())
+                            Paragraph::escape(&name)
                         );
                         let cancel_button =
                             ("Cancel", None, Some(Keycode::Escape));
-                        let delete_button =
-                            ("Delete", Some(MenuAction::DeleteProfile), None);
+                        let delete_button = (
+                            "Delete",
+                            Some(MenuAction::DeleteProfile(name)),
+                            None,
+                        );
                         let buttons = &[cancel_button, delete_button];
                         self.confirmation_dialog = Some(ButtonDialogBox::new(
                             self.size,
@@ -490,7 +482,8 @@ impl MenuView {
     ) {
         self.unfocus(ui, state);
         state.set_menu_section(MenuSection::Messages);
-        self.update_conversation(ui, state);
+        self.converse_view.update_conversation_list(ui, state);
+        self.converse_view.update_conversation_bubbles(ui, state);
     }
 
     pub fn go_to_current_puzzle(
@@ -505,15 +498,6 @@ impl MenuView {
 
     pub fn update_circuit_list(&mut self, ui: &mut Ui, state: &GameState) {
         self.puzzles_view.update_circuit_list(ui, state);
-    }
-
-    pub fn update_conversation(&mut self, ui: &mut Ui, state: &GameState) {
-        self.converse_view.update_conversation_list(ui, state);
-        self.converse_view.update_conversation_bubbles(ui, state);
-    }
-
-    pub fn update_profile_list(&mut self, ui: &mut Ui, state: &GameState) {
-        self.prefs_view.update_profile_list(ui, state);
     }
 
     pub fn update_puzzle_list(&mut self, ui: &mut Ui, state: &GameState) {

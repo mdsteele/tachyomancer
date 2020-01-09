@@ -145,18 +145,26 @@ impl GameState {
         self.savedir.has_profile(name)
     }
 
+    pub fn current_profile_is(&self, name: &str) -> bool {
+        self.savedir.current_profile_is(name)
+    }
+
     pub fn profile(&self) -> Option<&Profile> {
         self.profile.as_ref()
     }
 
-    pub fn create_or_load_profile(
+    pub fn load_profile(&self, name: &str) -> Result<Profile, String> {
+        self.savedir.load_profile(name)
+    }
+
+    pub fn create_or_load_and_set_profile(
         &mut self,
-        name: String,
+        name: &str,
     ) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
             profile.save()?;
         }
-        let profile = self.savedir.create_or_load_profile(name)?;
+        let profile = self.savedir.create_or_load_and_set_profile(name)?;
         self.circuit_name = profile
             .first_circuit_name_for_current_puzzle()
             .unwrap_or_else(String::new);
@@ -164,19 +172,15 @@ impl GameState {
         Ok(())
     }
 
-    pub fn delete_current_profile(&mut self) -> Result<(), String> {
-        let deleted_name = if let Some(ref mut profile) = self.profile {
-            profile.delete()?;
-            profile.name().to_string()
+    pub fn delete_profile(&mut self, name: &str) -> Result<(), String> {
+        let is_current: bool = if let Some(ref profile) = self.profile {
+            profile.name() == name
         } else {
-            return Err("No profile loaded".to_string());
+            false
         };
-        self.profile = None;
-        self.savedir.remove_profile(deleted_name);
-        if let Some(name) =
-            self.profile_names().next().map(|name| name.to_string())
-        {
-            self.create_or_load_profile(name)?;
+        self.savedir.delete_profile(name)?;
+        if is_current {
+            self.profile = self.savedir.load_current_profile_if_any()?;
         }
         Ok(())
     }
@@ -263,26 +267,19 @@ impl GameState {
     }
 
     pub fn chapter_order(&self) -> Vec<Chapter> {
-        let orpheus_first = if let Some(ref profile) = self.profile {
-            profile.get_conversation_choice(
-                Conversation::UnexpectedCompany,
-                "chapter",
-            ) == Some("orpheus")
+        if let Some(ref profile) = self.profile {
+            profile.chapter_order()
         } else {
-            false
-        };
-        let mut chapters = Vec::<Chapter>::with_capacity(5);
-        chapters.push(Chapter::Odyssey);
-        chapters.push(Chapter::Planetfall);
-        if orpheus_first {
-            chapters.push(Chapter::Orpheus);
-            chapters.push(Chapter::Calliope);
-        } else {
-            chapters.push(Chapter::Calliope);
-            chapters.push(Chapter::Orpheus);
+            Chapter::order_with_orpheus_first(false)
         }
-        chapters.push(Chapter::Lorelei);
-        chapters
+    }
+
+    pub fn latest_chapter(&self) -> Chapter {
+        if let Some(ref profile) = self.profile {
+            profile.latest_chapter()
+        } else {
+            Chapter::first()
+        }
     }
 
     pub fn current_puzzle(&self) -> Puzzle {

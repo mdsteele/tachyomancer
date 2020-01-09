@@ -22,6 +22,7 @@ use super::dialog::ButtonDialogBox;
 use super::paragraph::Paragraph;
 use crate::mancer::font::Align;
 use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui};
+use crate::mancer::save::PROFILE_NAME_MAX_CHARS;
 use crate::mancer::state::GameState;
 use cgmath::{self, Matrix4};
 use tachy::geom::{AsInt, Color3, Rect, RectSize};
@@ -261,6 +262,9 @@ impl TextEntry {
             },
             Event::TextInput(text) => {
                 for chr in text.chars() {
+                    if self.text.chars().count() >= PROFILE_NAME_MAX_CHARS {
+                        break;
+                    }
                     if (chr >= ' ' && chr <= '~')
                         || (chr >= '\u{a1}' && chr <= '\u{ff}')
                     {

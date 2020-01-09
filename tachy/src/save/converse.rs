@@ -56,6 +56,25 @@ impl Chapter {
     pub fn title(&self) -> &'static str {
         self.into()
     }
+
+    pub fn first() -> Chapter {
+        Chapter::Odyssey
+    }
+
+    pub fn order_with_orpheus_first(orpheus_first: bool) -> Vec<Chapter> {
+        let mut chapters = Vec::<Chapter>::with_capacity(5);
+        chapters.push(Chapter::Odyssey);
+        chapters.push(Chapter::Planetfall);
+        if orpheus_first {
+            chapters.push(Chapter::Orpheus);
+            chapters.push(Chapter::Calliope);
+        } else {
+            chapters.push(Chapter::Calliope);
+            chapters.push(Chapter::Orpheus);
+        }
+        chapters.push(Chapter::Lorelei);
+        chapters
+    }
 }
 
 //===========================================================================//
@@ -410,6 +429,25 @@ impl ConversationProgress {
         }
         self.data.choices.as_mut().unwrap().insert(key, value);
         self.needs_save = true;
+    }
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::Chapter;
+
+    #[test]
+    fn first_chapter() {
+        assert_eq!(
+            Chapter::order_with_orpheus_first(false)[0],
+            Chapter::first()
+        );
+        assert_eq!(
+            Chapter::order_with_orpheus_first(true)[0],
+            Chapter::first()
+        );
     }
 }
 

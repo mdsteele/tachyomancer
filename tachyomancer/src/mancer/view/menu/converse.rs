@@ -160,7 +160,11 @@ impl ConverseView {
         {
             state.set_current_conversation(conv);
             ui.request_redraw();
-            self.bubbles_list.update_conversation(ui, state);
+            self.bubbles_list.update_conversation(
+                BubblesScroll::JumpToTopOrBottom,
+                ui,
+                state,
+            );
             return None;
         }
 
@@ -178,7 +182,7 @@ impl ConverseView {
                 .unwrap_or(Conversation::first());
             state.set_current_conversation(conv);
             ui.request_redraw();
-            self.reset_for_current_conversation(ui, state);
+            self.update_conv(BubblesScroll::JumpToTopOrBottom, ui, state);
             return None;
         }
 
@@ -186,19 +190,28 @@ impl ConverseView {
         match self.bubbles_list.on_event(event, ui) {
             Some(BubblesAction::Complete) => {
                 state.mark_current_conversation_complete();
-                self.reset_for_current_conversation(ui, state);
+                self.update_chapters(ui, state);
+                self.update_conv(BubblesScroll::EaseToBottom, ui, state);
             }
             Some(BubblesAction::GoToPuzzle(puzzle)) => {
                 return Some(ConverseAction::GoToPuzzle(puzzle));
             }
             Some(BubblesAction::Increment) => {
                 state.increment_current_conversation_progress();
-                self.bubbles_list.update_conversation(ui, state);
+                self.bubbles_list.update_conversation(
+                    BubblesScroll::EaseToBottom,
+                    ui,
+                    state,
+                );
             }
             Some(BubblesAction::MakeChoice(key, value)) => {
                 state.set_current_conversation_choice(key, value);
                 state.increment_current_conversation_progress();
-                self.bubbles_list.update_conversation(ui, state);
+                self.bubbles_list.update_conversation(
+                    BubblesScroll::EaseToBottom,
+                    ui,
+                    state,
+                );
             }
             Some(BubblesAction::PlayCutscene(cutscene)) => {
                 return Some(ConverseAction::PlayCutscene(cutscene));
@@ -208,8 +221,26 @@ impl ConverseView {
         return None;
     }
 
-    pub fn reset_for_current_conversation(
+    pub fn jump_to_current_conversation_from(
         &mut self,
+        puzzle: Puzzle,
+        ui: &mut Ui,
+        state: &GameState,
+    ) {
+        self.update_conv(BubblesScroll::JumpToPuzzle(puzzle), ui, state);
+    }
+
+    fn update_chapters(&mut self, ui: &mut Ui, state: &GameState) {
+        self.chapter_list.set_items(
+            ui,
+            chapter_list_items(state),
+            &state.current_conversation().chapter(),
+        );
+    }
+
+    fn update_conv(
+        &mut self,
+        scroll: BubblesScroll,
         ui: &mut Ui,
         state: &GameState,
     ) {
@@ -218,7 +249,7 @@ impl ConverseView {
             conv_list_items(state),
             &state.current_conversation(),
         );
-        self.bubbles_list.update_conversation(ui, state);
+        self.bubbles_list.update_conversation(scroll, ui, state);
     }
 }
 
@@ -258,6 +289,13 @@ enum BubblesAction {
     PlayCutscene(Cutscene),
 }
 
+#[derive(Clone, Copy)]
+enum BubblesScroll {
+    JumpToTopOrBottom,
+    JumpToPuzzle(Puzzle),
+    EaseToBottom,
+}
+
 //===========================================================================//
 
 struct BubblesListView {
@@ -289,7 +327,7 @@ impl BubblesListView {
             more_button: None,
             scrollbar: Scrollbar::new(scrollbar_rect, 0),
         };
-        view.update_conversation(ui, state);
+        view.update_conversation(BubblesScroll::JumpToTopOrBottom, ui, state);
         view
     }
 
@@ -377,10 +415,15 @@ impl BubblesListView {
         self.num_bubbles_shown = 0;
         self.more_button = None;
         ui.request_redraw();
-        self.update_conversation(ui, state);
+        self.update_conversation(BubblesScroll::JumpToTopOrBottom, ui, state);
     }
 
-    fn update_conversation(&mut self, ui: &mut Ui, state: &GameState) {
+    fn update_conversation(
+        &mut self,
+        scroll: BubblesScroll,
+        ui: &mut Ui,
+        state: &GameState,
+    ) {
         debug_assert!(state.profile().is_some());
         let profile = state.profile().unwrap();
         let conv = profile.current_conversation();
@@ -414,7 +457,29 @@ impl BubblesListView {
             0
         };
         self.scrollbar.set_total_height(total_height, ui);
-        self.scrollbar.scroll_to(total_height, ui);
+        match scroll {
+            BubblesScroll::JumpToTopOrBottom => {
+                if profile.is_conversation_complete(conv) {
+                    self.scrollbar.scroll_to(0, ui);
+                } else {
+                    self.scrollbar.scroll_to(total_height, ui);
+                }
+            }
+            BubblesScroll::JumpToPuzzle(puzzle) => {
+                let mut position = 0;
+                for bubble in self.bubbles.iter() {
+                    if bubble.has_puzzle(puzzle) {
+                        let rect = bubble.rect();
+                        position = rect.y + rect.height / 2;
+                        break;
+                    }
+                }
+                self.scrollbar.scroll_to(position, ui);
+            }
+            BubblesScroll::EaseToBottom => {
+                self.scrollbar.ease_to(total_height);
+            }
+        }
     }
 
     fn rebuild_bubbles(
@@ -549,6 +614,10 @@ trait BubbleView {
         false
     }
 
+    fn has_puzzle(&self, _puzzle: Puzzle) -> bool {
+        false
+    }
+
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>);
 
     fn on_event(
@@ -570,15 +639,14 @@ struct CutsceneBubbleView {
 impl CutsceneBubbleView {
     fn new(width: i32, top: i32, cutscene: Cutscene) -> Box<dyn BubbleView> {
         let rect = Rect::new(0, top, width, CUTSCENE_BUBBLE_HEIGHT);
-        let view = CutsceneBubbleView {
+        Box::new(CutsceneBubbleView {
             rect,
             button: TextButton::new(
                 rect,
                 "Replay cutscene",
                 BubblesAction::PlayCutscene(cutscene),
             ),
-        };
-        Box::new(view)
+        })
     }
 }
 
@@ -626,12 +694,11 @@ impl NpcSpeechBubbleView {
         );
         let height = (PORTRAIT_HEIGHT + 2 * BUBBLE_INNER_MARGIN)
             .max(2 * BUBBLE_INNER_MARGIN + (paragraph.height().ceil() as i32));
-        let view = NpcSpeechBubbleView {
+        Box::new(NpcSpeechBubbleView {
             rect: Rect::new(0, top, width, height),
             portrait,
             paragraph,
-        };
-        Box::new(view)
+        })
     }
 }
 
@@ -695,12 +762,11 @@ struct PuzzleBubbleView {
 
 impl PuzzleBubbleView {
     fn new(width: i32, top: i32, puzzle: Puzzle) -> Box<dyn BubbleView> {
-        let view = PuzzleBubbleView {
+        Box::new(PuzzleBubbleView {
             rect: Rect::new(0, top, width, PUZZLE_HEIGHT),
             puzzle,
             hover_pulse: HoverPulse::new(),
-        };
-        Box::new(view)
+        })
     }
 }
 
@@ -711,6 +777,10 @@ impl BubbleView for PuzzleBubbleView {
 
     fn is_choice_or_puzzle(&self) -> bool {
         true
+    }
+
+    fn has_puzzle(&self, puzzle: Puzzle) -> bool {
+        self.puzzle == puzzle
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -781,13 +851,12 @@ impl YouChoiceBubbleView {
         debug_assert!(!choices.is_empty());
         let height = (choices.len() as i32) * (CHOICE_HEIGHT + CHOICE_SPACING)
             - CHOICE_SPACING;
-        let view = YouChoiceBubbleView {
+        Box::new(YouChoiceBubbleView {
             rect: Rect::new(0, top, width, height),
             key,
             choices,
             hovering: None,
-        };
-        Box::new(view)
+        })
     }
 
     fn choice_for_pt(&self, pt: Point2<i32>) -> Option<usize> {
@@ -900,11 +969,10 @@ impl YouSpeechBubbleView {
         );
         let height =
             2 * BUBBLE_INNER_MARGIN + (paragraph.height().ceil() as i32);
-        let view = YouSpeechBubbleView {
+        Box::new(YouSpeechBubbleView {
             rect: Rect::new(0, top, width, height),
             paragraph,
-        };
-        Box::new(view)
+        })
     }
 }
 

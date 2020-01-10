@@ -62,7 +62,6 @@ const SECTION_TOP: i32 =
 pub enum MenuAction {
     GoToPuzzle(Puzzle),
     PlayCutscene(Cutscene),
-    GoToConversation(Conversation),
     CopyCircuit,
     DeleteCircuit,
     EditCircuit,
@@ -366,7 +365,8 @@ impl MenuView {
             MenuSection::Puzzles => {
                 match self.puzzles_view.on_event(event, ui, state) {
                     Some(PuzzlesAction::GoToConversation(conv)) => {
-                        return Some(MenuAction::GoToConversation(conv));
+                        self.go_back_to_conversation(conv, ui, state);
+                        return None;
                     }
                     Some(PuzzlesAction::Copy) => {
                         return Some(MenuAction::CopyCircuit);
@@ -475,14 +475,20 @@ impl MenuView {
         self.confirmation_dialog = Some(dialog);
     }
 
-    pub fn go_to_current_conversation(
+    fn go_back_to_conversation(
         &mut self,
+        conv: Conversation,
         ui: &mut Ui,
         state: &mut GameState,
     ) {
+        state.set_current_conversation(conv);
         self.unfocus(ui, state);
         state.set_menu_section(MenuSection::Messages);
-        self.converse_view.reset_for_current_conversation(ui, state);
+        self.converse_view.jump_to_current_conversation_from(
+            state.current_puzzle(),
+            ui,
+            state,
+        );
     }
 
     pub fn go_to_current_puzzle(

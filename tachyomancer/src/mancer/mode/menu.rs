@@ -59,13 +59,6 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         state.set_cutscene(cutscene.script());
                         return ModeChange::Next;
                     }
-                    Some(MenuAction::GoToConversation(conv)) => {
-                        state.set_current_conversation(conv);
-                        view.go_to_current_conversation(
-                            &mut window.ui(),
-                            state,
-                        );
-                    }
                     Some(MenuAction::CopyCircuit) => {
                         match state.copy_current_circuit() {
                             Ok(()) => {

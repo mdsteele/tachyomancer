@@ -434,6 +434,7 @@ impl<T: Clone + PartialEq> RadioCheckbox<T> {
 pub struct Scrollbar {
     rect: Rect<i32>,
     scroll_top: i32,
+    scroll_top_goal: i32,
     scroll_max: i32,
     drag: Option<i32>,
 }
@@ -441,7 +442,13 @@ pub struct Scrollbar {
 impl Scrollbar {
     pub fn new(rect: Rect<i32>, total_height: i32) -> Scrollbar {
         let scroll_max = (total_height - rect.height).max(0);
-        Scrollbar { rect, scroll_top: 0, scroll_max, drag: None }
+        Scrollbar {
+            rect,
+            scroll_top: 0,
+            scroll_top_goal: 0,
+            scroll_max,
+            drag: None,
+        }
     }
 
     pub fn is_visible(&self) -> bool {
@@ -457,6 +464,7 @@ impl Scrollbar {
         if self.scroll_max != new_scroll_max {
             self.scroll_max = new_scroll_max;
             self.scroll_top = self.scroll_top.min(self.scroll_max);
+            self.scroll_top_goal = self.scroll_top_goal.min(self.scroll_max);
             ui.request_redraw();
         }
         debug_assert!(self.scroll_top <= self.scroll_max);
@@ -465,19 +473,26 @@ impl Scrollbar {
     pub fn scroll_by(&mut self, delta: i32, ui: &mut Ui) {
         let new_scroll_top =
             (self.scroll_top + delta).max(0).min(self.scroll_max);
-        if self.scroll_top != new_scroll_top {
-            self.scroll_top = new_scroll_top;
-            ui.request_redraw();
-        }
+        self.set_scroll_top_and_goal(new_scroll_top, ui);
     }
 
     pub fn scroll_to(&mut self, middle: i32, ui: &mut Ui) {
         let new_scroll_top =
             (middle - self.rect.height / 2).max(0).min(self.scroll_max);
+        self.set_scroll_top_and_goal(new_scroll_top, ui);
+    }
+
+    pub fn ease_to(&mut self, middle: i32) {
+        self.scroll_top_goal =
+            (middle - self.rect.height / 2).max(0).min(self.scroll_max);
+    }
+
+    fn set_scroll_top_and_goal(&mut self, new_scroll_top: i32, ui: &mut Ui) {
         if self.scroll_top != new_scroll_top {
             self.scroll_top = new_scroll_top;
             ui.request_redraw();
         }
+        self.scroll_top_goal = new_scroll_top;
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -505,12 +520,35 @@ impl Scrollbar {
         }
     }
 
+    fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {
+        let tracking_base: f64 = 0.0001; // smaller = faster tracking
+        let difference = (goal - current) as f64;
+        let change = difference * (1.0 - tracking_base.powf(tick.elapsed));
+        current
+            + if change > -1.0 && change < 1.0 {
+                change.signum() as i32
+            } else {
+                change.round() as i32
+            }
+    }
+
     pub fn on_event(&mut self, event: &Event, ui: &mut Ui) {
         match event {
+            Event::ClockTick(tick) => {
+                if self.scroll_top != self.scroll_top_goal {
+                    self.scroll_top = Scrollbar::track_towards(
+                        self.scroll_top,
+                        self.scroll_top_goal,
+                        tick,
+                    );
+                    ui.request_redraw();
+                }
+            }
             Event::MouseDown(mouse) if mouse.left => {
                 if let Some(handle_rect) = self.handle_rect() {
                     if handle_rect.contains_point(mouse.pt) {
                         self.drag = Some(mouse.pt.y - handle_rect.y);
+                        self.scroll_top_goal = self.scroll_top;
                         ui.request_redraw();
                     } else if self.rect.contains_point(mouse.pt) {
                         if mouse.pt.y < handle_rect.y {
@@ -529,9 +567,9 @@ impl Scrollbar {
                         total_height * new_handle_y,
                         self.rect.height,
                     );
-                    self.scroll_top =
+                    let new_scroll_top =
                         new_scroll_top.max(0).min(self.scroll_max);
-                    ui.request_redraw();
+                    self.set_scroll_top_and_goal(new_scroll_top, ui);
                 }
             }
             Event::MouseUp(mouse) if mouse.left => {

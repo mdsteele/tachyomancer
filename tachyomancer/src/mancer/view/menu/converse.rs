@@ -17,12 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::button::{HoverPulse, Scrollbar, TextButton};
+use super::super::button::{Scrollbar, TextButton};
 use super::super::paragraph::Paragraph;
 use super::list::{list_height_for_num_items, ListIcon, ListView};
 use crate::mancer::font::Align;
 use crate::mancer::gl::Stencil;
-use crate::mancer::gui::{Event, Resources, Sound, Ui};
+use crate::mancer::gui::{Event, Resources, Ui};
 use crate::mancer::save::{Prefs, Profile};
 use crate::mancer::state::{
     ConversationBubble, ConversationExt, Cutscene, GameState, Portrait,
@@ -55,7 +55,7 @@ const PORTRAIT_HEIGHT: i32 = 85;
 const PORTRAIT_WIDTH: i32 = 68;
 
 const PUZZLE_HEIGHT: i32 = 50;
-const PUZZLE_SPACING: i32 = 2;
+const PUZZLE_SPACING: i32 = 3;
 
 const SCROLLBAR_WIDTH: i32 = 18;
 const SCROLLBAR_MARGIN: i32 = 8;
@@ -494,7 +494,7 @@ impl BubblesListView {
             self.rect.width - (SCROLLBAR_MARGIN + SCROLLBAR_WIDTH);
         let mut bubble_views = Vec::<Box<dyn BubbleView>>::new();
         for bubble in conv.bubbles(profile) {
-            let mut bubble_top = if let Some(last) = bubble_views.last() {
+            let bubble_top = if let Some(last) = bubble_views.last() {
                 last.rect().bottom() + BUBBLE_SPACING
             } else {
                 0
@@ -517,14 +517,11 @@ impl BubblesListView {
                     ))
                 }
                 ConversationBubble::Puzzles(puzzles) => {
-                    for puzzle in puzzles {
-                        bubble_views.push(PuzzleBubbleView::new(
-                            bubble_width,
-                            bubble_top,
-                            puzzle,
-                        ));
-                        bubble_top += PUZZLE_HEIGHT + PUZZLE_SPACING;
-                    }
+                    bubble_views.push(PuzzleBubbleView::new(
+                        bubble_width,
+                        bubble_top,
+                        puzzles,
+                    ));
                 }
                 ConversationBubble::YouChoice(key, choices) => bubble_views
                     .push(YouChoiceBubbleView::new(
@@ -756,16 +753,30 @@ impl BubbleView for NpcSpeechBubbleView {
 
 struct PuzzleBubbleView {
     rect: Rect<i32>,
-    puzzle: Puzzle,
-    hover_pulse: HoverPulse,
+    buttons: Vec<TextButton<Puzzle>>,
 }
 
 impl PuzzleBubbleView {
-    fn new(width: i32, top: i32, puzzle: Puzzle) -> Box<dyn BubbleView> {
+    fn new(width: i32, top: i32, puzzles: Vec<Puzzle>) -> Box<dyn BubbleView> {
+        let num_puzzles = puzzles.len() as i32;
+        debug_assert!(num_puzzles > 0);
+        let height =
+            (PUZZLE_HEIGHT + PUZZLE_SPACING) * num_puzzles - PUZZLE_SPACING;
         Box::new(PuzzleBubbleView {
-            rect: Rect::new(0, top, width, PUZZLE_HEIGHT),
-            puzzle,
-            hover_pulse: HoverPulse::new(),
+            rect: Rect::new(0, top, width, height),
+            buttons: puzzles
+                .into_iter()
+                .enumerate()
+                .map(|(index, puzzle)| {
+                    let y = top
+                        + (PUZZLE_HEIGHT + PUZZLE_SPACING) * (index as i32);
+                    TextButton::new(
+                        Rect::new(0, y, width, PUZZLE_HEIGHT),
+                        &format!("Go to task \"{}\"", puzzle.title()),
+                        puzzle,
+                    )
+                })
+                .collect(),
         })
     }
 }
@@ -780,28 +791,13 @@ impl BubbleView for PuzzleBubbleView {
     }
 
     fn has_puzzle(&self, puzzle: Puzzle) -> bool {
-        self.puzzle == puzzle
+        self.buttons.iter().any(|button| *button.value() == puzzle)
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let rect = self.rect.as_f32();
-        let bg_color = Color4::CYAN0_TRANSLUCENT
-            .mix(Color4::CYAN3_TRANSLUCENT, self.hover_pulse.brightness());
-        resources.shaders().ui().draw_box4(
-            &matrix,
-            &rect,
-            &Color4::ORANGE5,
-            &Color4::CYAN3,
-            &bg_color,
-        );
-        let label = format!("Go to task \"{}\"", self.puzzle.title());
-        resources.fonts().bold().draw(
-            &matrix,
-            BUBBLE_FONT_SIZE,
-            Align::MidCenter,
-            (rect.x + 0.5 * rect.width, rect.y + 0.5 * rect.height),
-            &label,
-        );
+        for button in self.buttons.iter() {
+            button.draw(resources, matrix, true);
+        }
     }
 
     fn on_event(
@@ -809,24 +805,10 @@ impl BubbleView for PuzzleBubbleView {
         event: &Event,
         ui: &mut Ui,
     ) -> Option<BubblesAction> {
-        match event {
-            Event::ClockTick(tick) => {
-                self.hover_pulse.on_clock_tick(tick, ui);
+        for button in self.buttons.iter_mut() {
+            if let Some(puzzle) = button.on_event(event, ui, true) {
+                return Some(BubblesAction::GoToPuzzle(puzzle));
             }
-            Event::MouseDown(mouse) => {
-                if self.rect.contains_point(mouse.pt) {
-                    self.hover_pulse.on_click(ui);
-                    return Some(BubblesAction::GoToPuzzle(self.puzzle));
-                }
-            }
-            Event::MouseMove(mouse) => {
-                let hovering = self.rect.contains_point(mouse.pt);
-                if self.hover_pulse.set_hovering(hovering, ui) {
-                    ui.audio().play_sound(Sound::ButtonHover);
-                }
-            }
-            Event::Unfocus => self.hover_pulse.unfocus(),
-            _ => {}
         }
         return None;
     }

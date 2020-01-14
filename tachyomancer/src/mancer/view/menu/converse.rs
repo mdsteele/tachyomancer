@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use super::super::button::{Scrollbar, TextButton};
-use super::super::paragraph::Paragraph;
+use super::super::paragraph::{Paragraph, StreamingParagraph};
 use super::list::{list_height_for_num_items, ListIcon, ListView};
 use crate::mancer::font::Align;
 use crate::mancer::gl::Stencil;
-use crate::mancer::gui::{Event, Resources, Ui};
+use crate::mancer::gui::{Event, Keycode, Resources, Ui};
 use crate::mancer::save::{Prefs, Profile};
 use crate::mancer::state::{
     ConversationBubble, ConversationExt, Cutscene, GameState, Portrait,
@@ -427,13 +427,16 @@ impl BubblesListView {
         debug_assert!(state.profile().is_some());
         let profile = state.profile().unwrap();
         let conv = profile.current_conversation();
-        let num_bubbles_shown =
-            profile.conversation_progress(conv).saturating_add(1);
+        let num_bubbles_completed = profile.conversation_progress(conv);
+        let num_bubbles_shown = num_bubbles_completed.saturating_add(1);
         if conv != self.conv || num_bubbles_shown > self.bubbles.len() {
             self.rebuild_bubbles(profile, state.prefs(), conv);
         }
         self.num_bubbles_shown = num_bubbles_shown.min(self.bubbles.len());
         ui.request_redraw();
+        for bubble in self.bubbles.iter_mut().take(num_bubbles_completed) {
+            bubble.on_event(&Event::Unfocus, ui);
+        }
 
         self.more_button = if self.num_bubbles_shown < self.bubbles.len() {
             let width = self.rect.width - (SCROLLBAR_MARGIN + SCROLLBAR_WIDTH);
@@ -670,7 +673,7 @@ impl BubbleView for CutsceneBubbleView {
 struct NpcSpeechBubbleView {
     rect: Rect<i32>,
     portrait: Portrait,
-    paragraph: Paragraph,
+    paragraph: StreamingParagraph,
 }
 
 impl NpcSpeechBubbleView {
@@ -694,7 +697,7 @@ impl NpcSpeechBubbleView {
         Box::new(NpcSpeechBubbleView {
             rect: Rect::new(0, top, width, height),
             portrait,
-            paragraph,
+            paragraph: StreamingParagraph::new(paragraph),
         })
     }
 }
@@ -746,6 +749,31 @@ impl BubbleView for NpcSpeechBubbleView {
             (self.rect.x + PORTRAIT_WIDTH + 2 * BUBBLE_INNER_MARGIN) as f32;
         let top = (self.rect.y + BUBBLE_INNER_MARGIN) as f32;
         self.paragraph.draw(resources, matrix, (left, top));
+    }
+
+    fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+    ) -> Option<BubblesAction> {
+        match event {
+            Event::ClockTick(tick) => {
+                self.paragraph.tick(tick.elapsed, ui);
+            }
+            Event::MouseDown(mouse) if mouse.left => {
+                if self.rect.contains_point(mouse.pt) {
+                    self.paragraph.skip_to_end(ui);
+                }
+            }
+            Event::KeyDown(key) if key.code == Keycode::Return => {
+                self.paragraph.skip_to_end(ui);
+            }
+            Event::Unfocus => {
+                self.paragraph.skip_to_end(ui);
+            }
+            _ => {}
+        }
+        None
     }
 }
 
@@ -931,7 +959,8 @@ impl BubbleView for YouChoiceBubbleView {
 
 struct YouSpeechBubbleView {
     rect: Rect<i32>,
-    paragraph: Paragraph,
+    paragraph: StreamingParagraph,
+    paragraph_left_top: (f32, f32),
 }
 
 impl YouSpeechBubbleView {
@@ -951,9 +980,13 @@ impl YouSpeechBubbleView {
         );
         let height =
             2 * BUBBLE_INNER_MARGIN + (paragraph.height().ceil() as i32);
+        let paragraph_right = (width - BUBBLE_INNER_MARGIN) as f32;
+        let paragraph_left = (paragraph_right - paragraph.width()).floor();
+        let paragraph_top = (top + BUBBLE_INNER_MARGIN) as f32;
         Box::new(YouSpeechBubbleView {
             rect: Rect::new(0, top, width, height),
-            paragraph,
+            paragraph: StreamingParagraph::new(paragraph),
+            paragraph_left_top: (paragraph_left, paragraph_top),
         })
     }
 }
@@ -971,10 +1004,32 @@ impl BubbleView for YouSpeechBubbleView {
             &Color4::ORANGE1,
             &Color4::ORANGE0_TRANSLUCENT,
         );
-        let right = (self.rect.right() - BUBBLE_INNER_MARGIN) as f32;
-        let left = (right - self.paragraph.width()).floor();
-        let top = (self.rect.y + BUBBLE_INNER_MARGIN) as f32;
-        self.paragraph.draw(resources, matrix, (left, top));
+        self.paragraph.draw(resources, matrix, self.paragraph_left_top);
+    }
+
+    fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+    ) -> Option<BubblesAction> {
+        match event {
+            Event::ClockTick(tick) => {
+                self.paragraph.tick(tick.elapsed, ui);
+            }
+            Event::MouseDown(mouse) if mouse.left => {
+                if self.rect.contains_point(mouse.pt) {
+                    self.paragraph.skip_to_end(ui);
+                }
+            }
+            Event::KeyDown(key) if key.code == Keycode::Return => {
+                self.paragraph.skip_to_end(ui);
+            }
+            Event::Unfocus => {
+                self.paragraph.skip_to_end(ui);
+            }
+            _ => {}
+        }
+        None
     }
 }
 

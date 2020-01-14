@@ -17,13 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::paragraph::Paragraph;
+use super::paragraph::{Paragraph, StreamingParagraph};
 use crate::mancer::font::Align;
 use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui};
 use crate::mancer::save::Prefs;
 use crate::mancer::state::{CutsceneScript, Portrait, Theater};
 use cgmath::{self, Matrix4, Point2};
-use std::cell::Cell;
 use std::collections::BTreeMap;
 use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
 
@@ -253,9 +252,7 @@ impl CutsceneView {
 struct TalkBubble {
     rect: Rect<i32>,
     portrait: Portrait,
-    paragraph: Paragraph,
-    millis: f64,
-    millis_for_next: Cell<f64>,
+    paragraph: StreamingParagraph,
 }
 
 impl TalkBubble {
@@ -290,9 +287,7 @@ impl TalkBubble {
         TalkBubble {
             rect,
             portrait,
-            paragraph,
-            millis: 0.0,
-            millis_for_next: Cell::new(0.0),
+            paragraph: StreamingParagraph::new(paragraph),
         }
     }
 
@@ -318,35 +313,19 @@ impl TalkBubble {
         let left =
             (self.rect.x + TALK_PORTRAIT_WIDTH + 2 * TALK_INNER_MARGIN) as f32;
         let top = (self.rect.y + TALK_INNER_MARGIN) as f32;
-        let millis = self.millis as usize;
-        let needed_for_next = self.paragraph.draw_partial(
-            resources,
-            matrix,
-            (left, top),
-            millis,
-        );
-        self.millis_for_next.set((millis + needed_for_next) as f64);
+        self.paragraph.draw(resources, matrix, (left, top));
     }
 
     fn tick(&mut self, elapsed: f64, ui: &mut Ui) {
-        if self.millis < self.paragraph.total_millis() as f64 {
-            self.millis += elapsed * 1000.0;
-            if self.millis >= self.millis_for_next.get() {
-                ui.request_redraw();
-            }
-        }
+        self.paragraph.tick(elapsed, ui);
     }
 
     fn skip_to_end(&mut self, ui: &mut Ui) {
-        let total_millis = self.paragraph.total_millis() as f64;
-        if self.millis < total_millis {
-            self.millis = total_millis;
-            ui.request_redraw();
-        }
+        self.paragraph.skip_to_end(ui);
     }
 
     fn is_done(&self) -> bool {
-        (self.millis as usize) >= self.paragraph.total_millis()
+        self.paragraph.is_done()
     }
 }
 

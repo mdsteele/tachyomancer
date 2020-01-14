@@ -409,7 +409,7 @@ pub(super) fn where_are_we(profile: &Profile,
         good to go!\"");
     builder.esra("\
         Searching...\n\n\
-        $(500)O$(30)dd.  There don't seem to be any navsats in range.");
+        $(500)O$()dd.  There don't seem to be any navsats in range.");
     builder.henry("\
         \"$/That$/ can't be right.\"");
     builder.you("\"No navsats at all?  Are you sure, ESRA?\"");
@@ -511,7 +511,7 @@ pub(super) fn low_visibility(profile: &Profile,
     builder.lisa("\"All right, we're live.  What've we got, ESRA?\"");
     builder.esra("\
         Searching...\n\n\
-        $(500)O$(30)dd.  There don't seem to be any navsats in range.");
+        $(500)O$()dd.  There don't seem to be any navsats in range.");
     builder.lisa("\
         \"Say what?  What, did we just overshoot the frontier entirely?  That \
         can't be right.\"");

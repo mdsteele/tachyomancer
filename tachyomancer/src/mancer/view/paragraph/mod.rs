@@ -25,9 +25,10 @@ mod types;
 
 use self::parse::Parser;
 use self::types::{CompiledLine, ParserAlign};
-use crate::mancer::gui::Resources;
+use crate::mancer::gui::{Resources, Ui};
 use crate::mancer::save::Prefs;
 use cgmath::Matrix4;
+use std::cell::Cell;
 use std::str::Chars;
 use tachy::geom::{Color4, MatrixExt, RectSize};
 
@@ -71,7 +72,8 @@ impl Paragraph {
     /// * `$[h]`, where `h` is the name of a hotkey (e.g. `FlipHorz`), inserts
     ///   the name of the keycode bound to that hotkey.
     /// * `$(n)`, where `n` is a decimal number, switches the text speed to
-    ///   that many milliseconds per character.  The deafult is 30.
+    ///   that many milliseconds per character.
+    /// * `$()` switches the text speed back to the default.
     /// * `$'p'`, where `p` is the name of a special phrase, inserts the phrase
     ///   text.  Supported phrases include:
     ///     * "Command", which turns into the equivalent modifier key name
@@ -217,6 +219,57 @@ fn parse_arg(chars: &mut Chars, close: char) -> String {
         }
     }
     result
+}
+
+//===========================================================================//
+
+pub struct StreamingParagraph {
+    paragraph: Paragraph,
+    millis: f64,
+    millis_for_next: Cell<f64>,
+}
+
+impl StreamingParagraph {
+    pub fn new(paragraph: Paragraph) -> StreamingParagraph {
+        StreamingParagraph {
+            paragraph,
+            millis: 0.0,
+            millis_for_next: Cell::new(0.0),
+        }
+    }
+
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        left_top: (f32, f32),
+    ) {
+        let millis = self.millis as usize;
+        let needed_for_next =
+            self.paragraph.draw_partial(resources, matrix, left_top, millis);
+        self.millis_for_next.set((millis + needed_for_next) as f64);
+    }
+
+    pub fn tick(&mut self, elapsed: f64, ui: &mut Ui) {
+        if self.millis < self.paragraph.total_millis() as f64 {
+            self.millis += elapsed * 1000.0;
+            if self.millis >= self.millis_for_next.get() {
+                ui.request_redraw();
+            }
+        }
+    }
+
+    pub fn skip_to_end(&mut self, ui: &mut Ui) {
+        let total_millis = self.paragraph.total_millis() as f64;
+        if self.millis < total_millis {
+            self.millis = total_millis;
+            ui.request_redraw();
+        }
+    }
+
+    pub fn is_done(&self) -> bool {
+        (self.millis as usize) >= self.paragraph.total_millis()
+    }
 }
 
 //===========================================================================//

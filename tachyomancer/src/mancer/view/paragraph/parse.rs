@@ -33,7 +33,7 @@ use tachy::save::{ChipType, CircuitData};
 const DEFAULT_ALIGN: ParserAlign = ParserAlign::Left;
 const DEFAULT_COLOR: Color4 = Color4::WHITE;
 const DEFAULT_FONT: Font = Font::Roman;
-const DEFAULT_MILLIS_PER_CHAR: usize = 30;
+const DEFAULT_MILLIS_PER_CHAR: usize = 20;
 
 //===========================================================================//
 
@@ -194,7 +194,10 @@ impl Parser {
     }
 
     pub fn set_millis_per_char(&mut self, number_string: &str) {
-        if let Ok(number) = number_string.parse::<usize>() {
+        if number_string.is_empty() {
+            self.shift_text_piece();
+            self.current_millis_per_char = DEFAULT_MILLIS_PER_CHAR;
+        } else if let Ok(number) = number_string.parse::<usize>() {
             if number != self.current_millis_per_char {
                 self.shift_text_piece();
                 self.current_millis_per_char = number;

@@ -86,6 +86,7 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
                 }
                 EvalResult::Victory(score) => {
                     let score = match score {
+                        EvalScore::Cycles => eval.total_cycles(),
                         EvalScore::Value(value) => value as u32,
                         EvalScore::WireLength => wire_length as u32,
                     };

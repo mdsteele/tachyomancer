@@ -549,6 +549,10 @@ impl CircuitView {
             EvalResult::Victory(score) => {
                 let area = grid.bounds().area();
                 let score = match score {
+                    EvalScore::Cycles => {
+                        // TODO: It would be nice to not have this unwrap().
+                        grid.eval().unwrap().total_cycles()
+                    }
                     EvalScore::Value(value) => value as u32,
                     EvalScore::WireLength => {
                         grid.wire_fragments().len() as u32

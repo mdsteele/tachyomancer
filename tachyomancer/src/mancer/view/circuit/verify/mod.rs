@@ -80,6 +80,10 @@ impl VerificationTray {
                 // TODO: Make a verification view for AutomateDrillingRig
                 self::shared::NullVerifyView::new()
             }
+            Puzzle::AutomateGeigerCounter => {
+                // TODO: Make a verification view for AutomateGeigerCounter
+                self::shared::NullVerifyView::new()
+            }
             Puzzle::AutomateGrapple => {
                 self::grapple::GrappleVerifyView::new(right_bottom)
             }

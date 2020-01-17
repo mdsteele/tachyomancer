@@ -10,6 +10,16 @@ fn automate_drilling_rig() {
 }
 
 #[test]
+fn automate_geiger_counter_fast() {
+    test_solution("automate_geiger_counter_fast");
+}
+
+#[test]
+fn automate_geiger_counter_small() {
+    test_solution("automate_geiger_counter_small");
+}
+
+#[test]
 fn automate_grapple() {
     test_solution("automate_grapple");
 }

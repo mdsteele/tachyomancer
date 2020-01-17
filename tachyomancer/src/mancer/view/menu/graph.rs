@@ -159,14 +159,14 @@ impl ScoreGraphView {
         let font = resources.fonts().roman();
         font.draw(
             &matrix,
-            20.0,
+            18.0,
             Align::MidCenter,
             (mid_x, mid_y - 12.0),
             "COMPLETE THIS TASK TO",
         );
         font.draw(
             &matrix,
-            20.0,
+            18.0,
             Align::MidCenter,
             (mid_x, mid_y + 12.0),
             "VIEW OPTIMIZATION GRAPH",

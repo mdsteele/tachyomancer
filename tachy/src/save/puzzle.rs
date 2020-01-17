@@ -76,6 +76,7 @@ pub enum Puzzle {
     FabricateStopwatch,
     AutomateDrillingRig,
     CommandShields,
+    AutomateGeigerCounter,
     AutomateXUnit,
     SandboxBehavior,
     SandboxEvent,
@@ -156,6 +157,16 @@ impl Puzzle {
                 description:
                     "Regulate the speed of the drill to avoid breaking the \
                      drill head.",
+                instructions: "TODO",
+            },
+            Puzzle::AutomateGeigerCounter => &PuzzleData {
+                title: "Geiger Counter",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (10, 9),
+                score_units: "Cycles",
+                graph_bounds: (400, 5000),
+                description: "TODO",
                 instructions: "TODO",
             },
             Puzzle::AutomateGrapple => &PuzzleData {

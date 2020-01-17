@@ -48,6 +48,8 @@ pub struct EvalError {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EvalScore {
+    /// Score is equal to the number of cycles.
+    Cycles,
     /// Score is equal to the supplied value.
     Value(u32),
     /// Score is equal to the number of wire fragments in the circuit.
@@ -57,6 +59,7 @@ pub enum EvalScore {
 //===========================================================================//
 
 pub struct CircuitEval {
+    total_cycles: u32,
     cycle: u32,      // which cycle of the time step we're on
     subcycle: usize, // index into `chips` of next chip group to eval
     errors: Vec<EvalError>,
@@ -84,6 +87,7 @@ impl CircuitEval {
             }
         }
         CircuitEval {
+            total_cycles: 0,
             cycle: 0,
             subcycle: 0,
             errors: Vec::new(),
@@ -100,6 +104,10 @@ impl CircuitEval {
 
     pub fn time_step(&self) -> u32 {
         self.state.time_step
+    }
+
+    pub fn total_cycles(&self) -> u32 {
+        self.total_cycles
     }
 
     pub fn subcycle(&self) -> usize {
@@ -180,6 +188,7 @@ impl CircuitEval {
                 }
                 self.subcycle = 0;
                 self.cycle += 1;
+                self.total_cycles += 1;
                 if needs_another_cycle {
                     debug_log!(
                         "  Cycle {} complete, starting another cycle",

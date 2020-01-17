@@ -22,6 +22,7 @@ mod drill;
 mod fab_arith;
 mod fab_clock;
 mod fab_event;
+mod geiger;
 mod grapple;
 mod heliostat;
 mod lander;
@@ -51,6 +52,7 @@ pub use self::fab_clock::{
     FABRICATE_EGG_TIMER_DATA, FABRICATE_STOPWATCH_DATA,
 };
 pub use self::fab_event::{FABRICATE_COUNTER_DATA, FABRICATE_INC_DATA};
+pub use self::geiger::GeigerEval;
 pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
 pub use self::lander::LanderEval;
@@ -147,6 +149,7 @@ impl PuzzleExt for Puzzle {
         match self {
             Puzzle::AutomateBeacon => self::beacon::INTERFACES,
             Puzzle::AutomateDrillingRig => self::drill::INTERFACES,
+            Puzzle::AutomateGeigerCounter => self::geiger::INTERFACES,
             Puzzle::AutomateGrapple => self::grapple::INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateMiningRobot => self::mining::INTERFACES,
@@ -239,6 +242,7 @@ pub(super) fn new_puzzle_eval(
     match puzzle {
         Puzzle::AutomateBeacon => Box::new(BeaconEval::new(slots)),
         Puzzle::AutomateDrillingRig => Box::new(DrillingRigEval::new(slots)),
+        Puzzle::AutomateGeigerCounter => Box::new(GeigerEval::new(slots)),
         Puzzle::AutomateGrapple => Box::new(GrappleEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateMiningRobot => Box::new(MiningRobotEval::new(slots)),

@@ -33,7 +33,7 @@ pub use self::converse::{
     Chapter, Conversation, ConversationIter, ConversationProgress, Prereq,
 };
 pub use self::hotkey::HotkeyCode;
-pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind};
+pub use self::puzzle::{Puzzle, PuzzleIter, PuzzleKind, ScoreUnits};
 pub use self::score::{ScoreCurve, ScoreCurveMap};
 pub use self::size::{WireSize, WireSizeInterval};
 pub use self::solution::SolutionData;

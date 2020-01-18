@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -236,10 +236,11 @@ impl PuzzleEval for TurretEval {
         0.05
     }
 
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.num_enemies_appeared == ENEMIES.len() && self.enemies.is_empty()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         while self.num_enemies_appeared < ENEMIES.len()
             && ENEMIES[self.num_enemies_appeared].0 <= state.time_step()
         {
@@ -259,13 +260,6 @@ impl PuzzleEval for TurretEval {
         if self.movement_is_done {
             state.send_event(self.done_wire, 0);
             self.movement_is_done = false;
-        }
-        if self.num_enemies_appeared == ENEMIES.len()
-            && self.enemies.is_empty()
-        {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
         }
     }
 

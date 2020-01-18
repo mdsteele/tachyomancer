@@ -34,7 +34,7 @@ pub use self::check::{
 };
 pub use self::chip::ChipExt;
 pub use self::edit::{ChipsIter, EditGrid, WireFragmentsIter};
-pub use self::eval::{CircuitEval, EvalError, EvalResult, EvalScore};
+pub use self::eval::{CircuitEval, EvalError, EvalResult};
 pub use self::interface::{Interface, InterfacePort};
 pub use self::port::{
     PortColor, PortConstraint, PortDependency, PortFlow, PortSpec,

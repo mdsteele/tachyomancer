@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -154,19 +154,15 @@ impl XUnitEval {
 }
 
 impl PuzzleEval for XUnitEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.any_detonated
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         if state.time_step() == 0 {
             state.send_event(self.proxy_wire, 0);
         }
         self.send_next_pong(state);
-        if self.any_detonated {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
-        }
     }
 
     fn begin_additional_cycle(&mut self, state: &mut CircuitState) {

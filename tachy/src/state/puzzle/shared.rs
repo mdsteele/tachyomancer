@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort};
 use super::super::port::{PortColor, PortFlow};
 use crate::geom::{Coords, Direction};
@@ -98,15 +98,14 @@ impl FabricationEval {
 }
 
 impl PuzzleEval for FabricationEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, state: &CircuitState) -> bool {
+        let start = (state.time_step() as usize) * self.num_columns;
+        start >= self.expected_table_values.len()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         self.has_received_events.clear();
         let start = (state.time_step() as usize) * self.num_columns;
-        if start >= self.expected_table_values.len() {
-            return Some(EvalScore::WireLength);
-        }
         let mut column_index = 0;
         for iface_index in 0..self.interfaces.len() {
             let interface = &self.interfaces[iface_index];
@@ -133,7 +132,6 @@ impl PuzzleEval for FabricationEval {
             }
         }
         debug_assert_eq!(column_index, self.num_columns);
-        return None;
     }
 
     fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {

@@ -53,8 +53,7 @@ use tachy::save::{
     ChipType, HotkeyCode, SolutionData, WireSize, MAX_COMMENT_CHARS,
 };
 use tachy::state::{
-    EditGrid, EvalResult, EvalScore, GridChange, PuzzleExt,
-    TutorialBubblePosition,
+    EditGrid, EvalResult, GridChange, PuzzleExt, TutorialBubblePosition,
 };
 
 //===========================================================================//
@@ -548,16 +547,6 @@ impl CircuitView {
             }
             EvalResult::Victory(score) => {
                 let area = grid.bounds().area();
-                let score = match score {
-                    EvalScore::Cycles => {
-                        // TODO: It would be nice to not have this unwrap().
-                        grid.eval().unwrap().total_cycles()
-                    }
-                    EvalScore::Value(value) => value as u32,
-                    EvalScore::WireLength => {
-                        grid.wire_fragments().len() as u32
-                    }
-                };
                 // TODO: It would be nice to not have this unwrap() here.
                 let time_steps = grid.eval().unwrap().time_step();
                 debug_log!("Victory!  area={}, score={}", area, score);

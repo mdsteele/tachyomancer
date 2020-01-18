@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -114,17 +114,13 @@ impl SensorsEval {
 }
 
 impl PuzzleEval for SensorsEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        if self.num_goals_found >= GOALS.len() {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            state.send_behavior(self.upper_wire, self.current_upper);
-            state.send_behavior(self.lower_wire, self.current_lower);
-            None
-        }
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.num_goals_found >= GOALS.len()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
+        state.send_behavior(self.upper_wire, self.current_upper);
+        state.send_behavior(self.lower_wire, self.current_lower);
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {

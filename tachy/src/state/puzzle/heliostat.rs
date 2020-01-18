@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -152,10 +152,11 @@ impl HeliostatEval {
 }
 
 impl PuzzleEval for HeliostatEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.energy >= ENERGY_NEEDED_FOR_VICTORY
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         let is_in_shadow = self.current_orbit_degrees >= 135
             && self.current_orbit_degrees <= 225;
         self.current_goal = if is_in_shadow {
@@ -180,11 +181,6 @@ impl PuzzleEval for HeliostatEval {
         state.send_behavior(self.goal_wire, self.current_goal);
         state.send_behavior(self.efficiency_wire, self.current_efficiency);
         state.send_behavior(self.pos_wire, self.current_pos);
-        if self.energy >= ENERGY_NEEDED_FOR_VICTORY {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
-        }
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {

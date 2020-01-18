@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use crate::save::{Puzzle, SolutionData};
-use crate::state::{EditGrid, EvalResult, EvalScore, WireError};
+use crate::state::{EditGrid, EvalResult, WireError};
 
 //===========================================================================//
 
@@ -28,7 +28,6 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
         &Puzzle::all().collect(),
         &data.circuit,
     );
-    let wire_length = grid.wire_fragments().len();
     let mut errors = Vec::<String>::new();
     if !grid.start_eval() {
         for error in grid.errors() {
@@ -85,11 +84,6 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
                     break;
                 }
                 EvalResult::Victory(score) => {
-                    let score = match score {
-                        EvalScore::Cycles => eval.total_cycles(),
-                        EvalScore::Value(value) => value as u32,
-                        EvalScore::WireLength => wire_length as u32,
-                    };
                     if score != data.score {
                         errors.push(format!(
                             "Actual score was {}, but expected {}",

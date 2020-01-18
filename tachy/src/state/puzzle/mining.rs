@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -153,20 +153,16 @@ impl MiningRobotEval {
 }
 
 impl PuzzleEval for MiningRobotEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.ore_at_base >= ORE_NEEDED_AT_BASE
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         state.send_behavior(self.dist_wire, self.current_position as u32);
         state.send_behavior(self.carry_wire, self.ore_carried);
         let ore = self.ore_deposits[self.current_position];
         if ore > 0 {
             state.send_event(self.found_wire, ore);
-        }
-        if self.ore_at_base >= ORE_NEEDED_AT_BASE {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
         }
     }
 

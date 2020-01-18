@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -269,13 +269,11 @@ impl PuzzleEval for StorageDepotEval {
         0.075
     }
 
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        if self.num_commands_completed >= DELAYS_AND_COMMANDS.len() {
-            return Some(EvalScore::Value(state.time_step()));
-        }
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.num_commands_completed >= DELAYS_AND_COMMANDS.len()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         if self.time_to_next_command == Some(0) {
             match DELAYS_AND_COMMANDS[self.num_commands_sent].1 {
                 Command::Store(crate_id) => {
@@ -299,7 +297,6 @@ impl PuzzleEval for StorageDepotEval {
             state.send_event(self.done_wire, 0);
             self.movement_is_done = false;
         }
-        return None;
     }
 
     fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {

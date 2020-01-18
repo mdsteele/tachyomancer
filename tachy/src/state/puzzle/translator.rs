@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -243,10 +243,11 @@ impl TranslatorEval {
 }
 
 impl PuzzleEval for TranslatorEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.printed_bytes.len() >= EXPECTED_OUTPUT.len()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         if self.num_bytes_read < ALIEN_INPUT.len() {
             state.send_event(
                 self.read_wire,
@@ -255,11 +256,6 @@ impl PuzzleEval for TranslatorEval {
             self.num_bytes_read += 1;
         }
         self.send_next_translated_byte(state);
-        if self.printed_bytes.len() >= EXPECTED_OUTPUT.len() {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
-        }
     }
 
     fn begin_additional_cycle(&mut self, state: &mut CircuitState) {

@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -152,17 +152,13 @@ impl GrappleEval {
 }
 
 impl PuzzleEval for GrappleEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.num_coils_fired >= STARTING_CHARGES.len()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         state.send_behavior(self.port_charge_wire, self.current_port_charge);
         state.send_behavior(self.stbd_charge_wire, self.current_stbd_charge);
-        if self.num_coils_fired >= STARTING_CHARGES.len() {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
-        }
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {

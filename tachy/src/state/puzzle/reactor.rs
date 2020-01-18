@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -131,10 +131,11 @@ impl AutomateReactorEval {
 }
 
 impl PuzzleEval for AutomateReactorEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.num_targets_held >= TARGETS.len()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         let current_power = self.current_power.round() as u32;
         if current_power == self.current_target {
             self.held_target_for += 1;
@@ -148,15 +149,8 @@ impl PuzzleEval for AutomateReactorEval {
         } else {
             self.held_target_for = 0;
         }
-
         state.send_behavior(self.power_wire, current_power);
         state.send_behavior(self.target_wire, self.current_target);
-
-        if self.num_targets_held >= TARGETS.len() {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
-        }
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {

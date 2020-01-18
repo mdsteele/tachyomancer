@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -109,19 +109,15 @@ impl DrillingRigEval {
 }
 
 impl PuzzleEval for DrillingRigEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.current_depth >= DEPTH_FOR_VICTORY
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         state.send_behavior(self.depth_wire, self.current_depth);
         if self.hit_jolt {
             state.send_event(self.jolt_wire, 0);
             self.hit_jolt = false;
-        }
-        if self.current_depth >= DEPTH_FOR_VICTORY {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
         }
     }
 

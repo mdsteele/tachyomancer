@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -80,12 +80,12 @@ impl SandboxBehaviorEval {
 }
 
 impl PuzzleEval for SandboxBehaviorEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        false
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         state.send_behavior(self.timer, state.time_step() & 0xff);
-        None
     }
 }
 
@@ -107,13 +107,13 @@ impl SandboxEventEval {
 }
 
 impl PuzzleEval for SandboxEventEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        false
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         state.send_event(self.metronome, 0);
         state.send_behavior(self.timer, state.time_step() & 0xff);
-        None
     }
 }
 

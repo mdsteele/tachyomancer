@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -97,18 +97,15 @@ impl GeigerEval {
 }
 
 impl PuzzleEval for GeigerEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, state: &CircuitState) -> bool {
+        (state.time_step() as usize) >= CLICKS.len()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         let step = state.time_step() as usize;
-        if step >= CLICKS.len() {
-            return Some(EvalScore::Cycles);
-        }
-        if CLICKS[step] != 0 {
+        if step < CLICKS.len() && CLICKS[step] != 0 {
             state.send_event(self.click_wire, 0);
         }
-        return None;
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {

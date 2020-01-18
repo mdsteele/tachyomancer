@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -206,20 +206,21 @@ impl PuzzleEval for RobotArmEval {
         0.075
     }
 
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.time_to_next_command == Some(0)
+            && self.num_commands_sent >= COMMANDS.len()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         if self.time_to_next_command == Some(0) {
             self.time_to_next_command = None;
-            if self.num_commands_sent >= COMMANDS.len() {
-                return Some(EvalScore::Value(state.time_step()));
+            if self.num_commands_sent < COMMANDS.len() {
+                self.last_command = COMMANDS[self.num_commands_sent];
+                self.num_commands_sent += 1;
+                self.has_completed_command = false;
+                self.has_sent_radio_reply = false;
+                state.send_event(self.recv_wire, self.last_command);
             }
-            self.last_command = COMMANDS[self.num_commands_sent];
-            self.num_commands_sent += 1;
-            self.has_completed_command = false;
-            self.has_sent_radio_reply = false;
-            state.send_event(self.recv_wire, self.last_command);
         }
 
         state.send_behavior(self.pos_wire, self.current_position);
@@ -227,8 +228,6 @@ impl PuzzleEval for RobotArmEval {
             state.send_event(self.done_wire, 0);
             self.movement_is_done = false;
         }
-
-        return None;
     }
 
     fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {

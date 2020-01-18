@@ -33,6 +33,25 @@ pub enum PuzzleKind {
 
 //===========================================================================//
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ScoreUnits {
+    Cycles,
+    Time,
+    WireLength,
+}
+
+impl ScoreUnits {
+    pub fn label(self) -> &'static str {
+        match self {
+            ScoreUnits::Cycles => "Cycles",
+            ScoreUnits::Time => "Time",
+            ScoreUnits::WireLength => "Wire Length",
+        }
+    }
+}
+
+//===========================================================================//
+
 #[derive(
     Clone,
     Copy,
@@ -101,7 +120,7 @@ impl Puzzle {
         self.data().kind
     }
 
-    pub fn score_units(self) -> &'static str {
+    pub fn score_units(self) -> ScoreUnits {
         self.data().score_units
     }
 
@@ -133,7 +152,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: false,
                 init_size: (8, 6),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (150, 150),
                 description:
                     "Adjust the beacon transmission angle to track the \
@@ -152,7 +171,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: true,
                 init_size: (5, 7),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (100, 200),
                 description:
                     "Regulate the speed of the drill to avoid breaking the \
@@ -164,7 +183,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: true,
                 init_size: (10, 9),
-                score_units: "Cycles",
+                score_units: ScoreUnits::Cycles,
                 graph_bounds: (400, 5000),
                 description: "TODO",
                 instructions: "TODO",
@@ -174,7 +193,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: false,
                 init_size: (6, 8),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (150, 150),
                 description:
                     "Regulate the discharge of the grapple launcher's \
@@ -186,7 +205,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: false,
                 init_size: (6, 5),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (50, 150),
                 description:
                     "Position the ship's heliostat to reflect sunlight \
@@ -207,7 +226,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: true,
                 init_size: (8, 6),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (100, 250),
                 description:
                     "Program the scout robot to pick up ore deposits and \
@@ -228,7 +247,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: false,
                 init_size: (6, 8),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (150, 150),
                 description:
                     "Manipulate the reactor's control rods to regulate \
@@ -240,7 +259,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: true,
                 init_size: (8, 6),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (300, 500),
                 description:
                     "Operate a robotic arm in response to radio commands.",
@@ -251,7 +270,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: false,
                 init_size: (6, 7),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (100, 150),
                 description:
                     "Narrow the sensor sweep to zero in on a given signal of \
@@ -276,7 +295,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: true,
                 init_size: (8, 6),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (300, 1000),
                 description: "TODO",
                 instructions: "TODO",
@@ -286,7 +305,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: true,
                 init_size: (8, 5),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (300, 500),
                 description: "TODO",
                 instructions: "TODO",
@@ -296,7 +315,7 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: true,
                 init_size: (12, 9),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (300, 300),
                 description: "TODO",
                 instructions:
@@ -316,7 +335,7 @@ impl Puzzle {
                 kind: PuzzleKind::Command,
                 allow_events: false,
                 init_size: (6, 8),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (150, 150),
                 description:
                     "Operate the lander thrusters during descent for a soft \
@@ -328,7 +347,7 @@ impl Puzzle {
                 kind: PuzzleKind::Command,
                 allow_events: true,
                 init_size: (9, 7),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (400, 600),
                 description:
                     "Control the ship's shields to block incoming enemy \
@@ -340,7 +359,7 @@ impl Puzzle {
                 kind: PuzzleKind::Command,
                 allow_events: true,
                 init_size: (9, 7),
-                score_units: "Time",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (200, 200),
                 description:
                     "Aim and fire the pulse cannon turret to fend off waves \
@@ -352,7 +371,7 @@ impl Puzzle {
                 kind: PuzzleKind::Fabricate,
                 allow_events: true,
                 init_size: (7, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 150),
                 description:
                     "Build a memory chip that can increment or decrement its \
@@ -364,7 +383,7 @@ impl Puzzle {
                 kind: PuzzleKind::Fabricate,
                 allow_events: true,
                 init_size: (7, 7),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 150),
                 description:
                     "Build a timing chip that counts down from a given time \
@@ -376,7 +395,7 @@ impl Puzzle {
                 kind: PuzzleKind::Fabricate,
                 allow_events: false,
                 init_size: (7, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 50),
                 description:
                     "Build a 4-bit halver using packers and unpackers.\n\n\
@@ -394,7 +413,7 @@ impl Puzzle {
                 kind: PuzzleKind::Fabricate,
                 allow_events: true,
                 init_size: (5, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 50),
                 description:
                     "Build a 4-bit incrementor using more basic event and \
@@ -412,7 +431,7 @@ impl Puzzle {
                 kind: PuzzleKind::Fabricate,
                 allow_events: false,
                 init_size: (7, 7),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 100),
                 description:
                     "Build an 8-bit multiplier using 4-bit multipliers.\n\n\
@@ -428,7 +447,7 @@ impl Puzzle {
                 kind: PuzzleKind::Fabricate,
                 allow_events: true,
                 init_size: (7, 7),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 150),
                 description:
                     "Build a timing chip that counts upwards from zero, and \
@@ -440,7 +459,7 @@ impl Puzzle {
                 kind: PuzzleKind::Fabricate,
                 allow_events: false,
                 init_size: (5, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 50),
                 description:
                     "Build a 1-bit $*XOR$* gate out of $*AND$*, \
@@ -459,7 +478,7 @@ impl Puzzle {
                 kind: PuzzleKind::Sandbox,
                 allow_events: false,
                 init_size: (8, 6),
-                score_units: "",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (100, 100),
                 description:
                     "Build any circuits you want using all behavior chips \
@@ -472,7 +491,7 @@ impl Puzzle {
                 kind: PuzzleKind::Sandbox,
                 allow_events: true,
                 init_size: (8, 6),
-                score_units: "",
+                score_units: ScoreUnits::Time,
                 graph_bounds: (100, 100),
                 description:
                     "Build any circuits you want using all behavior and \
@@ -486,7 +505,7 @@ impl Puzzle {
                 kind: PuzzleKind::Tutorial,
                 allow_events: false,
                 init_size: (5, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 50),
                 description:
                     "Build a 4-bit adder using 2-bit adders, packers, and \
@@ -507,7 +526,7 @@ impl Puzzle {
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
                 init_size: (6, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 150),
                 description:
                     "Construct a signal amplifier with an automatic safety \
@@ -524,7 +543,7 @@ impl Puzzle {
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
                 init_size: (6, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
                 description:
                     "Construct a simple signal processor that filters out \
@@ -541,7 +560,7 @@ impl Puzzle {
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
                 init_size: (6, 4),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
                 description:
                     "Route incoming events to one of four destinations, based \
@@ -553,7 +572,7 @@ impl Puzzle {
                 kind: PuzzleKind::Tutorial,
                 allow_events: false,
                 init_size: (5, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 50),
                 description:
                     "Build a 1-bit multiplexer using other logic gates.\n\n\
@@ -572,7 +591,7 @@ impl Puzzle {
                 kind: PuzzleKind::Tutorial,
                 allow_events: false,
                 init_size: (5, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 50),
                 description:
                     "Build a 1-bit $*OR$* gate out of $*AND$* and $*NOT$* \
@@ -591,7 +610,7 @@ impl Puzzle {
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
                 init_size: (6, 5),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
                 description: "TODO",
                 instructions: "TODO",
@@ -601,7 +620,7 @@ impl Puzzle {
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
                 init_size: (7, 7),
-                score_units: "Wire Length",
+                score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 100),
                 description:
                     "Build a circuit for tracking a running total and \
@@ -628,7 +647,7 @@ struct PuzzleData {
     kind: PuzzleKind,
     allow_events: bool,
     init_size: (i32, i32),
-    score_units: &'static str,
+    score_units: ScoreUnits,
     graph_bounds: (i32, u32),
     description: &'static str,
     instructions: &'static str,

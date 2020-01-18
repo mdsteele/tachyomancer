@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -274,18 +274,15 @@ impl PuzzleEval for ShieldsEval {
         0.05
     }
 
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.enemy_explosion >= ENEMY_EXPLOSION_FOR_VICTORY
+            && self.torpedoes.is_empty()
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         self.enemy_dist = enemy_dist_for_time_step(state.time_step());
         state.send_behavior(self.dist_wire, self.enemy_dist);
         state.send_behavior(self.power_wire, self.shield_power);
-        if self.enemy_explosion >= ENEMY_EXPLOSION_FOR_VICTORY
-            && self.torpedoes.is_empty()
-        {
-            return Some(EvalScore::Value(state.time_step()));
-        }
         if self.enemy_damage < ENEMY_DAMAGE_FOR_VICTORY {
             while self.num_torpedoes_fired < TORPEDOES.len()
                 && TORPEDOES[self.num_torpedoes_fired].0 <= state.time_step()
@@ -296,7 +293,6 @@ impl PuzzleEval for ShieldsEval {
                 self.num_torpedoes_fired += 1;
             }
         }
-        return None;
     }
 
     fn end_cycle(&mut self, state: &CircuitState) -> Vec<EvalError> {

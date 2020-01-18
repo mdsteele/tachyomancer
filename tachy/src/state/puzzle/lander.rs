@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
@@ -150,19 +150,14 @@ impl PuzzleEval for LanderEval {
         0.05
     }
 
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
-        let altitude = self.current_altitude();
-        state.send_behavior(self.alt_wire, altitude);
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.current_altitude() <= 0
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
+        state.send_behavior(self.alt_wire, self.current_altitude());
         state.send_behavior(self.angle_wire, self.current_angle());
         state.send_behavior(self.fuel_wire, self.current_fuel);
-        if altitude > 0 {
-            None
-        } else {
-            Some(EvalScore::Value(state.time_step()))
-        }
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {

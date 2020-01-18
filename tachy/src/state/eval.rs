@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use crate::geom::{Coords, Direction};
-use crate::save::HotkeyCode;
+use crate::save::{HotkeyCode, ScoreUnits};
 use downcast_rs::{impl_downcast, Downcast};
 use std::collections::{HashMap, HashSet};
 use std::mem;
@@ -35,7 +35,7 @@ pub enum EvalResult {
     Continue,
     Breakpoint(Vec<Coords>),
     Failure,
-    Victory(EvalScore),
+    Victory(u32),
 }
 
 #[derive(Debug)]
@@ -44,16 +44,6 @@ pub struct EvalError {
     pub port: Option<(Coords, Direction)>,
     pub fatal: bool,
     pub message: String,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum EvalScore {
-    /// Score is equal to the number of cycles.
-    Cycles,
-    /// Score is equal to the supplied value.
-    Value(u32),
-    /// Score is equal to the number of wire fragments in the circuit.
-    WireLength,
 }
 
 //===========================================================================//
@@ -65,7 +55,9 @@ pub struct CircuitEval {
     errors: Vec<EvalError>,
     // Topologically-sorted list of chips, divided into parallel groups:
     chips: Vec<Vec<Box<dyn ChipEval>>>,
-    puzzle: Box<dyn PuzzleEval>,
+    wire_length: u32,
+    puzzle_eval: Box<dyn PuzzleEval>,
+    score_units: ScoreUnits,
     state: CircuitState,
     // Maps from coords to indices into the chips vec for chips that need it.
     coords_map: HashMap<Coords, (usize, usize)>,
@@ -73,10 +65,12 @@ pub struct CircuitEval {
 
 impl CircuitEval {
     pub fn new(
+        num_wire_fragments: usize,
         num_wires: usize,
         null_wires: HashSet<usize>,
         chip_groups: Vec<Vec<Box<dyn ChipEval>>>,
-        puzzle: Box<dyn PuzzleEval>,
+        puzzle_eval: Box<dyn PuzzleEval>,
+        score_units: ScoreUnits,
     ) -> CircuitEval {
         let mut coords_map = HashMap::new();
         for (group_index, group) in chip_groups.iter().enumerate() {
@@ -92,22 +86,20 @@ impl CircuitEval {
             subcycle: 0,
             errors: Vec::new(),
             chips: chip_groups,
-            puzzle,
+            wire_length: num_wire_fragments as u32,
+            puzzle_eval,
+            score_units,
             state: CircuitState::new(num_wires, null_wires),
             coords_map,
         }
     }
 
     pub fn seconds_per_time_step(&self) -> f64 {
-        self.puzzle.seconds_per_time_step()
+        self.puzzle_eval.seconds_per_time_step()
     }
 
     pub fn time_step(&self) -> u32 {
         self.state.time_step
-    }
-
-    pub fn total_cycles(&self) -> u32 {
-        self.total_cycles
     }
 
     pub fn subcycle(&self) -> usize {
@@ -117,7 +109,7 @@ impl CircuitEval {
     /// Returns the PuzzleEval object, which must have the specified type.
     /// Panics if the incorrect type is specified.
     pub fn puzzle_eval<T: PuzzleEval>(&self) -> &T {
-        self.puzzle.downcast_ref::<T>().unwrap()
+        self.puzzle_eval.downcast_ref::<T>().unwrap()
     }
 
     pub fn errors(&self) -> &[EvalError] {
@@ -173,12 +165,12 @@ impl CircuitEval {
                             chip.needs_another_cycle(&self.state);
                     }
                 }
-                let errors = self.puzzle.end_cycle(&self.state);
+                let errors = self.puzzle_eval.end_cycle(&self.state);
                 if self.errors_are_fatal(errors) {
                     return EvalResult::Failure;
                 }
                 needs_another_cycle |=
-                    self.puzzle.needs_another_cycle(self.time_step());
+                    self.puzzle_eval.needs_another_cycle(self.time_step());
                 if self.cycle + 1 >= MAX_CYCLES_PER_TIME_STEP {
                     self.errors.push(self.state.fatal_error(format!(
                         "Exceeded {} cycles",
@@ -195,10 +187,10 @@ impl CircuitEval {
                         self.cycle
                     );
                     self.state.reset_for_cycle();
-                    self.puzzle.begin_additional_cycle(&mut self.state);
+                    self.puzzle_eval.begin_additional_cycle(&mut self.state);
                     return EvalResult::Continue;
                 }
-                let errors = self.puzzle.end_time_step(&self.state);
+                let errors = self.puzzle_eval.end_time_step(&self.state);
                 if self.errors_are_fatal(errors) {
                     return EvalResult::Failure;
                 }
@@ -218,16 +210,20 @@ impl CircuitEval {
                 return EvalResult::Continue;
             }
             if self.cycle == 0 && self.subcycle == 0 {
-                if let Some(score) =
-                    self.puzzle.begin_time_step(&mut self.state)
-                {
-                    return if self.errors.is_empty() {
-                        EvalResult::Victory(score)
+                if self.puzzle_eval.task_is_completed(&self.state) {
+                    if self.errors.is_empty() {
+                        let score = match self.score_units {
+                            ScoreUnits::Cycles => self.total_cycles,
+                            ScoreUnits::Time => self.time_step(),
+                            ScoreUnits::WireLength => self.wire_length,
+                        };
+                        return EvalResult::Victory(score);
                     } else {
                         debug_log!("Errors: {:?}", self.errors);
-                        EvalResult::Failure
-                    };
+                        return EvalResult::Failure;
+                    }
                 }
+                self.puzzle_eval.begin_time_step(&mut self.state);
             }
             for chip in self.chips[self.subcycle].iter_mut() {
                 chip.eval(&mut self.state);
@@ -407,12 +403,13 @@ pub trait PuzzleEval: Downcast {
         0.1
     }
 
+    /// Called between time steps; if this returns true, evaluation will halt,
+    /// and it will count as a victory if there are no errors.
+    fn task_is_completed(&self, state: &CircuitState) -> bool;
+
     /// Called at the beginning of each time step; sets up input values for the
     /// circuit.
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore>;
+    fn begin_time_step(&mut self, state: &mut CircuitState);
 
     /// Called at the beginning of each cycle except the first; optionally
     /// sends additional events for that time step.  The default implementation

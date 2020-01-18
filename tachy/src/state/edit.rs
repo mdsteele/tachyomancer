@@ -922,10 +922,12 @@ impl EditGrid {
         };
 
         self.eval = Some(CircuitEval::new(
+            self.fragments.len(),
             self.wires.len(),
             null_wires,
             chip_evals,
             puzzle_eval,
+            self.puzzle.score_units(),
         ));
         debug_log!("Starting evaluation");
         return true;

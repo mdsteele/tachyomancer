@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{CircuitState, EvalError, EvalScore, PuzzleEval};
+use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use super::rng::SimpleRng;
 use crate::geom::{Coords, Direction};
@@ -138,10 +138,11 @@ impl BeaconEval {
 }
 
 impl PuzzleEval for BeaconEval {
-    fn begin_time_step(
-        &mut self,
-        state: &mut CircuitState,
-    ) -> Option<EvalScore> {
+    fn task_is_completed(&self, _state: &CircuitState) -> bool {
+        self.energy >= 5000
+    }
+
+    fn begin_time_step(&mut self, state: &mut CircuitState) {
         if (state.time_step() % 20) == 0 {
             let x = self.rng.rand_u4();
             let y = self.rng.rand_u4();
@@ -151,11 +152,6 @@ impl PuzzleEval for BeaconEval {
         state.send_behavior(self.opt_y_wire, self.current_opt.y);
         state.send_behavior(self.pos_x_wire, self.current_pos.x);
         state.send_behavior(self.pos_y_wire, self.current_pos.y);
-        if self.energy >= 5000 {
-            Some(EvalScore::Value(state.time_step()))
-        } else {
-            None
-        }
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {

@@ -276,7 +276,7 @@ impl ScoreGraphView {
             LABEL_FONT_SIZE,
             Align::TopCenter,
             (0.5 * graph_rect.height, -LABEL_MARGIN as f32),
-            puzzle.score_units(),
+            puzzle.score_units().label(),
         );
     }
 

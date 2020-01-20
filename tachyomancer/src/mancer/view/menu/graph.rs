@@ -31,12 +31,33 @@ use tachy::save::{Puzzle, PuzzleKind, ScoreCurve};
 const AXIS_THICKNESS: f32 = 2.0;
 const CURVE_THICKNESS: f32 = 2.0;
 const INNER_MARGIN: f32 = 12.0;
-const LABEL_FONT_SIZE: f32 = 18.0;
-const LABEL_MARGIN: f32 = 24.0;
+const AXIS_LABEL_FONT_SIZE: f32 = 18.0;
+const LABEL_MARGIN: f32 = 26.0;
 const TICK_LENGTH: f32 = 4.0;
-const TICK_STEP_HORZ: i32 = 10;
-const TICK_STEP_VERT: u32 = 10;
 const TICK_THICKNESS: f32 = 2.0;
+const TICK_LABEL_FONT_SIZE: f32 = 16.0;
+
+fn tick_step_for_maximum(max: i32) -> i32 {
+    if max >= 4000 {
+        1000
+    } else if max >= 1000 {
+        250
+    } else if max >= 400 {
+        100
+    } else if max >= 100 {
+        25
+    } else {
+        10
+    }
+}
+
+fn format_tick_maximum(max: i32) -> String {
+    if max >= 1000 && max % 1000 == 0 {
+        format!("{}k", max / 1000)
+    } else {
+        format!("{}", max)
+    }
+}
 
 //===========================================================================//
 
@@ -229,6 +250,7 @@ impl ScoreGraphView {
         // Draw axis ticks:
         let unit_span =
             (graph_rect.width - TICK_THICKNESS) / (graph_bounds.0 as f32);
+        let tick_step = tick_step_for_maximum(graph_bounds.0);
         let mut tick = 0;
         while tick <= graph_bounds.0 {
             let tick_rect = Rect::new(
@@ -238,12 +260,13 @@ impl ScoreGraphView {
                 TICK_LENGTH,
             );
             resources.shaders().solid().fill_rect(&matrix, color, tick_rect);
-            tick += TICK_STEP_HORZ;
+            tick += tick_step;
         }
         let unit_span =
             (graph_rect.height - TICK_THICKNESS) / (graph_bounds.1 as f32);
+        let tick_step = tick_step_for_maximum(graph_bounds.1 as i32);
         let mut tick = 0;
-        while tick <= graph_bounds.1 {
+        while tick <= (graph_bounds.1 as i32) {
             let tick_rect = Rect::new(
                 graph_rect.x - TICK_LENGTH,
                 graph_rect.bottom()
@@ -253,14 +276,46 @@ impl ScoreGraphView {
                 TICK_THICKNESS,
             );
             resources.shaders().solid().fill_rect(&matrix, color, tick_rect);
-            tick += TICK_STEP_VERT;
+            tick += tick_step;
         }
 
-        // Draw axis labels:
+        // Draw tick labels:
         let font = resources.fonts().roman();
         font.draw(
             &matrix,
-            LABEL_FONT_SIZE,
+            TICK_LABEL_FONT_SIZE,
+            Align::TopRight,
+            (
+                graph_rect.x - TICK_THICKNESS,
+                graph_rect.bottom() + TICK_THICKNESS,
+            ),
+            "0",
+        );
+        font.draw(
+            &matrix,
+            TICK_LABEL_FONT_SIZE,
+            Align::TopRight,
+            (graph_rect.right() + 1.0, graph_rect.bottom() + TICK_LENGTH),
+            &format_tick_maximum(graph_bounds.0),
+        );
+        font.draw(
+            &matrix,
+            TICK_LABEL_FONT_SIZE,
+            Align::TopCenter,
+            (
+                graph_rect.x
+                    - AXIS_THICKNESS
+                    - 1.0
+                    - 1.5 * TICK_LABEL_FONT_SIZE * font.ratio(),
+                graph_rect.y,
+            ),
+            &format_tick_maximum(graph_bounds.1 as i32),
+        );
+
+        // Draw axis labels:
+        font.draw(
+            &matrix,
+            AXIS_LABEL_FONT_SIZE,
             Align::BottomCenter,
             (
                 graph_rect.x + 0.5 * graph_rect.width,
@@ -273,7 +328,7 @@ impl ScoreGraphView {
             * Matrix4::from_angle_z(Deg(-90.0));
         font.draw(
             &side_matrix,
-            LABEL_FONT_SIZE,
+            AXIS_LABEL_FONT_SIZE,
             Align::TopCenter,
             (0.5 * graph_rect.height, -LABEL_MARGIN as f32),
             puzzle.score_units().label(),

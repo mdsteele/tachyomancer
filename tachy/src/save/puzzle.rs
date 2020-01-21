@@ -153,7 +153,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (150, 150),
+                graph_bounds: (200, 300),
                 description:
                     "Adjust the beacon transmission angle to track the \
                      detected signal.",
@@ -194,7 +194,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (6, 8),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (150, 150),
+                graph_bounds: (200, 200),
                 description:
                     "Regulate the discharge of the grapple launcher's \
                      magnetic coils.",
@@ -206,7 +206,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (6, 5),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (50, 150),
+                graph_bounds: (100, 200),
                 description:
                     "Position the ship's heliostat to reflect sunlight \
                      onto the solar panels at the optimal angle.",
@@ -227,7 +227,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (100, 250),
+                graph_bounds: (100, 500),
                 description:
                     "Program the scout robot to pick up ore deposits and \
                      carry them back to the base.",
@@ -248,7 +248,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (6, 8),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (150, 150),
+                graph_bounds: (200, 200),
                 description:
                     "Manipulate the reactor's control rods to regulate \
                      the power output to the desired level.",
@@ -271,7 +271,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (6, 7),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (100, 150),
+                graph_bounds: (150, 150),
                 description:
                     "Narrow the sensor sweep to zero in on a given signal of \
                      interest.",
@@ -296,7 +296,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (300, 1000),
+                graph_bounds: (500, 1000),
                 description: "TODO",
                 instructions: "TODO",
             },
@@ -306,7 +306,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (8, 5),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (300, 500),
+                graph_bounds: (500, 500),
                 description: "TODO",
                 instructions: "TODO",
             },
@@ -384,7 +384,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (7, 7),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (100, 150),
+                graph_bounds: (150, 200),
                 description:
                     "Build a timing chip that counts down from a given time \
                      and then fires an event at zero.",
@@ -396,7 +396,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (7, 5),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (50, 50),
+                graph_bounds: (100, 100),
                 description:
                     "Build a 4-bit halver using packers and unpackers.\n\n\
                      Once this task is completed, you will be able to use \
@@ -414,7 +414,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (50, 50),
+                graph_bounds: (100, 100),
                 description:
                     "Build a 4-bit incrementor using more basic event and \
                      behavior chips.\n\n\
@@ -432,7 +432,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (7, 7),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (50, 100),
+                graph_bounds: (150, 200),
                 description:
                     "Build an 8-bit multiplier using 4-bit multipliers.\n\n\
                      Once this task is completed, you will be able to use \
@@ -448,7 +448,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (7, 7),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (100, 150),
+                graph_bounds: (150, 200),
                 description:
                     "Build a timing chip that counts upwards from zero, and \
                      that can be paused or reset.",
@@ -460,7 +460,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (50, 50),
+                graph_bounds: (100, 100),
                 description:
                     "Build a 1-bit $*XOR$* gate out of $*AND$*, \
                      $*OR$*, and $*NOT$* gates.\n\n\
@@ -506,7 +506,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (50, 50),
+                graph_bounds: (100, 100),
                 description:
                     "Build a 4-bit adder using 2-bit adders, packers, and \
                      unpackers.\n\n\
@@ -530,7 +530,7 @@ impl Puzzle {
                 graph_bounds: (150, 150),
                 description:
                     "Construct a signal amplifier with an automatic safety \
-                     cutoff for overly-intense signals.",
+                     cutoff for high-intensity signals.",
                 instructions:
                     "* $!When an event arrives on the left side of the board, \
                      double its value and send it out the right side of the \
@@ -573,7 +573,7 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (50, 50),
+                graph_bounds: (100, 100),
                 description:
                     "Build a 1-bit multiplexer using other logic gates.\n\n\
                      Once this task is completed, you will be able to use \
@@ -621,7 +621,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (7, 7),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (50, 100),
+                graph_bounds: (150, 200),
                 description:
                     "Build a circuit for tracking a running total and \
                      resetting it back to zero.",

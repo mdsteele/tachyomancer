@@ -101,42 +101,54 @@ const_assert_eq!(INTERFACES[1].ports.len(), NUM_RODS);
 
 //===========================================================================//
 
-pub struct AutomateReactorEval {
+pub struct ReactorEval {
     power_wire: usize,
     target_wire: usize,
     rod_wires: Vec<usize>,
+    rod_values: Vec<u32>,
     current_power: f64,
     current_target: u32,
     held_target_for: i32,
     num_targets_held: usize,
 }
 
-impl AutomateReactorEval {
-    pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
-    ) -> AutomateReactorEval {
+impl ReactorEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> ReactorEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), NUM_RODS);
-        AutomateReactorEval {
+        ReactorEval {
             power_wire: slots[0][0].1,
             target_wire: slots[0][1].1,
             rod_wires: slots[1].iter().map(|&(_, wire)| wire).collect(),
+            rod_values: vec![0; NUM_RODS],
             current_power: 0.0,
             current_target: TARGETS[0],
             held_target_for: 0,
             num_targets_held: 0,
         }
     }
+
+    pub fn current_power(&self) -> u32 {
+        self.current_power.round() as u32
+    }
+
+    pub fn target_power(&self) -> u32 {
+        self.current_target
+    }
+
+    pub fn rod_values(&self) -> &[u32] {
+        &self.rod_values
+    }
 }
 
-impl PuzzleEval for AutomateReactorEval {
+impl PuzzleEval for ReactorEval {
     fn task_is_completed(&self, _state: &CircuitState) -> bool {
         self.num_targets_held >= TARGETS.len()
     }
 
     fn begin_time_step(&mut self, state: &mut CircuitState) {
-        let current_power = self.current_power.round() as u32;
+        let current_power = self.current_power();
         if current_power == self.current_target {
             self.held_target_for += 1;
             if self.held_target_for >= TARGET_HOLD_TIME {
@@ -154,14 +166,16 @@ impl PuzzleEval for AutomateReactorEval {
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
-        let rod_values: Vec<u32> = self
+        self.rod_values = self
             .rod_wires
             .iter()
             .map(|&rod_wire| state.recv_behavior(rod_wire))
             .collect();
-        let rod_total: u32 = rod_values.iter().copied().sum();
-        let rod_average: f64 = (rod_total as f64) / (rod_values.len() as f64);
-        let rod_imbalance: f64 = rod_values
+        let rod_total: u32 = self.rod_values.iter().copied().sum();
+        let rod_average: f64 =
+            (rod_total as f64) / (self.rod_values.len() as f64);
+        let rod_imbalance: f64 = self
+            .rod_values
             .iter()
             .map(|&value| (rod_average - (value as f64)).powi(2))
             .sum();

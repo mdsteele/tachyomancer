@@ -22,6 +22,7 @@ mod grapple;
 mod heliostat;
 mod lander;
 mod mining;
+mod reactor;
 mod robotarm;
 mod sensors;
 mod shared;
@@ -94,8 +95,7 @@ impl VerificationTray {
                 self::mining::MiningRobotVerifyView::new(right_bottom)
             }
             Puzzle::AutomateReactor => {
-                // TODO: Make a verification view for AutomateReactor
-                self::shared::NullVerifyView::new()
+                self::reactor::ReactorVerifyView::new(right_bottom)
             }
             Puzzle::AutomateRobotArm => {
                 self::robotarm::RobotArmVerifyView::new(right_bottom)

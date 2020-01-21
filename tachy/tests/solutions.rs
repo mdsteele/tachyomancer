@@ -40,6 +40,21 @@ fn automate_mining_robot() {
 }
 
 #[test]
+fn automate_reactor_fast() {
+    test_solution("automate_reactor_fast");
+}
+
+#[test]
+fn automate_reactor_medium() {
+    test_solution("automate_reactor_medium");
+}
+
+#[test]
+fn automate_reactor_small() {
+    test_solution("automate_reactor_small");
+}
+
+#[test]
 fn automate_robot_arm() {
     test_solution("automate_robot_arm");
 }

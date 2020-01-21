@@ -57,6 +57,7 @@ pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
 pub use self::lander::LanderEval;
 pub use self::mining::MiningRobotEval;
+pub use self::reactor::ReactorEval;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::shared::{
@@ -247,7 +248,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateMiningRobot => Box::new(MiningRobotEval::new(slots)),
         Puzzle::AutomateReactor => {
-            Box::new(self::reactor::AutomateReactorEval::new(slots))
+            Box::new(self::reactor::ReactorEval::new(slots))
         }
         Puzzle::AutomateRobotArm => Box::new(RobotArmEval::new(slots)),
         Puzzle::AutomateSensors => {

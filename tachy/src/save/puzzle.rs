@@ -248,10 +248,10 @@ impl Puzzle {
                 allow_events: false,
                 init_size: (6, 8),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (200, 200),
+                graph_bounds: (400, 500),
                 description:
-                    "Manipulate the reactor's control rods to regulate \
-                     the power output to the desired level.",
+                    "Manipulate the reactor's control rods to adjust the \
+                     power output to the desired level.",
                 instructions: "TODO",
             },
             Puzzle::AutomateRobotArm => &PuzzleData {

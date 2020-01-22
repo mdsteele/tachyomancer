@@ -264,7 +264,7 @@ impl<'a> Window<'a> {
         self.sdl_window.gl_swap_window();
     }
 
-    pub fn submit_solution(&self, solution: SolutionData) {
+    pub fn submit_solution(&mut self, solution: SolutionData) {
         self.gui_context.score_client.submit_solution(solution);
     }
 }

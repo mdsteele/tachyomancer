@@ -24,6 +24,7 @@ mod chip;
 mod circuit;
 mod cutscene;
 mod dialog;
+mod graph;
 mod menu;
 mod paragraph;
 mod tooltip;

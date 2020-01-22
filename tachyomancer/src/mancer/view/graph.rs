@@ -19,23 +19,22 @@
 
 use crate::mancer::font::Align;
 use crate::mancer::gl::FrameBuffer;
-use crate::mancer::gui::Resources;
-use crate::mancer::state::GameState;
-use cgmath::{vec2, Deg, Matrix4};
+use crate::mancer::gui::{Event, Resources, Ui};
+use cgmath::{Deg, Matrix4};
 use std::cell::RefCell;
-use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect, RectSize};
-use tachy::save::{Puzzle, PuzzleKind, ScoreCurve};
+use tachy::geom::{Color3, MatrixExt, Rect, RectSize};
+use tachy::save::{Puzzle, ScoreCurve};
 
 //===========================================================================//
 
 const AXIS_THICKNESS: f32 = 2.0;
 const CURVE_THICKNESS: f32 = 2.0;
-const INNER_MARGIN: f32 = 12.0;
 const AXIS_LABEL_FONT_SIZE: f32 = 18.0;
 const LABEL_MARGIN: f32 = 26.0;
 const TICK_LENGTH: f32 = 4.0;
 const TICK_THICKNESS: f32 = 2.0;
 const TICK_LABEL_FONT_SIZE: f32 = 16.0;
+const SCORE_HILIGHT_RADIUS: f32 = 4.0;
 
 fn tick_step_for_maximum(max: i32) -> i32 {
     if max >= 4000 {
@@ -61,58 +60,47 @@ fn format_tick_maximum(max: i32) -> String {
 
 //===========================================================================//
 
-pub struct ScoreGraphView {
+pub struct ScoreGraph {
     window_size: RectSize<i32>,
     rect: Rect<f32>,
-    cache: RefCell<Option<(Option<String>, Puzzle, FrameBuffer)>>,
+    puzzle: Puzzle,
+    local_scores: ScoreCurve,
+    hilight_score: Option<(i32, u32)>,
+    cache: RefCell<Option<FrameBuffer>>,
 }
 
-impl ScoreGraphView {
-    pub fn new(window_size: RectSize<i32>, rect: Rect<i32>) -> ScoreGraphView {
-        ScoreGraphView {
+impl ScoreGraph {
+    pub fn new(
+        window_size: RectSize<i32>,
+        rect: Rect<f32>,
+        puzzle: Puzzle,
+        local_scores: &ScoreCurve,
+        hilight_score: Option<(i32, u32)>,
+    ) -> ScoreGraph {
+        ScoreGraph {
             window_size,
-            rect: rect.as_f32(),
+            rect,
+            puzzle,
+            local_scores: local_scores.clone(),
+            hilight_score,
             cache: RefCell::new(None),
         }
     }
 
-    pub fn clear_cache(&mut self) {
-        *self.cache.borrow_mut() = None;
+    pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let mut opt_cache = self.cache.borrow_mut();
+        if let Some(fbo) = opt_cache.as_ref() {
+            self.draw_fbo(resources, matrix, fbo);
+            return;
+        }
+        let fbo = self.generate_fbo(resources);
+        self.draw_fbo(resources, matrix, &fbo);
+        *opt_cache = Some(fbo);
     }
 
-    pub fn draw(
-        &self,
-        resources: &Resources,
-        matrix: &Matrix4<f32>,
-        state: &GameState,
-    ) {
-        let profile_name = state.profile().map(|profile| profile.name());
-        let puzzle = state.current_puzzle();
-
-        resources.shaders().ui().draw_scroll_bar(
-            matrix,
-            &self.rect,
-            &Color4::ORANGE2,
-            &Color4::PURPLE1,
-            &Color4::PURPLE0_TRANSLUCENT,
-        );
-
-        let mut cached = self.cache.borrow_mut();
-        match cached.as_ref() {
-            Some(&(ref pname, puzz, ref fbo))
-                if pname.as_ref().map(String::as_str) == profile_name
-                    && puzz == puzzle =>
-            {
-                self.draw_fbo(resources, matrix, fbo);
-                return;
-            }
-            _ => {}
-        }
-
-        let fbo =
-            self.generate_fbo(resources, puzzle, state.local_scores(puzzle));
-        self.draw_fbo(resources, matrix, &fbo);
-        *cached = Some((profile_name.map(str::to_string), puzzle, fbo));
+    pub fn on_event(&mut self, _event: &Event, _ui: &mut Ui) {
+        // TODO: Hilight local/global score vertices (and show exact numbers)
+        //   on mouseover.
     }
 
     fn draw_fbo(
@@ -121,77 +109,28 @@ impl ScoreGraphView {
         matrix: &Matrix4<f32>,
         fbo: &FrameBuffer,
     ) {
-        let left_top = self.rect.top_left() + vec2(INNER_MARGIN, INNER_MARGIN);
+        let left_top = self.rect.top_left();
         let grayscale = false;
         resources.shaders().frame().draw(matrix, fbo, left_top, grayscale);
     }
 
-    fn generate_fbo(
-        &self,
-        resources: &Resources,
-        puzzle: Puzzle,
-        local_scores: &ScoreCurve,
-    ) -> FrameBuffer {
-        debug_log!("Regenerating preview image");
-        let fbo_size = self.rect.size().expand(-INNER_MARGIN);
+    fn generate_fbo(&self, resources: &Resources) -> FrameBuffer {
+        debug_log!("Regenerating score graph image");
         let fbo = FrameBuffer::new(
-            fbo_size.width as usize,
-            fbo_size.height as usize,
+            self.rect.width as usize,
+            self.rect.height as usize,
             false,
         );
         fbo.bind();
-        if puzzle.kind() == PuzzleKind::Sandbox {
-            ScoreGraphView::draw_sandbox_message(resources, fbo_size);
-        } else if !local_scores.is_empty() {
-            ScoreGraphView::draw_graph(
-                resources,
-                fbo_size,
-                puzzle,
-                local_scores,
-            );
-        } else {
-            ScoreGraphView::draw_no_solutions_message(resources, fbo_size);
-        }
+        ScoreGraph::draw_graph(
+            resources,
+            self.rect.size(),
+            self.puzzle,
+            &self.local_scores,
+            self.hilight_score,
+        );
         fbo.unbind(self.window_size);
         fbo
-    }
-
-    fn draw_sandbox_message(resources: &Resources, fbo_size: RectSize<f32>) {
-        let matrix = ScoreGraphView::fbo_matrix(fbo_size);
-        let mid_x = (0.5 * fbo_size.width).round();
-        let mid_y = (0.5 * fbo_size.height).round();
-        let font = resources.fonts().roman();
-        font.draw(
-            &matrix,
-            20.0,
-            Align::MidCenter,
-            (mid_x, mid_y),
-            "NO GRAPH FOR SANDBOX",
-        );
-    }
-
-    fn draw_no_solutions_message(
-        resources: &Resources,
-        fbo_size: RectSize<f32>,
-    ) {
-        let matrix = ScoreGraphView::fbo_matrix(fbo_size);
-        let mid_x = (0.5 * fbo_size.width).round();
-        let mid_y = (0.5 * fbo_size.height).round();
-        let font = resources.fonts().roman();
-        font.draw(
-            &matrix,
-            18.0,
-            Align::MidCenter,
-            (mid_x, mid_y - 12.0),
-            "COMPLETE THIS TASK TO",
-        );
-        font.draw(
-            &matrix,
-            18.0,
-            Align::MidCenter,
-            (mid_x, mid_y + 12.0),
-            "VIEW OPTIMIZATION GRAPH",
-        );
     }
 
     fn draw_graph(
@@ -199,8 +138,9 @@ impl ScoreGraphView {
         fbo_size: RectSize<f32>,
         puzzle: Puzzle,
         local_scores: &ScoreCurve,
+        hilight_score: Option<(i32, u32)>,
     ) {
-        let matrix = ScoreGraphView::fbo_matrix(fbo_size);
+        let matrix = ScoreGraph::fbo_matrix(fbo_size);
 
         // Draw the graph data:
         let graph_rect = Rect::new(
@@ -210,17 +150,16 @@ impl ScoreGraphView {
             fbo_size.height - LABEL_MARGIN,
         );
         let graph_bounds = puzzle.graph_bounds();
-        let global_scores = resources.global_scores_for(puzzle);
-        ScoreGraphView::draw_score_curve(
+        ScoreGraph::draw_score_curve(
             resources,
             &matrix,
             graph_rect,
             graph_bounds,
-            &global_scores,
+            &resources.global_scores_for(puzzle),
             Color3::CYAN4,
             Color3::CYAN2,
         );
-        ScoreGraphView::draw_score_curve(
+        ScoreGraph::draw_score_curve(
             resources,
             &matrix,
             graph_rect,
@@ -333,6 +272,25 @@ impl ScoreGraphView {
             (0.5 * graph_rect.height, -LABEL_MARGIN as f32),
             puzzle.score_units().label(),
         );
+
+        // Draw hilighted score:
+        if let Some((area, score)) = hilight_score {
+            let cx = graph_rect.x
+                + graph_rect.width * ((area as f32) / (graph_bounds.0 as f32));
+            let cy = graph_rect.bottom()
+                - graph_rect.height
+                    * ((score as f32) / (graph_bounds.1 as f32));
+            resources.shaders().solid().fill_rect(
+                &matrix,
+                Color3::YELLOW5,
+                Rect::new(
+                    cx - SCORE_HILIGHT_RADIUS,
+                    cy - SCORE_HILIGHT_RADIUS,
+                    2.0 * SCORE_HILIGHT_RADIUS,
+                    2.0 * SCORE_HILIGHT_RADIUS,
+                ),
+            );
+        }
     }
 
     fn draw_score_curve(

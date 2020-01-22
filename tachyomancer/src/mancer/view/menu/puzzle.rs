@@ -19,9 +19,9 @@
 
 use super::super::button::TextButton;
 use super::super::chip::ChipModel;
+use super::super::graph::ScoreGraph;
 use super::super::paragraph::Paragraph;
 use super::super::wire::WireModel;
-use super::graph::ScoreGraphView;
 use super::list::{ListIcon, ListView};
 use crate::mancer::font::Align;
 use crate::mancer::gl::{Depth, FrameBuffer};
@@ -48,6 +48,8 @@ const DESCRIPTION_LINE_HEIGHT: f32 = 22.0;
 const DESCRIPTION_TITLE_FONT_SIZE: f32 = 26.0;
 const DESCRIPTION_TITLE_MARGIN_BOTTOM: f32 = 14.0;
 
+const GRAPH_INNER_MARGIN: f32 = 12.0;
+
 const PREVIEW_INNER_MARGIN: f32 = 14.0;
 const PREVIEW_MAX_GRID_CELL_SIZE: f32 = 48.0;
 
@@ -68,9 +70,9 @@ pub struct PuzzlesView {
     puzzle_list: ListView<Puzzle>,
     circuit_list: ListView<String>,
     back_button: TextButton<()>,
-    description: DescriptionView,
-    graph: ScoreGraphView,
-    preview: CircuitPreviewView,
+    description: DescriptionPanel,
+    graph: ScoreGraphPanel,
+    preview: CircuitPreviewPanel,
     edit_button: TextButton<PuzzlesAction>,
     rename_button: TextButton<PuzzlesAction>,
     copy_button: TextButton<PuzzlesAction>,
@@ -149,9 +151,9 @@ impl PuzzlesView {
                 circuit_list_items(state),
                 state.circuit_name(),
             ),
-            description: DescriptionView::new(window_size, description_rect),
-            graph: ScoreGraphView::new(window_size, graph_rect),
-            preview: CircuitPreviewView::new(window_size, preview_rect),
+            description: DescriptionPanel::new(window_size, description_rect),
+            graph: ScoreGraphPanel::new(window_size, graph_rect),
+            preview: CircuitPreviewPanel::new(window_size, preview_rect),
             edit_button,
             rename_button,
             copy_button,
@@ -285,23 +287,22 @@ fn puzzle_list_items(
 //===========================================================================//
 
 struct DescriptionCache {
-    profile_name: Option<String>,
     puzzle: Puzzle,
     fbo: FrameBuffer,
 }
 
-struct DescriptionView {
+struct DescriptionPanel {
     window_size: RectSize<i32>,
     rect: Rect<f32>,
     cache: RefCell<Option<DescriptionCache>>,
 }
 
-impl DescriptionView {
+impl DescriptionPanel {
     pub fn new(
         window_size: RectSize<i32>,
         rect: Rect<i32>,
-    ) -> DescriptionView {
-        DescriptionView {
+    ) -> DescriptionPanel {
+        DescriptionPanel {
             window_size,
             rect: rect.as_f32(),
             cache: RefCell::new(None),
@@ -321,14 +322,11 @@ impl DescriptionView {
             &Color4::CYAN2,
             &Color4::PURPLE0_TRANSLUCENT,
         );
-        let profile_name = state.profile().map(|profile| profile.name());
         let puzzle = state.current_puzzle();
 
         let mut opt_cache = self.cache.borrow_mut();
         if let Some(cache) = opt_cache.as_ref() {
-            if cache.profile_name.as_ref().map(String::as_str) == profile_name
-                && cache.puzzle == puzzle
-            {
+            if cache.puzzle == puzzle {
                 self.draw_fbo(resources, matrix, &cache.fbo);
                 return;
             }
@@ -336,11 +334,7 @@ impl DescriptionView {
 
         let fbo = self.generate_fbo(resources, state, puzzle);
         self.draw_fbo(resources, matrix, &fbo);
-        *opt_cache = Some(DescriptionCache {
-            profile_name: profile_name.map(str::to_string),
-            puzzle,
-            fbo,
-        });
+        *opt_cache = Some(DescriptionCache { puzzle, fbo });
     }
 
     fn draw_fbo(
@@ -375,7 +369,7 @@ impl DescriptionView {
             false,
         );
         fbo.bind();
-        DescriptionView::draw_description(
+        DescriptionPanel::draw_description(
             resources,
             fbo_size,
             puzzle,
@@ -433,25 +427,138 @@ impl DescriptionView {
 
 //===========================================================================//
 
+struct ScoreGraphCache {
+    puzzle: Puzzle,
+    graph: ScoreGraph,
+}
+
+pub struct ScoreGraphPanel {
+    window_size: RectSize<i32>,
+    rect: Rect<f32>,
+    cache: RefCell<Option<ScoreGraphCache>>,
+}
+
+impl ScoreGraphPanel {
+    pub fn new(
+        window_size: RectSize<i32>,
+        rect: Rect<i32>,
+    ) -> ScoreGraphPanel {
+        ScoreGraphPanel {
+            window_size,
+            rect: rect.as_f32(),
+            cache: RefCell::new(None),
+        }
+    }
+
+    pub fn clear_cache(&mut self) {
+        *self.cache.borrow_mut() = None;
+    }
+
+    pub fn draw(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        state: &GameState,
+    ) {
+        resources.shaders().ui().draw_scroll_bar(
+            matrix,
+            &self.rect,
+            &Color4::ORANGE2,
+            &Color4::PURPLE1,
+            &Color4::PURPLE0_TRANSLUCENT,
+        );
+
+        let puzzle = state.current_puzzle();
+        if puzzle.kind() == PuzzleKind::Sandbox {
+            self.draw_sandbox_message(resources, matrix);
+            return;
+        }
+        let local_scores = state.local_scores(puzzle);
+        if local_scores.is_empty() {
+            self.draw_no_solutions_message(resources, matrix);
+            return;
+        }
+
+        let mut opt_cache = self.cache.borrow_mut();
+        if let Some(cache) = opt_cache.as_ref() {
+            if cache.puzzle == puzzle {
+                cache.graph.draw(resources, matrix);
+                return;
+            }
+        }
+
+        let graph = ScoreGraph::new(
+            self.window_size,
+            self.rect.expand(-GRAPH_INNER_MARGIN),
+            puzzle,
+            local_scores,
+            None, // TODO: Hilight score (if any) of current circuit
+        );
+        graph.draw(resources, matrix);
+        *opt_cache = Some(ScoreGraphCache { puzzle, graph });
+    }
+
+    fn draw_sandbox_message(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+    ) {
+        let mid_x = (self.rect.x + 0.5 * self.rect.width).round();
+        let mid_y = (self.rect.y + 0.5 * self.rect.height).round();
+        resources.fonts().roman().draw(
+            &matrix,
+            20.0,
+            Align::MidCenter,
+            (mid_x, mid_y),
+            "NO GRAPH FOR SANDBOX",
+        );
+    }
+
+    fn draw_no_solutions_message(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+    ) {
+        let mid_x = (self.rect.x + 0.5 * self.rect.width).round();
+        let mid_y = (self.rect.y + 0.5 * self.rect.height).round();
+        let font = resources.fonts().roman();
+        font.draw(
+            &matrix,
+            18.0,
+            Align::MidCenter,
+            (mid_x, mid_y - 12.0),
+            "COMPLETE THIS TASK TO",
+        );
+        font.draw(
+            &matrix,
+            18.0,
+            Align::MidCenter,
+            (mid_x, mid_y + 12.0),
+            "VIEW OPTIMIZATION GRAPH",
+        );
+    }
+}
+
+//===========================================================================//
+
 struct CircuitPreviewCache {
-    profile_name: Option<String>,
     puzzle: Puzzle,
     circuit_name: String,
     fbo: FrameBuffer,
 }
 
-struct CircuitPreviewView {
+struct CircuitPreviewPanel {
     window_size: RectSize<i32>,
     rect: Rect<f32>,
     cache: RefCell<Option<CircuitPreviewCache>>,
 }
 
-impl CircuitPreviewView {
+impl CircuitPreviewPanel {
     pub fn new(
         window_size: RectSize<i32>,
         rect: Rect<i32>,
-    ) -> CircuitPreviewView {
-        CircuitPreviewView {
+    ) -> CircuitPreviewPanel {
+        CircuitPreviewPanel {
             window_size,
             rect: rect.as_f32(),
             cache: RefCell::new(None),
@@ -471,16 +578,12 @@ impl CircuitPreviewView {
             &Color4::CYAN2,
             &Color4::PURPLE0_TRANSLUCENT,
         );
-        let profile_name = state.profile().map(|profile| profile.name());
         let puzzle = state.current_puzzle();
         let circuit_name = state.circuit_name();
 
         let mut opt_cache = self.cache.borrow_mut();
         if let Some(cache) = opt_cache.as_ref() {
-            if cache.profile_name.as_ref().map(String::as_str) == profile_name
-                && cache.puzzle == puzzle
-                && cache.circuit_name == circuit_name
-            {
+            if cache.puzzle == puzzle && cache.circuit_name == circuit_name {
                 self.draw_fbo(resources, matrix, &cache.fbo);
                 return;
             }
@@ -489,7 +592,6 @@ impl CircuitPreviewView {
         let fbo = self.generate_fbo(resources, state, puzzle, circuit_name);
         self.draw_fbo(resources, matrix, &fbo);
         *opt_cache = Some(CircuitPreviewCache {
-            profile_name: profile_name.map(str::to_string),
             puzzle,
             circuit_name: circuit_name.to_string(),
             fbo,
@@ -525,10 +627,10 @@ impl CircuitPreviewView {
         fbo.bind();
         match state.load_edit_grid(puzzle, circuit_name) {
             Ok(grid) => {
-                CircuitPreviewView::draw_edit_grid(resources, fbo_size, &grid)
+                CircuitPreviewPanel::draw_edit_grid(resources, fbo_size, &grid)
             }
             Err(error) => {
-                CircuitPreviewView::draw_error_paragraph(
+                CircuitPreviewPanel::draw_error_paragraph(
                     resources,
                     fbo_size,
                     &error,
@@ -570,7 +672,7 @@ impl CircuitPreviewView {
         fbo_size: RectSize<f32>,
         grid: &EditGrid,
     ) {
-        let grid_matrix = CircuitPreviewView::grid_matrix(fbo_size, grid);
+        let grid_matrix = CircuitPreviewPanel::grid_matrix(fbo_size, grid);
         let board_rect = grid.bounds().as_f32().expand(0.25);
         resources.shaders().solid().fill_rect(
             &grid_matrix,

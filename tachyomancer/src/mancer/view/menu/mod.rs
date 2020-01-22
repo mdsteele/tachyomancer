@@ -19,7 +19,6 @@
 
 mod converse;
 mod credits;
-mod graph;
 mod list;
 mod nav;
 mod prefs;

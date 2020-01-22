@@ -335,13 +335,13 @@ impl GameState {
         }
     }
 
-    pub fn record_current_puzzle_score(
+    pub fn record_puzzle_score(
         &mut self,
+        puzzle: Puzzle,
         area: i32,
         score: u32,
     ) -> Result<(), String> {
         if let Some(ref mut profile) = self.profile {
-            let puzzle = profile.current_puzzle();
             debug_log!(
                 "Recording {:?} score (area={}, score={})",
                 puzzle,

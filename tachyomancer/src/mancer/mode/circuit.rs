@@ -64,7 +64,7 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         return back_to_menu(state);
                     }
                     Some(CircuitAction::Victory(solution)) => {
-                        record_score(state, window, solution);
+                        record_score(window, &mut view, state, solution);
                     }
                     None => {}
                 }
@@ -124,15 +124,26 @@ fn back_to_menu(state: &mut GameState) -> ModeChange {
 }
 
 fn record_score(
+    window: &mut Window,
+    view: &mut CircuitView,
     state: &mut GameState,
-    window: &Window,
     solution: SolutionData,
 ) {
-    let score = solution.score;
+    let puzzle = solution.puzzle;
     let area = solution.circuit.size.area();
+    let score = solution.score;
     window.submit_solution(solution);
-    match state.record_current_puzzle_score(area, score) {
-        Ok(()) => {}
+    match state.record_puzzle_score(puzzle, area, score) {
+        Ok(()) => {
+            view.show_victory_dialog(
+                &mut window.ui(),
+                state.prefs(),
+                puzzle,
+                area,
+                score,
+                state.local_scores(puzzle),
+            );
+        }
         Err(err) => {
             // TODO: display error to user; don't panic
             panic!("Victory failed: {:?}", err);

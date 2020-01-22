@@ -39,8 +39,8 @@ use self::tooltip::GridTooltipTag;
 use self::tutorial::TutorialBubble;
 use self::verify::VerificationTray;
 use super::dialog::{
-    ButtonDialogBox, DialogAction, HotkeyDialogBox, TextDialogBox,
-    WireSizeDialogBox,
+    ButtonDialogBox, DialogAction, HotkeyDialogBox, ScoreGraphDialogBox,
+    TextDialogBox, WireSizeDialogBox,
 };
 use super::paragraph::Paragraph;
 use super::tooltip::Tooltip;
@@ -50,7 +50,8 @@ use cgmath;
 use std::u16;
 use tachy::geom::{Coords, Direction, RectSize};
 use tachy::save::{
-    ChipType, HotkeyCode, SolutionData, WireSize, MAX_COMMENT_CHARS,
+    ChipType, HotkeyCode, Puzzle, ScoreCurve, SolutionData, WireSize,
+    MAX_COMMENT_CHARS,
 };
 use tachy::state::{
     EditGrid, EvalResult, GridChange, PuzzleExt, TutorialBubblePosition,
@@ -117,7 +118,7 @@ pub struct CircuitView {
     edit_comment_dialog: Option<(TextDialogBox, Coords)>,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
     failed_save_dialog: Option<ButtonDialogBox<FailedSaveDialogAction>>,
-    victory_dialog: Option<ButtonDialogBox<VictoryDialogAction>>,
+    victory_dialog: Option<ScoreGraphDialogBox<VictoryDialogAction>>,
 }
 
 impl CircuitView {
@@ -551,27 +552,6 @@ impl CircuitView {
                 let time_steps = grid.eval().unwrap().time_step();
                 debug_log!("Victory!  area={}, score={}", area, score);
                 grid.stop_eval();
-                let size =
-                    RectSize::new(self.width as i32, self.height as i32);
-                // TODO: The dialog box should show the optimization graph
-                //   (with this point plotted on it).
-                let format =
-                    format!("Victory!\nArea: {}\nScore: {}", area, score);
-                let buttons = &[
-                    (
-                        "Continue editing",
-                        VictoryDialogAction::ContinueEditing,
-                        Some(Keycode::Escape),
-                    ),
-                    (
-                        "Back to menu",
-                        VictoryDialogAction::BackToMenu,
-                        Some(Keycode::Return),
-                    ),
-                ];
-                self.victory_dialog =
-                    Some(ButtonDialogBox::new(size, prefs, &format, buttons));
-                // TODO: Unfocus other views
                 self.controls_status = ControlsStatus::Stopped;
                 ui.request_redraw();
                 Some(CircuitAction::Victory(SolutionData {
@@ -628,6 +608,44 @@ impl CircuitView {
         self.failed_save_dialog =
             Some(ButtonDialogBox::new(size, prefs, &format, buttons));
         ui.request_redraw();
+        // TODO: Unfocus other views
+    }
+
+    pub fn show_victory_dialog(
+        &mut self,
+        ui: &mut Ui,
+        prefs: &Prefs,
+        puzzle: Puzzle,
+        area: i32,
+        score: u32,
+        local_scores: &ScoreCurve,
+    ) {
+        // TODO: Play sound for victory.
+        let window_size = RectSize::new(self.width as i32, self.height as i32);
+        let format = format!("Task \"{}\" completed!", puzzle.title());
+        let buttons = &[
+            (
+                "Continue editing",
+                VictoryDialogAction::ContinueEditing,
+                Some(Keycode::Escape),
+            ),
+            (
+                "Back to menu",
+                VictoryDialogAction::BackToMenu,
+                Some(Keycode::Return),
+            ),
+        ];
+        self.victory_dialog = Some(ScoreGraphDialogBox::new(
+            window_size,
+            prefs,
+            &format,
+            puzzle,
+            local_scores,
+            (area, score),
+            buttons,
+        ));
+        ui.request_redraw();
+        // TODO: Unfocus other views
     }
 }
 

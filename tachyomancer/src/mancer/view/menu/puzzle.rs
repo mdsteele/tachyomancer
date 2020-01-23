@@ -209,6 +209,7 @@ impl PuzzlesView {
             state.set_circuit_name(circuit_name);
             ui.request_redraw();
         }
+        self.graph.on_event(event, ui);
         if let Some(()) = self.back_button.on_event(event, ui, true) {
             let puzzle = state.current_puzzle();
             for &conv in puzzle.origin_conversations() {
@@ -536,6 +537,13 @@ impl ScoreGraphPanel {
             (mid_x, mid_y + 12.0),
             "VIEW OPTIMIZATION GRAPH",
         );
+    }
+
+    fn on_event(&mut self, event: &Event, ui: &mut Ui) {
+        let mut opt_cache = self.cache.borrow_mut();
+        if let Some(cache) = opt_cache.as_mut() {
+            cache.graph.on_event(event, ui);
+        }
     }
 }
 

@@ -410,3 +410,19 @@ impl ScoreGraph {
 }
 
 //===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::format_tick_maximum;
+
+    #[test]
+    fn max_tick_format() {
+        assert_eq!(format_tick_maximum(100), "100");
+        assert_eq!(format_tick_maximum(700), "700");
+        assert_eq!(format_tick_maximum(1000), "1k");
+        assert_eq!(format_tick_maximum(3000), "3k");
+        assert_eq!(format_tick_maximum(3500), "3500");
+    }
+}
+
+//===========================================================================//

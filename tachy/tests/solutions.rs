@@ -35,6 +35,11 @@ fn automate_heliostat_small() {
 }
 
 #[test]
+fn automate_incubator() {
+    test_solution("automate_incubator");
+}
+
+#[test]
 fn automate_mining_robot() {
     test_solution("automate_mining_robot");
 }

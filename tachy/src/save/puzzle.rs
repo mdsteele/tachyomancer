@@ -94,6 +94,7 @@ pub enum Puzzle {
     FabricateEggTimer,
     FabricateStopwatch,
     AutomateDrillingRig,
+    AutomateIncubator,
     CommandShields,
     AutomateGeigerCounter,
     AutomateXUnit,
@@ -220,6 +221,27 @@ impl Puzzle {
                      interface on the right side of the board.\n\
                      * $!The closer the current position is to optimal, the \
                      more energy will be produced.",
+            },
+            Puzzle::AutomateIncubator => &PuzzleData {
+                title: "Incubator",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (9, 6),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 500),
+                description:
+                    "Incubate the eggs of flora native to this planet in \
+                     order to render them edible for Icthyans.",
+                instructions:
+                    "* $!The incubator holds up to two eggs at once.  You \
+                     must incubate 10 eggs (5 on each side).\n\
+                     * $!Each side will signal when a new egg is ready to be \
+                     loaded on that side.\n\
+                     * $!Turn on the heater to warm any eggs inside.  Each \
+                     egg must be warmed for exactly 20 time steps (not \
+                     necessarily contiguous), then unloaded.\n\
+                     * $!Loading or unloading an egg takes a few time \
+                     steps.  The heater must be off during this time.",
             },
             Puzzle::AutomateMiningRobot => &PuzzleData {
                 title: "Mining Robot",

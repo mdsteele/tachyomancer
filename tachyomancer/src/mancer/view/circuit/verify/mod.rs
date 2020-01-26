@@ -91,6 +91,10 @@ impl VerificationTray {
             Puzzle::AutomateHeliostat => {
                 self::heliostat::HeliostatVerifyView::new(right_bottom)
             }
+            Puzzle::AutomateIncubator => {
+                // TODO: Make a verification view for AutomateIncubator
+                self::shared::NullVerifyView::new()
+            }
             Puzzle::AutomateMiningRobot => {
                 self::mining::MiningRobotVerifyView::new(right_bottom)
             }

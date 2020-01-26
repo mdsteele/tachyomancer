@@ -134,6 +134,7 @@ impl ChipExt for ChipType {
                     Puzzle::FabricateEggTimer,
                     Puzzle::FabricateStopwatch,
                     Puzzle::AutomateDrillingRig,
+                    Puzzle::AutomateIncubator,
                     Puzzle::CommandShields,
                 ],
             ),

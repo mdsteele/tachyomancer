@@ -53,6 +53,7 @@ pub struct CircuitEval {
     cycle: u32,      // which cycle of the time step we're on
     subcycle: usize, // index into `chips` of next chip group to eval
     errors: Vec<EvalError>,
+    breakpoints_enabled: bool,
     // Topologically-sorted list of chips, divided into parallel groups:
     chips: Vec<Vec<Box<dyn ChipEval>>>,
     wire_length: u32,
@@ -85,6 +86,7 @@ impl CircuitEval {
             cycle: 0,
             subcycle: 0,
             errors: Vec::new(),
+            breakpoints_enabled: true,
             chips: chip_groups,
             wire_length: num_wire_fragments as u32,
             puzzle_eval,
@@ -114,6 +116,10 @@ impl CircuitEval {
 
     pub fn errors(&self) -> &[EvalError] {
         &self.errors
+    }
+
+    pub fn set_breakpoints_enabled(&mut self, enabled: bool) {
+        self.breakpoints_enabled = enabled;
     }
 
     pub fn press_button(&mut self, coords: Coords, sublocation: u32) {
@@ -241,7 +247,9 @@ impl CircuitEval {
                 );
                 let coords_vec =
                     mem::replace(&mut self.state.breakpoints, Vec::new());
-                return EvalResult::Breakpoint(coords_vec);
+                if self.breakpoints_enabled {
+                    return EvalResult::Breakpoint(coords_vec);
+                }
             }
         }
         return EvalResult::Continue;

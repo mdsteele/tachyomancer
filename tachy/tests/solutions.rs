@@ -105,6 +105,11 @@ fn fabricate_halve() {
 }
 
 #[test]
+fn fabricate_inc() {
+    test_solution("fabricate_inc");
+}
+
+#[test]
 fn fabricate_mul() {
     test_solution("fabricate_mul");
 }

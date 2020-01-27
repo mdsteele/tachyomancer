@@ -1,0 +1,24 @@
+puzzle = "FabricateInc"
+score = 28
+time_steps = 8
+
+[circuit]
+size = [5, 2]
+
+[circuit.chips]
+p1p0 = "f0-Latest"
+p1p1 = "f0-Break(true)"
+p2p0 = "f0-Add"
+p3p1 = "f0-Discard"
+p4p1 = "t0-Sample"
+
+[circuit.wires]
+p0p0s = "SplitTee"
+p0p1n = "TurnLeft"
+p1p0e = "Stub"
+p2p1e = "Straight"
+p2p1s = "Straight"
+p3p0e = "Straight"
+p3p1e = "Stub"
+p4p0s = "TurnLeft"
+p4p1e = "Stub"

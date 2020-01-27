@@ -49,6 +49,7 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
         errors.push("Circuit had errors".to_string());
     } else {
         let eval = grid.eval_mut().unwrap();
+        eval.set_breakpoints_enabled(false);
         for time_step in 0..(data.time_steps + 1) {
             match eval.step_time() {
                 EvalResult::Continue if time_step < data.time_steps => {}
@@ -60,12 +61,7 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
                     break;
                 }
                 EvalResult::Breakpoint(_) => {
-                    // TODO: We should just ignore breakpoints.
-                    errors.push(format!(
-                        "Breakpoint at time step {}",
-                        time_step
-                    ));
-                    break;
+                    unreachable!("Breakpoints were disabled.");
                 }
                 EvalResult::Failure => {
                     errors.extend(eval.errors().iter().map(|error| {

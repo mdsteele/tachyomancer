@@ -198,6 +198,77 @@ impl Interface {
 
 //===========================================================================//
 
-// TODO: add tests for Interface positioning methods
+#[cfg(test)]
+mod tests {
+    use super::{Interface, InterfacePort, InterfacePosition};
+    use crate::geom::{Coords, CoordsRect, CoordsSize, Direction};
+    use crate::save::WireSize;
+    use crate::state::{PortColor, PortFlow};
+
+    #[test]
+    fn interface_positioning() {
+        let mut interface = Interface {
+            name: "Foobar",
+            description: "r",
+            side: Direction::North,
+            pos: InterfacePosition::Center,
+            ports: &[
+                InterfacePort {
+                    name: "Foo",
+                    description: "",
+                    flow: PortFlow::Send,
+                    color: PortColor::Event,
+                    size: WireSize::One,
+                },
+                InterfacePort {
+                    name: "Bar",
+                    description: "",
+                    flow: PortFlow::Send,
+                    color: PortColor::Event,
+                    size: WireSize::Two,
+                },
+            ],
+        };
+        let rect = CoordsRect::new(-1, 3, 8, 7);
+
+        interface.side = Direction::East;
+        interface.pos = InterfacePosition::Left(0);
+        assert_eq!(interface.top_left(rect), Coords::new(7, 8));
+        interface.pos = InterfacePosition::Right(1);
+        assert_eq!(interface.top_left(rect), Coords::new(7, 4));
+        interface.pos = InterfacePosition::Center;
+        assert_eq!(interface.top_left(rect), Coords::new(7, 6));
+        assert_eq!(interface.size(), CoordsSize::new(1, 2));
+
+        interface.side = Direction::West;
+        interface.pos = InterfacePosition::Left(0);
+        assert_eq!(interface.top_left(rect), Coords::new(-2, 3));
+        interface.pos = InterfacePosition::Right(1);
+        assert_eq!(interface.top_left(rect), Coords::new(-2, 7));
+        interface.pos = InterfacePosition::Center;
+        assert_eq!(interface.top_left(rect), Coords::new(-2, 5));
+        assert_eq!(interface.size(), CoordsSize::new(1, 2));
+
+        interface.side = Direction::North;
+        interface.pos = InterfacePosition::Left(1);
+        assert_eq!(interface.top_left(rect), Coords::new(4, 2));
+        interface.pos = InterfacePosition::Right(0);
+        assert_eq!(interface.top_left(rect), Coords::new(-1, 2));
+        interface.pos = InterfacePosition::Center;
+        assert_eq!(interface.top_left(rect), Coords::new(2, 2));
+        assert_eq!(interface.size(), CoordsSize::new(2, 1));
+
+        interface.side = Direction::South;
+        interface.pos = InterfacePosition::Left(1);
+        assert_eq!(interface.top_left(rect), Coords::new(0, 10));
+        interface.pos = InterfacePosition::Right(0);
+        assert_eq!(interface.top_left(rect), Coords::new(5, 10));
+        interface.pos = InterfacePosition::Center;
+        assert_eq!(interface.top_left(rect), Coords::new(2, 10));
+        assert_eq!(interface.size(), CoordsSize::new(2, 1));
+    }
+
+    // TODO: Test for Interface::min_bounds_size()
+}
 
 //===========================================================================//

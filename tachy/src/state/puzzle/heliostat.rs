@@ -38,8 +38,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Sensor Interface",
         description:
-            "\
-             Connects to a subspace sensor array that determines the ideal \
+            "Connects to a subspace sensor array that determines the ideal \
              position for the heliostat mirror.  Use the motor interface to \
              move the mirror to this position.",
         side: Direction::West,
@@ -55,8 +54,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Power",
                 description:
-                    "\
-                     Outputs the current power generation efficiency, from 0 \
+                    "Outputs the current power generation efficiency, from 0 \
                      to 100 percent.  (You can ignore this port if you don't \
                      need it.)",
                 flow: PortFlow::Send,
@@ -68,8 +66,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Motor Interface",
         description:
-            "\
-             Connects to a stepper motor that controls the position of the \
+            "Connects to a stepper motor that controls the position of the \
              heliostat mirror.",
         side: Direction::East,
         pos: InterfacePosition::Right(0),
@@ -83,8 +80,7 @@ pub const INTERFACES: &[Interface] = &[
             },
             InterfacePort {
                 name: "Motor",
-                description: "\
-                              Receives motor commands.\n    \
+                description: "Receives motor commands.\n    \
                               Send 1 to move clockwise.\n    \
                               Send 2 to move counterclockwise.\n  \
                               Send any other value to not move.",

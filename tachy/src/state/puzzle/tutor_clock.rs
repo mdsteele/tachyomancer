@@ -82,10 +82,17 @@ const CLOCK_EXPECTED_TABLE_VALUES: &[u32] = &[
     NIL,   6,
 ];
 
-pub(super) const CLOCK_BUBBLES: &[(TutorialBubblePosition, &str)] = &[(
-    TutorialBubblePosition::Bounds(Direction::North),
-    "A $*Clock$* chip can be used together with a $*Latest$* chip to \
-     delay a value by one time step.",
-)];
+pub(super) const CLOCK_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
+    (
+        TutorialBubblePosition::PartsTray,
+        "$*Clock$* chips can be found in the \"Timing\" section of the parts \
+         tray.",
+    ),
+    (
+        TutorialBubblePosition::Bounds(Direction::South),
+        "A $*Clock$* chip can be used together with a $*Latest$* chip to \
+         delay a value by one time step.",
+    ),
+];
 
 //===========================================================================//

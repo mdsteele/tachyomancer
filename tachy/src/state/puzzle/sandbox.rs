@@ -54,8 +54,7 @@ pub const EVENT_INTERFACES: &[Interface] = &[Interface {
         },
         InterfacePort {
             name: "Tick",
-            description: "\
-                          Sends an event at the beginning of each time step.",
+            description: "Sends an event at the beginning of each time step.",
             flow: PortFlow::Send,
             color: PortColor::Event,
             size: WireSize::Zero,

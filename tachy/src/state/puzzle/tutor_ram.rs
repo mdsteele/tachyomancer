@@ -33,7 +33,9 @@ pub const TUTORIAL_RAM_DATA: &FabricationData = &FabricationData {
 pub(super) const RAM_INTERFACES: &[Interface] = &[
     Interface {
         name: "Push",
-        description: "TODO",
+        description:
+            "When an event arrives here, that value should be pushed onto \
+             the top of the stack.",
         side: Direction::West,
         pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
@@ -46,7 +48,9 @@ pub(super) const RAM_INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Pop",
-        description: "TODO",
+        description:
+            "When an event arrives here, the top value of the stack should \
+             be popped off and sent to the $*Out$* port.",
         side: Direction::West,
         pos: InterfacePosition::Right(0),
         ports: &[InterfacePort {
@@ -59,7 +63,7 @@ pub(super) const RAM_INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Out",
-        description: "TODO",
+        description: "Values popped off the stack should be sent here.",
         side: Direction::East,
         pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
@@ -96,7 +100,17 @@ const RAM_EXPECTED_TABLE_VALUES: &[u32] = &[
       1,   0,   1,
 ];
 
-pub(super) const RAM_BUBBLES: &[(TutorialBubblePosition, &str)] =
-    &[(TutorialBubblePosition::Bounds(Direction::North), "TODO")];
+pub(super) const RAM_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
+    (
+        TutorialBubblePosition::PartsTray,
+        "$*Ram$* chips can be found in the \"Memory\" section of the parts \
+         tray.",
+    ),
+    (
+        TutorialBubblePosition::Bounds(Direction::South),
+        "If necessary, a $*Coerce$* chip can be used to set the address size \
+         for a $*Ram$* chip.",
+    ),
+];
 
 //===========================================================================//

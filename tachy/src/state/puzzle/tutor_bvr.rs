@@ -59,8 +59,7 @@ pub(super) const OR_INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Out",
-        description: "\
-                      Should be 1 if either input is 1.\n\
+        description: "Should be 1 if either input is 1.\n\
                       Should be 0 if both inputs are 0.",
         side: Direction::East,
         pos: InterfacePosition::Center,
@@ -221,8 +220,7 @@ pub(super) const ADD_INTERFACES: &[Interface] = &[
     Interface {
         name: "Out",
         description:
-            "\
-             Should be the sum of the two inputs (which will never be more \
+            "Should be the sum of the two inputs (which will never be more \
              than 15 for this task).",
         side: Direction::East,
         pos: InterfacePosition::Center,

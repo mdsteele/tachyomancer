@@ -44,7 +44,7 @@ const MAX_LANDING_ANGLE: i32 = 95;
 pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Instruments Interface",
-        description: "TODO",
+        description: "Connects to the lander's instruments panel.",
         side: Direction::West,
         pos: InterfacePosition::Center,
         ports: &[
@@ -57,18 +57,18 @@ pub const INTERFACES: &[Interface] = &[
             },
             InterfacePort {
                 name: "Angle",
-                description: "\
-                    Indicates the current descent angle, in degrees (0-180).  \
-                    90 is vertical.",
+                description:
+                    "Indicates the current descent angle, in degrees \
+                     (0-180).  90 is vertical.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
             InterfacePort {
                 name: "Fuel",
-                description: "\
-                    Indicates how much fuel is remaining.  When this reaches \
-                    zero, the thrusters will stop working.",
+                description:
+                    "Indicates how much fuel is remaining.  When this reaches \
+                     zero, the thrusters will stop working.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
@@ -77,7 +77,9 @@ pub const INTERFACES: &[Interface] = &[
     },
     Interface {
         name: "Thruster Interface",
-        description: "TODO",
+        description:
+            "Connects to the lander's descent thrusters.  Increase the value \
+             for each side to increase thrust, at the cost of more fuel.",
         side: Direction::South,
         pos: InterfacePosition::Center,
         ports: &[

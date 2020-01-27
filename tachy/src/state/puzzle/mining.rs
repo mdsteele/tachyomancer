@@ -45,8 +45,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Dist",
                 description:
-                    "\
-                     Indicates how far away the robot is from the base.",
+                    "Indicates how far away the robot is from the base.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
@@ -54,8 +53,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Back",
                 description:
-                    "\
-                     Signal here when the robot should return to the base.",
+                    "Signal here when the robot should return to the base.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::Zero,
@@ -71,8 +69,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Carry",
                 description:
-                    "\
-                     Indicates how much ore the robot is currently carrying, \
+                    "Indicates how much ore the robot is currently carrying, \
                      in kilograms.",
                 flow: PortFlow::Send,
                 color: PortColor::Behavior,
@@ -81,8 +78,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Found",
                 description:
-                    "\
-                     Sends an event with the size of an ore deposit (from \
+                    "Sends an event with the size of an ore deposit (from \
                      1-3kg) when the robot passes over it.",
                 flow: PortFlow::Send,
                 color: PortColor::Event,
@@ -91,8 +87,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Dig",
                 description:
-                    "\
-                     Signal here to dig up the ore deposit under the robot.",
+                    "Signal here to dig up the ore deposit under the robot.",
                 flow: PortFlow::Recv,
                 color: PortColor::Event,
                 size: WireSize::Zero,

@@ -38,8 +38,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Thermostat Interface",
         description:
-            "\
-             Connects to sensors in the ship's power grid that determine the \
+            "Connects to sensors in the ship's power grid that determine the \
              current and desired power outputs of the backup reactor (from 0 \
              to 9).",
         side: Direction::West,
@@ -64,8 +63,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Control Rod Interface",
         description:
-            "\
-             Connects to an array of actuators that move the reactor's three \
+            "Connects to an array of actuators that move the reactor's three \
              control rods.  Send higher values to retract a rod (increasing \
              the total power output), or lower values to extend a rod \
              (decreasing the total power).",

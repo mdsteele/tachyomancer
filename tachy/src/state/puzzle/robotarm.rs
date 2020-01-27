@@ -67,8 +67,7 @@ pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Arm Interface",
         description:
-            "\
-             Connects to the sensors and servo motors of the robot arm.",
+            "Connects to the sensors and servo motors of the robot arm.",
         side: Direction::East,
         pos: InterfacePosition::Right(0),
         ports: &[

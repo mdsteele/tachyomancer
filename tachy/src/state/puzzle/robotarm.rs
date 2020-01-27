@@ -248,6 +248,8 @@ impl PuzzleEval for RobotArmEval {
                 self.has_sent_radio_reply = true;
             }
         }
+        // TODO: Fail if we try to turn/manipulate while the arm is still
+        //   moving.
         if let MotorMovement::Stationary = self.motor_movement {
             if let Some(dir) = state.recv_event(self.turn_wire) {
                 self.motor_movement = if dir == 0 {
@@ -256,6 +258,8 @@ impl PuzzleEval for RobotArmEval {
                     MotorMovement::TurningCw(TIME_PER_TURN)
                 };
             } else if state.recv_event(self.manip_wire).is_some() {
+                // TODO: Don't fail for incorrect manipulation until the arm hs
+                //   extended.
                 if self.current_position != self.last_command {
                     let message = format!(
                         "Manipulated position {}, but last \

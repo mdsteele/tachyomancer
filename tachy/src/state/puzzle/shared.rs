@@ -155,13 +155,13 @@ impl PuzzleEval for FabricationEval {
                             let msg = if port.size == WireSize::Zero {
                                 format!(
                                     "No event expected for {}, \
-                                     but got an event",
+                                     but got an event.",
                                     port.name
                                 )
                             } else {
                                 format!(
                                     "No event expected for {}, \
-                                     but got event value of {}",
+                                     but got event value of {}.",
                                     port.name, actual
                                 )
                             };
@@ -169,14 +169,14 @@ impl PuzzleEval for FabricationEval {
                         } else if self.has_received_events.contains(&wire) {
                             let msg = format!(
                                 "Expected only one event for {}, \
-                                 but got more than one",
+                                 but got more than one.",
                                 port.name
                             );
                             errors.push(state.port_error(loc, msg));
                         } else if actual != expected {
                             let msg = format!(
                                 "Expected event value of {} for {}, \
-                                 but got event value of {}",
+                                 but got event value of {}.",
                                 expected, port.name, actual
                             );
                             errors.push(state.port_error(loc, msg));
@@ -211,7 +211,7 @@ impl PuzzleEval for FabricationEval {
                             if actual != expected {
                                 let msg = format!(
                                     "Expected value of {} for {}, \
-                                     but got value of {}",
+                                     but got value of {}.",
                                     expected, port.name, actual
                                 );
                                 errors.push(state.port_error(loc, msg));
@@ -224,13 +224,13 @@ impl PuzzleEval for FabricationEval {
                                     let msg = if port.size == WireSize::Zero {
                                         format!(
                                             "Expected an event for \
-                                             {}, but got no event",
+                                             {}, but got no event.",
                                             port.name
                                         )
                                     } else {
                                         format!(
                                             "Expected event value of {} for \
-                                             {}, but got no event",
+                                             {}, but got no event.",
                                             expected, port.name
                                         )
                                     };

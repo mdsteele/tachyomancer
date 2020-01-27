@@ -1,0 +1,14 @@
+puzzle = "FabricateXor"
+score = 0
+time_steps = 4
+
+[circuit]
+size = [1, 1]
+
+[circuit.chips]
+p0p0 = "f0-Or"
+
+[circuit.wires]
+m1p0e = "Stub"
+p0p0e = "Stub"
+p0p0s = "Stub"

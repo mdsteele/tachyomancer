@@ -173,7 +173,7 @@ impl CircuitEval {
                     self.puzzle_eval.needs_another_cycle(self.time_step());
                 if self.cycle + 1 >= MAX_CYCLES_PER_TIME_STEP {
                     self.errors.push(self.state.fatal_error(format!(
-                        "Exceeded {} cycles",
+                        "Exceeded {} cycles.",
                         MAX_CYCLES_PER_TIME_STEP
                     )));
                     return EvalResult::Failure;

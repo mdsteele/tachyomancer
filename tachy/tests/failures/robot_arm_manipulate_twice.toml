@@ -1,0 +1,31 @@
+puzzle = "AutomateRobotArm"
+score = 0
+time_steps = 100
+
+[circuit]
+size = [5, 4]
+
+[circuit.chips]
+p1p0 = "f0-Latest"
+p1p1 = "f0-Discard"
+p2p1 = "f0-Join"
+p3p0 = "t0-Eq"
+p3p1 = "f0-Demux"
+p4p1 = "f0-Sample"
+
+[circuit.wires]
+p0p0e = "TurnLeft"
+p0p1n = "SplitTee"
+p1p1e = "Stub"
+p2p0e = "Straight"
+p2p1e = "Stub"
+p2p2s = "Straight"
+p2p3n = "TurnLeft"
+p3p0s = "Stub"
+p3p1e = "Stub"
+p3p2n = "TurnLeft"
+p3p3e = "Straight"
+p4p0e = "Straight"
+p4p1e = "Stub"
+p4p2e = "Straight"
+p4p3e = "Straight"

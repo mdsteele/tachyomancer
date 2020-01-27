@@ -1,0 +1,17 @@
+puzzle = "AutomateRobotArm"
+score = 0
+time_steps = 100
+
+[circuit]
+size = [2, 4]
+
+[circuit.chips]
+p0p1 = "f0-Discard"
+
+[circuit.wires]
+m1p1e = "Stub"
+p0p2s = "TurnLeft"
+p0p3n = "TurnLeft"
+p1p1s = "TurnLeft"
+p1p2n = "TurnLeft"
+p1p3e = "Straight"

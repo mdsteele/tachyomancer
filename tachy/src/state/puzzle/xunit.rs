@@ -199,7 +199,7 @@ impl PuzzleEval for XUnitEval {
                 self.any_detonated = true;
                 if charges.len() < CHARGE_DELAYS.len() {
                     errors.push(state.fatal_error(format!(
-                        "Only {} out of {} charges were detonated at once",
+                        "Only {} out of {} charges were detonated at once.",
                         charges.len(),
                         CHARGE_DELAYS.len()
                     )));

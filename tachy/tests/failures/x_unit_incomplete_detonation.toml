@@ -1,0 +1,35 @@
+puzzle = "AutomateXUnit"
+score = 0
+time_steps = 100
+
+[circuit]
+size = [6, 4]
+
+[circuit.chips]
+p0p1 = "f0-Join"
+p0p2 = "t3-Demux"
+p1p2 = "t1-Eq"
+p1p3 = "f2-Discard"
+p2p0 = "f0-Sample"
+p2p2 = "t3-Latest"
+p3p2 = "f0-Const(1)"
+p3p3 = "f2-Delay"
+p4p2 = "f1-Inc"
+
+[circuit.wires]
+m1p1e = "Stub"
+p0p1s = "Stub"
+p0p2e = "Stub"
+p0p3n = "TurnLeft"
+p1p0e = "TurnLeft"
+p1p1e = "TurnLeft"
+p1p1w = "TurnLeft"
+p2p1w = "SplitTee"
+p2p3n = "SplitTee"
+p3p0e = "Straight"
+p3p2e = "Stub"
+p4p0s = "TurnLeft"
+p4p1e = "SplitTee"
+p4p3w = "TurnLeft"
+p5p1s = "TurnLeft"
+p5p2n = "TurnLeft"

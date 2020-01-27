@@ -1,0 +1,15 @@
+puzzle = "AutomateMiningRobot"
+score = 0
+time_steps = 100
+
+[circuit]
+size = [3, 3]
+
+[circuit.chips]
+p2p2 = "f1-Discard"
+
+[circuit.wires]
+p1p1e = "TurnLeft"
+p1p2s = "Straight"
+p2p1s = "TurnLeft"
+p2p2s = "Stub"

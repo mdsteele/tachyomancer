@@ -44,7 +44,7 @@ const CLICKS: &[u8] = &[
 pub const INTERFACES: &[Interface] = &[
     Interface {
         name: "Detector Interface",
-        description: "Connects to the alpha particle detector.",
+        description: "Connects to the particle detector.",
         side: Direction::West,
         pos: InterfacePosition::Center,
         ports: &[InterfacePort {

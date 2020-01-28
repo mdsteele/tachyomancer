@@ -186,7 +186,9 @@ impl Puzzle {
                 init_size: (10, 9),
                 score_units: ScoreUnits::Cycles,
                 graph_bounds: (400, 5000),
-                description: "TODO",
+                description:
+                    "Calculate the number of radiation particles detected \
+                     over a sliding window of time.",
                 instructions: "TODO",
             },
             Puzzle::AutomateGrapple => &PuzzleData {
@@ -319,7 +321,9 @@ impl Puzzle {
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 1000),
-                description: "TODO",
+                description:
+                    "Store crates within a warehouse and retrieve them again \
+                     on demand.",
                 instructions: "TODO",
             },
             Puzzle::AutomateTranslator => &PuzzleData {
@@ -329,7 +333,8 @@ impl Puzzle {
                 init_size: (8, 5),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
-                description: "TODO",
+                description: "Translate a passage of Icthyan text using a \
+                              word-for-word dictionary database.",
                 instructions: "TODO",
             },
             Puzzle::AutomateXUnit => &PuzzleData {
@@ -339,7 +344,9 @@ impl Puzzle {
                 init_size: (12, 9),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (300, 300),
-                description: "TODO",
+                description:
+                    "Ensure that all the implosion charges surrounding the \
+                     fissile core detonate simultaneously.",
                 instructions:
                     "* $!Your goal is to make all 256 charges detonate at \
                      once.\n\
@@ -634,7 +641,9 @@ impl Puzzle {
                 init_size: (6, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
-                description: "TODO",
+                description:
+                    "Construct a simple last-in, first-out stack memory \
+                     module.",
                 instructions: "TODO",
             },
             Puzzle::TutorialSum => &PuzzleData {

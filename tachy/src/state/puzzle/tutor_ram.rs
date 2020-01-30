@@ -51,8 +51,8 @@ pub(super) const RAM_INTERFACES: &[Interface] = &[
         description:
             "When an event arrives here, the top value of the stack should \
              be popped off and sent to the $*Out$* port.",
-        side: Direction::West,
-        pos: InterfacePosition::Right(0),
+        side: Direction::East,
+        pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
             name: "Pop",
             description: "",
@@ -65,7 +65,7 @@ pub(super) const RAM_INTERFACES: &[Interface] = &[
         name: "Out",
         description: "Values popped off the stack should be sent here.",
         side: Direction::East,
-        pos: InterfacePosition::Left(0),
+        pos: InterfacePosition::Right(0),
         ports: &[InterfacePort {
             name: "Out",
             description: "",
@@ -74,30 +74,44 @@ pub(super) const RAM_INTERFACES: &[Interface] = &[
             size: WireSize::Four,
         }],
     },
+    Interface {
+        name: "Count",
+        description:
+            "Should be equal to the number of values currently in the stack.",
+        side: Direction::West,
+        pos: InterfacePosition::Right(0),
+        ports: &[InterfacePort {
+            name: "Count",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::Eight,
+        }],
+    },
 ];
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const RAM_EXPECTED_TABLE_VALUES: &[u32] = &[
-      5, NIL, NIL,
-      3, NIL, NIL,
-     12, NIL, NIL,
-    NIL,   0,  12,
-    NIL,   0,   3,
-    NIL,   0,   5,
-    NIL,   0, NIL,
-     12, NIL, NIL,
-     14, NIL, NIL,
-      9, NIL, NIL,
-      4, NIL, NIL,
-    NIL,   0,   4,
-    NIL,   0,   9,
-      2, NIL, NIL,
-    NIL,   0,   2,
-    NIL,   0,  14,
-      9,   0,   9,
-    NIL,   0,  12,
-    NIL,   0, NIL,
-      1,   0,   1,
+      5, NIL, NIL, 1,
+      3, NIL, NIL, 2,
+     12, NIL, NIL, 3,
+    NIL,   0,  12, 2,
+    NIL,   0,   3, 1,
+    NIL,   0,   5, 0,
+    NIL,   0, NIL, 0,
+     12, NIL, NIL, 1,
+     14, NIL, NIL, 2,
+      9, NIL, NIL, 3,
+      4, NIL, NIL, 4,
+    NIL,   0,   4, 3,
+    NIL,   0,   9, 2,
+      2, NIL, NIL, 3,
+    NIL,   0,   2, 2,
+    NIL,   0,  14, 1,
+      9,   0,   9, 1,
+    NIL,   0,  12, 0,
+    NIL,   0, NIL, 0,
+      1,   0,   1, 0,
 ];
 
 pub(super) const RAM_BUBBLES: &[(TutorialBubblePosition, &str)] = &[

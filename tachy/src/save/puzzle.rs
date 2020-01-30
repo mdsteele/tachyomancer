@@ -489,8 +489,8 @@ impl Puzzle {
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (500, 500),
                 description:
-                    "Construct a first-in, first-out queue memory module \
-                     that also supports random access.\n\n\
+                    "Construct a simple first-in, first-out queue memory \
+                     module.\n\n\
                      Once this task is completed, you will be able to use \
                      $*Queue$* chips in future tasks.",
                 instructions: "TODO",

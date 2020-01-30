@@ -657,14 +657,7 @@ impl CircuitPreviewPanel {
         error: &str,
         prefs: &Prefs,
     ) {
-        let matrix = cgmath::ortho(
-            0.0,
-            fbo_size.width,
-            0.0,
-            fbo_size.height,
-            -10.0,
-            10.0,
-        );
+        let matrix = &CircuitPreviewPanel::fbo_matrix(fbo_size);
         let paragraph = Paragraph::compile(
             DESCRIPTION_FONT_SIZE,
             DESCRIPTION_LINE_HEIGHT,
@@ -722,6 +715,17 @@ impl CircuitPreviewPanel {
             );
         }
         depth.disable();
+        resources.fonts().roman().draw(
+            &CircuitPreviewPanel::fbo_matrix(fbo_size),
+            DESCRIPTION_FONT_SIZE,
+            Align::BottomRight,
+            (fbo_size.width, fbo_size.height),
+            &format!("{}x{}", grid.bounds().width, grid.bounds().height),
+        );
+    }
+
+    fn fbo_matrix(fbo_size: RectSize<f32>) -> Matrix4<f32> {
+        cgmath::ortho(0.0, fbo_size.width, 0.0, fbo_size.height, -10.0, 10.0)
     }
 
     fn grid_matrix(fbo_size: RectSize<f32>, grid: &EditGrid) -> Matrix4<f32> {

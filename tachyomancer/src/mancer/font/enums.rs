@@ -60,6 +60,7 @@ pub enum Align {
     BottomCenter,
     TopRight,
     MidRight,
+    BottomRight,
 }
 
 //===========================================================================//

@@ -256,6 +256,7 @@ impl TextShader {
             }
             Align::TopRight => Vector2::new(-(num_chars as f32), 0.0),
             Align::MidRight => Vector2::new(-(num_chars as f32), -0.5),
+            Align::BottomRight => Vector2::new(-(num_chars as f32), -1.0),
         };
 
         let mut array = [0u32; MAX_CHARS];

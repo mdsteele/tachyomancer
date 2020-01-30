@@ -374,4 +374,14 @@ impl<'a> Iterator for CircuitNamesIter<'a> {
     }
 }
 
+impl<'a> DoubleEndedIterator for CircuitNamesIter<'a> {
+    fn next_back(&mut self) -> Option<&'a str> {
+        if let Some(ref mut inner) = self.inner {
+            inner.next_back().map(UniCase::as_ref)
+        } else {
+            None
+        }
+    }
+}
+
 //===========================================================================//

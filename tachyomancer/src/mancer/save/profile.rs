@@ -357,8 +357,10 @@ impl Profile {
         progress.save()
     }
 
-    pub fn first_circuit_name_for_current_puzzle(&self) -> Option<String> {
-        self.circuit_names(self.current_puzzle()).next().map(str::to_string)
+    pub fn last_circuit_name_for_current_puzzle(&self) -> Option<String> {
+        self.circuit_names(self.current_puzzle())
+            .next_back()
+            .map(str::to_string)
     }
 
     pub fn circuit_names(&self, puzzle: Puzzle) -> CircuitNamesIter {

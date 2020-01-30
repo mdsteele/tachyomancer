@@ -260,6 +260,7 @@ fn circuit_list_items(
         items.extend(
             profile
                 .circuit_names(profile.current_puzzle())
+                .rev()
                 .map(|name| (name.to_string(), name.to_string(), false, None)),
         )
     }

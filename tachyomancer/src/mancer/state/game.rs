@@ -47,9 +47,9 @@ impl GameState {
         let menu_section = MenuSection::Navigation;
         let mut circuit_name = String::new();
         if let Some(ref profile) = opt_profile {
-            let puzzle = profile.current_puzzle();
-            if let Some(name) = profile.circuit_names(puzzle).next() {
-                circuit_name = name.to_string();
+            if let Some(name) = profile.last_circuit_name_for_current_puzzle()
+            {
+                circuit_name = name;
             }
         }
         Ok(GameState {
@@ -166,7 +166,7 @@ impl GameState {
         }
         let profile = self.savedir.create_or_load_and_set_profile(name)?;
         self.circuit_name = profile
-            .first_circuit_name_for_current_puzzle()
+            .last_circuit_name_for_current_puzzle()
             .unwrap_or_else(String::new);
         self.profile = Some(profile);
         Ok(())
@@ -295,7 +295,7 @@ impl GameState {
             if profile.current_puzzle() != puzzle {
                 profile.set_current_puzzle(puzzle);
                 self.circuit_name = profile
-                    .first_circuit_name_for_current_puzzle()
+                    .last_circuit_name_for_current_puzzle()
                     .unwrap_or_else(String::new);
             }
         }
@@ -401,7 +401,7 @@ impl GameState {
             let puzzle = profile.current_puzzle();
             profile.delete_circuit(puzzle, &self.circuit_name)?;
             self.circuit_name = profile
-                .first_circuit_name_for_current_puzzle()
+                .last_circuit_name_for_current_puzzle()
                 .unwrap_or_else(String::new);
             Ok(())
         } else {

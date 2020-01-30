@@ -17,7 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use crate::save::{Puzzle, SolutionData};
+use crate::save::{PuzzleSet, SolutionData};
 use crate::state::{EditGrid, EvalResult, WireError};
 
 //===========================================================================//
@@ -25,7 +25,7 @@ use crate::state::{EditGrid, EvalResult, WireError};
 pub fn verify_solution(data: &SolutionData) -> Vec<String> {
     let mut grid = EditGrid::from_circuit_data(
         data.puzzle,
-        &Puzzle::all().collect(),
+        &PuzzleSet::with_everything_solved(),
         &data.circuit,
     );
     let mut errors = Vec::<String>::new();

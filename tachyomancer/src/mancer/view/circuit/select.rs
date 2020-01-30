@@ -637,11 +637,11 @@ fn changes_for_paste(
 mod tests {
     use super::{changes_for_cut, changes_for_paste, Selection};
     use cgmath::vec2;
-    use std::collections::{HashMap, HashSet};
+    use std::collections::HashMap;
     use tachy::geom::{
         Coords, CoordsDelta, CoordsRect, CoordsSize, Direction, Orientation,
     };
-    use tachy::save::{ChipType, CircuitData, Puzzle, WireShape};
+    use tachy::save::{ChipType, CircuitData, Puzzle, PuzzleSet, WireShape};
     use tachy::state::EditGrid;
 
     #[test]
@@ -659,7 +659,7 @@ mod tests {
         );
         let mut grid = EditGrid::from_circuit_data(
             Puzzle::TutorialOr,
-            &HashSet::new(),
+            &PuzzleSet::new(),
             &data,
         );
         assert_eq!(
@@ -701,7 +701,7 @@ mod tests {
         );
         let mut grid = EditGrid::from_circuit_data(
             Puzzle::TutorialOr,
-            &HashSet::new(),
+            &PuzzleSet::new(),
             &data,
         );
         assert_eq!(
@@ -753,7 +753,7 @@ mod tests {
         );
         let mut grid = EditGrid::from_circuit_data(
             Puzzle::TutorialOr,
-            &HashSet::new(),
+            &PuzzleSet::new(),
             &data,
         );
         assert_eq!(
@@ -793,7 +793,7 @@ mod tests {
         );
         let mut grid = EditGrid::from_circuit_data(
             Puzzle::TutorialOr,
-            &HashSet::new(),
+            &PuzzleSet::new(),
             &data,
         );
         assert_eq!(

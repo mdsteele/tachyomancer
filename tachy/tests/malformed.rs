@@ -2,7 +2,7 @@ extern crate tachy;
 
 use std::fs;
 use std::path::PathBuf;
-use tachy::save::{CircuitData, Puzzle};
+use tachy::save::{CircuitData, Puzzle, PuzzleSet};
 use tachy::state::EditGrid;
 
 #[test]
@@ -46,7 +46,7 @@ fn test_malformed_circuit(name: &str, puzzle: Puzzle) {
     let original_data = CircuitData::load(&original_path).unwrap();
     let grid = EditGrid::from_circuit_data(
         puzzle,
-        &Puzzle::all().collect(),
+        &PuzzleSet::with_everything_solved(),
         &original_data,
     );
     let actual_repaired_string =

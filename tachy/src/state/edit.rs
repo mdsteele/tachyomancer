@@ -28,7 +28,7 @@ use crate::geom::{
     Coords, CoordsDelta, CoordsRect, CoordsSize, Direction, Orientation, Rect,
 };
 use crate::save::{
-    ChipSet, ChipType, CircuitData, Puzzle, WireShape, WireSize,
+    ChipSet, ChipType, CircuitData, Puzzle, PuzzleSet, WireShape, WireSize,
 };
 use std::collections::{hash_map, hash_set, HashMap, HashSet};
 use std::mem;
@@ -67,21 +67,21 @@ pub struct EditGrid {
 }
 
 impl EditGrid {
-    pub fn new(puzzle: Puzzle, solved_puzzles: &HashSet<Puzzle>) -> EditGrid {
+    pub fn new(puzzle: Puzzle, solved: &PuzzleSet) -> EditGrid {
         let size = puzzle.initial_board_size();
         let data = CircuitData::new(size.width, size.height);
-        EditGrid::from_circuit_data(puzzle, solved_puzzles, &data)
+        EditGrid::from_circuit_data(puzzle, solved, &data)
     }
 
     pub fn from_circuit_data(
         puzzle: Puzzle,
-        solved_puzzles: &HashSet<Puzzle>,
+        solved: &PuzzleSet,
         data: &CircuitData,
     ) -> EditGrid {
         let origin = Coords::new(0, 0);
         let mut grid = EditGrid {
             puzzle,
-            allowed_chips: puzzle.allowed_chips(solved_puzzles),
+            allowed_chips: puzzle.allowed_chips(solved),
             bounds: CoordsRect::with_size(origin, data.size),
             interfaces: puzzle.interfaces(),
             fragments: HashMap::new(),

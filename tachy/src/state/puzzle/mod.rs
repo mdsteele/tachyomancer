@@ -85,15 +85,15 @@ use super::eval::PuzzleEval;
 use super::interface::Interface;
 use crate::geom::{Coords, Direction};
 use crate::save::{
-    ChipSet, ChipType, Conversation, Puzzle, PuzzleKind, CHIP_CATEGORIES,
+    ChipSet, ChipType, Conversation, Puzzle, PuzzleKind, PuzzleSet,
+    CHIP_CATEGORIES,
 };
-use std::collections::HashSet;
 
 //===========================================================================//
 
 pub trait PuzzleExt {
     fn origin_conversations(&self) -> &'static [Conversation];
-    fn allowed_chips(&self, solved_puzzles: &HashSet<Puzzle>) -> ChipSet;
+    fn allowed_chips(&self, solved: &PuzzleSet) -> ChipSet;
     fn interfaces(&self) -> &'static [Interface];
     fn tutorial_bubbles(
         &self,
@@ -138,11 +138,11 @@ impl PuzzleExt for Puzzle {
         }
     }
 
-    fn allowed_chips(&self, solved_puzzles: &HashSet<Puzzle>) -> ChipSet {
+    fn allowed_chips(&self, solved: &PuzzleSet) -> ChipSet {
         let mut allowed = ChipSet::new();
         for &(_, ctypes) in CHIP_CATEGORIES.iter() {
             for &ctype in ctypes.iter() {
-                if is_chip_allowed_in(ctype, *self, solved_puzzles) {
+                if is_chip_allowed_in(ctype, *self, solved) {
                     allowed.insert(ctype);
                 }
             }
@@ -211,7 +211,7 @@ impl PuzzleExt for Puzzle {
 fn is_chip_allowed_in(
     ctype: ChipType,
     puzzle: Puzzle,
-    solved_puzzles: &HashSet<Puzzle>,
+    solved: &PuzzleSet,
 ) -> bool {
     if !puzzle.allows_events() && ctype.uses_events() {
         return false;
@@ -225,23 +225,25 @@ fn is_chip_allowed_in(
             PuzzleKind::Command | PuzzleKind::Sandbox => true,
         },
         ChipAvailability::OnlyIn(puzzles) => puzzles.contains(&puzzle),
-        // TODO: StartingWith should require other_puzzle to be unlocked (so
-        // that SandboxEvent doesn't immediately have all chip types)
-        ChipAvailability::StartingWith(other) => puzzle >= other,
+        ChipAvailability::StartingWith(other) => {
+            puzzle >= other && solved.is_unlocked(other)
+        }
         ChipAvailability::StartingWithButNotIn(other, puzzles) => {
-            puzzle >= other && !puzzles.contains(&puzzle)
+            puzzle >= other
+                && solved.is_unlocked(other)
+                && !puzzles.contains(&puzzle)
         }
         ChipAvailability::UnlockedBy(other) => {
-            puzzle > other && solved_puzzles.contains(&other)
+            puzzle > other && solved.is_solved(other)
         }
         ChipAvailability::UnlockedByButNotIn(other, puzzles) => {
             puzzle > other
-                && solved_puzzles.contains(&other)
+                && solved.is_solved(other)
                 && !puzzles.contains(&puzzle)
         }
         ChipAvailability::UnlockedByButOnlyIn(other, puzzles) => {
             debug_assert!(puzzles.iter().all(|&p| p > other));
-            solved_puzzles.contains(&other) && puzzles.contains(&puzzle)
+            solved.is_solved(other) && puzzles.contains(&puzzle)
         }
     }
 }

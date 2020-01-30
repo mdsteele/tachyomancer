@@ -37,6 +37,17 @@ use cgmath::Bounded;
 
 //===========================================================================//
 
+const CLOCK_ONLY_PUZZLES: &[Puzzle] = &[
+    Puzzle::TutorialClock,
+    Puzzle::FabricateEggTimer,
+    Puzzle::FabricateStopwatch,
+    Puzzle::AutomateDrillingRig,
+    Puzzle::AutomateIncubator,
+    Puzzle::CommandShields,
+];
+
+//===========================================================================//
+
 pub enum ChipAvailability {
     Always,
     InteractiveOnly,
@@ -44,6 +55,7 @@ pub enum ChipAvailability {
     StartingWith(Puzzle),
     StartingWithButNotIn(Puzzle, &'static [Puzzle]),
     UnlockedBy(Puzzle),
+    UnlockedByButNotIn(Puzzle, &'static [Puzzle]),
     UnlockedByButOnlyIn(Puzzle, &'static [Puzzle]),
 }
 
@@ -129,14 +141,11 @@ impl ChipExt for ChipType {
             }
             ChipType::Ram => ChipAvailability::StartingWithButNotIn(
                 Puzzle::TutorialRam,
-                &[
-                    Puzzle::TutorialClock,
-                    Puzzle::FabricateEggTimer,
-                    Puzzle::FabricateStopwatch,
-                    Puzzle::AutomateDrillingRig,
-                    Puzzle::AutomateIncubator,
-                    Puzzle::CommandShields,
-                ],
+                CLOCK_ONLY_PUZZLES,
+            ),
+            ChipType::Queue => ChipAvailability::UnlockedByButNotIn(
+                Puzzle::FabricateQueue,
+                CLOCK_ONLY_PUZZLES,
             ),
             ChipType::Clock => {
                 ChipAvailability::StartingWith(Puzzle::TutorialClock)
@@ -265,6 +274,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Not => self::logic::NOT_CHIP_DATA,
         ChipType::Or => self::logic::OR_CHIP_DATA,
         ChipType::Pack => self::value::PACK_CHIP_DATA,
+        ChipType::Queue => self::memory::QUEUE_CHIP_DATA,
         ChipType::Ram => self::memory::RAM_CHIP_DATA,
         ChipType::Random => self::value::RANDOM_CHIP_DATA,
         ChipType::Sample => self::value::SAMPLE_CHIP_DATA,
@@ -320,6 +330,7 @@ pub(super) fn new_chip_evals(
         ChipType::Not => self::logic::NotChipEval::new_evals(slots),
         ChipType::Or => self::logic::OrChipEval::new_evals(slots),
         ChipType::Pack => self::value::PackChipEval::new_evals(slots),
+        ChipType::Queue => self::memory::QueueChipEval::new_evals(slots),
         ChipType::Ram => self::memory::RamChipEval::new_evals(slots),
         ChipType::Random => self::value::RandomChipEval::new_evals(slots),
         ChipType::Sample => self::value::SampleChipEval::new_evals(slots),

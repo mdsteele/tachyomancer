@@ -22,6 +22,7 @@ mod drill;
 mod fab_arith;
 mod fab_clock;
 mod fab_event;
+mod fab_memory;
 mod geiger;
 mod grapple;
 mod heliostat;
@@ -53,6 +54,7 @@ pub use self::fab_clock::{
     FABRICATE_EGG_TIMER_DATA, FABRICATE_STOPWATCH_DATA,
 };
 pub use self::fab_event::{FABRICATE_COUNTER_DATA, FABRICATE_INC_DATA};
+pub use self::fab_memory::FABRICATE_QUEUE_DATA;
 pub use self::geiger::GeigerEval;
 pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
@@ -171,6 +173,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::FabricateHalve => self::fab_arith::HALVE_INTERFACES,
             Puzzle::FabricateInc => self::fab_event::INC_INTERFACES,
             Puzzle::FabricateMul => self::fab_arith::MUL_INTERFACES,
+            Puzzle::FabricateQueue => self::fab_memory::QUEUE_INTERFACES,
             Puzzle::FabricateStopwatch => {
                 self::fab_clock::STOPWATCH_INTERFACES
             }
@@ -231,8 +234,14 @@ fn is_chip_allowed_in(
         ChipAvailability::UnlockedBy(other) => {
             puzzle > other && solved_puzzles.contains(&other)
         }
+        ChipAvailability::UnlockedByButNotIn(other, puzzles) => {
+            puzzle > other
+                && solved_puzzles.contains(&other)
+                && !puzzles.contains(&puzzle)
+        }
         ChipAvailability::UnlockedByButOnlyIn(other, puzzles) => {
-            puzzles.contains(&puzzle) && solved_puzzles.contains(&other)
+            debug_assert!(puzzles.iter().all(|&p| p > other));
+            solved_puzzles.contains(&other) && puzzles.contains(&puzzle)
         }
     }
 }
@@ -278,6 +287,9 @@ pub(super) fn new_puzzle_eval(
         }
         Puzzle::FabricateMul => {
             Box::new(FabricationEval::new(FABRICATE_MUL_DATA, slots))
+        }
+        Puzzle::FabricateQueue => {
+            Box::new(FabricationEval::new(FABRICATE_QUEUE_DATA, slots))
         }
         Puzzle::FabricateStopwatch => {
             Box::new(FabricationEval::new(FABRICATE_STOPWATCH_DATA, slots))

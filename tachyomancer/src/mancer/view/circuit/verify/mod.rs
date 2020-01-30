@@ -43,9 +43,10 @@ use tachy::save::Puzzle;
 use tachy::state::{
     CircuitEval, FABRICATE_COUNTER_DATA, FABRICATE_EGG_TIMER_DATA,
     FABRICATE_HALVE_DATA, FABRICATE_INC_DATA, FABRICATE_MUL_DATA,
-    FABRICATE_STOPWATCH_DATA, FABRICATE_XOR_DATA, TUTORIAL_ADD_DATA,
-    TUTORIAL_AMP_DATA, TUTORIAL_CLOCK_DATA, TUTORIAL_DEMUX_DATA,
-    TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA, TUTORIAL_RAM_DATA, TUTORIAL_SUM_DATA,
+    FABRICATE_QUEUE_DATA, FABRICATE_STOPWATCH_DATA, FABRICATE_XOR_DATA,
+    TUTORIAL_ADD_DATA, TUTORIAL_AMP_DATA, TUTORIAL_CLOCK_DATA,
+    TUTORIAL_DEMUX_DATA, TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA,
+    TUTORIAL_RAM_DATA, TUTORIAL_SUM_DATA,
 };
 
 //===========================================================================//
@@ -142,6 +143,9 @@ impl VerificationTray {
             }
             Puzzle::FabricateMul => {
                 FabricationVerifyView::new(right_bottom, FABRICATE_MUL_DATA)
+            }
+            Puzzle::FabricateQueue => {
+                FabricationVerifyView::new(right_bottom, FABRICATE_QUEUE_DATA)
             }
             Puzzle::FabricateStopwatch => FabricationVerifyView::new(
                 right_bottom,

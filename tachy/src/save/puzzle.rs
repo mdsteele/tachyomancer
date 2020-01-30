@@ -67,6 +67,7 @@ impl ScoreUnits {
     Serialize,
 )]
 pub enum Puzzle {
+    // Odyssey:
     TutorialOr,
     FabricateXor,
     TutorialMux,
@@ -78,6 +79,7 @@ pub enum Puzzle {
     AutomateReactor,
     AutomateSensors,
     CommandLander,
+    // Planetfall:
     TutorialDemux,
     TutorialAmp,
     TutorialSum,
@@ -87,15 +89,19 @@ pub enum Puzzle {
     AutomateBeacon,
     AutomateRobotArm,
     CommandTurret,
+    // Calliope:
     TutorialRam,
+    FabricateQueue,
     AutomateTranslator,
     AutomateStorageDepot,
+    // Orpheus:
     TutorialClock,
     FabricateEggTimer,
     FabricateStopwatch,
     AutomateDrillingRig,
     AutomateIncubator,
     CommandShields,
+    // Lorelei:
     AutomateGeigerCounter,
     AutomateXUnit,
     SandboxBehavior,
@@ -404,7 +410,9 @@ impl Puzzle {
                 graph_bounds: (150, 150),
                 description:
                     "Build a memory chip that can increment or decrement its \
-                     value in response to events.",
+                     value in response to events.\n\n\
+                     Once this task is completed, you will be able to use \
+                     $*Counter$* chips in future tasks.",
                 instructions: "TODO",
             },
             Puzzle::FabricateEggTimer => &PuzzleData {
@@ -416,7 +424,9 @@ impl Puzzle {
                 graph_bounds: (150, 200),
                 description:
                     "Build a timing chip that counts down from a given time \
-                     and then fires an event at zero.",
+                     and then fires an event at zero.\n\n\
+                     Once this task is completed, you will be able to use \
+                     $*Egg Timer$* chips in future tasks.",
                 instructions: "TODO",
             },
             Puzzle::FabricateHalve => &PuzzleData {
@@ -471,6 +481,20 @@ impl Puzzle {
                      * $!The output should be the product of $*In1$* and \
                      $*In2$*.  This product will never be more than 255.",
             },
+            Puzzle::FabricateQueue => &PuzzleData {
+                title: "Queue Memory",
+                kind: PuzzleKind::Fabricate,
+                allow_events: true,
+                init_size: (8, 6),
+                score_units: ScoreUnits::WireLength,
+                graph_bounds: (500, 500),
+                description:
+                    "Construct a first-in, first-out queue memory module \
+                     that also supports random access.\n\n\
+                     Once this task is completed, you will be able to use \
+                     $*Queue$* chips in future tasks.",
+                instructions: "TODO",
+            },
             Puzzle::FabricateStopwatch => &PuzzleData {
                 title: "Stopwatch",
                 kind: PuzzleKind::Fabricate,
@@ -480,7 +504,9 @@ impl Puzzle {
                 graph_bounds: (150, 200),
                 description:
                     "Build a timing chip that counts upwards from zero, and \
-                     that can be paused or reset.",
+                     that can be paused or reset.\n\n\
+                     Once this task is completed, you will be able to use \
+                     $*Stopwatch$* chips in future tasks.",
                 instructions: "TODO",
             },
             Puzzle::FabricateXor => &PuzzleData {
@@ -640,7 +666,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (6, 5),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (150, 200),
+                graph_bounds: (400, 400),
                 description:
                     "Construct a simple last-in, first-out stack memory \
                      module.",

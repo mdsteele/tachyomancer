@@ -110,6 +110,11 @@ fn fabricate_inc() {
 }
 
 #[test]
+fn fabricate_queue() {
+    test_solution("fabricate_queue");
+}
+
+#[test]
 fn fabricate_mul() {
     test_solution("fabricate_mul");
 }

@@ -60,6 +60,7 @@ pub enum ChipType {
     Not,
     Or,
     Pack,
+    Queue,
     Ram,
     Random,
     Sample,
@@ -109,6 +110,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Latest,
         ChipType::Counter,
         ChipType::Ram,
+        ChipType::Queue,
         ChipType::Screen,
     ]),
     ("Timing", &[
@@ -134,7 +136,7 @@ impl ChipType {
             | ChipType::Display
             | ChipType::EggTimer
             | ChipType::Stopwatch => CoordsSize::new(2, 1),
-            ChipType::Ram => CoordsSize::new(2, 2),
+            ChipType::Ram | ChipType::Queue => CoordsSize::new(2, 2),
             ChipType::Screen => CoordsSize::new(5, 5),
             _ => CoordsSize::new(1, 1),
         }
@@ -340,6 +342,7 @@ impl str::FromStr for ChipType {
             "Not" => Ok(ChipType::Not),
             "Or" => Ok(ChipType::Or),
             "Pack" => Ok(ChipType::Pack),
+            "Queue" => Ok(ChipType::Queue),
             "Ram" => Ok(ChipType::Ram),
             "Random" => Ok(ChipType::Random),
             "Sample" => Ok(ChipType::Sample),

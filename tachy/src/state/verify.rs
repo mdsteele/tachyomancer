@@ -74,7 +74,7 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
                 }
                 EvalResult::Victory(score) if time_step < data.time_steps => {
                     errors.push(format!(
-                        "Unexpected victory at time step {}: {:?}",
+                        "Unexpected victory at time step {} with score of {}",
                         time_step, score
                     ));
                     break;

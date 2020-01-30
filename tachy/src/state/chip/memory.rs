@@ -22,6 +22,7 @@ use super::data::{AbstractConstraint, ChipData};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
 use crate::state::{PortColor, PortFlow};
+use std::collections::VecDeque;
 
 //===========================================================================//
 
@@ -113,6 +114,67 @@ impl ChipEval for LatestChipEval {
         if let Some(value) = state.recv_event(self.input) {
             state.send_behavior(self.output, value);
         }
+    }
+}
+
+//===========================================================================//
+
+pub const QUEUE_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Send, PortColor::Behavior, (0, 1), Direction::West),
+        (PortFlow::Recv, PortColor::Event, (1, 1), Direction::East),
+        (PortFlow::Send, PortColor::Event, (1, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(1, WireSize::Eight),
+        AbstractConstraint::Exact(2, WireSize::Zero),
+        AbstractConstraint::AtLeast(0, WireSize::One),
+        AbstractConstraint::AtLeast(3, WireSize::One),
+        AbstractConstraint::Equal(0, 3),
+    ],
+    dependencies: &[(0, 1), (0, 3), (2, 1), (2, 3)],
+};
+
+pub struct QueueChipEval {
+    push: usize,
+    count: usize,
+    pop: usize,
+    out: usize,
+    queue: VecDeque<u32>,
+}
+
+impl QueueChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), QUEUE_CHIP_DATA.ports.len());
+        let chip_eval = QueueChipEval {
+            push: slots[0].0,
+            count: slots[1].0,
+            pop: slots[2].0,
+            out: slots[3].0,
+            queue: VecDeque::new(),
+        };
+        vec![(3, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for QueueChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let pop = state.has_event(self.pop);
+        if let Some(value) = state.recv_event(self.push) {
+            if pop || self.queue.len() < 256 {
+                self.queue.push_back(value);
+            }
+        }
+        if pop {
+            if let Some(value) = self.queue.pop_front() {
+                state.send_event(self.out, value);
+            }
+        }
+        debug_assert!(self.queue.len() <= (WireSize::Eight.mask() as usize));
+        state.send_behavior(self.count, self.queue.len() as u32);
     }
 }
 

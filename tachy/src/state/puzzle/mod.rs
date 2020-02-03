@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 mod beacon;
+mod collector;
 mod drill;
 mod fab_arith;
 mod fab_clock;
@@ -46,6 +47,7 @@ mod tutor_ram;
 mod xunit;
 
 pub use self::beacon::BeaconEval;
+pub use self::collector::CollectorEval;
 pub use self::drill::DrillingRigEval;
 pub use self::fab_arith::{
     FABRICATE_HALVE_DATA, FABRICATE_MUL_DATA, FABRICATE_XOR_DATA,
@@ -153,6 +155,7 @@ impl PuzzleExt for Puzzle {
     fn interfaces(&self) -> &'static [Interface] {
         match self {
             Puzzle::AutomateBeacon => self::beacon::INTERFACES,
+            Puzzle::AutomateCollector => self::collector::INTERFACES,
             Puzzle::AutomateDrillingRig => self::drill::INTERFACES,
             Puzzle::AutomateGeigerCounter => self::geiger::INTERFACES,
             Puzzle::AutomateGrapple => self::grapple::INTERFACES,
@@ -257,6 +260,7 @@ pub(super) fn new_puzzle_eval(
 ) -> Box<dyn PuzzleEval> {
     match puzzle {
         Puzzle::AutomateBeacon => Box::new(BeaconEval::new(slots)),
+        Puzzle::AutomateCollector => Box::new(CollectorEval::new(slots)),
         Puzzle::AutomateDrillingRig => Box::new(DrillingRigEval::new(slots)),
         Puzzle::AutomateGeigerCounter => Box::new(GeigerEval::new(slots)),
         Puzzle::AutomateGrapple => Box::new(GrappleEval::new(slots)),

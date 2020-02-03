@@ -92,6 +92,7 @@ pub enum Puzzle {
     // Calliope:
     TutorialRam,
     FabricateQueue,
+    AutomateCollector,
     AutomateTranslator,
     AutomateStorageDepot,
     // Orpheus:
@@ -104,6 +105,7 @@ pub enum Puzzle {
     // Lorelei:
     AutomateGeigerCounter,
     AutomateXUnit,
+    // Sandboxes:
     SandboxBehavior,
     SandboxEvent,
 }
@@ -173,6 +175,16 @@ impl Puzzle {
                      on the right side of the board.\n\
                      * $!The closer the current position is to optimal, TODO.",
             },
+            Puzzle::AutomateCollector => &PuzzleData {
+                title: "Collector",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (8, 6),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 500),
+                description: "TODO",
+                instructions: "TODO",
+            },
             Puzzle::AutomateDrillingRig => &PuzzleData {
                 title: "Drilling Rig",
                 kind: PuzzleKind::Automate,
@@ -239,7 +251,7 @@ impl Puzzle {
                 graph_bounds: (500, 500),
                 description:
                     "Incubate the eggs of flora native to this planet in \
-                     order to render them edible for Icthyans.",
+                     order to render them edible for Ichthyans.",
                 instructions:
                     "* $!The incubator holds up to two eggs at once.  You \
                      must incubate 10 eggs (5 on each side).\n\
@@ -339,7 +351,7 @@ impl Puzzle {
                 init_size: (8, 5),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
-                description: "Translate a passage of Icthyan text using a \
+                description: "Translate a passage of Ichthyan text using a \
                               word-for-word dictionary database.",
                 instructions: "TODO",
             },

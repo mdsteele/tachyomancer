@@ -29,7 +29,7 @@ const TOOLTIP_FONT_SIZE: f32 = 20.0;
 const TOOLTIP_HOVER_TIME: f64 = 0.5;
 const TOOLTIP_LINE_HEIGHT: f32 = 22.0;
 const TOOLTIP_INNER_MARGIN: f32 = 10.0;
-const TOOLTIP_MAX_WIDTH: f32 = 380.0;
+const TOOLTIP_MAX_WIDTH: f32 = 400.0;
 const TOOLTIP_OUTER_MARGIN: f32 = 14.0;
 
 //===========================================================================//

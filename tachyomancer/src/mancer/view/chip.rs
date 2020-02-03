@@ -175,6 +175,12 @@ impl ChipModel {
                     &format!("{:05}", value),
                 );
             }
+            ChipType::DocBv(_, _) => {
+                draw_comment_chip(resources, grid_matrix, coords, orient);
+            }
+            ChipType::DocEv(_, _) => {
+                draw_comment_chip(resources, grid_matrix, coords, orient);
+            }
             ChipType::Screen => {
                 draw_basic_chip(
                     resources,
@@ -221,12 +227,19 @@ impl ChipModel {
             }
         }
 
-        for port in ctype.ports(coords, orient) {
-            draw_port(resources, grid_matrix, &port);
+        match ctype {
+            ChipType::DocBv(_, _) | ChipType::DocEv(_, _) => {}
+            _ => {
+                for port in ctype.ports(coords, orient) {
+                    draw_port(resources, grid_matrix, &port);
+                }
+            }
         }
 
         match ctype {
-            ChipType::Comment(bytes) => {
+            ChipType::Comment(bytes)
+            | ChipType::DocBv(_, bytes)
+            | ChipType::DocEv(_, bytes) => {
                 let string: String =
                     bytes.iter().map(|&b| char::from(b)).collect();
                 draw_chip_string(

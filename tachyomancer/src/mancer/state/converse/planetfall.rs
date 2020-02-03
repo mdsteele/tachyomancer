@@ -134,22 +134,26 @@ pub(super) fn advanced_circuits(
         Until now, you have been unable to put $Rloops$D in your circuits; \
         for example, you cannot use the output of an adder chip as one of \
         its inputs, because the result would not be well-defined:\n\
-        $=$#size = [3, 2]\n\
+        $=$#size = [5, 2]\n\
         [chips]\n\
-        p1p0 = 'f0-Add'\n\
+        p0p0 = 'f0-Const(5)'\n\
+        p2p0 = 'f0-Add'\n\
+        p4p0 = \"f0-DocBv(4, '???')\"\n\
         [wires]\n\
-        m1p0e = 'Stub'\n\
-        p0p0e = 'Straight'\n\
-        p0p0w = 'Straight'\n\
-        p1p0e = 'Stub'\n\
-        p1p0s = 'Stub'\n\
-        p1p0w = 'Stub'\n\
-        p1p1e = 'TurnRight'\n\
-        p1p1n = 'TurnLeft'\n\
-        p2p0s = 'TurnLeft'\n\
-        p2p0w = 'TurnRight'\n\
-        p2p1n = 'TurnRight'\n\
-        p2p1w = 'TurnLeft'\n\
+        p0p0e = 'Stub'\n\
+        p1p0e = 'Straight'\n\
+        p1p0w = 'Straight'\n\
+        p2p0e = 'Stub'\n\
+        p2p0s = 'Stub'\n\
+        p2p0w = 'Stub'\n\
+        p2p1e = 'TurnRight'\n\
+        p2p1n = 'TurnLeft'\n\
+        p3p0e = 'SplitLeft'\n\
+        p3p0s = 'SplitTee'\n\
+        p3p0w = 'SplitRight'\n\
+        p3p1n = 'TurnRight'\n\
+        p3p1w = 'TurnLeft'\n\
+        p4p0w = 'Stub'\n\
         #");
     builder.esra("\
         However, in event-based circuits, time steps can be divided into \

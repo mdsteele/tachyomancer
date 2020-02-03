@@ -48,6 +48,8 @@ pub enum ChipType {
     Demux,
     Discard,
     Display,
+    DocBv(WireSize, [u8; MAX_COMMENT_CHARS]),
+    DocEv(WireSize, [u8; MAX_COMMENT_CHARS]),
     EggTimer,
     Eq,
     Halve,
@@ -164,6 +166,7 @@ impl ChipType {
                  for the wire size, the value will wrap around (for example, \
                  5 + 12 on a 4-bit wire will result in 1 instead of 17)."
             }
+            ChipType::Add2Bit => "TODO",
             ChipType::And => {
                 "For each bit in the wire, the output is 1 if both inputs \
                  are 1, or 0 if either input is 0."
@@ -174,9 +177,11 @@ impl ChipType {
                  through.\n\
                  $'Right-click' to toggle whether the breakpoint is enabled."
             }
+            ChipType::Button(_) => "TODO",
             ChipType::Clock => {
                 "Sends an event at the beginning of a time step if it \
-                 received at least one event during the previous time step."
+                 received at least one event during the previous time step.  \
+                 Allows for loops within circuits."
             }
             ChipType::Cmp => {
                 "Outputs 1 if the one input is strictly less than the other; \
@@ -200,23 +205,69 @@ impl ChipType {
                 "Outputs a constant value.\n\
                  $'Right-click' on the chip to change the output value."
             }
+            ChipType::Counter => "TODO",
             ChipType::Delay => {
                 "Delays events by one cycle.  Allows for loops within \
                  circuits."
             }
             ChipType::Demux => {
-                "When the behavior wire is 0, incoming events are sent \
-                 through the antipodal port.  When the behavior wire is 1, \
-                 incoming events are sent through the lateral port instead."
+                "When $*Ctrl$* is 0, incoming events are sent to $*Out0$*.  \
+                 When $*Ctrl$* is 1, incoming events are sent to $*Out1$* \
+                 instead.\n\
+                 $=$#size = [5, 3]\n\
+                 [chips]\n\
+                 p0p1 = \"f0-DocEv(0, 'In')\"\n\
+                 p2p0 = \"f1-DocBv(1, 'Ctrl')\"\n\
+                 p2p1 = 'f0-Demux'\n\
+                 p4p1 = \"f0-DocEv(0, 'Out0')\"\n\
+                 p4p2 = \"f0-DocEv(0, 'Out1')\"\n\
+                 [wires]\n\
+                 p0p1e = 'Stub'\n\
+                 p1p1e = 'Straight'\n\
+                 p1p1w = 'Straight'\n\
+                 p2p0s = 'Stub'\n\
+                 p2p1e = 'Stub'\n\
+                 p2p1n = 'Stub'\n\
+                 p2p1s = 'Stub'\n\
+                 p2p1w = 'Stub'\n\
+                 p2p2e = 'TurnRight'\n\
+                 p2p2n = 'TurnLeft'\n\
+                 p3p1e = 'Straight'\n\
+                 p3p1w = 'Straight'\n\
+                 p3p2e = 'Straight'\n\
+                 p3p2w = 'Straight'\n\
+                 p4p1w = 'Stub'\n\
+                 p4p2w = 'Stub'\n\
+                 #"
             }
             ChipType::Discard => {
                 "Transforms value-carrying events into 0-bit events by \
-                 discarding the value."
+                 discarding the value.\n\
+                 $=$#size = [5, 1]\n\
+                 [chips]\n\
+                 p0p0 = \"f0-DocEv(4, 'In')\"\n\
+                 p2p0 = 'f0-Discard'\n\
+                 p4p0 = \"f0-DocEv(0, 'Out')\"\n\
+                 [wires]\n\
+                 p0p0e = 'Stub'\n\
+                 p1p0e = 'Straight'\n\
+                 p1p0w = 'Straight'\n\
+                 p2p0e = 'Stub'\n\
+                 p2p0w = 'Stub'\n\
+                 p3p0e = 'Straight'\n\
+                 p3p0w = 'Straight'\n\
+                 p4p0w = 'Stub'\n\
+                 #"
             }
+            ChipType::Display => "TODO",
+            ChipType::DocBv(_, _) => "",
+            ChipType::DocEv(_, _) => "",
+            ChipType::EggTimer => "TODO",
             ChipType::Eq => {
                 "Outputs 1 if the two inputs are equal; outputs 0 otherwise."
             }
             ChipType::Halve => "Outputs half the input, rounded down.",
+            ChipType::Inc => "TODO",
             ChipType::Join => {
                 "Merges two event streams into one; when an event arrives at \
                  either input port, it is sent to the output port.  If an \
@@ -226,7 +277,22 @@ impl ChipType {
             }
             ChipType::Latest => {
                 "Outputs the value of the most recent event to arrive (or \
-                 zero if no events have arrived yet)."
+                 zero if no events have arrived yet).\n\
+                 $=$#size = [5, 1]\n\
+                 [chips]\n\
+                 p0p0 = \"f0-DocEv(4, 'In')\"\n\
+                 p2p0 = 'f0-Latest'\n\
+                 p4p0 = \"f0-DocBv(4, 'Out')\"\n\
+                 [wires]\n\
+                 p0p0e = 'Stub'\n\
+                 p1p0e = 'Straight'\n\
+                 p1p0w = 'Straight'\n\
+                 p2p0e = 'Stub'\n\
+                 p2p0w = 'Stub'\n\
+                 p3p0e = 'Straight'\n\
+                 p3p0w = 'Straight'\n\
+                 p4p0w = 'Stub'\n\
+                 #"
             }
             ChipType::Mul => {
                 "Outputs the product of the two inputs.  If the product is \
@@ -234,9 +300,54 @@ impl ChipType {
                  example, 3 \u{d7} 6 on a 4-bit wire will result in 2 instead \
                  of 18)."
             }
+            ChipType::Mul4Bit => "TODO",
+            ChipType::Mux => {
+                "When $*Ctrl$* is 0, outputs the value of $*In0$*.  When \
+                 $*Ctrl$* is 1, outputs the value of $*In1$* instead.\n\
+                 $=$#size = [5, 3]\n\
+                 [chips]\n\
+                 p0p1 = \"f0-DocBv(1, 'In0')\"\n\
+                 p0p2 = \"f0-DocBv(1, 'In1')\"\n\
+                 p2p0 = \"f1-DocBv(1, 'Ctrl')\"\n\
+                 p2p1 = 'f0-Mux'\n\
+                 p4p1 = \"f0-DocBv(1, 'Out')\"\n\
+                 [wires]\n\
+                 p0p1e = 'Stub'\n\
+                 p0p2e = 'Stub'\n\
+                 p1p1e = 'Straight'\n\
+                 p1p1w = 'Straight'\n\
+                 p1p2e = 'Straight'\n\
+                 p1p2w = 'Straight'\n\
+                 p2p0s = 'Stub'\n\
+                 p2p1e = 'Stub'\n\
+                 p2p1n = 'Stub'\n\
+                 p2p1s = 'Stub'\n\
+                 p2p1w = 'Stub'\n\
+                 p2p2n = 'TurnRight'\n\
+                 p2p2w = 'TurnLeft'\n\
+                 p3p1e = 'Straight'\n\
+                 p3p1w = 'Straight'\n\
+                 p4p1w = 'Stub'\n\
+                 #"
+            }
             ChipType::Not => {
                 "Inverts bits.  Each 0 bit in the input becomes a 1 bit in \
-                 the output, and vice-versa."
+                 the output, and vice-versa.\n\
+                 $=$#size = [5, 1]\n\
+                 [chips]\n\
+                 p0p0 = \"f0-DocBv(1, 'In')\"\n\
+                 p2p0 = 'f0-Not'\n\
+                 p4p0 = \"f0-DocBv(1, 'Out')\"\n\
+                 [wires]\n\
+                 p0p0e = 'Stub'\n\
+                 p1p0e = 'Straight'\n\
+                 p1p0w = 'Straight'\n\
+                 p2p0e = 'Stub'\n\
+                 p2p0w = 'Stub'\n\
+                 p3p0e = 'Straight'\n\
+                 p3p0w = 'Straight'\n\
+                 p4p0w = 'Stub'\n\
+                 #"
             }
             ChipType::Or => {
                 "For each bit in the wire, the output is 1 if either input \
@@ -246,6 +357,40 @@ impl ChipType {
                 "Joins two input wires into a single output wire with twice \
                  as many bits.  The antipodal input becomes the low bits of \
                  the output, and the lateral input becomes the high bits."
+            }
+            ChipType::Queue => "TODO",
+            ChipType::Ram => {
+                "Stores an array of values (initially all zero).  Each \
+                 $*Val$* port gives the current value of the cell specified \
+                 by the corresponding $*Addr$* port.  When a $*Set$* event \
+                 arrives, sets the value of that cell.\n\
+                 $=$#size = [4, 4]\n\
+                 [chips]\n\
+                 p0p0 = \"f0-DocEv(4, 'Set1')\"\n\
+                 p0p1 = \"f0-DocBv(8, 'Addr1')\"\n\
+                 p0p2 = \"f2-DocBv(4, 'Val1')\"\n\
+                 p1p1 = 'f0-Ram'\n\
+                 p3p1 = \"f0-DocBv(4, 'Val2')\"\n\
+                 p3p2 = \"f2-DocBv(8, 'Addr2')\"\n\
+                 p3p3 = \"f2-DocEv(4, 'Set2')\"\n\
+                 [wires]\n\
+                 p0p0e = 'Stub'\n\
+                 p0p1e = 'Stub'\n\
+                 p0p2e = 'Stub'\n\
+                 p1p0s = 'TurnLeft'\n\
+                 p1p0w = 'TurnRight'\n\
+                 p1p1n = 'Stub'\n\
+                 p1p1w = 'Stub'\n\
+                 p1p2w = 'Stub'\n\
+                 p2p1e = 'Stub'\n\
+                 p2p2e = 'Stub'\n\
+                 p2p2s = 'Stub'\n\
+                 p2p3e = 'TurnRight'\n\
+                 p2p3n = 'TurnLeft'\n\
+                 p3p1w = 'Stub'\n\
+                 p3p2w = 'Stub'\n\
+                 p3p3w = 'Stub'\n\
+                 #"
             }
             ChipType::Random => {
                 "When an event arrives, generates a random output value, \
@@ -257,6 +402,8 @@ impl ChipType {
                  sampling the value of the behavior wire when an event \
                  arrives."
             }
+            ChipType::Screen => "TODO",
+            ChipType::Stopwatch => "TODO",
             ChipType::Sub => {
                 "Outputs the difference between the two inputs.  The result \
                  is always positive (for example, if the inputs are 3 and 5, \
@@ -276,7 +423,6 @@ impl ChipType {
                 "For each bit in the wire, the output is 1 if exactly one \
                  input is 1, or 0 if the inputs are both 0 or both 1."
             }
-            _ => "TODO",
         };
         format!("$*{}$*\n{}", name, description)
     }
@@ -294,6 +440,16 @@ impl fmt::Display for ChipType {
             }
             ChipType::Comment(bytes) => formatter
                 .pad(&format!("Comment('{}')", escape(bytes).trim_end())),
+            ChipType::DocBv(size, bytes) => formatter.pad(&format!(
+                "DocBv({}, '{}')",
+                size.num_bits(),
+                escape(bytes).trim_end()
+            )),
+            ChipType::DocEv(size, bytes) => formatter.pad(&format!(
+                "DocEv({}, '{}')",
+                size.num_bits(),
+                escape(bytes).trim_end()
+            )),
             _ => fmt::Debug::fmt(self, formatter),
         }
     }
@@ -315,16 +471,6 @@ impl str::FromStr for ChipType {
             "Clock" => Ok(ChipType::Clock),
             "Cmp" => Ok(ChipType::Cmp),
             "CmpEq" => Ok(ChipType::CmpEq),
-            "Coerce(1)" => Ok(ChipType::Coerce(WireSize::One)),
-            "Coerce(2)" => Ok(ChipType::Coerce(WireSize::Two)),
-            "Coerce(4)" => Ok(ChipType::Coerce(WireSize::Four)),
-            "Coerce(8)" => Ok(ChipType::Coerce(WireSize::Eight)),
-            "Coerce(16)" => Ok(ChipType::Coerce(WireSize::Sixteen)),
-            "Coerce(One)" => Ok(ChipType::Coerce(WireSize::One)),
-            "Coerce(Two)" => Ok(ChipType::Coerce(WireSize::Two)),
-            "Coerce(Four)" => Ok(ChipType::Coerce(WireSize::Four)),
-            "Coerce(Eight)" => Ok(ChipType::Coerce(WireSize::Eight)),
-            "Coerce(Sixteen)" => Ok(ChipType::Coerce(WireSize::Sixteen)),
             "Counter" => Ok(ChipType::Counter),
             "Delay" => Ok(ChipType::Delay),
             "Demux" => Ok(ChipType::Demux),
@@ -362,26 +508,31 @@ impl str::FromStr for ChipType {
                     if let Ok(code) = inner.parse() {
                         return Ok(ChipType::Button(Some(code)));
                     }
+                } else if let Some(inner) = within(string, "Coerce(", ")") {
+                    if let Ok(size) = inner.parse() {
+                        if size != WireSize::Zero {
+                            return Ok(ChipType::Coerce(size));
+                        }
+                    }
                 } else if let Some(inner) = within(string, "Const(", ")") {
                     if let Ok(value) = inner.parse() {
                         return Ok(ChipType::Const(value));
                     }
-                } else if let Some(inner) = within(string, "Comment('", "')") {
-                    if let Some(bytes) = unescape(inner) {
+                } else if let Some(inner) = within(string, "Comment(", ")") {
+                    if let Some(bytes) = parse_comment_bytes(inner) {
                         return Ok(ChipType::Comment(bytes));
                     }
-                } else if let Some(inner) = within(string, "Comment([", "])") {
-                    let parts: Vec<&str> = inner.split(", ").collect();
-                    if parts.len() <= MAX_COMMENT_CHARS {
-                        let mut bytes = [b' '; MAX_COMMENT_CHARS];
-                        for (index, part) in parts.into_iter().enumerate() {
-                            if let Ok(byte) = part.parse() {
-                                bytes[index] = byte;
-                            } else {
-                                return Err(string.to_string());
-                            }
+                } else if let Some(inner) = within(string, "DocBv(", ")") {
+                    if let Some((size, bytes)) = parse_size_and_comment(inner)
+                    {
+                        if size != WireSize::Zero {
+                            return Ok(ChipType::DocBv(size, bytes));
                         }
-                        return Ok(ChipType::Comment(bytes));
+                    }
+                } else if let Some(inner) = within(string, "DocEv(", ")") {
+                    if let Some((size, bytes)) = parse_size_and_comment(inner)
+                    {
+                        return Ok(ChipType::DocEv(size, bytes));
                     }
                 }
                 return Err(string.to_string());
@@ -442,6 +593,46 @@ fn unescape(string: &str) -> Option<[u8; MAX_COMMENT_CHARS]> {
         index += 1;
     }
     return Some(bytes);
+}
+
+fn parse_list(string: &str) -> Option<[u8; MAX_COMMENT_CHARS]> {
+    let parts: Vec<&str> = string.split(", ").collect();
+    if parts.len() <= MAX_COMMENT_CHARS {
+        let mut bytes = [b' '; MAX_COMMENT_CHARS];
+        for (index, part) in parts.into_iter().enumerate() {
+            if let Ok(byte) = part.parse() {
+                bytes[index] = byte;
+            } else {
+                return None;
+            }
+        }
+        return Some(bytes);
+    }
+    return None;
+}
+
+fn parse_comment_bytes(string: &str) -> Option<[u8; MAX_COMMENT_CHARS]> {
+    if let Some(inner) = within(string, "'", "'") {
+        unescape(inner)
+    } else if let Some(inner) = within(string, "[", "]") {
+        parse_list(inner)
+    } else {
+        None
+    }
+}
+
+fn parse_size_and_comment(
+    string: &str,
+) -> Option<(WireSize, [u8; MAX_COMMENT_CHARS])> {
+    let parts: Vec<&str> = string.splitn(2, ", ").collect();
+    if parts.len() == 2 {
+        if let Ok(wire_size) = parts[0].parse() {
+            if let Some(bytes) = parse_comment_bytes(parts[1]) {
+                return Some((wire_size, bytes));
+            }
+        }
+    }
+    return None;
 }
 
 fn within<'a>(string: &'a str, prefix: &str, suffix: &str) -> Option<&'a str> {
@@ -522,6 +713,11 @@ mod tests {
     use std::u16;
 
     #[test]
+    fn chip_type_is_small() {
+        assert!(std::mem::size_of::<ChipType>() <= std::mem::size_of::<u64>());
+    }
+
+    #[test]
     fn chip_type_to_and_from_string() {
         let mut chip_types = vec![
             ChipType::Break(false),
@@ -536,6 +732,17 @@ mod tests {
             ChipType::Const(0),
             ChipType::Const(13),
             ChipType::Const(u16::MAX),
+            ChipType::DocBv(WireSize::One, *b"Blarg"),
+            ChipType::DocBv(WireSize::Two, *b" \x1b\"~ "),
+            ChipType::DocBv(WireSize::Four, *b"Foo  "),
+            ChipType::DocBv(WireSize::Eight, *b" Bar "),
+            ChipType::DocBv(WireSize::Sixteen, *b"  Baz"),
+            ChipType::DocEv(WireSize::Zero, *b"'\"):@"),
+            ChipType::DocEv(WireSize::One, *b"Blarg"),
+            ChipType::DocEv(WireSize::Two, *b" \x1b\"~ "),
+            ChipType::DocEv(WireSize::Four, *b"Foo  "),
+            ChipType::DocEv(WireSize::Eight, *b" Bar "),
+            ChipType::DocEv(WireSize::Sixteen, *b"  Baz"),
             ChipType::Toggle(true),
         ];
         for &(_, ctypes) in CHIP_CATEGORIES.iter() {

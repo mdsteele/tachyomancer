@@ -218,6 +218,7 @@ fn is_chip_allowed_in(
     }
     match ctype.availibility() {
         ChipAvailability::Always => true,
+        ChipAvailability::DiagramOnly => false,
         ChipAvailability::InteractiveOnly => match puzzle.kind() {
             PuzzleKind::Tutorial
             | PuzzleKind::Fabricate

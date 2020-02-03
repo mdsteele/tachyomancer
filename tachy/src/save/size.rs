@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use cgmath::Bounded;
+use std::str;
 
 //===========================================================================//
 
@@ -99,6 +100,28 @@ impl Bounded for WireSize {
     }
     fn max_value() -> WireSize {
         WireSize::Sixteen
+    }
+}
+
+impl str::FromStr for WireSize {
+    type Err = ();
+
+    fn from_str(string: &str) -> Result<WireSize, ()> {
+        match string {
+            "0" => Ok(WireSize::Zero),
+            "1" => Ok(WireSize::One),
+            "2" => Ok(WireSize::Two),
+            "4" => Ok(WireSize::Four),
+            "8" => Ok(WireSize::Eight),
+            "16" => Ok(WireSize::Sixteen),
+            "Zero" => Ok(WireSize::Zero),
+            "One" => Ok(WireSize::One),
+            "Two" => Ok(WireSize::Two),
+            "Four" => Ok(WireSize::Four),
+            "Eight" => Ok(WireSize::Eight),
+            "Sixteen" => Ok(WireSize::Sixteen),
+            _ => Err(()),
+        }
     }
 }
 

@@ -21,6 +21,7 @@ mod arith;
 mod compare;
 mod data;
 mod debug;
+mod doc;
 mod logic;
 mod memory;
 mod timing;
@@ -50,6 +51,7 @@ const CLOCK_ONLY_PUZZLES: &[Puzzle] = &[
 
 pub enum ChipAvailability {
     Always,
+    DiagramOnly,
     InteractiveOnly,
     OnlyIn(&'static [Puzzle]),
     StartingWith(Puzzle),
@@ -98,6 +100,9 @@ impl ChipExt for ChipType {
             | ChipType::Const(_)
             | ChipType::Display
             | ChipType::Not => ChipAvailability::Always,
+            ChipType::DocBv(_, _) | ChipType::DocEv(_, _) => {
+                ChipAvailability::DiagramOnly
+            }
             ChipType::Or => ChipAvailability::UnlockedBy(Puzzle::TutorialOr),
             ChipType::Xor => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateXor)
@@ -262,6 +267,8 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Demux => self::logic::DEMUX_CHIP_DATA,
         ChipType::Discard => self::value::DISCARD_CHIP_DATA,
         ChipType::Display => self::debug::DISPLAY_CHIP_DATA,
+        ChipType::DocBv(size, _) => self::doc::doc_bv_chip_data(size),
+        ChipType::DocEv(size, _) => self::doc::doc_ev_chip_data(size),
         ChipType::EggTimer => self::timing::EGG_TIMER_CHIP_DATA,
         ChipType::Eq => self::compare::EQ_CHIP_DATA,
         ChipType::Halve => self::arith::HALVE_CHIP_DATA,
@@ -318,6 +325,8 @@ pub(super) fn new_chip_evals(
         ChipType::Demux => self::logic::DemuxChipEval::new_evals(slots),
         ChipType::Discard => self::value::DiscardChipEval::new_evals(slots),
         ChipType::Display => vec![],
+        ChipType::DocBv(_, _) => vec![],
+        ChipType::DocEv(_, _) => vec![],
         ChipType::EggTimer => self::timing::EggTimerChipEval::new_evals(slots),
         ChipType::Eq => self::compare::EqChipEval::new_evals(slots),
         ChipType::Halve => self::arith::HalveChipEval::new_evals(slots),

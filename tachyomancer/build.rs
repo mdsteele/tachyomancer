@@ -26,7 +26,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-use heck::{ShoutySnakeCase, TitleCase};
+use heck::{CamelCase, ShoutySnakeCase};
 use png::HasParameters;
 use std::env;
 use std::fs::{self, File};
@@ -250,7 +250,7 @@ impl Converter {
         let mut icon_names: Vec<String> = png_paths
             .iter()
             .map(|path| {
-                path.file_stem().unwrap().to_str().unwrap().to_title_case()
+                path.file_stem().unwrap().to_str().unwrap().to_camel_case()
             })
             .collect();
         icon_names.sort();
@@ -292,7 +292,7 @@ impl Converter {
         let mut icon_names: Vec<String> = png_paths
             .iter()
             .map(|path| {
-                path.file_stem().unwrap().to_str().unwrap().to_title_case()
+                path.file_stem().unwrap().to_str().unwrap().to_camel_case()
             })
             .collect();
         icon_names.sort();

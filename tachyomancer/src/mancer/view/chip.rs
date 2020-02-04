@@ -126,8 +126,16 @@ impl ChipModel {
                 }
                 draw_break_chip(resources, grid_matrix, coords, enabled);
             }
-            ChipType::Comment(_) => {
-                draw_comment_chip(resources, grid_matrix, coords, orient);
+            ChipType::Comment(_)
+            | ChipType::DocBv(_, _)
+            | ChipType::DocEv(_, _) => {
+                draw_comment_chip(
+                    resources,
+                    grid_matrix,
+                    coords,
+                    orient,
+                    chip_icon(ctype, orient),
+                );
             }
             ChipType::Discard => {
                 draw_discard_chip(resources, grid_matrix, coords, orient);
@@ -174,12 +182,6 @@ impl ChipModel {
                     text_orient,
                     &format!("{:05}", value),
                 );
-            }
-            ChipType::DocBv(_, _) => {
-                draw_comment_chip(resources, grid_matrix, coords, orient);
-            }
-            ChipType::DocEv(_, _) => {
-                draw_comment_chip(resources, grid_matrix, coords, orient);
             }
             ChipType::Screen => {
                 draw_basic_chip(
@@ -288,9 +290,9 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         ChipType::Add => ChipIcon::Add,
         ChipType::Add2Bit => {
             if orient.is_mirrored() {
-                ChipIcon::Add2bit2
+                ChipIcon::Add2Bit2
             } else {
-                ChipIcon::Add2bit1
+                ChipIcon::Add2Bit1
             }
         }
         ChipType::And => ChipIcon::And,
@@ -303,9 +305,9 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
                 Direction::South | Direction::West => true,
             };
             if flip {
-                ChipIcon::Cmpeq2
+                ChipIcon::CmpEq2
             } else {
-                ChipIcon::Cmpeq1
+                ChipIcon::CmpEq1
             }
         }
         ChipType::Comment(_) => ChipIcon::Comment,
@@ -313,6 +315,8 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         ChipType::Delay => ChipIcon::Delay,
         ChipType::Demux => ChipIcon::Demux,
         ChipType::Discard => ChipIcon::Discard,
+        ChipType::DocBv(_, _) => ChipIcon::DocBv,
+        ChipType::DocEv(_, _) => ChipIcon::DocEv,
         ChipType::Eq => ChipIcon::Eq,
         ChipType::Halve => ChipIcon::Halve,
         ChipType::Inc => ChipIcon::Inc,
@@ -321,9 +325,9 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         ChipType::Mul => ChipIcon::Mul,
         ChipType::Mul4Bit => {
             if orient.is_mirrored() {
-                ChipIcon::Mul4bit2
+                ChipIcon::Mul4Bit2
             } else {
-                ChipIcon::Mul4bit1
+                ChipIcon::Mul4Bit1
             }
         }
         ChipType::Mux => ChipIcon::Mux,
@@ -400,6 +404,7 @@ fn draw_comment_chip(
     grid_matrix: &Matrix4<f32>,
     coords: Coords,
     orient: Orientation,
+    icon: ChipIcon,
 ) {
     let matrix = grid_matrix
         * Matrix4::trans2((coords.x as f32) + 0.5, (coords.y as f32) + 0.5)
@@ -407,7 +412,7 @@ fn draw_comment_chip(
     resources.shaders().chip().draw_comment(
         &matrix,
         RectSize::new(0.9, 0.9),
-        ChipIcon::Comment as u32,
+        icon as u32,
         Color3::PURPLE5,
         resources.textures().chip_icons(),
     );

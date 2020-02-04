@@ -148,6 +148,10 @@ impl ChipExt for ChipType {
                 Puzzle::TutorialRam,
                 CLOCK_ONLY_PUZZLES,
             ),
+            ChipType::Stack => ChipAvailability::UnlockedByButNotIn(
+                Puzzle::FabricateStack,
+                CLOCK_ONLY_PUZZLES,
+            ),
             ChipType::Queue => ChipAvailability::UnlockedByButNotIn(
                 Puzzle::FabricateQueue,
                 CLOCK_ONLY_PUZZLES,
@@ -286,6 +290,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Random => self::value::RANDOM_CHIP_DATA,
         ChipType::Sample => self::value::SAMPLE_CHIP_DATA,
         ChipType::Screen => self::memory::SCREEN_CHIP_DATA,
+        ChipType::Stack => self::memory::STACK_CHIP_DATA,
         ChipType::Stopwatch => self::timing::STOPWATCH_CHIP_DATA,
         ChipType::Sub => self::arith::SUB_CHIP_DATA,
         ChipType::Toggle(_) => self::debug::TOGGLE_CHIP_DATA,
@@ -346,6 +351,7 @@ pub(super) fn new_chip_evals(
         ChipType::Screen => {
             self::memory::ScreenChipEval::new_evals(slots, coords)
         }
+        ChipType::Stack => self::memory::StackChipEval::new_evals(slots),
         ChipType::Stopwatch => {
             self::timing::StopwatchChipEval::new_evals(slots)
         }

@@ -115,13 +115,18 @@ fn fabricate_inc() {
 }
 
 #[test]
+fn fabricate_mul() {
+    test_solution("fabricate_mul");
+}
+
+#[test]
 fn fabricate_queue() {
     test_solution("fabricate_queue");
 }
 
 #[test]
-fn fabricate_mul() {
-    test_solution("fabricate_mul");
+fn fabricate_stack() {
+    test_solution("fabricate_stack");
 }
 
 #[test]

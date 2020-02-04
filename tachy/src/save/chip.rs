@@ -67,6 +67,7 @@ pub enum ChipType {
     Random,
     Sample,
     Screen,
+    Stack,
     Stopwatch,
     Sub,
     Toggle(bool),
@@ -112,6 +113,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Latest,
         ChipType::Counter,
         ChipType::Ram,
+        ChipType::Stack,
         ChipType::Queue,
         ChipType::Screen,
     ]),
@@ -138,7 +140,9 @@ impl ChipType {
             | ChipType::Display
             | ChipType::EggTimer
             | ChipType::Stopwatch => CoordsSize::new(2, 1),
-            ChipType::Ram | ChipType::Queue => CoordsSize::new(2, 2),
+            ChipType::Ram | ChipType::Stack | ChipType::Queue => {
+                CoordsSize::new(2, 2)
+            }
             ChipType::Screen => CoordsSize::new(5, 5),
             _ => CoordsSize::new(1, 1),
         }
@@ -403,6 +407,7 @@ impl ChipType {
                  arrives."
             }
             ChipType::Screen => "TODO",
+            ChipType::Stack => "TODO",
             ChipType::Stopwatch => "TODO",
             ChipType::Sub => {
                 "Outputs the difference between the two inputs.  The result \
@@ -493,6 +498,7 @@ impl str::FromStr for ChipType {
             "Random" => Ok(ChipType::Random),
             "Sample" => Ok(ChipType::Sample),
             "Screen" => Ok(ChipType::Screen),
+            "Stack" => Ok(ChipType::Stack),
             "Stopwatch" => Ok(ChipType::Stopwatch),
             "Sub" => Ok(ChipType::Sub),
             "Toggle(false)" => Ok(ChipType::Toggle(false)),

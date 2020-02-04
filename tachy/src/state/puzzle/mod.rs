@@ -56,7 +56,7 @@ pub use self::fab_clock::{
     FABRICATE_EGG_TIMER_DATA, FABRICATE_STOPWATCH_DATA,
 };
 pub use self::fab_event::{FABRICATE_COUNTER_DATA, FABRICATE_INC_DATA};
-pub use self::fab_memory::FABRICATE_QUEUE_DATA;
+pub use self::fab_memory::{FABRICATE_QUEUE_DATA, FABRICATE_STACK_DATA};
 pub use self::geiger::GeigerEval;
 pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
@@ -177,6 +177,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::FabricateInc => self::fab_event::INC_INTERFACES,
             Puzzle::FabricateMul => self::fab_arith::MUL_INTERFACES,
             Puzzle::FabricateQueue => self::fab_memory::QUEUE_INTERFACES,
+            Puzzle::FabricateStack => self::fab_memory::STACK_INTERFACES,
             Puzzle::FabricateStopwatch => {
                 self::fab_clock::STOPWATCH_INTERFACES
             }
@@ -297,6 +298,9 @@ pub(super) fn new_puzzle_eval(
         }
         Puzzle::FabricateQueue => {
             Box::new(FabricationEval::new(FABRICATE_QUEUE_DATA, slots))
+        }
+        Puzzle::FabricateStack => {
+            Box::new(FabricationEval::new(FABRICATE_STACK_DATA, slots))
         }
         Puzzle::FabricateStopwatch => {
             Box::new(FabricationEval::new(FABRICATE_STOPWATCH_DATA, slots))

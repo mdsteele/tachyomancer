@@ -91,6 +91,7 @@ pub enum Puzzle {
     CommandTurret,
     // Calliope:
     TutorialRam,
+    FabricateStack,
     FabricateQueue,
     AutomateCollector,
     AutomateTranslator,
@@ -497,7 +498,7 @@ impl Puzzle {
                 title: "Queue Memory",
                 kind: PuzzleKind::Fabricate,
                 allow_events: true,
-                init_size: (8, 6),
+                init_size: (7, 6),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (500, 500),
                 description:
@@ -505,6 +506,20 @@ impl Puzzle {
                      module.\n\n\
                      Once this task is completed, you will be able to use \
                      $*Queue$* chips in future tasks.",
+                instructions: "TODO",
+            },
+            Puzzle::FabricateStack => &PuzzleData {
+                title: "Stack Memory",
+                kind: PuzzleKind::Fabricate,
+                allow_events: true,
+                init_size: (7, 6),
+                score_units: ScoreUnits::WireLength,
+                graph_bounds: (500, 500),
+                description:
+                    "Construct a simple last-in, first-out stack memory \
+                     module.\n\n\
+                     Once this task is completed, you will be able to use \
+                     $*Stack$* chips in future tasks.",
                 instructions: "TODO",
             },
             Puzzle::FabricateStopwatch => &PuzzleData {
@@ -673,15 +688,15 @@ impl Puzzle {
                      NOT ((NOT $/a$/) AND (NOT $/b$/)).",
             },
             Puzzle::TutorialRam => &PuzzleData {
-                title: "Stack Memory",
+                title: "Repeat Filter",
                 kind: PuzzleKind::Tutorial,
                 allow_events: true,
                 init_size: (6, 5),
                 score_units: ScoreUnits::WireLength,
-                graph_bounds: (400, 400),
+                graph_bounds: (200, 200),
                 description:
-                    "Construct a simple last-in, first-out stack memory \
-                     module.",
+                    "Construct a simple signal processor that filters out \
+                     repeated inputs.",
                 instructions: "TODO",
             },
             Puzzle::TutorialSum => &PuzzleData {

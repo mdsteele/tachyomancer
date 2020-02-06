@@ -60,16 +60,19 @@ fn main() {
         &PathBuf::from("src/mancer/gui/cursor.svg"),
         &PathBuf::from("texture/cursor.png"),
         icns::PixelFormat::RGBA,
+        1.0,
     );
     converter.svg_to_png(
         &PathBuf::from("src/mancer/shader/ui.svg"),
         &PathBuf::from("texture/ui.png"),
         icns::PixelFormat::RGBA,
+        1.0,
     );
     converter.svgs_to_pngs(
         &PathBuf::from("src/mancer/texture/diagram"),
         &PathBuf::from("texture/diagram"),
         icns::PixelFormat::RGBA,
+        1.0,
     );
 
     let target = env::var("TARGET").unwrap();
@@ -81,7 +84,7 @@ fn main() {
 
 //===========================================================================//
 
-const CHIP_ICON_SIZE: usize = 64;
+const CHIP_ICON_SIZE: usize = 128;
 const CHIP_TEXTURE_COLS: usize = 8;
 const CHIP_TEXTURE_ROWS: usize = 8;
 
@@ -246,6 +249,7 @@ impl Converter {
             &PathBuf::from("src/mancer/texture/chip"),
             &PathBuf::from("chip"),
             icns::PixelFormat::Alpha,
+            2.0,
         );
         let mut icon_names: Vec<String> = png_paths
             .iter()
@@ -288,6 +292,7 @@ impl Converter {
             &PathBuf::from("src/mancer/texture/listicon"),
             &PathBuf::from("listicon"),
             icns::PixelFormat::Alpha,
+            1.0,
         );
         let mut icon_names: Vec<String> = png_paths
             .iter()
@@ -414,6 +419,7 @@ impl Converter {
         svg_path: &Path,
         png_relpath: &Path,
         pixel_format: icns::PixelFormat,
+        scale: f32,
     ) -> PathBuf {
         // Check if the output PNG file is already up-to-date:
         let png_path = self.out_dir.join(png_relpath);
@@ -427,7 +433,7 @@ impl Converter {
         // Convert the SVG to PNG:
         let svg =
             nsvg::parse_file(svg_path, nsvg::Units::Pixel, 96.0).unwrap();
-        let (width, height, rgba) = svg.rasterize_to_raw_rgba(1.0).unwrap();
+        let (width, height, rgba) = svg.rasterize_to_raw_rgba(scale).unwrap();
 
         let mut image = icns::Image::from_data(
             icns::PixelFormat::RGBA,
@@ -448,6 +454,7 @@ impl Converter {
         svg_dir_path: &Path,
         png_dir_relpath: &Path,
         pixel_format: icns::PixelFormat,
+        scale: f32,
     ) -> Vec<PathBuf> {
         let mut png_paths = Vec::<PathBuf>::new();
         for entry in svg_dir_path.read_dir().unwrap() {
@@ -459,7 +466,7 @@ impl Converter {
             let png_relpath =
                 png_dir_relpath.join(svg_name).with_extension("png");
             let png_path =
-                self.svg_to_png(&svg_path, &png_relpath, pixel_format);
+                self.svg_to_png(&svg_path, &png_relpath, pixel_format, scale);
             png_paths.push(png_path);
         }
         png_paths.sort();

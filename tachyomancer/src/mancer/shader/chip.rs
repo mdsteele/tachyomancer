@@ -142,6 +142,59 @@ const DISCARD_CORNER_DATA: &[u8] = BASIC_CORNER_DATA;
 
 //===========================================================================//
 
+//     _-12_
+//    1  |  3
+//   /|_-13_|\
+//  0-2-----5-4
+//  | |     | |
+//  | |     | |
+// 10-11----8-6
+//   \|^-14^|/
+//    9  |  7
+//     ^-15^
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const MEMORY_INDEX_DATA: &[u8] = &[
+    2, 1, 0,   5, 4, 3,  8, 7, 6,  11, 10, 9, // corners
+    1, 2, 12,  12, 2, 13,  3, 12, 13,  3, 13, 5, // top edge
+    4, 5, 8,   4, 8, 6,   // right edge
+    9, 15, 14,  9, 14, 11,  7, 8, 14,  7, 14, 15, // bottom edge
+    0, 10, 2,  2, 10, 11, // left edge
+    2, 11, 5,  5, 11, 8,  2, 5, 13,  8, 11, 14, // face
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const MEMORY_VERTEX_DATA: &[f32] = &[
+     0.00,  0.06, 0.05,  TEX_MIN, TEX_MIN,
+     0.06,  0.00, 0.05,  TEX_MIN, TEX_MIN,
+     0.06,  0.06, 0.10,  TEX_MIN, TEX_MIN,
+    -0.06,  0.00, 0.05,  TEX_MAX, TEX_MIN,
+     0.00,  0.06, 0.05,  TEX_MAX, TEX_MIN,
+    -0.06,  0.06, 0.10,  TEX_MAX, TEX_MIN,
+     0.00, -0.06, 0.05,  TEX_MAX, TEX_MAX,
+    -0.06,  0.00, 0.05,  TEX_MAX, TEX_MAX,
+    -0.06, -0.06, 0.10,  TEX_MAX, TEX_MAX,
+     0.06,  0.00, 0.05,  TEX_MIN, TEX_MAX,
+     0.00, -0.06, 0.05,  TEX_MIN, TEX_MAX,
+     0.06, -0.06, 0.10,  TEX_MIN, TEX_MAX,
+     0.38, -0.07, 0.05,      0.5, TEX_MIN,
+     0.38, -0.01, 0.10,      0.5, TEX_MIN,
+    -0.38,  0.01, 0.10,      0.5, TEX_MAX,
+    -0.38,  0.07, 0.05,      0.5, TEX_MAX,
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const MEMORY_CORNER_DATA: &[u8] = &[
+    0, 0,  0, 0,  0, 0,
+    1, 0,  1, 0,  1, 0,
+    1, 1,  1, 1,  1, 1,
+    0, 1,  0, 1,  0, 1,
+    0, 0,  0, 0,
+    1, 1,  1, 1,
+];
+
+//===========================================================================//
+
 struct ChipModel {
     ibuffer: IndexBuffer<u8>,
     _vertex_vbuffer: VertexBuffer<f32>,
@@ -190,6 +243,7 @@ pub struct ChipShader {
     basic_model: ChipModel,
     comment_model: ChipModel,
     discard_model: ChipModel,
+    memory_model: ChipModel,
 }
 
 impl ChipShader {
@@ -231,6 +285,11 @@ impl ChipShader {
                 DISCARD_INDEX_DATA,
                 DISCARD_VERTEX_DATA,
                 DISCARD_CORNER_DATA,
+            ),
+            memory_model: ChipModel::new(
+                MEMORY_INDEX_DATA,
+                MEMORY_VERTEX_DATA,
+                MEMORY_CORNER_DATA,
             ),
         })
     }
@@ -293,6 +352,26 @@ impl ChipShader {
             icon_texture,
         );
         self.discard_model.draw();
+    }
+
+    /// The matrix should place the origin at the center of the chip.
+    pub fn draw_memory(
+        &self,
+        matrix: &Matrix4<f32>,
+        size: RectSize<f32>,
+        icon_index: u32,
+        icon_color: Color3,
+        icon_texture: &Texture2D,
+    ) {
+        self.bind(
+            matrix,
+            &size,
+            &BASIC_PLASTIC_COLOR,
+            icon_index,
+            &icon_color,
+            icon_texture,
+        );
+        self.memory_model.draw();
     }
 
     fn bind(

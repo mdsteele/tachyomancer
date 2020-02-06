@@ -137,6 +137,9 @@ impl ChipModel {
                     chip_icon(ctype, orient),
                 );
             }
+            ChipType::Counter => {
+                draw_counter_chip(resources, grid_matrix, coords, orient);
+            }
             ChipType::Discard => {
                 draw_discard_chip(resources, grid_matrix, coords, orient);
             }
@@ -182,6 +185,9 @@ impl ChipModel {
                     text_orient,
                     &format!("{:05}", value),
                 );
+            }
+            ChipType::Latest => {
+                draw_latest_chip(resources, grid_matrix, coords, orient);
             }
             ChipType::Screen => {
                 draw_basic_chip(
@@ -312,6 +318,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         }
         ChipType::Comment(_) => ChipIcon::Comment,
         ChipType::Const(_) => ChipIcon::Const,
+        ChipType::Counter => ChipIcon::Counter,
         ChipType::Delay => ChipIcon::Delay,
         ChipType::Demux => ChipIcon::Demux,
         ChipType::Discard => ChipIcon::Discard,
@@ -358,6 +365,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
 fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
     match chip_icon {
         ChipIcon::Clock
+        | ChipIcon::Counter
         | ChipIcon::Delay
         | ChipIcon::Demux
         | ChipIcon::Discard
@@ -418,6 +426,30 @@ fn draw_comment_chip(
     );
 }
 
+fn draw_counter_chip(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    coords: Coords,
+    orient: Orientation,
+) {
+    let orient = orient * Orientation::default().rotate_ccw();
+    let oriented_size = orient * CoordsSize::new(1, 2);
+    let matrix = grid_matrix
+        * Matrix4::trans2(
+            (coords.x as f32) + 0.5 * (oriented_size.width as f32),
+            (coords.y as f32) + 0.5 * (oriented_size.height as f32),
+        )
+        * orient.matrix();
+    let icon = ChipIcon::Counter;
+    resources.shaders().chip().draw_memory(
+        &matrix,
+        RectSize::new(1.0, 2.0).expand(-CHIP_MARGIN),
+        icon as u32,
+        chip_icon_color(icon),
+        resources.textures().chip_icons(),
+    );
+}
+
 fn draw_discard_chip(
     resources: &Resources,
     grid_matrix: &Matrix4<f32>,
@@ -429,6 +461,25 @@ fn draw_discard_chip(
         * orient.matrix();
     let icon = ChipIcon::Discard;
     resources.shaders().chip().draw_discard(
+        &matrix,
+        RectSize::new(1.0, 1.0).expand(-CHIP_MARGIN),
+        icon as u32,
+        chip_icon_color(icon),
+        resources.textures().chip_icons(),
+    );
+}
+
+fn draw_latest_chip(
+    resources: &Resources,
+    grid_matrix: &Matrix4<f32>,
+    coords: Coords,
+    orient: Orientation,
+) {
+    let matrix = grid_matrix
+        * Matrix4::trans2((coords.x as f32) + 0.5, (coords.y as f32) + 0.5)
+        * orient.matrix();
+    let icon = ChipIcon::Latest;
+    resources.shaders().chip().draw_memory(
         &matrix,
         RectSize::new(1.0, 1.0).expand(-CHIP_MARGIN),
         icon as u32,

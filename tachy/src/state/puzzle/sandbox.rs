@@ -27,7 +27,7 @@ use crate::state::{PortColor, PortFlow};
 
 pub const BEHAVIOR_INTERFACES: &[Interface] = &[Interface {
     name: "Timer Interface",
-    description: "Connected to a digital timer.",
+    description: "Connects to a digital timer.",
     side: Direction::West,
     pos: InterfacePosition::Right(0),
     ports: &[InterfacePort {
@@ -39,33 +39,50 @@ pub const BEHAVIOR_INTERFACES: &[Interface] = &[Interface {
     }],
 }];
 
-pub const EVENT_INTERFACES: &[Interface] = &[Interface {
-    name: "Timer Interface",
-    description: "Connected to a digital timer.",
-    side: Direction::West,
-    pos: InterfacePosition::Right(0),
-    ports: &[
-        InterfacePort {
-            name: "Time",
-            description: "Outputs the current time step.",
-            flow: PortFlow::Send,
-            color: PortColor::Behavior,
-            size: WireSize::Eight,
-        },
-        InterfacePort {
-            name: "Tick",
-            description: "Sends an event at the beginning of each time step.",
+pub const EVENT_INTERFACES: &[Interface] = &[
+    Interface {
+        name: "Startup Interface",
+        description: "Connects to the power supply.",
+        side: Direction::North,
+        pos: InterfacePosition::Right(0),
+        ports: &[InterfacePort {
+            name: "Init",
+            description:
+                "Sends a single event at the start of the first time step.",
             flow: PortFlow::Send,
             color: PortColor::Event,
             size: WireSize::Zero,
-        },
-    ],
-}];
+        }],
+    },
+    Interface {
+        name: "Timer Interface",
+        description: "Connects to a digital timer.",
+        side: Direction::West,
+        pos: InterfacePosition::Right(0),
+        ports: &[
+            InterfacePort {
+                name: "Time",
+                description: "Outputs the current time step.",
+                flow: PortFlow::Send,
+                color: PortColor::Behavior,
+                size: WireSize::Eight,
+            },
+            InterfacePort {
+                name: "Tick",
+                description:
+                    "Sends an event at the beginning of each time step.",
+                flow: PortFlow::Send,
+                color: PortColor::Event,
+                size: WireSize::Zero,
+            },
+        ],
+    },
+];
 
 //===========================================================================//
 
 pub struct SandboxBehaviorEval {
-    timer: usize,
+    time_wire: usize,
 }
 
 impl SandboxBehaviorEval {
@@ -74,7 +91,7 @@ impl SandboxBehaviorEval {
     ) -> SandboxBehaviorEval {
         debug_assert_eq!(slots.len(), 1);
         debug_assert_eq!(slots[0].len(), 1);
-        SandboxBehaviorEval { timer: slots[0][0].1 }
+        SandboxBehaviorEval { time_wire: slots[0][0].1 }
     }
 }
 
@@ -84,24 +101,30 @@ impl PuzzleEval for SandboxBehaviorEval {
     }
 
     fn begin_time_step(&mut self, state: &mut CircuitState) {
-        state.send_behavior(self.timer, state.time_step() & 0xff);
+        state.send_behavior(self.time_wire, state.time_step() & 0xff);
     }
 }
 
 //===========================================================================//
 
 pub struct SandboxEventEval {
-    metronome: usize,
-    timer: usize,
+    init_wire: usize,
+    time_wire: usize,
+    tick_wire: usize,
 }
 
 impl SandboxEventEval {
     pub fn new(
         slots: Vec<Vec<((Coords, Direction), usize)>>,
     ) -> SandboxEventEval {
-        debug_assert_eq!(slots.len(), 1);
-        debug_assert_eq!(slots[0].len(), 2);
-        SandboxEventEval { metronome: slots[0][1].1, timer: slots[0][0].1 }
+        debug_assert_eq!(slots.len(), 2);
+        debug_assert_eq!(slots[0].len(), 1);
+        debug_assert_eq!(slots[1].len(), 2);
+        SandboxEventEval {
+            init_wire: slots[0][0].1,
+            time_wire: slots[1][0].1,
+            tick_wire: slots[1][1].1,
+        }
     }
 }
 
@@ -111,8 +134,11 @@ impl PuzzleEval for SandboxEventEval {
     }
 
     fn begin_time_step(&mut self, state: &mut CircuitState) {
-        state.send_event(self.metronome, 0);
-        state.send_behavior(self.timer, state.time_step() & 0xff);
+        if state.time_step() == 0 {
+            state.send_event(self.init_wire, 0);
+        }
+        state.send_behavior(self.time_wire, state.time_step() & 0xff);
+        state.send_event(self.tick_wire, 0);
     }
 }
 

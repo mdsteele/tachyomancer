@@ -167,8 +167,7 @@ impl Puzzle {
                 description:
                     "Adjust the beacon transmission angle to track the \
                      detected signal.",
-                instructions:
-                    "* $!Your goal is TODO.\n\
+                instructions: "* $!Your goal is TODO.\n\
                      * $!The optimal position is given by the sensor \
                      interface on the left side of the board.  This optimal \
                      position will change over time.\n\
@@ -543,8 +542,7 @@ impl Puzzle {
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 100),
-                description:
-                    "Build a 1-bit $*XOR$* gate out of $*AND$*, \
+                description: "Build a 1-bit $*XOR$* gate out of $*AND$*, \
                      $*OR$*, and $*NOT$* gates.\n\n\
                      Once this task is completed, you will be able to use \
                      $*XOR$* gates in future tasks.",
@@ -594,8 +592,7 @@ impl Puzzle {
                      unpackers.\n\n\
                      Once this task is completed, you will be able to use \
                      generic $*Add$* chips in future tasks.",
-                instructions:
-                    "* $!Your goal is to construct a 4-bit adder.\n\
+                instructions: "* $!Your goal is to construct a 4-bit adder.\n\
                      * $!The output should be the sum of $*In1$* and \
                      $*In2$*.  This sum will never be more than 15.\n\
                      * $!You can use $*Unpack$* chips to separate the \
@@ -660,8 +657,7 @@ impl Puzzle {
                     "Build a 1-bit multiplexer using other logic gates.\n\n\
                      Once this task is completed, you will be able to use \
                      $*Mux$* chips in future tasks.",
-                instructions:
-                    "* $!Your goal is to construct a 1-bit Mux.\n\
+                instructions: "* $!Your goal is to construct a 1-bit Mux.\n\
                      * $!The output should be the value of $*in0$* if \
                      $*ctrl$* is 0, or of $*in1$* if $*ctrl$* is 1.\n\
                      * $!If $/a$/ and $/b$/ are the inputs and $/c$/ is \

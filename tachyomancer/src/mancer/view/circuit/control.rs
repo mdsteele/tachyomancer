@@ -35,8 +35,7 @@ const BUTTON_SPACING: i32 = 8;
 const TRAY_MARGIN: i32 = 12;
 const TRAY_HEIGHT: i32 = 2 * TRAY_MARGIN + BUTTON_HEIGHT;
 
-const TOOLTIP_RESET: &str =
-    "$*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
+const TOOLTIP_RESET: &str = "$*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
      Resets the simulation back to the beginning and returns to edit mode.";
 const TOOLTIP_RUN_PAUSE: &str = "$*Run/pause$* $>$G$*$[EvalRunPause]$*$D$<\n\
                                  Runs or pauses the simulation.";

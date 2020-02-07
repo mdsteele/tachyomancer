@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="64" height="64">
+  <!-- Stack: -->
+  <path d="M 22,5 h 4 V 59 h 12 V 5 h 4"
+        fill="none" stroke="black" stroke-width="2" stroke-linejoin="round"/>
+  <g fill="black" stroke="none">
+    <rect x="28" y="23" width="8" height="4"/>
+    <rect x="28" y="28" width="8" height="4"/>
+    <rect x="28" y="33" width="8" height="4"/>
+    <rect x="28" y="38" width="8" height="4"/>
+    <rect x="28" y="43" width="8" height="4"/>
+    <rect x="28" y="48" width="8" height="4"/>
+    <rect x="28" y="53" width="8" height="4"/>
+  </g>
+  <!-- Push arrow: -->
+  <path d="M 2,13 H 17 A 3 3 0 0 1 20,16 v 3"
+        fill="none" stroke="black" stroke-width="3" stroke-dasharray="2 1"/>
+  <path d="M 20,23 l -4,-4 h 8 z" fill="black" stroke="none"/>
+  <!-- Pop arrow: -->
+  <path d="M 62,51 H 47 A 3 3 0 0 1 44,48 V 16 A 3 3 0 0 1 47,13 H 58"
+        fill="none" stroke="black" stroke-width="3" stroke-dasharray="2 1"/>
+  <path d="M 62,13 l -4,-4 v 8 z" fill="black" stroke="none"/>
+  <!-- Size: -->
+  <circle cx="12" cy="51" r="6" fill="none" stroke="black" stroke-width="2"/>
+  <path d="M 0,51 H 6 M 12,45 V 32 H 26"
+        fill="none" stroke="black" stroke-width="2" stroke-linejoin="round"/>
+</svg>

@@ -347,7 +347,9 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
                 ChipIcon::Pack1
             }
         }
+        ChipType::Queue => ChipIcon::Queue,
         ChipType::Sample => ChipIcon::Sample,
+        ChipType::Stack => ChipIcon::Stack,
         ChipType::Sub => ChipIcon::Sub,
         ChipType::Random => ChipIcon::Random,
         ChipType::Unpack => {
@@ -374,6 +376,7 @@ fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
         | ChipIcon::Latest
         | ChipIcon::Random
         | ChipIcon::Sample => Color3::CYAN4,
+        ChipIcon::Queue | ChipIcon::Stack => Color3::new(0.6, 0.7, 0.7),
         _ => Color3::ORANGE4,
     }
 }

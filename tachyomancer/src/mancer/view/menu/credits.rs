@@ -25,8 +25,7 @@ use crate::mancer::save::Prefs;
 const PARAGRAPH_FONT_SIZE: f32 = 20.0;
 const PARAGRAPH_LINE_HEIGHT: f32 = 22.0;
 
-const FIRST_PARAGRAPH_FORMAT: &str =
-    "$=$O$*TACHYOMANCER$*$D$<\n\
+const FIRST_PARAGRAPH_FORMAT: &str = "$=$O$*TACHYOMANCER$*$D$<\n\
      $=\u{a9}2018 Matthew D. Steele <mdsteele@alum.mit.edu>$<\n\n\
      $CGame website:$D$>https://mdsteele.games/tachyomancer/$<\n\
      $CSource code:$D$>https://github.com/mdsteele/tachyomancer/$<\n\n\
@@ -37,8 +36,7 @@ const FIRST_PARAGRAPH_FORMAT: &str =
      option) any later version.\n\n\
      $=Thanks for playing!";
 
-const GAME_PARAGRAPH_FORMAT: &str =
-    "    $O$*GAME$*$D\n\
+const GAME_PARAGRAPH_FORMAT: &str = "    $O$*GAME$*$D\n\
      $CDesign/Programming:$D Matthew Steele\n     \
      $CAlpha Testing:$D TODO\n      \
      $CBeta Testing:$D TODO";

@@ -80,8 +80,10 @@ impl ChipEval for BreakChipEval {
         }
     }
 
-    fn on_press(&mut self, _sublocation: u32) {
-        self.enabled = !self.enabled;
+    fn on_press(&mut self, _sublocation: u32, num_times: u32) {
+        if num_times % 2 != 0 {
+            self.enabled = !self.enabled;
+        }
     }
 }
 
@@ -97,7 +99,7 @@ pub struct ButtonChipEval {
     output: usize,
     coords: Coords,
     hotkey: Option<HotkeyCode>,
-    press_count: i32,
+    press_count: u32,
 }
 
 impl ButtonChipEval {
@@ -120,11 +122,14 @@ impl ButtonChipEval {
 impl ChipEval for ButtonChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         if let Some(code) = self.hotkey {
-            self.press_count += state.pop_hotkey_presses(code);
+            self.press_count = self
+                .press_count
+                .saturating_add(state.pop_hotkey_presses(code));
         }
         if self.press_count > 0 {
             self.press_count -= 1;
             state.send_event(self.output, 0);
+            state.record_input(self.coords, 0, 1);
         }
     }
 
@@ -136,8 +141,8 @@ impl ChipEval for ButtonChipEval {
         Some(self.coords)
     }
 
-    fn on_press(&mut self, _sublocation: u32) {
-        self.press_count += 1;
+    fn on_press(&mut self, _sublocation: u32, num_times: u32) {
+        self.press_count = self.press_count.saturating_add(num_times);
     }
 }
 
@@ -166,6 +171,7 @@ pub struct ToggleChipEval {
     output: usize,
     value: bool,
     coords: Coords,
+    toggle_count: u32,
 }
 
 impl ToggleChipEval {
@@ -175,13 +181,22 @@ impl ToggleChipEval {
         coords: Coords,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), TOGGLE_CHIP_DATA.ports.len());
-        let chip_eval = ToggleChipEval { output: slots[0].0, value, coords };
+        let chip_eval = ToggleChipEval {
+            output: slots[0].0,
+            value,
+            coords,
+            toggle_count: 0,
+        };
         vec![(0, Box::new(chip_eval))]
     }
 }
 
 impl ChipEval for ToggleChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
+        if self.toggle_count > 0 {
+            state.record_input(self.coords, 0, self.toggle_count);
+            self.toggle_count = 0;
+        }
         state.send_behavior(self.output, self.value.into());
     }
 
@@ -189,8 +204,11 @@ impl ChipEval for ToggleChipEval {
         Some(self.coords)
     }
 
-    fn on_press(&mut self, _sublocation: u32) {
-        self.value = !self.value;
+    fn on_press(&mut self, _sublocation: u32, num_times: u32) {
+        if num_times % 2 != 0 {
+            self.value = !self.value;
+        }
+        self.toggle_count = self.toggle_count.saturating_add(num_times);
     }
 }
 

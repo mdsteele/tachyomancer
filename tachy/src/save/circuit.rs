@@ -261,13 +261,13 @@ impl Ord for OrderedDir {
 
 //===========================================================================//
 
-fn delta_key_string(delta: CoordsDelta) -> String {
+pub(super) fn delta_key_string(delta: CoordsDelta) -> String {
     let xsign = if delta.x < 0 { 'm' } else { 'p' };
     let ysign = if delta.y < 0 { 'm' } else { 'p' };
     format!("{}{}{}{}", xsign, delta.x.abs(), ysign, delta.y.abs())
 }
 
-fn key_string_delta(key: &str) -> Option<CoordsDelta> {
+pub(super) fn key_string_delta(key: &str) -> Option<CoordsDelta> {
     let mut chars = key.chars();
     let xsign_chr = chars.next();
     let xsign: i32 = match xsign_chr {

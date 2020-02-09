@@ -74,6 +74,10 @@ impl ScoreClient {
     }
 
     pub fn submit_solution(&self, solution: SolutionData) {
+        debug_log!(
+            "Solution submitted:\n{}",
+            solution.serialize_to_string().map_or_else(|s| s, |s| s)
+        );
         self.global_scores.lock().unwrap().insert(
             solution.puzzle,
             solution.circuit.size.area(),

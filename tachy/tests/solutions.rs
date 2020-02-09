@@ -95,6 +95,11 @@ fn automate_x_unit() {
 }
 
 #[test]
+fn command_shields() {
+    test_solution("command_shields");
+}
+
+#[test]
 fn fabricate_counter() {
     test_solution("fabricate_counter");
 }

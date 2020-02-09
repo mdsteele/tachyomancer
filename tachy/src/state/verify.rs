@@ -17,8 +17,10 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use crate::geom::Coords;
 use crate::save::{PuzzleSet, SolutionData};
 use crate::state::{EditGrid, EvalResult, WireError};
+use std::collections::HashMap;
 
 //===========================================================================//
 
@@ -47,46 +49,58 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
             });
         }
         errors.push("Circuit had errors".to_string());
-    } else {
-        let eval = grid.eval_mut().unwrap();
-        eval.set_breakpoints_enabled(false);
-        for time_step in 0..(data.time_steps + 1) {
-            match eval.step_time() {
-                EvalResult::Continue if time_step < data.time_steps => {}
-                EvalResult::Continue => {
+        return errors;
+    }
+
+    let mut all_inputs = HashMap::<(u32, u32), Vec<(Coords, u32, u32)>>::new();
+    if let Some(ref inputs) = data.inputs {
+        let origin = grid.bounds().top_left();
+        for (time_step, cycle, delta, subloc, count) in inputs.iter() {
+            all_inputs
+                .entry((time_step, cycle))
+                .or_insert_with(Vec::new)
+                .push((origin + delta, subloc, count));
+        }
+    }
+
+    let eval = grid.eval_mut().unwrap();
+    loop {
+        let time_step = eval.time_step();
+        if let Some(inputs) = all_inputs.remove(&(time_step, eval.cycle())) {
+            for (coords, subloc, count) in inputs {
+                eval.press_button(coords, subloc, count);
+            }
+        }
+        match eval.step_cycle() {
+            EvalResult::Continue => {
+                if time_step >= data.time_steps {
                     errors.push(format!(
                         "Evaluation did not end at time step {}",
-                        time_step
+                        data.time_steps
                     ));
                     break;
                 }
-                EvalResult::Breakpoint(_) => {
-                    unreachable!("Breakpoints were disabled.");
-                }
-                EvalResult::Failure => {
-                    errors.extend(eval.errors().iter().map(|error| {
-                        format!(
-                            "Time step {}: {}",
-                            error.time_step, error.message
-                        )
-                    }));
-                    break;
-                }
-                EvalResult::Victory(score) if time_step < data.time_steps => {
+            }
+            EvalResult::Breakpoint(_) => {}
+            EvalResult::Failure => {
+                errors.extend(eval.errors().iter().map(|error| {
+                    format!("Time step {}: {}", error.time_step, error.message)
+                }));
+                break;
+            }
+            EvalResult::Victory(score) => {
+                if time_step < data.time_steps {
                     errors.push(format!(
                         "Unexpected victory at time step {} with score of {}",
                         time_step, score
                     ));
-                    break;
+                } else if score != data.score {
+                    errors.push(format!(
+                        "Actual score was {}, but expected {}",
+                        score, data.score
+                    ));
                 }
-                EvalResult::Victory(score) => {
-                    if score != data.score {
-                        errors.push(format!(
-                            "Actual score was {}, but expected {}",
-                            score, data.score
-                        ));
-                    }
-                }
+                break;
             }
         }
     }

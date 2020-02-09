@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use crate::geom::{Coords, Direction};
-use crate::save::{HotkeyCode, ScoreUnits};
+use crate::save::{HotkeyCode, InputsData, ScoreUnits};
 use downcast_rs::{impl_downcast, Downcast};
 use std::collections::{HashMap, HashSet};
 use std::mem;
@@ -50,10 +50,8 @@ pub struct EvalError {
 
 pub struct CircuitEval {
     total_cycles: u32,
-    cycle: u32,      // which cycle of the time step we're on
     subcycle: usize, // index into `chips` of next chip group to eval
     errors: Vec<EvalError>,
-    breakpoints_enabled: bool,
     // Topologically-sorted list of chips, divided into parallel groups:
     chips: Vec<Vec<Box<dyn ChipEval>>>,
     wire_length: u32,
@@ -83,10 +81,8 @@ impl CircuitEval {
         }
         CircuitEval {
             total_cycles: 0,
-            cycle: 0,
             subcycle: 0,
             errors: Vec::new(),
-            breakpoints_enabled: true,
             chips: chip_groups,
             wire_length: num_wire_fragments as u32,
             puzzle_eval,
@@ -104,6 +100,10 @@ impl CircuitEval {
         self.state.time_step
     }
 
+    pub fn cycle(&self) -> u32 {
+        self.state.cycle
+    }
+
     pub fn subcycle(&self) -> usize {
         self.subcycle
     }
@@ -118,18 +118,32 @@ impl CircuitEval {
         &self.errors
     }
 
-    pub fn set_breakpoints_enabled(&mut self, enabled: bool) {
-        self.breakpoints_enabled = enabled;
-    }
-
-    pub fn press_button(&mut self, coords: Coords, sublocation: u32) {
+    pub fn press_button(
+        &mut self,
+        coords: Coords,
+        sublocation: u32,
+        times: u32,
+    ) {
         if let Some(&(group, index)) = self.coords_map.get(&coords) {
-            self.chips[group][index].on_press(sublocation);
+            self.chips[group][index].on_press(sublocation, times);
         }
     }
 
     pub fn press_hotkey(&mut self, code: HotkeyCode) {
         self.state.press_hotkey(code);
+    }
+
+    pub fn recorded_inputs(&self, top_left: Coords) -> Option<InputsData> {
+        if self.state.recorded_inputs.is_empty() {
+            return None;
+        }
+        let mut inputs = InputsData::new();
+        for &(time_step, cycle, coords, subloc, count) in
+            self.state.recorded_inputs.iter()
+        {
+            inputs.insert(time_step, cycle, coords - top_left, subloc, count);
+        }
+        return Some(inputs);
     }
 
     pub fn wire_event(&self, wire_index: usize) -> Option<u32> {
@@ -177,7 +191,7 @@ impl CircuitEval {
                 }
                 needs_another_cycle |=
                     self.puzzle_eval.needs_another_cycle(self.time_step());
-                if self.cycle + 1 >= MAX_CYCLES_PER_TIME_STEP {
+                if self.cycle() + 1 >= MAX_CYCLES_PER_TIME_STEP {
                     self.errors.push(self.state.fatal_error(format!(
                         "Exceeded {} cycles.",
                         MAX_CYCLES_PER_TIME_STEP
@@ -185,12 +199,12 @@ impl CircuitEval {
                     return EvalResult::Failure;
                 }
                 self.subcycle = 0;
-                self.cycle += 1;
+                self.state.cycle += 1;
                 self.total_cycles += 1;
                 if needs_another_cycle {
                     debug_log!(
                         "  Cycle {} complete, starting another cycle",
-                        self.cycle
+                        self.cycle()
                     );
                     self.state.reset_for_cycle();
                     self.puzzle_eval.begin_additional_cycle(&mut self.state);
@@ -208,14 +222,14 @@ impl CircuitEval {
                 debug_log!(
                     "Time step {} complete after {} cycle(s)",
                     self.time_step(),
-                    self.cycle
+                    self.cycle()
                 );
                 self.state.reset_for_cycle();
-                self.cycle = 0;
+                self.state.cycle = 0;
                 self.state.time_step += 1;
                 return EvalResult::Continue;
             }
-            if self.cycle == 0 && self.subcycle == 0 {
+            if self.cycle() == 0 && self.subcycle == 0 {
                 if self.puzzle_eval.task_is_completed(&self.state) {
                     if self.errors.is_empty() {
                         let score = match self.score_units {
@@ -247,9 +261,7 @@ impl CircuitEval {
                 );
                 let coords_vec =
                     mem::replace(&mut self.state.breakpoints, Vec::new());
-                if self.breakpoints_enabled {
-                    return EvalResult::Breakpoint(coords_vec);
-                }
+                return EvalResult::Breakpoint(coords_vec);
             }
         }
         return EvalResult::Continue;
@@ -257,9 +269,9 @@ impl CircuitEval {
 
     pub fn step_cycle(&mut self) -> EvalResult {
         let current_time_step = self.time_step();
-        let current_cycle = self.cycle;
+        let current_cycle = self.cycle();
         while self.time_step() == current_time_step
-            && self.cycle == current_cycle
+            && self.cycle() == current_cycle
         {
             match self.step_subcycle() {
                 EvalResult::Continue => {}
@@ -285,6 +297,7 @@ impl CircuitEval {
 
 pub struct CircuitState {
     time_step: u32,
+    cycle: u32,
     // "Null" wires are ports that have no wire fragments connected to them.
     // We treat them as wires for ease of evaluation, but we don't count the
     // circuit state as having "changed" for the purposes of debug stepping
@@ -292,7 +305,8 @@ pub struct CircuitState {
     null_wires: HashSet<usize>,
     values: Vec<(u32, bool)>,
     breakpoints: Vec<Coords>,
-    hotkey_presses: HashMap<HotkeyCode, i32>,
+    hotkey_presses: HashMap<HotkeyCode, u32>,
+    recorded_inputs: Vec<(u32, u32, Coords, u32, u32)>,
     changed: bool,
 }
 
@@ -300,10 +314,12 @@ impl CircuitState {
     fn new(num_values: usize, null_wires: HashSet<usize>) -> CircuitState {
         CircuitState {
             time_step: 0,
+            cycle: 0,
             null_wires,
             values: vec![(0, false); num_values],
             breakpoints: vec![],
             hotkey_presses: HashMap::new(),
+            recorded_inputs: Vec::new(),
             changed: false,
         }
     }
@@ -350,11 +366,23 @@ impl CircuitState {
     }
 
     fn press_hotkey(&mut self, code: HotkeyCode) {
-        self.hotkey_presses.entry(code).and_modify(|n| *n += 1).or_insert(1);
+        let num_presses = self.hotkey_presses.entry(code).or_insert(0);
+        *num_presses = num_presses.saturating_add(1);
     }
 
-    pub fn pop_hotkey_presses(&mut self, code: HotkeyCode) -> i32 {
+    pub fn pop_hotkey_presses(&mut self, code: HotkeyCode) -> u32 {
         self.hotkey_presses.remove(&code).unwrap_or(0)
+    }
+
+    pub fn record_input(&mut self, coords: Coords, subloc: u32, count: u32) {
+        // TODO: more efficient storage
+        self.recorded_inputs.push((
+            self.time_step,
+            self.cycle,
+            coords,
+            subloc,
+            count,
+        ));
     }
 
     pub fn fatal_error(&self, message: String) -> EvalError {
@@ -490,7 +518,7 @@ pub trait ChipEval {
     /// part of the chip was clicked, for chip types that have multiple
     /// clickable parts.  For example, the `Screen` chip uses the sublocation
     /// to know which cell of the screen was clicked.
-    fn on_press(&mut self, _sublocation: u32) {}
+    fn on_press(&mut self, _sublocation: u32, _num_times: u32) {}
 }
 
 //===========================================================================//

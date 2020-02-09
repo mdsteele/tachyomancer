@@ -547,10 +547,13 @@ impl CircuitView {
                 None
             }
             EvalResult::Victory(score) => {
-                let area = grid.bounds().area();
-                // TODO: It would be nice to not have this unwrap() here.
-                let time_steps = grid.eval().unwrap().time_step();
-                debug_log!("Victory!  area={}, score={}", area, score);
+                let bounds = grid.bounds();
+                let (time_steps, inputs) = {
+                    // TODO: It would be nice to not have this unwrap() here.
+                    let eval = grid.eval().unwrap();
+                    (eval.time_step(), eval.recorded_inputs(bounds.top_left()))
+                };
+                debug_log!("Victory: area={}, score={}", bounds.area(), score);
                 grid.stop_eval();
                 self.controls_status = ControlsStatus::Stopped;
                 ui.request_redraw();
@@ -560,6 +563,7 @@ impl CircuitView {
                     score,
                     time_steps,
                     circuit: grid.to_circuit_data(),
+                    inputs,
                 }))
             }
             EvalResult::Failure => {

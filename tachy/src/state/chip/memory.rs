@@ -373,6 +373,7 @@ impl ChipEval for ScreenChipEval {
         state.send_behavior(self.output2, self.values[addr2] as u32);
         state.send_behavior(self.output3, self.values[addr3] as u32);
         if let Some(value) = self.pressed.take() {
+            state.record_input(self.coords, value, 1);
             state.send_event(self.touch, value);
         }
     }
@@ -385,7 +386,7 @@ impl ChipEval for ScreenChipEval {
         &self.values
     }
 
-    fn on_press(&mut self, sublocation: u32) {
+    fn on_press(&mut self, sublocation: u32, _num_times: u32) {
         self.pressed = Some(sublocation);
     }
 }

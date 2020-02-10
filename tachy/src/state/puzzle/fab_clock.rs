@@ -36,8 +36,8 @@ pub(super) const EGG_TIMER_INTERFACES: &[Interface] = &[
         description:
             "When an event value arrives here, the timer should be set to go \
              off in that many time steps.",
-        side: Direction::West,
-        pos: InterfacePosition::Center,
+        side: Direction::South,
+        pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
             name: "Set",
             description: "",
@@ -51,7 +51,7 @@ pub(super) const EGG_TIMER_INTERFACES: &[Interface] = &[
         description:
             "Should be the number of time steps before the timer goes off.",
         side: Direction::North,
-        pos: InterfacePosition::Center,
+        pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
             name: "Remain",
             description: "",
@@ -63,8 +63,8 @@ pub(super) const EGG_TIMER_INTERFACES: &[Interface] = &[
     Interface {
         name: "Alarm",
         description: "Send an event here when the timer goes off.",
-        side: Direction::East,
-        pos: InterfacePosition::Center,
+        side: Direction::North,
+        pos: InterfacePosition::Right(0),
         ports: &[InterfacePort {
             name: "Alarm",
             description: "",
@@ -112,8 +112,8 @@ pub(super) const STOPWATCH_INTERFACES: &[Interface] = &[
         description:
             "When an event value arrives here, the timer should start \
              counting up from its current value.",
-        side: Direction::West,
-        pos: InterfacePosition::Center,
+        side: Direction::South,
+        pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
             name: "Start",
             description: "",
@@ -126,8 +126,8 @@ pub(super) const STOPWATCH_INTERFACES: &[Interface] = &[
         name: "Stop",
         description:
             "When an event value arrives here, the timer should pause.",
-        side: Direction::South,
-        pos: InterfacePosition::Center,
+        side: Direction::North,
+        pos: InterfacePosition::Left(0),
         ports: &[InterfacePort {
             name: "Stop",
             description: "",
@@ -141,8 +141,8 @@ pub(super) const STOPWATCH_INTERFACES: &[Interface] = &[
         description:
             "When an event value arrives here, the timer value should be \
              reset to zero.",
-        side: Direction::North,
-        pos: InterfacePosition::Center,
+        side: Direction::South,
+        pos: InterfacePosition::Right(0),
         ports: &[InterfacePort {
             name: "Reset",
             description: "",
@@ -154,8 +154,8 @@ pub(super) const STOPWATCH_INTERFACES: &[Interface] = &[
     Interface {
         name: "Time",
         description: "Should be the current timer value, starting at zero.",
-        side: Direction::East,
-        pos: InterfacePosition::Center,
+        side: Direction::North,
+        pos: InterfacePosition::Right(0),
         ports: &[InterfacePort {
             name: "Time",
             description: "",

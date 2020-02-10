@@ -20,6 +20,7 @@
 mod beacon;
 mod grapple;
 mod heliostat;
+mod injector;
 mod lander;
 mod mining;
 mod reactor;
@@ -99,6 +100,9 @@ impl VerificationTray {
             Puzzle::AutomateIncubator => {
                 // TODO: Make a verification view for AutomateIncubator
                 self::shared::NullVerifyView::new()
+            }
+            Puzzle::AutomateInjector => {
+                self::injector::InjectorVerifyView::new(right_bottom)
             }
             Puzzle::AutomateMiningRobot => {
                 self::mining::MiningRobotVerifyView::new(right_bottom)

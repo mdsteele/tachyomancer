@@ -93,6 +93,7 @@ pub enum Puzzle {
     TutorialRam,
     FabricateStack,
     FabricateQueue,
+    AutomateInjector,
     AutomateCollector,
     AutomateTranslator,
     AutomateStorageDepot,
@@ -262,6 +263,19 @@ impl Puzzle {
                      necessarily contiguous), then unloaded.\n\
                      * $!Loading or unloading an egg takes a few time \
                      steps.  The heater must be off during this time.",
+            },
+            Puzzle::AutomateInjector => &PuzzleData {
+                title: "Plasma Injector",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (9, 5),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 500),
+                description:
+                    "Control the main reactor's primary plasma injection head \
+                     in order to maintain a steady Low-Temperature Fusion \
+                     (LTF) reaction.",
+                instructions: "TODO",
             },
             Puzzle::AutomateMiningRobot => &PuzzleData {
                 title: "Mining Robot",

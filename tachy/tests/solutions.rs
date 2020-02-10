@@ -45,6 +45,11 @@ fn automate_incubator() {
 }
 
 #[test]
+fn automate_injector() {
+    test_solution("automate_injector");
+}
+
+#[test]
 fn automate_mining_robot() {
     test_solution("automate_mining_robot");
 }

@@ -39,7 +39,11 @@ pub struct SolutionData {
 }
 
 impl SolutionData {
-    pub fn load(path: &Path) -> Result<SolutionData, String> {
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<SolutionData, String> {
+        SolutionData::load_path(path.as_ref())
+    }
+
+    fn load_path(path: &Path) -> Result<SolutionData, String> {
         let bytes = fs::read(path).map_err(|err| {
             format!("Could not read solution file from {:?}: {}", path, err)
         })?;

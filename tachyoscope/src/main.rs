@@ -111,9 +111,11 @@ struct LandingPageHandler {
 
 impl Handler for LandingPageHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        debug_log!("Received LandingPageHandler request.");
         let count =
             self.db.load_num_verified_solutions().map_err(internal_error)?;
         let response = format!("There are {} verified solutions.\n", count);
+        debug_log!("Serving LandingPageHandler response.");
         Ok(Response::with((status::Ok, response)))
     }
 }
@@ -126,8 +128,10 @@ struct GetScoresHandler {
 
 impl Handler for GetScoresHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        debug_log!("Received GetScoresHandler request.");
         let scores = self.db.load_scores().map_err(internal_error)?;
         let response = scores.serialize_to_string().map_err(internal_error)?;
+        debug_log!("Sending GetScoresHandler response.");
         Ok(Response::with((status::Ok, response)))
     }
 }
@@ -140,7 +144,10 @@ struct SubmitSolutionHandler {
 
 impl Handler for SubmitSolutionHandler {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        debug_log!("Received submission from {:?}", request.remote_addr);
+        debug_log!(
+            "Received SubmitSolutionHandler request from {:?}",
+            request.remote_addr
+        );
 
         // Read the serialized solution from the client:
         let mut body = String::new();
@@ -157,16 +164,19 @@ impl Handler for SubmitSolutionHandler {
                 IronError::new(io_err, (status::BadRequest, msg))
             })?;
         debug_log!(
-            "Got solution data from ID={:?} for {:?} with size: {:?}",
+            "Got solution data from ID={:?} for {:?} with size {}x{}",
             data.install_id,
             data.puzzle,
-            data.circuit.size
+            data.circuit.size.width,
+            data.circuit.size.height,
         );
 
         // Ignore solutions that fall outside graph bounds:
         let (max_area, max_score) = data.puzzle.graph_bounds();
         if data.score > max_score || data.circuit.size.area() > max_area {
+            debug_log!("This solution is outside the graph; ignoring it.");
             let response = "Solution is not within graph bounds.".to_string();
+            debug_log!("Sending SubmitSolutionHandler response.");
             return Ok(Response::with((status::Ok, response)));
         }
 
@@ -174,8 +184,10 @@ impl Handler for SubmitSolutionHandler {
         if let Some(key) =
             self.db.store_new_solution(&data).map_err(internal_error)?
         {
+            debug_log!("Verifying solution...");
             let errors = verify_solution(&data);
             if errors.is_empty() {
+                debug_log!("Solution successful.  Storing in DB...");
                 self.db
                     .store_verified_solution(
                         key,
@@ -183,14 +195,21 @@ impl Handler for SubmitSolutionHandler {
                         data.score,
                     )
                     .map_err(internal_error)?;
+                debug_log!("Solution has been stored in the DB.");
             } else {
+                debug_log!("Solution had errors.  Ignoring it.");
                 let mut response = "Circuit had errors:\n".to_string();
                 for error in errors.iter() {
                     response.push_str(&format!("- {}\n", error));
                 }
+                debug_log!("Sending SubmitSolutionHandler response.");
                 return Ok(Response::with((status::Ok, response)));
             }
+        } else {
+            debug_log!("We've seen this solution before; ignoring it.");
         };
+
+        debug_log!("Sending SubmitSolutionHandler response.");
         return Ok(Response::with((status::Ok, "ok\n")));
     }
 }

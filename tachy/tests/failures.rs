@@ -1,6 +1,5 @@
 extern crate tachy;
 
-use std::path::PathBuf;
 use tachy::save::SolutionData;
 use tachy::state::verify_solution;
 
@@ -74,7 +73,7 @@ fn x_unit_incomplete_detonation() {
 }
 
 fn test_failure(name: &str) -> Vec<String> {
-    let path = PathBuf::from(format!("tests/failures/{}.toml", name));
+    let path = format!("tests/failures/{}.toml", name);
     let data = SolutionData::load(&path).unwrap();
     verify_solution(&data)
 }

@@ -1,0 +1,22 @@
+install_id = 578263091605762393
+puzzle = "TutorialOr"
+score = 16
+time_steps = 4
+
+[circuit]
+size = [4, 2]
+
+[circuit.chips]
+p0p0 = "f0-Not"
+p1p0 = "f0-And"
+p1p1 = "f3-Not"
+p3p1 = "f0-Not"
+
+[circuit.wires]
+m1p0e = "Stub"
+p0p0e = "Stub"
+p1p0s = "Stub"
+p1p1s = "Stub"
+p2p0s = "TurnLeft"
+p2p1n = "TurnLeft"
+p3p1e = "Stub"

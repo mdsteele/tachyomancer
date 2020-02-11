@@ -54,8 +54,8 @@ impl ScoreDatabase for InMemoryScoreDatabase {
     }
 
     fn load_scores(&self) -> Result<ScoreCurveMap, String> {
-        let storage = self.storage.lock().unwrap();
         let mut scores = ScoreCurveMap::new();
+        let storage = self.storage.lock().unwrap();
         for (&(puzzle, _), &(area, score)) in storage.verified.iter() {
             scores.insert(puzzle, area, score);
         }
@@ -66,8 +66,9 @@ impl ScoreDatabase for InMemoryScoreDatabase {
         &self,
         solution: &SolutionData,
     ) -> Result<Option<(Puzzle, String)>, String> {
-        let mut storage = self.storage.lock().unwrap();
         let hash = hash_circuit_data(&solution.circuit)?;
+        debug_log!("Solution hash is {}", hash);
+        let mut storage = self.storage.lock().unwrap();
         if !storage.circuits.contains_key(&hash) {
             storage.circuits.insert(hash.clone(), solution.circuit.clone());
         }
@@ -93,6 +94,61 @@ impl ScoreDatabase for InMemoryScoreDatabase {
         let mut storage = self.storage.lock().unwrap();
         storage.verified.insert(key, (area, score));
         Ok(())
+    }
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::super::shared::ScoreDatabase;
+    use super::InMemoryScoreDatabase;
+    use tachy::save::{Puzzle, SolutionData};
+
+    #[test]
+    fn num_verified_solutions() {
+        let db = InMemoryScoreDatabase::new();
+        assert_eq!(db.load_num_verified_solutions().unwrap(), 0);
+
+        // Store a solution.  It should not count as verified until we have
+        // actually verified it.
+        let solution =
+            SolutionData::load("tests/solutions/tutorial_or_1.toml").unwrap();
+        let key = db.store_new_solution(&solution).unwrap();
+        assert!(key.is_some());
+        assert_eq!(db.load_num_verified_solutions().unwrap(), 0);
+        db.store_verified_solution(
+            key.unwrap(),
+            solution.circuit.size.area(),
+            solution.score,
+        )
+        .unwrap();
+        assert_eq!(db.load_num_verified_solutions().unwrap(), 1);
+
+        // Store another solution.  Again, it should not count as verified
+        // until we have actually verified it.
+        let solution =
+            SolutionData::load("tests/solutions/tutorial_or_2.toml").unwrap();
+        let key = db.store_new_solution(&solution).unwrap();
+        assert!(key.is_some());
+        assert_eq!(db.load_num_verified_solutions().unwrap(), 1);
+        db.store_verified_solution(
+            key.unwrap(),
+            solution.circuit.size.area(),
+            solution.score,
+        )
+        .unwrap();
+        assert_eq!(db.load_num_verified_solutions().unwrap(), 2);
+
+        // Try storing the same solution again.  It should be rejected as a
+        // duplicate.
+        assert!(db.store_new_solution(&solution).unwrap().is_none());
+        assert_eq!(db.load_num_verified_solutions().unwrap(), 2);
+
+        // Load scores and check that we have both scores for TutorialOr.
+        let score_map = db.load_scores().unwrap();
+        let score_curve = score_map.get(Puzzle::TutorialOr);
+        assert_eq!(score_curve.scores(), &[(8, 16), (9, 12)]);
     }
 }
 

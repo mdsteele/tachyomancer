@@ -18,8 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use sha::sha256::Sha256;
-use sha::utils::DigestExt;
-use std::hash::Hasher;
+use sha::utils::{Digest, DigestExt};
 use tachy::save::{CircuitData, Puzzle, ScoreCurveMap, SolutionData};
 
 //===========================================================================//
@@ -51,10 +50,40 @@ pub trait ScoreDatabase: Send + Sync {
 //===========================================================================//
 
 pub fn hash_circuit_data(circuit: &CircuitData) -> Result<String, String> {
-    let mut hash = Sha256::default();
     let serialized = circuit.serialize_to_string()?;
-    hash.write(serialized.as_bytes());
-    Ok(hash.to_hex())
+    Ok(Sha256::default().digest(serialized.as_bytes()).to_hex())
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::hash_circuit_data;
+    use tachy::save::SolutionData;
+
+    #[test]
+    fn circuit_hash_1() {
+        let solution =
+            SolutionData::load("tests/solutions/tutorial_or_1.toml").unwrap();
+        let hash = hash_circuit_data(&solution.circuit).unwrap();
+        assert_eq!(
+            hash,
+            "f38b0da4b7a01eeb75cfc2698efb7dbd\
+             895b03bd971cc5170aecb0220a0724d8"
+        );
+    }
+
+    #[test]
+    fn circuit_hash_2() {
+        let solution =
+            SolutionData::load("tests/solutions/tutorial_or_2.toml").unwrap();
+        let hash = hash_circuit_data(&solution.circuit).unwrap();
+        assert_eq!(
+            hash,
+            "9af25154810a935af30a2107019b4d5b\
+             c2a62b99e95c82607bbb8c574c22a2d2"
+        );
+    }
 }
 
 //===========================================================================//

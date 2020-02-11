@@ -1,6 +1,5 @@
 extern crate tachy;
 
-use std::path::PathBuf;
 use tachy::save::SolutionData;
 use tachy::state::verify_solution;
 
@@ -190,7 +189,7 @@ fn tutorial_sum() {
 }
 
 fn test_solution(name: &str) {
-    let path = PathBuf::from(format!("tests/solutions/{}.toml", name));
+    let path = format!("tests/solutions/{}.toml", name);
     let data = SolutionData::load(&path).unwrap();
     let errors = verify_solution(&data);
     if !errors.is_empty() {

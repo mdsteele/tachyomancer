@@ -133,6 +133,14 @@ impl CircuitEval {
         self.state.press_hotkey(code);
     }
 
+    fn num_recorded_inputs(&self) -> u32 {
+        let mut total: u32 = 0;
+        for &(_, _, _, _, count) in self.state.recorded_inputs.iter() {
+            total = total.saturating_add(count);
+        }
+        total
+    }
+
     pub fn recorded_inputs(&self, top_left: Coords) -> Option<InputsData> {
         if self.state.recorded_inputs.is_empty() {
             return None;
@@ -234,6 +242,9 @@ impl CircuitEval {
                     if self.errors.is_empty() {
                         let score = match self.score_units {
                             ScoreUnits::Cycles => self.total_cycles,
+                            ScoreUnits::ManualInputs => {
+                                self.num_recorded_inputs()
+                            }
                             ScoreUnits::Time => self.time_step(),
                             ScoreUnits::WireLength => self.wire_length,
                         };

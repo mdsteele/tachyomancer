@@ -36,6 +36,7 @@ pub enum PuzzleKind {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScoreUnits {
     Cycles,
+    ManualInputs,
     Time,
     WireLength,
 }
@@ -44,6 +45,7 @@ impl ScoreUnits {
     pub fn label(self) -> &'static str {
         match self {
             ScoreUnits::Cycles => "Cycles",
+            ScoreUnits::ManualInputs => "Manual Inputs",
             ScoreUnits::Time => "Time",
             ScoreUnits::WireLength => "Wire Length",
         }
@@ -396,8 +398,8 @@ impl Puzzle {
                 kind: PuzzleKind::Command,
                 allow_events: false,
                 init_size: (6, 8),
-                score_units: ScoreUnits::Time,
-                graph_bounds: (150, 150),
+                score_units: ScoreUnits::ManualInputs,
+                graph_bounds: (200, 100),
                 description:
                     "Operate the lander thrusters during descent for a soft \
                      landing.",
@@ -408,8 +410,8 @@ impl Puzzle {
                 kind: PuzzleKind::Command,
                 allow_events: true,
                 init_size: (9, 7),
-                score_units: ScoreUnits::Time,
-                graph_bounds: (400, 600),
+                score_units: ScoreUnits::ManualInputs,
+                graph_bounds: (500, 100),
                 description:
                     "Control the ship's shields to block incoming enemy \
                      torpedoes, then return fire.",
@@ -420,8 +422,8 @@ impl Puzzle {
                 kind: PuzzleKind::Command,
                 allow_events: true,
                 init_size: (9, 7),
-                score_units: ScoreUnits::Time,
-                graph_bounds: (200, 200),
+                score_units: ScoreUnits::ManualInputs,
+                graph_bounds: (500, 100),
                 description:
                     "Aim and fire the pulse cannon turret to fend off waves \
                      of enemy attackers.",

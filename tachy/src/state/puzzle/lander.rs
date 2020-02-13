@@ -25,17 +25,17 @@ use crate::state::{PortColor, PortFlow};
 
 //===========================================================================//
 
-const GRAVITY: f64 = 2.0;
-const TERMINAL_VELOCITY: f64 = 15.0;
-const AIR_RESISTANCE: f64 = GRAVITY / (TERMINAL_VELOCITY * TERMINAL_VELOCITY);
-const ACCEL_PER_THRUST: f64 = 0.1;
+const GRAVITY: f64 = 0.04;
+const ACCEL_PER_THRUST: f64 = GRAVITY / 15.0;
 
 const INIT_ALTITUDE: f64 = 250.0;
 const INIT_VELOCITY: f64 = -1.0;
 const INIT_ANGLE: i32 = 90;
-const INIT_FUEL: u32 = 250;
+const INIT_FUEL: u32 = 3000;
+const FUEL_FACTOR: u32 = 15;
+const_assert!(INIT_FUEL <= FUEL_FACTOR * 255);
 
-const MAX_LANDING_SPEED: f64 = 5.0;
+const MAX_LANDING_SPEED: f64 = 2.0;
 const MIN_LANDING_ANGLE: i32 = 85;
 const MAX_LANDING_ANGLE: i32 = 95;
 
@@ -113,9 +113,13 @@ pub struct LanderEval {
     current_velocity: f64,
     current_angle: i32,
     current_fuel: u32,
+    port_thrust: u32,
+    stbd_thrust: u32,
 }
 
 impl LanderEval {
+    pub const INITIAL_ALTITUDE: f64 = INIT_ALTITUDE;
+
     pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> LanderEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 3);
@@ -130,20 +134,29 @@ impl LanderEval {
             current_velocity: INIT_VELOCITY,
             current_angle: INIT_ANGLE,
             current_fuel: INIT_FUEL,
+            port_thrust: 0,
+            stbd_thrust: 0,
         }
     }
 
-    pub fn current_altitude(&self) -> u32 {
-        debug_assert!(self.current_altitude >= 0.0);
-        self.current_altitude.ceil() as u32
+    pub fn lander_altitude(&self) -> f64 {
+        self.current_altitude
     }
 
-    pub fn current_angle(&self) -> u32 {
-        self.current_angle as u32
+    pub fn lander_angle_from_vertical(&self) -> i32 {
+        self.current_angle - 90
     }
 
-    pub fn current_fuel(&self) -> u32 {
-        self.current_fuel
+    pub fn fuel(&self) -> f32 {
+        (self.current_fuel as f32) / (INIT_FUEL as f32)
+    }
+
+    pub fn port_thrust(&self) -> f32 {
+        (self.port_thrust as f32) / 15.0
+    }
+
+    pub fn stbd_thrust(&self) -> f32 {
+        (self.stbd_thrust as f32) / 15.0
     }
 }
 
@@ -153,13 +166,24 @@ impl PuzzleEval for LanderEval {
     }
 
     fn task_is_completed(&self, _state: &CircuitState) -> bool {
-        self.current_altitude() <= 0
+        self.current_altitude <= 0.0
+            && self.port_thrust == 0
+            && self.stbd_thrust == 0
     }
 
     fn begin_time_step(&mut self, state: &mut CircuitState) {
-        state.send_behavior(self.alt_wire, self.current_altitude());
-        state.send_behavior(self.angle_wire, self.current_angle());
-        state.send_behavior(self.fuel_wire, self.current_fuel);
+        debug_assert!(self.current_altitude >= 0.0);
+        let altitude = self.current_altitude.ceil() as u32;
+        debug_assert!(altitude <= 255);
+        state.send_behavior(self.alt_wire, altitude);
+
+        debug_assert!(self.current_angle >= 0);
+        debug_assert!(self.current_angle <= 180);
+        state.send_behavior(self.angle_wire, self.current_angle as u32);
+
+        let fuel = (self.current_fuel + FUEL_FACTOR - 1) / FUEL_FACTOR;
+        debug_assert!(fuel <= 255);
+        state.send_behavior(self.fuel_wire, fuel);
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {
@@ -169,6 +193,8 @@ impl PuzzleEval for LanderEval {
             limit_thrust(port_thrust, stbd_thrust, self.current_fuel);
         debug_assert!(port_thrust + stbd_thrust <= self.current_fuel);
         self.current_fuel -= port_thrust + stbd_thrust;
+        self.port_thrust = port_thrust;
+        self.stbd_thrust = stbd_thrust;
 
         let current_wind = wind_at_altitude(self.current_altitude);
 
@@ -180,9 +206,6 @@ impl PuzzleEval for LanderEval {
         self.current_velocity += ((port_thrust + stbd_thrust) as f64)
             * ACCEL_PER_THRUST
             * (self.current_angle as f64).to_radians().sin();
-        self.current_velocity -= AIR_RESISTANCE
-            * self.current_velocity
-            * self.current_velocity.abs();
 
         self.current_angle += (port_thrust as i32) - (stbd_thrust as i32);
         self.current_angle += current_wind;
@@ -207,6 +230,7 @@ impl PuzzleEval for LanderEval {
                     self.current_angle, MIN_LANDING_ANGLE, MAX_LANDING_ANGLE
                 )));
             }
+            self.current_velocity = self.current_velocity.max(0.0);
         }
         errors
     }

@@ -1,0 +1,47 @@
+puzzle = "CommandLander"
+score = 2
+time_steps = 123
+
+[circuit]
+size = [6, 4]
+
+[circuit.chips]
+p0p2 = "t0-Const(89)"
+p0p3 = "f0-Const(2)"
+p1p2 = "t0-CmpEq"
+p1p3 = "f0-Mux"
+p2p0 = "f0-Toggle(false)"
+p2p3 = "f1-Add"
+p3p0 = "t1-Mux"
+p3p3 = "t1-Add"
+p4p0 = "f2-Const(13)"
+p4p1 = "t0-CmpEq"
+p4p3 = "t2-Mux"
+p5p1 = "f2-Const(91)"
+p5p3 = "f2-Const(2)"
+
+[circuit.wires]
+p0p1e = "Straight"
+p0p2e = "Stub"
+p0p3e = "Stub"
+p1p1e = "Straight"
+p1p2s = "Stub"
+p1p3e = "Stub"
+p2p0e = "Stub"
+p2p1s = "SplitTee"
+p2p2e = "TurnLeft"
+p2p2w = "TurnLeft"
+p2p3s = "Stub"
+p3p0e = "Stub"
+p3p1e = "Straight"
+p3p1s = "Straight"
+p3p2w = "SplitTee"
+p3p3e = "Stub"
+p3p3s = "Stub"
+p4p1e = "Stub"
+p4p2s = "Straight"
+p4p3e = "Stub"
+
+[inputs]
+t00059_000_p2p0_0 = 1
+t00120_000_p2p0_0 = 1

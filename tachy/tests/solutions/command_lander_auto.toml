@@ -1,0 +1,53 @@
+puzzle = "CommandLander"
+score = 0
+time_steps = 113
+
+[circuit]
+size = [6, 6]
+
+[circuit.chips]
+p0p4 = "t0-Const(89)"
+p0p5 = "f0-Const(2)"
+p1p1 = "f2-Cmp"
+p1p4 = "t0-CmpEq"
+p1p5 = "f0-Mux"
+p2p0 = "t0-Cmp"
+p2p2 = "t0-And"
+p2p5 = "f1-Add"
+p3p0 = "f2-Const(120)"
+p3p2 = "t1-Mux"
+p3p5 = "t1-Add"
+p4p2 = "f2-Const(13)"
+p4p3 = "t0-CmpEq"
+p4p5 = "t2-Mux"
+p5p3 = "f2-Const(91)"
+p5p5 = "f2-Const(2)"
+
+[circuit.wires]
+p0p0e = "TurnLeft"
+p0p1n = "SplitTee"
+p0p2s = "TurnLeft"
+p0p3n = "TurnLeft"
+p0p4e = "Stub"
+p0p5e = "Stub"
+p1p0e = "Straight"
+p1p2n = "TurnLeft"
+p1p3e = "Straight"
+p1p4s = "Stub"
+p1p5e = "Stub"
+p2p0e = "Stub"
+p2p1s = "Straight"
+p2p2e = "Stub"
+p2p3s = "SplitTee"
+p2p4e = "TurnLeft"
+p2p4w = "TurnLeft"
+p2p5s = "Stub"
+p3p2e = "Stub"
+p3p3e = "Straight"
+p3p3s = "Straight"
+p3p4w = "SplitTee"
+p3p5e = "Stub"
+p3p5s = "Stub"
+p4p3e = "Stub"
+p4p4s = "Straight"
+p4p5e = "Stub"

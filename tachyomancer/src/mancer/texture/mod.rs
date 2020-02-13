@@ -28,6 +28,9 @@ const CHIP_ICONS_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/texture/chip_icons.png"));
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+const DIAGRAM_LANDER_PNG_DATA: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/texture/diagram/lander.png"));
+#[cfg_attr(rustfmt, rustfmt_skip)]
 const DIAGRAM_SHIELDS_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/texture/diagram/shields.png"));
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -321,6 +324,7 @@ const WIRE_TEXTURE1D_DATA: &[u8; 1024] = &[
 pub struct Textures {
     brushed_metal: Texture2D,
     chip_icons: Texture2D,
+    diagram_lander: Texture2D,
     diagram_shields: Texture2D,
     diagram_storage: Texture2D,
     diagram_turret: Texture2D,
@@ -340,6 +344,8 @@ impl Textures {
             Texture2D::from_jpeg("brushed_metal", BRUSHED_METAL_JPEG_DATA)?;
         let chip_icons =
             Texture2D::from_png("texture/chip_icons", CHIP_ICONS_PNG_DATA)?;
+        let diagram_lander =
+            Texture2D::from_png("diagram/lander", DIAGRAM_LANDER_PNG_DATA)?;
         let diagram_shields =
             Texture2D::from_png("diagram/shields", DIAGRAM_SHIELDS_PNG_DATA)?;
         let diagram_storage =
@@ -365,6 +371,7 @@ impl Textures {
         Ok(Textures {
             brushed_metal,
             chip_icons,
+            diagram_lander,
             diagram_shields,
             diagram_storage,
             diagram_turret,
@@ -385,6 +392,10 @@ impl Textures {
 
     pub fn chip_icons(&self) -> &Texture2D {
         &self.chip_icons
+    }
+
+    pub fn diagram_lander(&self) -> &Texture2D {
+        &self.diagram_lander
     }
 
     pub fn diagram_shields(&self) -> &Texture2D {

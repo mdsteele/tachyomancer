@@ -99,8 +99,18 @@ fn automate_x_unit() {
 }
 
 #[test]
-fn command_shields() {
-    test_solution("command_shields");
+fn command_lander_auto() {
+    test_solution("command_lander_auto");
+}
+
+#[test]
+fn command_lander_manual() {
+    test_solution("command_lander_manual");
+}
+
+#[test]
+fn command_shields_manual() {
+    test_solution("command_shields_manual");
 }
 
 #[test]

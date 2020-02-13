@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="128" height="128">
+  <!-- Lander -->
+  <g transform="translate(0, 0)">
+    <g fill="#883916" stroke="#d99353" stroke-width="2">
+      <rect x="3" y="10" width="6" height="21"/>
+      <rect x="23" y="10" width="6" height="21"/>
+      <path d="M 8,9 A 8 8 0 0 1 24,9 V 26 H 8 Z"/>
+    </g>
+  </g>
+  <!-- Thruster flames -->
+  <g transform="translate(-2, 32)">
+    <path d="M 6,0 V 1 L 5,6 L 8,13 L 11,6 L 10,1 V 0"
+          fill="#51d9f9" stroke="#65ebfb" stroke-width="2"/>
+  </g>
+  <!-- Fuel meter -->
+  <g transform="translate(16, 32)">
+    <rect x="3" y="0" width="10" height="32" fill="#246272" stroke="none"/>
+    <rect x="5" y="0" width="6" height="32" fill="#51d9f9" stroke="none"/>
+  </g>
+  <!-- Meter caps -->
+  <g transform="translate(0, 64)">
+    <path d="M 8,14 V 2 H 24 V 14
+             M 8,18 V 30 H 24 V 18"
+          fill="none" stroke="#a437fc" stroke-width="4"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Surface -->
+  <g transform="translate(0, 96)">
+    <path d="M -2,16 L 10,2 L 15,8 L 18,5 L 24,12 L 34,16
+             H 92 L 100,12 L 105,14 L 112,5 L 116,8 L 122,3 L 130,13
+             V 130 H -2 Z"
+          fill="#883916" stroke="#d99353" stroke-width="2"/>
+  </g>
+</svg>

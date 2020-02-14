@@ -21,20 +21,18 @@ use super::shared::PuzzleVerifyView;
 use crate::mancer::font::Align;
 use crate::mancer::gui::Resources;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{Rect, RectSize};
+use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::state::{CircuitEval, ReactorEval};
 
 //===========================================================================//
 
 const VIEW_WIDTH: i32 = 160;
-const VIEW_HEIGHT: i32 = 160;
-
-const FONT_SIZE: f32 = 20.0;
+const VIEW_HEIGHT: i32 = 140;
 
 //===========================================================================//
 
 pub struct ReactorVerifyView {
-    rect: Rect<i32>,
+    rect: Rect<f32>,
 }
 
 impl ReactorVerifyView {
@@ -45,7 +43,7 @@ impl ReactorVerifyView {
             VIEW_WIDTH,
             VIEW_HEIGHT,
         );
-        Box::new(ReactorVerifyView { rect })
+        Box::new(ReactorVerifyView { rect: rect.as_f32() })
     }
 
     fn draw_data(
@@ -54,29 +52,58 @@ impl ReactorVerifyView {
         matrix: &Matrix4<f32>,
         data: &EvalData,
     ) {
-        let left = self.rect.x as f32;
-        let top = self.rect.y as f32;
-        let font = resources.fonts().roman();
-        font.draw(
+        // Control rods:
+        for index in 0..3 {
+            let mut x = self.rect.x + 95.0;
+            let y = self.rect.bottom() - 114.0 + 26.0 * (index as f32);
+            let extend = data.rods[index];
+            for _ in 0..extend {
+                resources.shaders().diagram().draw(
+                    matrix,
+                    Rect::new(x, y, 16.0, 32.0),
+                    Rect::new(0.75, 0.5, 0.125, 0.25),
+                    resources.textures().diagram_reactor(),
+                );
+                x += 16.0;
+            }
+            resources.shaders().diagram().draw(
+                matrix,
+                Rect::new(x, y, 16.0, 32.0),
+                Rect::new(0.875, 0.5, 0.125, 0.25),
+                resources.textures().diagram_reactor(),
+            );
+        }
+        // Reactor:
+        resources.shaders().diagram().draw(
             matrix,
-            FONT_SIZE,
-            Align::TopLeft,
-            (left, top),
-            &format!("Power: {}", data.power),
+            Rect::new(self.rect.x, self.rect.bottom() - 128.0, 96.0, 96.0),
+            Rect::new(0.0, 0.0, 0.75, 0.75),
+            resources.textures().diagram_reactor(),
         );
-        font.draw(
+        resources.shaders().diagram().draw(
             matrix,
-            FONT_SIZE,
-            Align::TopLeft,
-            (left, top + 30.0),
-            &format!("Target: {}", data.target),
+            Rect::new(self.rect.x, self.rect.bottom() - 32.0, 128.0, 32.0),
+            Rect::new(0.0, 0.75, 1.0, 0.25),
+            resources.textures().diagram_reactor(),
         );
-        font.draw(
+        // Power readings:
+        resources.fonts().led().draw_style(
             matrix,
-            FONT_SIZE,
-            Align::TopLeft,
-            (left, top + 60.0),
-            &format!("Rods: {:?}", data.rods),
+            16.0,
+            Align::MidCenter,
+            (self.rect.x + 37.0, self.rect.bottom() - 15.0),
+            &Color4::YELLOW4,
+            0.0,
+            &format!("{}", data.target),
+        );
+        resources.fonts().led().draw_style(
+            matrix,
+            16.0,
+            Align::MidCenter,
+            (self.rect.x + 99.0, self.rect.bottom() - 15.0),
+            &Color4::YELLOW4,
+            0.0,
+            &format!("{}", data.power),
         );
     }
 }

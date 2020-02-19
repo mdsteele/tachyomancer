@@ -112,6 +112,7 @@ impl PuzzleExt for Puzzle {
     fn origin_conversations(&self) -> &'static [Conversation] {
         match self {
             Puzzle::AutomateBeacon => &[Conversation::OneMoreThing],
+            Puzzle::AutomateFuelSynthesis => &[Conversation::MakingFuel],
             Puzzle::AutomateGrapple => {
                 &[Conversation::CaptainAwake, Conversation::AnIdea]
             }

@@ -274,7 +274,7 @@ pub(super) fn additional_chips(
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn making_fuel(
-    _profile: &Profile,
+    profile: &Profile,
     builder: &mut ConversationBuilder,
 ) -> Result<(), ()> {
     builder.you("How is progress on fuel-making, Chief?");
@@ -282,7 +282,8 @@ pub(super) fn making_fuel(
         We've got a good start.  Crewman Patel's got the catalysis equipment \
         set up, and he'll be managing the synthesis process as we bring in \
         materials.");
-    // TODO puzzle link
+    builder.puzzle(profile, Puzzle::AutomateFuelSynthesis)?;
+    builder.henry("TODO");
     Ok(())
 }
 

@@ -14,6 +14,11 @@ fn automate_drilling_rig() {
 }
 
 #[test]
+fn automate_fuel_synth() {
+    test_solution("automate_fuel_synth");
+}
+
+#[test]
 fn automate_geiger_counter_fast() {
     test_solution("automate_geiger_counter_fast");
 }

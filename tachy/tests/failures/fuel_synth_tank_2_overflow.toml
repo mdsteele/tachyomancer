@@ -1,0 +1,12 @@
+puzzle = "AutomateFuelSynthesis"
+score = 0
+time_steps = 100
+
+[circuit]
+size = [4, 1]
+
+[circuit.chips]
+p2p0 = "f3-Not"
+
+[circuit.wires]
+p2m1s = "Stub"

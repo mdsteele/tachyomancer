@@ -88,6 +88,7 @@ pub enum Puzzle {
     FabricateInc,
     FabricateCounter,
     AutomateMiningRobot,
+    AutomateFuelSynthesis,
     AutomateBeacon,
     AutomateRobotArm,
     CommandTurret,
@@ -199,6 +200,26 @@ impl Puzzle {
                     "Regulate the speed of the drill to avoid breaking the \
                      drill head.",
                 instructions: "TODO",
+            },
+            Puzzle::AutomateFuelSynthesis => &PuzzleData {
+                title: "Fuel Synthesis",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (8, 6),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 400),
+                description:
+                    "Control the intake valves and mixing chamber for the \
+                     hyperfuel synthesis process.",
+                instructions:
+                    "* $!Open each tank's intake valve until 5 units of \
+                     reagent have been pumped into that tank.\n\
+                     * $!Start the mixer to drain 5 units from each tank and \
+                     mix them into a batch of hyperfuel.  Both intake valves \
+                     must remain closed during mixing.\n\
+                     * $!It is an error to allow either of the tanks to \
+                     overflow.\n\
+                     * $!Your goal is to produce 8 batches of fuel.",
             },
             Puzzle::AutomateGeigerCounter => &PuzzleData {
                 title: "Geiger Counter",

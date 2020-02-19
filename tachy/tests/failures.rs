@@ -12,6 +12,52 @@ fn fab_behavior_wrong() {
 }
 
 #[test]
+fn fuel_synth_intakes_open_while_mixing() {
+    let actual = test_failure("fuel_synth_intakes_open_while_mixing");
+    let expected = vec![
+        "Time step 12: Intake valve #1 was left open during mixing.",
+        "Time step 12: Intake valve #2 was left open during mixing.",
+    ];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn fuel_synth_mix_while_mixing() {
+    let actual = test_failure("fuel_synth_mix_while_mixing");
+    let expected =
+        vec!["Time step 12: Tried to start mixing while already in progress."];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn fuel_synth_not_enough_to_mix() {
+    let actual = test_failure("fuel_synth_not_enough_to_mix");
+    let expected = vec![
+        "Time step 1: Tried to start mixing with not enough reagent in each \
+         tank.",
+    ];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn fuel_synth_tank_1_overflow() {
+    let actual = test_failure("fuel_synth_tank_1_overflow");
+    let expected = vec![
+        "Time step 19: Tank #1 is full, but the intake valve was left open.",
+    ];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn fuel_synth_tank_2_overflow() {
+    let actual = test_failure("fuel_synth_tank_2_overflow");
+    let expected = vec![
+        "Time step 24: Tank #2 is full, but the intake valve was left open.",
+    ];
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn infinite_loop() {
     let actual = test_failure("infinite_loop");
     let expected = vec!["Time step 0: Exceeded 1000 cycles."];

@@ -24,6 +24,7 @@ mod fab_arith;
 mod fab_clock;
 mod fab_event;
 mod fab_memory;
+mod fuel;
 mod geiger;
 mod grapple;
 mod heliostat;
@@ -58,6 +59,7 @@ pub use self::fab_clock::{
 };
 pub use self::fab_event::{FABRICATE_COUNTER_DATA, FABRICATE_INC_DATA};
 pub use self::fab_memory::{FABRICATE_QUEUE_DATA, FABRICATE_STACK_DATA};
+pub use self::fuel::FuelEval;
 pub use self::geiger::GeigerEval;
 pub use self::grapple::GrappleEval;
 pub use self::heliostat::HeliostatEval;
@@ -159,6 +161,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateBeacon => self::beacon::INTERFACES,
             Puzzle::AutomateCollector => self::collector::INTERFACES,
             Puzzle::AutomateDrillingRig => self::drill::INTERFACES,
+            Puzzle::AutomateFuelSynthesis => self::fuel::INTERFACES,
             Puzzle::AutomateGeigerCounter => self::geiger::INTERFACES,
             Puzzle::AutomateGrapple => self::grapple::INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
@@ -266,6 +269,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateBeacon => Box::new(BeaconEval::new(slots)),
         Puzzle::AutomateCollector => Box::new(CollectorEval::new(slots)),
         Puzzle::AutomateDrillingRig => Box::new(DrillingRigEval::new(slots)),
+        Puzzle::AutomateFuelSynthesis => Box::new(FuelEval::new(slots)),
         Puzzle::AutomateGeigerCounter => Box::new(GeigerEval::new(slots)),
         Puzzle::AutomateGrapple => Box::new(GrappleEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),

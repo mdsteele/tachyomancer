@@ -73,7 +73,7 @@ impl Interface {
                         }
                     }
                     let min_size = if min_center > 0 {
-                        min_left.max(min_right) + min_center
+                        2 * min_left.max(min_right) + min_center
                     } else {
                         min_left + min_right
                     };
@@ -209,7 +209,7 @@ mod tests {
     fn interface_positioning() {
         let mut interface = Interface {
             name: "Foobar",
-            description: "r",
+            description: "",
             side: Direction::North,
             pos: InterfacePosition::Center,
             ports: &[
@@ -268,7 +268,66 @@ mod tests {
         assert_eq!(interface.size(), CoordsSize::new(2, 1));
     }
 
-    // TODO: Test for Interface::min_bounds_size()
+    #[test]
+    fn interface_min_bounds_size() {
+        let ports = &[
+            InterfacePort {
+                name: "Foo",
+                description: "",
+                flow: PortFlow::Send,
+                color: PortColor::Event,
+                size: WireSize::One,
+            },
+            InterfacePort {
+                name: "Bar",
+                description: "",
+                flow: PortFlow::Send,
+                color: PortColor::Event,
+                size: WireSize::Two,
+            },
+        ];
+        let interfaces = vec![
+            Interface {
+                name: "Spam",
+                description: "",
+                side: Direction::North,
+                pos: InterfacePosition::Right(0),
+                ports,
+            },
+            Interface {
+                name: "Eggs",
+                description: "",
+                side: Direction::North,
+                pos: InterfacePosition::Center,
+                ports,
+            },
+            Interface {
+                name: "Bacon",
+                description: "",
+                side: Direction::North,
+                pos: InterfacePosition::Left(0),
+                ports,
+            },
+            Interface {
+                name: "Beans",
+                description: "",
+                side: Direction::West,
+                pos: InterfacePosition::Right(1),
+                ports,
+            },
+            Interface {
+                name: "Sausage",
+                description: "",
+                side: Direction::West,
+                pos: InterfacePosition::Left(0),
+                ports,
+            },
+        ];
+        assert_eq!(
+            Interface::min_bounds_size(&interfaces),
+            CoordsSize::new(6, 5)
+        );
+    }
 }
 
 //===========================================================================//

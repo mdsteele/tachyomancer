@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="512" height="512">
+  <!-- Frame -->
+  <g fill="none" stroke="#d99353">
+    <g stroke-width="8">
+      <circle cx="256" cy="256" r="252" fill="#246272"/>
+      <circle cx="256" cy="256" r="191"/>
+    </g>
+    <g stroke-width="6">
+      <path d="M 145,100 H 367"/>
+      <path d="M 95,150 H 417"/>
+      <path d="M 70,300 H 442"/>
+      <path d="M 130,400 H 382"/>
+    </g>
+  </g>
+  <!-- Stars -->
+  <g fill="#e6b688" stroke="none">
+    <path d="M 0,-50 L 29,40 L -48,-15 L 48,-15 L -29,40 Z"
+          transform="translate(146, 239) scale(1.15)"/>
+    <path d="M 0,-50 L 29,40 L -48,-15 L 48,-15 L -29,40 Z"
+          transform="translate(256, 219) scale(1.15)"/>
+    <path d="M 0,-50 L 29,40 L -48,-15 L 48,-15 L -29,40 Z"
+          transform="translate(366, 239) scale(1.15)"/>
+  </g>
+</svg>

@@ -105,45 +105,71 @@ impl EditGridView {
         }
     }
 
-    fn draw_background_grid(&self, resources: &Resources) {
-        let matrix = cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
-        let size = self.size * self.zoom.recip();
-        let pixel_rect = Rect::new(
-            (self.scroll.x as f32) - 0.5 * size.width,
-            (self.scroll.y as f32) - 0.5 * size.height,
+    fn draw_background(&self, resources: &Resources) {
+        let size = self.size / self.zoom;
+        let parallax = 0.9;
+        let texel_rect = Rect::new(
+            parallax * (self.scroll.x as f32) - 0.5 * size.width,
+            parallax * (self.scroll.y as f32) - 0.5 * size.height,
             size.width,
             size.height,
         );
-        let coords_rect = pixel_rect * (GRID_CELL_SIZE as f32).recip();
-        resources.shaders().board().draw(&matrix, coords_rect);
+        resources.shaders().diagram().draw(
+            &cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0),
+            Rect::new(0.0, 0.0, 1.0, 1.0),
+            texel_rect / 512.0,
+            resources.textures().diagram_background(),
+        );
     }
 
-    fn draw_bounds(&self, resources: &Resources, grid: &EditGrid) {
-        let matrix = self.vp_matrix();
+    fn draw_bounds(
+        &self,
+        resources: &Resources,
+        grid_matrix: &Matrix4<f32>,
+        grid: &EditGrid,
+    ) {
         let (bounds, is_acceptable) = match self.interaction {
             Interaction::DraggingBounds(ref drag) => {
                 (drag.bounds(), drag.is_acceptable())
             }
             _ => (grid.bounds(), true),
         };
-        let x = (bounds.x * GRID_CELL_SIZE) as f32;
-        let y = (bounds.y * GRID_CELL_SIZE) as f32;
-        let width = (bounds.width * GRID_CELL_SIZE) as f32;
-        let height = (bounds.height * GRID_CELL_SIZE) as f32;
-        let thick = BOUNDS_MARGIN * (GRID_CELL_SIZE as f32);
+        resources.shaders().board().draw(grid_matrix, bounds.as_f32());
+
+        let bounds = bounds.as_f32();
         let color = if is_acceptable {
             Color3::PURPLE2
         } else {
             Color3::new(1.0, 0.0, 0.0)
         };
-        let rect = Rect::new(x - thick, y, thick, height);
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
-        let rect = Rect::new(x, y - thick, width, thick);
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
-        let rect = Rect::new(x + width, y, thick, height);
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
-        let rect = Rect::new(x, y + height, width, thick);
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        let rect = Rect::new(
+            bounds.x - BOUNDS_MARGIN,
+            bounds.y - BOUNDS_MARGIN,
+            BOUNDS_MARGIN,
+            bounds.height + 2.0 * BOUNDS_MARGIN,
+        );
+        resources.shaders().solid().fill_rect(&grid_matrix, color, rect);
+        let rect = Rect::new(
+            bounds.x,
+            bounds.y - BOUNDS_MARGIN,
+            bounds.width,
+            BOUNDS_MARGIN,
+        );
+        resources.shaders().solid().fill_rect(&grid_matrix, color, rect);
+        let rect = Rect::new(
+            bounds.x + bounds.width,
+            bounds.y - BOUNDS_MARGIN,
+            BOUNDS_MARGIN,
+            bounds.height + 2.0 * BOUNDS_MARGIN,
+        );
+        resources.shaders().solid().fill_rect(&grid_matrix, color, rect);
+        let rect = Rect::new(
+            bounds.x,
+            bounds.y + bounds.height,
+            bounds.width,
+            BOUNDS_MARGIN,
+        );
+        resources.shaders().solid().fill_rect(&grid_matrix, color, rect);
     }
 
     fn draw_tutorial_bubbles(&self, resources: &Resources, grid: &EditGrid) {
@@ -327,13 +353,13 @@ impl EditGridView {
     }
 
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
-        self.draw_background_grid(resources);
-        self.draw_bounds(resources, grid);
+        let grid_matrix =
+            self.vp_matrix() * Matrix4::from_scale(GRID_CELL_SIZE as f32);
+        self.draw_background(resources);
+        self.draw_bounds(resources, &grid_matrix, grid);
         self.draw_tutorial_bubbles(resources, grid);
 
         let depth = Depth::enable_with_face_culling(false);
-        let grid_matrix =
-            self.vp_matrix() * Matrix4::from_scale(GRID_CELL_SIZE as f32);
         self.draw_chips(resources, &grid_matrix, grid);
         self.draw_interfaces(resources, &grid_matrix, grid);
         self.draw_wires(resources, &grid_matrix, grid);

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="256" height="256">
+  <rect x="0" y="0" width="256" height="256" fill="#0f0517" stroke="none"/>
+  <g fill="none" stroke="#071220" stroke-width="4" stroke-linejoin="round">
+    <circle cx="56" cy="120" r="4"/>
+    <path d="M 60,120 H 136 V 76"/>
+    <circle cx="136" cy="72" r="4"/>
+    <circle cx="72" cy="136" r="4"/>
+    <path d="M 76,136 H 136 V 186 L 104,216 V 244"/>
+    <circle cx="104" cy="248" r="4"/>
+    <circle cx="72" cy="152" r="4"/>
+    <path d="M 76,152 H 120 V 180.3 L 88,210.3 V 244"/>
+    <circle cx="88" cy="248" r="4"/>
+    <circle cx="104" cy="168" r="4"/>
+    <path d="M 100,168 H 56 V 146.3 L 45.7,136 H 0 M 256,136 H 252"/>
+    <circle cx="248" cy="136" r="4"/>
+    <circle cx="88" cy="184" r="4"/>
+    <path d="M 84,184 H 40 V 152 H 0 M 256,152 H 252"/>
+    <circle cx="248" cy="152" r="4"/>
+    <circle cx="72" cy="200" r="4"/>
+    <path d="M 72,204 V 256 M 72,0 V 8 H 104 V 20"/>
+    <circle cx="104" cy="24" r="4"/>
+    <circle cx="152" cy="152" r="4"/>
+    <path d="M 152,148 V 104 H 184 V 40 H 212"/>
+    <circle cx="216" cy="40" r="4"/>
+    <circle cx="152" cy="88" r="4"/>
+    <path d="M 156,88 H 164"/>
+    <circle cx="168" cy="88" r="4"/>
+    <circle cx="216" cy="24" r="4"/>
+    <path d="M 212,24 H 168 V 72 H 152 V 28"/>
+    <circle cx="152" cy="24" r="4"/>
+    <circle cx="120" cy="232" r="4"/>
+    <path d="M 120,236 V 256 M 120,0 V 8 H 232 V 56 H 204"/>
+    <circle cx="200" cy="56" r="4"/>
+    <circle cx="136" cy="24" r="4"/>
+    <path d="M 136,28 V 56 H 120 V 100"/>
+    <circle cx="120" cy="104" r="4"/>
+    <circle cx="120" cy="24" r="4"/>
+    <path d="M 120,28 V 40 H 104 V 104 H 60"/>
+    <circle cx="56" cy="104" r="4"/>
+    <circle cx="168" cy="120" r="4"/>
+    <path d="M 172,120 H 200 V 72 H 256 M 0,72 H 4"/>
+    <circle cx="8" cy="72" r="4"/>
+    <circle cx="168" cy="136" r="4"/>
+    <path d="M 172,136 H 216 V 88 H 256 M 0,88 H 4"/>
+    <circle cx="8" cy="88" r="4"/>
+    <circle cx="56" cy="200" r="4"/>
+    <path d="M 56,204 V 256 M 56,0 V 24 H 88 V 88 H 40 V 120 H 0 M 256,120
+             H 252"/>
+    <circle cx="248" cy="120" r="4"/>
+    <circle cx="152" cy="168" r="4"/>
+    <path d="M 152,172 V 191.7 L 136,207.7 V 244"/>
+    <circle cx="136" cy="248" r="4"/>
+    <circle cx="24" cy="168" r="4"/>
+    <path d="M 20,168 H 0 M 256,168 H 232 V 104 H 256 M 0,104 H 24 V 92"/>
+    <circle cx="24" cy="88" r="4"/>
+    <circle cx="24" cy="72" r="4"/>
+    <path d="M 28,72 H 72 V 40 H 60"/>
+    <circle cx="56" cy="40" r="4"/>
+    <circle cx="56" cy="56" r="4"/>
+    <path d="M 52,56 H 0 M 256,56 H 248 V 8 H 256 M 0,8 H 4"/>
+    <circle cx="8" cy="8" r="4"/>
+    <circle cx="216" cy="152" r="4"/>
+    <path d="M 212,152 H 178.3 L 168,162.3 V 228"/>
+    <circle cx="168" cy="232" r="4"/>
+    <circle cx="152" cy="216" r="4"/>
+    <path d="M 152,220 V 248 H 256 M 0,248 H 24 V 256 M 24,0 V 20"/>
+    <circle cx="24" cy="24" r="4"/>
+    <circle cx="8" cy="24" r="4"/>
+    <path d="M 8,28 V 40 H 40 V 0 M 40,256 V 204"/>
+    <circle cx="40" cy="200" r="4"/>
+    <circle cx="8" cy="200" r="4"/>
+    <path d="M 4,200 H 0 M 256,200 H 236"/>
+    <circle cx="232" cy="200" r="4"/>
+    <circle cx="8" cy="216" r="4"/>
+    <path d="M 4,216 H 0 M 256,216 H 236"/>
+    <circle cx="232" cy="216" r="4"/>
+    <circle cx="232" cy="232" r="4"/>
+    <path d="M 236,232 H 256 M 0,232 H 24 V 184 H 0 M 256,184 H 204"/>
+    <circle cx="200" cy="184" r="4"/>
+    <circle cx="216" cy="168" r="4"/>
+    <path d="M 212,168 H 184 V 232 H 212"/>
+    <circle cx="216" cy="232" r="4"/>
+    <circle cx="200" cy="216" r="4"/>
+    <path d="M 204,216 H 216 V 200 H 204"/>
+    <circle cx="200" cy="200" r="4"/>
+  </g>
+</svg>

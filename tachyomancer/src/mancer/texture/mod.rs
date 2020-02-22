@@ -28,6 +28,10 @@ const CHIP_ICONS_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/texture/chip_icons.png"));
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+const DIAGRAM_BACKGROUND_PNG_DATA: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"),
+                           "/texture/diagram/background.png"));
+#[cfg_attr(rustfmt, rustfmt_skip)]
 const DIAGRAM_LANDER_PNG_DATA: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/texture/diagram/lander.png"));
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -330,6 +334,7 @@ const WIRE_TEXTURE1D_DATA: &[u8; 1024] = &[
 pub struct Textures {
     brushed_metal: Texture2D,
     chip_icons: Texture2D,
+    diagram_background: Texture2D,
     diagram_lander: Texture2D,
     diagram_patch: Texture2D,
     diagram_reactor: Texture2D,
@@ -352,6 +357,10 @@ impl Textures {
             Texture2D::from_jpeg("brushed_metal", BRUSHED_METAL_JPEG_DATA)?;
         let chip_icons =
             Texture2D::from_png("texture/chip_icons", CHIP_ICONS_PNG_DATA)?;
+        let diagram_background = Texture2D::from_png(
+            "diagram/background",
+            DIAGRAM_BACKGROUND_PNG_DATA,
+        )?;
         let diagram_lander =
             Texture2D::from_png("diagram/lander", DIAGRAM_LANDER_PNG_DATA)?;
         let diagram_patch =
@@ -383,6 +392,7 @@ impl Textures {
         Ok(Textures {
             brushed_metal,
             chip_icons,
+            diagram_background,
             diagram_lander,
             diagram_patch,
             diagram_reactor,
@@ -406,6 +416,10 @@ impl Textures {
 
     pub fn chip_icons(&self) -> &Texture2D {
         &self.chip_icons
+    }
+
+    pub fn diagram_background(&self) -> &Texture2D {
+        &self.diagram_background
     }
 
     pub fn diagram_lander(&self) -> &Texture2D {

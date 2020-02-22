@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::cast::{AsFloat, AsInt};
-use cgmath::{BaseNum, Point2, Vector2};
+use cgmath::{BaseFloat, BaseNum, Point2, Vector2};
 use std::ops;
 
 //===========================================================================//
@@ -94,6 +94,14 @@ impl<T: BaseNum> ops::Mul<T> for RectSize<T> {
 
     fn mul(self, other: T) -> RectSize<T> {
         RectSize::new(self.width * other, self.height * other)
+    }
+}
+
+impl<T: BaseFloat> ops::Div<T> for RectSize<T> {
+    type Output = RectSize<T>;
+
+    fn div(self, other: T) -> RectSize<T> {
+        self * other.recip()
     }
 }
 
@@ -264,6 +272,14 @@ impl<T: BaseNum> ops::Mul<T> for Rect<T> {
     }
 }
 
+impl<T: BaseFloat> ops::Div<T> for Rect<T> {
+    type Output = Rect<T>;
+
+    fn div(self, other: T) -> Rect<T> {
+        self * other.recip()
+    }
+}
+
 impl<T: BaseNum> ops::Sub<Vector2<T>> for Rect<T> {
     type Output = Rect<T>;
 
@@ -359,6 +375,30 @@ mod tests {
         assert_eq!(
             RectSize::<usize>::new(3, 4).as_f32(),
             RectSize::<f32>::new(3.0, 4.0)
+        );
+    }
+
+    #[test]
+    fn rect_size_mul_div() {
+        assert_eq!(
+            RectSize::<f32>::new(3.0, -4.0) * 2.0,
+            RectSize::<f32>::new(6.0, -8.0)
+        );
+        assert_eq!(
+            RectSize::<f32>::new(3.0, -4.0) / 2.0,
+            RectSize::<f32>::new(1.5, -2.0)
+        );
+    }
+
+    #[test]
+    fn rect_mul_div() {
+        assert_eq!(
+            Rect::<f32>::new(3.0, -4.0, 10.0, 9.0) * 2.0,
+            Rect::<f32>::new(6.0, -8.0, 20.0, 18.0)
+        );
+        assert_eq!(
+            Rect::<f32>::new(3.0, -4.0, 10.0, 9.0) / 2.0,
+            Rect::<f32>::new(1.5, -2.0, 5.0, 4.5)
         );
     }
 

@@ -115,8 +115,7 @@ impl MenuView {
         let navigation_view =
             NavigationView::new(size.as_f32(), state, latest_chapter);
         let converse_view = ConverseView::new(section_rect, &mut ui, state);
-        let puzzles_view =
-            PuzzlesView::new(size, section_rect, &mut ui, state);
+        let puzzles_view = PuzzlesView::new(section_rect, &mut ui, state);
 
         ui.audio().play_music(music_for_chapter(latest_chapter));
 

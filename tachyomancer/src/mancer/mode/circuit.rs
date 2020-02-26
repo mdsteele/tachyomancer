@@ -20,7 +20,12 @@
 use super::shared::ModeChange;
 use crate::mancer::gui::{Event, Music, Window};
 use crate::mancer::state::GameState;
-use crate::mancer::view::{CircuitAction, CircuitView};
+use crate::mancer::view::{export_circuit_image, CircuitAction, CircuitView};
+use directories::UserDirs;
+use png::{self, HasParameters};
+use std::fs::File;
+use std::path::PathBuf;
+use tachy::geom::RectSize;
 use tachy::save::{Puzzle, SolutionData};
 
 //===========================================================================//
@@ -62,6 +67,9 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                     },
                     Some(CircuitAction::BackToMenuWithoutSaving) => {
                         return back_to_menu(state);
+                    }
+                    Some(CircuitAction::ExportImage(score)) => {
+                        export_image(window, &mut view, state, score);
                     }
                     Some(CircuitAction::Victory(solution)) => {
                         record_score(window, &mut view, state, solution);
@@ -121,6 +129,64 @@ fn back_to_menu(state: &mut GameState) -> ModeChange {
         state.set_circuit_name(String::new());
     }
     ModeChange::Next
+}
+
+fn export_image(
+    window: &mut Window,
+    view: &mut CircuitView,
+    state: &GameState,
+    score: u32,
+) {
+    debug_assert!(state.edit_grid().is_some());
+    let grid = state.edit_grid().unwrap();
+    let name = format!("{} {}", grid.puzzle().title(), state.circuit_name());
+    let (size, rgb) = export_circuit_image(window.resources(), grid, score);
+    match save_png(&name, size, &rgb) {
+        Ok(path) => {
+            view.show_export_image_success(
+                &mut window.ui(),
+                state.prefs(),
+                &path.to_string_lossy(),
+            );
+        }
+        Err(error) => {
+            view.show_export_image_error(
+                &mut window.ui(),
+                state.prefs(),
+                &error,
+            );
+        }
+    }
+}
+
+fn is_alphanum_or_period(ch: char) -> bool {
+    ch == '.' || ch.is_ascii_alphanumeric()
+}
+
+fn save_png(
+    name: &str,
+    size: RectSize<usize>,
+    rgb: &[u8],
+) -> Result<PathBuf, String> {
+    let user_dirs = UserDirs::new()
+        .ok_or_else(|| "No valid home directory found.".to_string())?;
+    let downloads_dir = user_dirs
+        .download_dir()
+        .ok_or_else(|| "No valid downloads directory found.".to_string())?;
+    let name = name.replace(|ch| !is_alphanum_or_period(ch), "_");
+    let mut png_path = downloads_dir.join(format!("{}.png", name));
+    let mut counter: u64 = 0;
+    while png_path.exists() {
+        counter += 1;
+        png_path = downloads_dir.join(format!("{}_{}.png", name, counter));
+    }
+    let png_file = File::create(&png_path).map_err(|err| err.to_string())?;
+    let mut encoder =
+        png::Encoder::new(png_file, size.width as u32, size.height as u32);
+    encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
+    let mut writer = encoder.write_header().map_err(|err| err.to_string())?;
+    writer.write_image_data(rgb).map_err(|err| err.to_string())?;
+    Ok(png_path)
 }
 
 fn record_score(

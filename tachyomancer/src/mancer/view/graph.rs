@@ -18,11 +18,11 @@
 // +--------------------------------------------------------------------------+
 
 use crate::mancer::font::Align;
-use crate::mancer::gl::FrameBuffer;
+use crate::mancer::gl::FrameBufferMultisample;
 use crate::mancer::gui::{Event, Resources, Ui};
 use cgmath::{Deg, Matrix4, MetricSpace, Point2};
 use std::cell::RefCell;
-use tachy::geom::{AsFloat, Color3, MatrixExt, Rect, RectSize};
+use tachy::geom::{AsFloat, Color3, MatrixExt, Rect};
 use tachy::save::{Puzzle, ScoreCurve};
 
 //===========================================================================//
@@ -63,11 +63,10 @@ fn format_tick_maximum(max: i32) -> String {
 
 struct ScoreGraphCache {
     global_scores: ScoreCurve,
-    fbo: FrameBuffer,
+    fbo: FrameBufferMultisample,
 }
 
 pub struct ScoreGraph {
-    window_size: RectSize<i32>,
     rect: Rect<f32>,
     puzzle: Puzzle,
     local_scores: ScoreCurve,
@@ -78,14 +77,12 @@ pub struct ScoreGraph {
 
 impl ScoreGraph {
     pub fn new(
-        window_size: RectSize<i32>,
         rect: Rect<f32>,
         puzzle: Puzzle,
         local_scores: &ScoreCurve,
         hilight_score: Option<(i32, u32)>,
     ) -> ScoreGraph {
         ScoreGraph {
-            window_size,
             rect,
             puzzle,
             local_scores: local_scores.clone(),
@@ -111,7 +108,7 @@ impl ScoreGraph {
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
-        fbo: &FrameBuffer,
+        fbo: &FrameBufferMultisample,
     ) {
         let left_top = self.rect.top_left();
         let grayscale = false;
@@ -137,10 +134,10 @@ impl ScoreGraph {
         &self,
         resources: &Resources,
         global_scores: &ScoreCurve,
-    ) -> FrameBuffer {
+    ) -> FrameBufferMultisample {
         debug_log!("Regenerating score graph image");
         let fbo_size = self.rect.size();
-        let fbo = FrameBuffer::new(
+        let fbo = FrameBufferMultisample::new(
             fbo_size.width as usize,
             fbo_size.height as usize,
             false,
@@ -168,7 +165,7 @@ impl ScoreGraph {
             &self.local_scores,
             global_scores,
         );
-        fbo.unbind(self.window_size);
+        fbo.unbind(resources.window_size());
         fbo
     }
 

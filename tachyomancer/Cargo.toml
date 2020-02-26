@@ -19,9 +19,9 @@ serde_derive = "1"
 toml = "0.5"
 
 [dependencies]
-app_dirs = "1.2"
 cgmath = "0.17"
 claxon = "0.4"
+directories = "2"
 getopts = "0.2"
 gl = "0.13"
 jpeg-decoder = { version = "0.1", default-features = false }

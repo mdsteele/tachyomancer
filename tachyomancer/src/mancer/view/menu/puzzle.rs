@@ -24,7 +24,7 @@ use super::super::paragraph::Paragraph;
 use super::super::wire::WireModel;
 use super::list::{ListIcon, ListView};
 use crate::mancer::font::Align;
-use crate::mancer::gl::{Depth, FrameBuffer};
+use crate::mancer::gl::{Depth, FrameBufferMultisample};
 use crate::mancer::gui::{Event, Resources, Ui};
 use crate::mancer::save::Prefs;
 use crate::mancer::state::GameState;
@@ -81,7 +81,6 @@ pub struct PuzzlesView {
 
 impl PuzzlesView {
     pub fn new(
-        window_size: RectSize<i32>,
         rect: Rect<i32>,
         ui: &mut Ui,
         state: &GameState,
@@ -151,9 +150,9 @@ impl PuzzlesView {
                 circuit_list_items(state),
                 state.circuit_name(),
             ),
-            description: DescriptionPanel::new(window_size, description_rect),
-            graph: ScoreGraphPanel::new(window_size, graph_rect),
-            preview: CircuitPreviewPanel::new(window_size, preview_rect),
+            description: DescriptionPanel::new(description_rect),
+            graph: ScoreGraphPanel::new(graph_rect),
+            preview: CircuitPreviewPanel::new(preview_rect),
             edit_button,
             rename_button,
             copy_button,
@@ -290,25 +289,17 @@ fn puzzle_list_items(
 
 struct DescriptionCache {
     puzzle: Puzzle,
-    fbo: FrameBuffer,
+    fbo: FrameBufferMultisample,
 }
 
 struct DescriptionPanel {
-    window_size: RectSize<i32>,
     rect: Rect<f32>,
     cache: RefCell<Option<DescriptionCache>>,
 }
 
 impl DescriptionPanel {
-    pub fn new(
-        window_size: RectSize<i32>,
-        rect: Rect<i32>,
-    ) -> DescriptionPanel {
-        DescriptionPanel {
-            window_size,
-            rect: rect.as_f32(),
-            cache: RefCell::new(None),
-        }
+    pub fn new(rect: Rect<i32>) -> DescriptionPanel {
+        DescriptionPanel { rect: rect.as_f32(), cache: RefCell::new(None) }
     }
 
     pub fn draw(
@@ -343,7 +334,7 @@ impl DescriptionPanel {
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
-        fbo: &FrameBuffer,
+        fbo: &FrameBufferMultisample,
     ) {
         let left_top = self.rect.top_left()
             + vec2(
@@ -359,13 +350,13 @@ impl DescriptionPanel {
         resources: &Resources,
         state: &GameState,
         puzzle: Puzzle,
-    ) -> FrameBuffer {
+    ) -> FrameBufferMultisample {
         debug_log!("Regenerating puzzle description");
         let fbo_size = self.rect.size().expand2(
             -DESCRIPTION_INNER_MARGIN_HORZ,
             -DESCRIPTION_INNER_MARGIN_VERT,
         );
-        let fbo = FrameBuffer::new(
+        let fbo = FrameBufferMultisample::new(
             fbo_size.width as usize,
             fbo_size.height as usize,
             false,
@@ -377,7 +368,7 @@ impl DescriptionPanel {
             puzzle,
             state.prefs(),
         );
-        fbo.unbind(self.window_size);
+        fbo.unbind(resources.window_size());
         fbo
     }
 
@@ -435,21 +426,13 @@ struct ScoreGraphCache {
 }
 
 pub struct ScoreGraphPanel {
-    window_size: RectSize<i32>,
     rect: Rect<f32>,
     cache: RefCell<Option<ScoreGraphCache>>,
 }
 
 impl ScoreGraphPanel {
-    pub fn new(
-        window_size: RectSize<i32>,
-        rect: Rect<i32>,
-    ) -> ScoreGraphPanel {
-        ScoreGraphPanel {
-            window_size,
-            rect: rect.as_f32(),
-            cache: RefCell::new(None),
-        }
+    pub fn new(rect: Rect<i32>) -> ScoreGraphPanel {
+        ScoreGraphPanel { rect: rect.as_f32(), cache: RefCell::new(None) }
     }
 
     pub fn clear_cache(&mut self) {
@@ -490,7 +473,6 @@ impl ScoreGraphPanel {
         }
 
         let graph = ScoreGraph::new(
-            self.window_size,
             self.rect.expand(-GRAPH_INNER_MARGIN),
             puzzle,
             local_scores,
@@ -553,25 +535,17 @@ impl ScoreGraphPanel {
 struct CircuitPreviewCache {
     puzzle: Puzzle,
     circuit_name: String,
-    fbo: FrameBuffer,
+    fbo: FrameBufferMultisample,
 }
 
 struct CircuitPreviewPanel {
-    window_size: RectSize<i32>,
     rect: Rect<f32>,
     cache: RefCell<Option<CircuitPreviewCache>>,
 }
 
 impl CircuitPreviewPanel {
-    pub fn new(
-        window_size: RectSize<i32>,
-        rect: Rect<i32>,
-    ) -> CircuitPreviewPanel {
-        CircuitPreviewPanel {
-            window_size,
-            rect: rect.as_f32(),
-            cache: RefCell::new(None),
-        }
+    pub fn new(rect: Rect<i32>) -> CircuitPreviewPanel {
+        CircuitPreviewPanel { rect: rect.as_f32(), cache: RefCell::new(None) }
     }
 
     pub fn draw(
@@ -611,7 +585,7 @@ impl CircuitPreviewPanel {
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
-        fbo: &FrameBuffer,
+        fbo: &FrameBufferMultisample,
     ) {
         let left_top = self.rect.top_left()
             + vec2(PREVIEW_INNER_MARGIN, PREVIEW_INNER_MARGIN);
@@ -625,10 +599,10 @@ impl CircuitPreviewPanel {
         state: &GameState,
         puzzle: Puzzle,
         circuit_name: &str,
-    ) -> FrameBuffer {
+    ) -> FrameBufferMultisample {
         debug_log!("Regenerating preview image");
         let fbo_size = self.rect.size().expand(-PREVIEW_INNER_MARGIN);
-        let fbo = FrameBuffer::new(
+        let fbo = FrameBufferMultisample::new(
             fbo_size.width as usize,
             fbo_size.height as usize,
             true,
@@ -647,7 +621,7 @@ impl CircuitPreviewPanel {
                 );
             }
         }
-        fbo.unbind(self.window_size);
+        fbo.unbind(resources.window_size());
         fbo
     }
 

@@ -18,8 +18,9 @@
 // +--------------------------------------------------------------------------+
 
 use crate::mancer::gl::{
-    FrameBuffer, Primitive, Shader, ShaderProgram, ShaderSampler, ShaderType,
-    ShaderUniform, Texture2DMultisample, VertexArray, VertexBuffer,
+    FrameBuffer, FrameBufferMultisample, Primitive, Shader, ShaderProgram,
+    ShaderSampler, ShaderType, ShaderUniform, Texture2DMultisample,
+    VertexArray, VertexBuffer,
 };
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{AsFloat, MatrixExt, RectSize};
@@ -32,6 +33,7 @@ const FRAME_FRAG_CODE: &[u8] = include_bytes!("frame.frag");
 //===========================================================================//
 
 pub struct FrameBufferShader {
+    window_size: RectSize<i32>,
     program: ShaderProgram,
     mvp: ShaderUniform<Matrix4<f32>>,
     frame_size: ShaderUniform<RectSize<f32>>,
@@ -43,7 +45,9 @@ pub struct FrameBufferShader {
 }
 
 impl FrameBufferShader {
-    pub(super) fn new() -> Result<FrameBufferShader, String> {
+    pub(super) fn new(
+        window_size: RectSize<i32>,
+    ) -> Result<FrameBufferShader, String> {
         let vert =
             Shader::new(ShaderType::Vertex, "frame.vert", FRAME_VERT_CODE)?;
         let frag =
@@ -62,6 +66,7 @@ impl FrameBufferShader {
         vbuffer.attribi(0, 2, 0, 0);
 
         Ok(FrameBufferShader {
+            window_size,
             program,
             mvp,
             frame_size,
@@ -76,16 +81,16 @@ impl FrameBufferShader {
     pub fn draw(
         &self,
         matrix: &Matrix4<f32>,
-        fbuffer: &FrameBuffer,
+        fbo: &FrameBufferMultisample,
         left_top: Point2<f32>,
         grayscale: bool,
     ) {
         self.program.bind();
-        self.texture.set(fbuffer.texture());
+        self.texture.set(fbo.texture());
         self.mvp.set(&(matrix * Matrix4::trans2(left_top.x, left_top.y)));
-        let size = fbuffer.size().as_f32();
+        let size = fbo.size().as_f32();
         self.frame_size.set(&size);
-        let texture_size = fbuffer.texture_size().as_f32();
+        let texture_size = fbo.texture_size().as_f32();
         self.tex_size.set(&RectSize::new(
             size.width / texture_size.width,
             size.height / texture_size.height,
@@ -93,6 +98,24 @@ impl FrameBufferShader {
         self.grayscale.set(&(if grayscale { 1 } else { 0 }));
         self.varray.bind();
         self.varray.draw(Primitive::TriangleStrip, 0, 4);
+    }
+
+    pub fn read_rgb_data(&self, fbo: &FrameBufferMultisample) -> Vec<u8> {
+        let size = fbo.size();
+        let mut target = FrameBuffer::new(size.width, size.height);
+        let binding = target.bind(self.window_size);
+        let matrix = cgmath::ortho(
+            0.0,
+            size.width as f32,
+            size.height as f32,
+            0.0,
+            -1.0,
+            1.0,
+        );
+        self.draw(&matrix, fbo, Point2::new(0.0, 0.0), false);
+        let data = binding.read_rgb_data();
+        binding.unbind();
+        data
     }
 }
 

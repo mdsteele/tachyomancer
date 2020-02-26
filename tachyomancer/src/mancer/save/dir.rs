@@ -21,7 +21,7 @@ use super::encode::{decode_name, encode_name};
 use super::prefs::Prefs;
 use super::profile::{is_valid_profile_name, Profile};
 use super::score::GlobalScoresDir;
-use app_dirs::{self, AppDataType, AppDirsError, AppInfo};
+use directories::ProjectDirs;
 use std::collections::{btree_set, BTreeSet};
 use std::fs;
 use std::path::PathBuf;
@@ -252,16 +252,10 @@ impl<'a> Iterator for ProfileNamesIter<'a> {
 
 //===========================================================================//
 
-const APP_INFO: AppInfo = AppInfo { name: "Tachyomancer", author: "mdsteele" };
-
 fn get_default_save_dir_path() -> Result<PathBuf, String> {
-    app_dirs::app_root(AppDataType::UserData, &APP_INFO).map_err(|err| {
-        match err {
-            AppDirsError::Io(error) => format!("IO error: {}", error),
-            AppDirsError::NotSupported => "App dir not supported".to_string(),
-            AppDirsError::InvalidAppInfo => "App info invalid".to_string(),
-        }
-    })
+    let project_dirs = ProjectDirs::from("games", "mdsteele", "Tachyomancer")
+        .ok_or_else(|| "No valid home directory found.".to_string())?;
+    Ok(project_dirs.data_dir().to_path_buf())
 }
 
 //===========================================================================//

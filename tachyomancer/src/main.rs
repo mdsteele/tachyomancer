@@ -17,9 +17,9 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-extern crate app_dirs;
 extern crate cgmath;
 extern crate claxon;
+extern crate directories;
 extern crate getopts;
 extern crate gl;
 extern crate jpeg_decoder;

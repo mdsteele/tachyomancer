@@ -23,7 +23,7 @@ use super::super::tooltip::TooltipSink;
 use super::tray::TraySlide;
 use super::tutorial::TutorialBubble;
 use crate::mancer::font::Align;
-use crate::mancer::gl::{Depth, FrameBuffer, Stencil};
+use crate::mancer::gl::{Depth, FrameBufferMultisample, Stencil};
 use crate::mancer::gui::{Cursor, Event, Resources, Ui, Window};
 use crate::mancer::shader::UiShader;
 use cgmath::{vec2, Deg, Matrix4, Point2};
@@ -63,7 +63,7 @@ pub enum PartsAction {
 pub struct PartsTray {
     rect: Rect<i32>,
     parts: Vec<(Rect<i32>, ChipType)>,
-    fbo: FrameBuffer,
+    fbo: FrameBufferMultisample,
     scrollbar: Scrollbar,
     slide: TraySlide,
     tutorial_bubble: Option<TutorialBubble>,
@@ -133,8 +133,11 @@ impl PartsTray {
         }
 
         let fbo_height = top + TRAY_INNER_MARGIN;
-        let fbo =
-            FrameBuffer::new(fbo_width as usize, fbo_height as usize, true);
+        let fbo = FrameBufferMultisample::new(
+            fbo_width as usize,
+            fbo_height as usize,
+            true,
+        );
         fbo.bind();
         {
             let resources = window.resources();
@@ -174,7 +177,7 @@ impl PartsTray {
             }
             depth.disable();
         }
-        fbo.unbind(window.size());
+        fbo.unbind(window_size);
 
         let scrollbar = Scrollbar::new(
             Rect::new(

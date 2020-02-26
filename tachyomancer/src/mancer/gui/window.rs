@@ -90,6 +90,7 @@ impl<'a> Window<'a> {
                 gl_attr.set_multisample_samples(4);
             }
         }
+
         let native_resolution = gui_context.get_native_resolution()?;
         let resolution = options.resolution.unwrap_or(native_resolution);
         let sdl_window = {
@@ -120,6 +121,7 @@ impl<'a> Window<'a> {
                 .build()
                 .map_err(|err| format!("Could not create window: {}", err))?
         };
+
         let gl_context = sdl_window.gl_create_context()?;
         // According to https://wiki.libsdl.org/SDL_GL_GetProcAddress, to
         // support Windows, we should wait until after we've created the GL
@@ -138,13 +140,19 @@ impl<'a> Window<'a> {
             gl::DepthFunc(gl::LESS);
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);
         }
-        let resources =
-            Resources::new(gui_context.score_client.global_scores().clone())?;
+
+        let (width, height) = sdl_window.size();
+        let resources = Resources::new(
+            RectSize::new(width as i32, height as i32),
+            gui_context.score_client.global_scores().clone(),
+        )?;
+
         let mut possible_resolutions =
             gui_context.get_possible_resolutions()?;
         possible_resolutions.retain(|res| {
             res.width >= WINDOW_MIN_WIDTH && res.height >= WINDOW_MIN_HEIGHT
         });
+
         Ok(Window {
             gui_context,
             sdl_window,

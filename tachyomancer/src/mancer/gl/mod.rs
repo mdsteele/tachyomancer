@@ -31,7 +31,9 @@ mod uniform;
 mod vertex;
 
 pub use self::depth::Depth;
-pub use self::frame::FrameBuffer;
+pub use self::frame::{
+    FrameBuffer, FrameBufferBinding, FrameBufferMultisample,
+};
 pub use self::heightmap::HeightmapModel;
 pub use self::index::IndexBuffer;
 pub use self::model::{Model, ModelBuilder, ModelBuilderContext};

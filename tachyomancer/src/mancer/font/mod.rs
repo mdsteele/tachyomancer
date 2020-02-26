@@ -249,6 +249,7 @@ impl TextShader {
         let mut shift = match alignment {
             Align::TopLeft => Vector2::new(0.0, 0.0),
             Align::MidLeft => Vector2::new(0.0, -0.5),
+            Align::BottomLeft => Vector2::new(0.0, -1.0),
             Align::TopCenter => Vector2::new(-0.5 * (num_chars as f32), 0.0),
             Align::MidCenter => Vector2::new(-0.5 * (num_chars as f32), -0.5),
             Align::BottomCenter => {

@@ -31,7 +31,7 @@ mod tooltip;
 mod wire;
 
 pub use self::begin::{BeginAction, BeginView};
-pub use self::circuit::{CircuitAction, CircuitView};
+pub use self::circuit::{export_circuit_image, CircuitAction, CircuitView};
 pub use self::cutscene::{CutsceneAction, CutsceneView};
 pub use self::menu::{MenuAction, MenuView};
 

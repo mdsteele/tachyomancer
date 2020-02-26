@@ -21,11 +21,13 @@ use crate::mancer::font::Fonts;
 use crate::mancer::shader::Shaders;
 use crate::mancer::texture::Textures;
 use std::sync::{Arc, Mutex};
+use tachy::geom::RectSize;
 use tachy::save::{Puzzle, ScoreCurve, ScoreCurveMap};
 
 //===========================================================================//
 
 pub struct Resources {
+    window_size: RectSize<i32>,
     fonts: Fonts,
     global_scores: Arc<Mutex<ScoreCurveMap>>,
     shaders: Shaders,
@@ -34,12 +36,17 @@ pub struct Resources {
 
 impl Resources {
     pub(super) fn new(
+        window_size: RectSize<i32>,
         global_scores: Arc<Mutex<ScoreCurveMap>>,
     ) -> Result<Resources, String> {
         let fonts = Fonts::new()?;
-        let shaders = Shaders::new()?;
+        let shaders = Shaders::new(window_size)?;
         let textures = Textures::new()?;
-        Ok(Resources { fonts, global_scores, shaders, textures })
+        Ok(Resources { window_size, fonts, global_scores, shaders, textures })
+    }
+
+    pub fn window_size(&self) -> RectSize<i32> {
+        self.window_size
     }
 
     pub fn fonts(&self) -> &Fonts {

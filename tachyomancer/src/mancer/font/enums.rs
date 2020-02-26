@@ -55,6 +55,7 @@ const SEGMENT7_METRICS: (u32, u32, u32, u32) =
 pub enum Align {
     TopLeft,
     MidLeft,
+    BottomLeft,
     TopCenter,
     MidCenter,
     BottomCenter,

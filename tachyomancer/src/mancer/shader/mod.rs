@@ -42,6 +42,7 @@ pub use self::scene::SceneShader;
 pub use self::solid::SolidShader;
 pub use self::ui::UiShader;
 pub use self::wire::WireShader;
+use tachy::geom::RectSize;
 
 //===========================================================================//
 
@@ -61,12 +62,12 @@ pub struct Shaders {
 }
 
 impl Shaders {
-    pub fn new() -> Result<Shaders, String> {
+    pub fn new(window_size: RectSize<i32>) -> Result<Shaders, String> {
         Ok(Shaders {
             board: BoardShader::new()?,
             chip: ChipShader::new()?,
             diagram: DiagramShader::new()?,
-            frame: FrameBufferShader::new()?,
+            frame: FrameBufferShader::new(window_size)?,
             heightmap: HeightmapShader::new()?,
             icon: IconShader::new()?,
             port: PortShader::new()?,

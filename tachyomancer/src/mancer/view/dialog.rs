@@ -369,7 +369,6 @@ impl<T: Clone> ScoreGraphDialogBox<T> {
             SCORE_GRAPH_HEIGHT,
         );
         let graph = ScoreGraph::new(
-            window_size,
             graph_rect.as_f32(),
             puzzle,
             local_scores,

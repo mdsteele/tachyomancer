@@ -20,6 +20,7 @@
 mod bounds;
 mod chipdrag;
 mod control;
+mod export;
 mod grid;
 mod manip;
 mod parts;
@@ -32,6 +33,7 @@ mod verify;
 mod wiredrag;
 
 use self::control::{ControlsAction, ControlsStatus, ControlsTray};
+pub use self::export::export_circuit_image;
 use self::grid::{EditGridAction, EditGridView};
 use self::parts::{PartsAction, PartsTray};
 use self::specify::SpecificationTray;
@@ -62,7 +64,14 @@ use tachy::state::{
 pub enum CircuitAction {
     BackToMenu,
     BackToMenuWithoutSaving,
+    ExportImage(u32),
     Victory(SolutionData),
+}
+
+#[derive(Clone, Copy)]
+enum ExportImageDialogAction {
+    BackToMenu,
+    ContinueEditing,
 }
 
 #[derive(Clone, Copy)]
@@ -74,6 +83,7 @@ enum FailedSaveDialogAction {
 #[derive(Clone, Copy)]
 enum VictoryDialogAction {
     BackToMenu,
+    ExportImage(u32),
     ContinueEditing,
 }
 
@@ -117,6 +127,7 @@ pub struct CircuitView {
     edit_coerce_dialog: Option<(WireSizeDialogBox, Coords)>,
     edit_comment_dialog: Option<(TextDialogBox, Coords)>,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
+    export_image_dialog: Option<ButtonDialogBox<ExportImageDialogAction>>,
     failed_save_dialog: Option<ButtonDialogBox<FailedSaveDialogAction>>,
     victory_dialog: Option<ScoreGraphDialogBox<VictoryDialogAction>>,
 }
@@ -179,6 +190,7 @@ impl CircuitView {
             edit_coerce_dialog: None,
             edit_comment_dialog: None,
             edit_const_dialog: None,
+            export_image_dialog: None,
             failed_save_dialog: None,
             victory_dialog: None,
         }
@@ -207,6 +219,8 @@ impl CircuitView {
             dialog.draw(resources, &projection, |_| true);
         } else if let Some((ref dialog, _)) = self.edit_const_dialog {
             dialog.draw(resources, &projection, is_valid_const);
+        } else if let Some(ref dialog) = self.export_image_dialog {
+            dialog.draw(resources, &projection);
         } else if let Some(ref dialog) = self.failed_save_dialog {
             dialog.draw(resources, &projection);
         } else if let Some(ref dialog) = self.victory_dialog {
@@ -274,6 +288,17 @@ impl CircuitView {
             return None;
         }
 
+        if let Some(mut dialog) = self.export_image_dialog.take() {
+            match dialog.on_event(event, ui) {
+                Some(ExportImageDialogAction::BackToMenu) => {
+                    return Some(CircuitAction::BackToMenu);
+                }
+                Some(ExportImageDialogAction::ContinueEditing) => {}
+                None => self.export_image_dialog = Some(dialog),
+            }
+            return None;
+        }
+
         if let Some(mut dialog) = self.failed_save_dialog.take() {
             match dialog.on_event(event, ui) {
                 Some(FailedSaveDialogAction::BackToMenuWithoutSaving) => {
@@ -289,6 +314,9 @@ impl CircuitView {
             match dialog.on_event(event, ui) {
                 Some(VictoryDialogAction::BackToMenu) => {
                     return Some(CircuitAction::BackToMenu);
+                }
+                Some(VictoryDialogAction::ExportImage(score)) => {
+                    return Some(CircuitAction::ExportImage(score));
                 }
                 Some(VictoryDialogAction::ContinueEditing) => {}
                 None => self.victory_dialog = Some(dialog),
@@ -584,6 +612,56 @@ impl CircuitView {
         }
     }
 
+    pub fn show_export_image_success(
+        &mut self,
+        ui: &mut Ui,
+        prefs: &Prefs,
+        path: &str,
+    ) {
+        let format = format!("Saved image to:\n\n{}", Paragraph::escape(path));
+        self.show_export_image_dialog(ui, prefs, &format);
+    }
+
+    pub fn show_export_image_error(
+        &mut self,
+        ui: &mut Ui,
+        prefs: &Prefs,
+        error: &str,
+    ) {
+        debug_warn!("Failed to export image: {}", error);
+        // TODO: Play sound for error dialog popup.
+        let format = format!(
+            "$R$*ERROR:$*$D Unable to export image!\n\n{}",
+            Paragraph::escape(error)
+        );
+        self.show_export_image_dialog(ui, prefs, &format);
+    }
+
+    fn show_export_image_dialog(
+        &mut self,
+        ui: &mut Ui,
+        prefs: &Prefs,
+        format: &str,
+    ) {
+        let buttons = &[
+            (
+                "Continue editing",
+                ExportImageDialogAction::ContinueEditing,
+                Some(Keycode::Escape),
+            ),
+            (
+                "Back to menu",
+                ExportImageDialogAction::BackToMenu,
+                Some(Keycode::Return),
+            ),
+        ];
+        let size = RectSize::new(self.width as i32, self.height as i32);
+        self.export_image_dialog =
+            Some(ButtonDialogBox::new(size, prefs, format, buttons));
+        ui.request_redraw();
+        // TODO: Unfocus other views
+    }
+
     pub fn show_failed_to_save_error(
         &mut self,
         ui: &mut Ui,
@@ -633,6 +711,7 @@ impl CircuitView {
                 VictoryDialogAction::ContinueEditing,
                 Some(Keycode::Escape),
             ),
+            ("Export image", VictoryDialogAction::ExportImage(score), None),
             (
                 "Back to menu",
                 VictoryDialogAction::BackToMenu,

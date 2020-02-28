@@ -30,21 +30,21 @@ pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
     builder.cutscene(Cutscene::Intro);
     builder.esra("Commander $'YOURNAME', please wake up.");
     builder.you("\"Ow, my head...what happened?\"");
-    builder.esra("I'm glad you're awake, Commander.  Your help is required.");
+    builder.esra("I am glad you are awake, Commander.  Your help is \
+                  required.");
     builder.you("\"Huh?  Who am I talking to?\"");
     builder.esra("This is the Emergency Situation Response AI built into the \
                   Odyssey's main computer.");
-    builder.you("\"What!?  The ESRA's been activated?  That must mean that \
-                 things are $/really$/ bad...\"");
+    builder.you("\"What!?  The ESRA's been activated?  What's going on?\"");
     builder.esra("\
-        Indeed.  I will summarize the situation.  The Odyssey has been \
-        severely damaged.  Much of the crew is dead.  We seem to be in a \
-        stable orbit, but our location is unknown and our engines are \
-        inoperable.  There is no sign of the other convoy ships.");
+        I will summarize the situation.  The Odyssey has been severely \
+        damaged.  Much of the crew is dead.  We seem to be in a stable orbit, \
+        but our location is unknown and our engines are inoperable.  There is \
+        no sign of the other convoy ships.");
     builder.you("\"Where is the captain?\"");
     builder.esra("\
-        Captain Jackson is alive and well, but still asleep in cryo, as are \
-        the other surviving crew members.  You are the first one I woke up.");
+        Captain Jackson is alive and well in cryosleep, as are the other \
+        surviving crew members.  You are the first one that I woke up.");
     let should = builder
         .choice(profile, "should")
         .option("captain", "\"You should have woken the captain first.\"")
@@ -54,8 +54,8 @@ pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
         builder.esra("\
             I understand your concerns, Commander, but as I will explain in \
             a moment, it was important that I start with you.  In an \
-            emergency situation when all crewmembers were in cryosleep or \
-            otherwise incapacitated, I did have the authority to make that \
+            emergency situation when all crewmembers are in cryosleep or \
+            otherwise incapacitated, I do have the authority to make that \
             call.");
     } else {
         builder.esra("\
@@ -66,11 +66,11 @@ pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
     builder.esra("\
         The ship is almost completely without power.  The primary LTF core \
         has been destroyed, and the backup reactor is currently offline.  All \
-        but one of the solar panels were torn off, and the last one is stuck \
-        at the wrong angle because its actuator control board is fried.  We \
-        are collecting barely enough power to maintain minimal life support.  \
-        I had to conserve power for nine months to save up enough to safely \
-        thaw you.");
+        but one of the solar panels are missing or destroyed, and the last \
+        one is stuck at the wrong angle because its actuator control board is \
+        damaged.  We are collecting barely enough power to maintain minimal \
+        life support.  I had to conserve power for nine months to save up \
+        enough to safely thaw you.");
     builder.you("\
         \"Do you mean to tell me that we've been adrift for nine months?  \
         This was supposed to be a three-month mission!  Why hasn't anyone \
@@ -83,30 +83,24 @@ pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
         crew member with any control circuit engineering experience.");
     let remember = builder
         .choice(profile, "remember")
-        .option("sure", "\"Sure, I think I can handle that.\"")
         .option("how",
                 "\"I haven't done that stuff in ages; I'm not sure I remember \
                  how.\"")
         .option("hurts", "\"Did I mention how much my head hurts right now?\"")
         .done()?;
-    if remember == "sure" {
+    if remember == "how" {
         builder.esra("\
-            Your confidence is encouraging.  Nonetheless, I suggest working \
-            through the tutorial programs in my databanks, just to make \
-            sure.  I will send them over to your terminal.");
-    } else if remember == "how" {
-        builder.esra("\
-            Don't worry, it will come back to you.  There are tutorial \
-            programs in my databanks that will get you back up to speed in \
-            no time.  I will send them over to your terminal.");
+            I am confident that you will manage.  There are tutorial programs \
+            in my databanks that will help refresh your memeory.  I will send \
+            them over to your terminal.");
     } else {
         builder.esra("\
             There should be some painkillers in the medical supply cabinet.  \
-            Unfortunately, said cabinet got blown into space when the LTF \
+            Unfortunately, that cabinet was blown into space when the LTF \
             core exploded.  Hopefully, your headache will subside on its \
             own.\n\n\
             In the meantime, there are tutorial programs in my databanks that \
-            should help get you back up to speed.  I will send them over to \
+            will help get you back up to speed.  I will send them over to \
             your terminal.");
     }
     Ok(())
@@ -116,53 +110,106 @@ pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
 pub(super) fn basics(profile: &Profile, builder: &mut ConversationBuilder)
                      -> Result<(), ()> {
     builder.esra("\
-        Before we begin repairs, it's worth taking a few minutes to \
-        refamiliarize yourself with the circuit fabricator.  In addition, \
-        with our cargo bays ruptured, we have lost all our supplies of a \
-        number of key circuit components that we'll need for later repairs, \
-        so I'm going to walk you through resynthesizing some of these from \
-        scratch, starting with a basic OR gate.");
+        Before we begin repairs, it is worth taking a few minutes to \
+        refamiliarize yourself with the Nanofabricator.  In addition, \
+        with our cargo bays ruptured, we have lost our supplies of certain \
+        key circuit components that we will need for later repairs.  \
+        Therefore, I will walk you through re-fabricating some of these \
+        components from scratch.  Let us begin with a basic $*OR$* gate.");
     builder.esra("\
         Fortunately, we still have large stocks of AND and NOT gates, and we \
         can mass-fabricate OR gates from those.  Follow the datalink below, \
-        and I'll walk you through it.");
+        and I will walk you through it.");
     builder.puzzle(profile, Puzzle::TutorialOr)?;
     builder.esra("\
-        Excellent.  I'll start the FAB running on that design, and soon we'll \
-        have all the OR gates we could want.");
+        Excellent.  I will start the Nanofabricator running on that design, \
+        and soon we will have all the OR gates we could need.");
     builder.you("\"That wasn't so bad.  What's next?\"");
     builder.esra("\
-        There are still other components we're missing, so let's do a little \
-        more practice.  Follow the datalink below, and I will walk you though \
-        building a XOR gate.");
+        There are still other components we are missing, so let us do a \
+        little more practice.  Follow the datalink below, and I will walk you \
+        though building a simple $*Mux$*.");
     builder.puzzle(profile, Puzzle::TutorialMux)?;
     builder.esra("\
         Great.  There is one last exercise I want you to do before we start \
-        the real work.  There's a very important component we need to \
-        synthesize, and a very important concept you'll need to be familiar \
-        with.  The component is a multiplexer, or $YMUX$D, and the concept \
-        is $Ymulti-bit wires$D.  I will explain.");
+        the real work, which is to create an $*Add$* chip.  And there is an \
+        important concept you will need to use in order to do so.");
     builder.esra("\
-        So far, you've been working with 1-bit wires, which can carry two \
-        different values: zero or one.  However, by using special chips which \
-        I will make available in the next exercise, you can $Ypack$D two \
-        1-bit wires into a single 2-bit wire, or $Yunpack$D a 2-bit wire into \
-        two 1-bit wires.  A 2-bit wire can carry 2x2=4 different values, from \
-        0 to 3.  You can further pack two 2-bit wires into a 4-bit wire, \
-        which can carry 2x2x2x2=16 different values from, 0 to 15.  And so \
-        on.");
+        So far, you have been working with 1-bit wires, which can carry two \
+        different values: 0 or 1.  However, by a using a $*Pack$* chip, you \
+        can join two 1-bit wires into a single 2-bit wire, which can carry \
+        2x2=4 different values, from 0 to 3.\n\n\
+        $=$#size = [7, 3]\n\
+        [chips]\n\
+        p0p0 = \"f0-DocBv(1, '1-bit')\"\n\
+        p0p1 = \"f0-DocBv(1, '1-bit')\"\n\
+        p2p1 = 'f0-Pack'\n\
+        p3p2 = \"f0-DocBv(2, '2-bit')\"\n\
+        p4p1 = 't0-Pack'\n\
+        p6p1 = \"f0-DocBv(4, '4-bit')\"\n\
+        [wires]\n\
+        p0p0e = 'Stub'\n\
+        p0p1e = 'Stub'\n\
+        p1p0e = 'Straight'\n\
+        p1p0w = 'Straight'\n\
+        p1p1e = 'Straight'\n\
+        p1p1w = 'Straight'\n\
+        p2p0s = 'TurnLeft'\n\
+        p2p0w = 'TurnRight'\n\
+        p2p1e = 'Stub'\n\
+        p2p1n = 'Stub'\n\
+        p2p1w = 'Stub'\n\
+        p3p1e = 'Straight'\n\
+        p3p1w = 'Straight'\n\
+        p3p2e = 'Stub'\n\
+        p4p1e = 'Stub'\n\
+        p4p1s = 'Stub'\n\
+        p4p1w = 'Stub'\n\
+        p4p2n = 'TurnRight'\n\
+        p4p2w = 'TurnLeft'\n\
+        p5p1e = 'Straight'\n\
+        p5p1w = 'Straight'\n\
+        p6p1w = 'Stub'\n\
+        #$<\n\n\
+        Similarly, can further join two 2-bit wires into a 4-bit wire, which \
+        can carry 2x2x2x2=16 different values, from 0 to 15.  And so on.");
+    builder.you("\"And I can also split those wires back up, yes?\"");
+    builder.esra("\
+        Correct.  You can use an $*Unpack$* chip to split a 4-bit wire back \
+        into two 2-bit wires, and so on:\n\n\
+        $=$#size = [5, 2]\n\
+        [chips]\n\
+        p0p1 = \"f0-DocBv(4, '4-bit')\"\n\
+        p2p1 = 'f0-Unpack'\n\
+        p4p0 = \"f0-DocBv(2, '2-bit')\"\n\
+        p4p1 = \"f0-DocBv(2, '2-bit')\"\n\
+        [wires]\n\
+        p0p1e = 'Stub'\n\
+        p1p1e = 'Straight'\n\
+        p1p1w = 'Straight'\n\
+        p2p0e = 'TurnLeft'\n\
+        p2p0s = 'TurnRight'\n\
+        p2p1e = 'Stub'\n\
+        p2p1n = 'Stub'\n\
+        p2p1w = 'Stub'\n\
+        p3p0e = 'Straight'\n\
+        p3p0w = 'Straight'\n\
+        p3p1e = 'Straight'\n\
+        p3p1w = 'Straight'\n\
+        p4p0w = 'Stub'\n\
+        p4p1w = 'Stub'\n\
+        #$<");
     builder.esra("\
         Most chips you'll use can work with any size of wires.  For example, \
-        a NOT chip will invert each bit on the wire separately, regardless of \
-        how many bits the wire has.  And later, when you work with arithmatic \
-        chips, you'll be able to add or subtract values for any size of \
-        wire.");
+        a $*NOT$* chip will invert each bit on the wire separately, \
+        regardless of how many bits the wire has.  A generic $*Add$* chip, \
+        similarly, can add two values for any size of wire.");
     builder.esra("\
-        That brings us to the MUX, which allows you to select between two \
-        input values, of any size, based on a 1-bit control wire.  In this \
-        exercise, I'm going to have you build a MUX for 2-bit inputs, using \
-        packers and unpackers.  But once you're done, you'll be able to use \
-        MUXes of any size.");
+        Unfortunately, we lost our stocks of generic $*Add$* chips, but we do \
+        have some specialized ones that only work on 2-bit wires.  In this \
+        exercise, you will use these 2-bit adders to build a 4-bit adder.  \
+        Generalizing from there will allow us to fabricate as many generic \
+        $*Add$* chips as we need.");
     builder.puzzle(profile, Puzzle::TutorialAdd)?;
     builder.esra("\
         Wonderful.  With our stocks of basic chips replenished, and your \
@@ -176,48 +223,42 @@ pub(super) fn restore_power(profile: &Profile,
                             builder: &mut ConversationBuilder)
                             -> Result<(), ()> {
     builder.esra("\
-        Now that you've been trained on the basics of circuit design, the \
-        first task we need to accomplish is restoring additional ship \
-        power.  That will allow us to safely rouse additional crew members \
-        from cryosleep, and to start bringing other ship systems back \
-        online.");
+        Now that you are back up to speed on circuit fabrication, the first \
+        task we need to accomplish is restoring additional ship power.  That \
+        will allow us to safely rouse additional crew members from cryosleep, \
+        and to start bringing other ship systems back online.");
     builder.esra("\
-        The LTF core is badly damaged, and we simply don't have the raw \
+        The LTF core is badly damaged, and we simply do not have the raw \
         materials available to repair it.  The backup reactor is probably \
-        repairable, but not without physical access to it, and because of the \
-        damaged sections of the ship, you can't safely reach it from where \
-        you are now.");
-    builder.esra("\
-        Therefore, my recommendation is that you begin by repairing the \
-        heliostat controller so we can get proper output from the remaining \
-        solar panel.  We won't get very much power from that, but it's a \
-        start.");
+        repairable, but not by a single person.  Therefore, my recommendation \
+        is that you begin by repairing the heliostat controller so that we \
+        can get a better power output from the remaining solar panel.");
     let start = builder
         .choice(profile, "start")
-        .option("sgtm", "Sounds like a good plan.")
-        .option("how-much", "How much power will we get?")
+        .option("sgtm", "\"Sounds like a good plan.\"")
+        .option("how-much", "\"How much power will we get?\"")
         .done()?;
     if start == "how-much" {
         builder.esra("\
-            Probably enough to rouse one additional crew member from \
-            cryosleep, and provide life support for the both of you, but not \
-            much more than that.");
+            It will probably provide enough power to rouse one additional \
+            crew member from cryosleep, and provide life support for the \
+            both of you, but not much more than that.");
     } else {
         builder.esra("\
-            As I said, it's a start.  It should allow us to rouse another \
+            It is a start, at least.  It should allow us to rouse another \
             crew member from cryosleep, and with the help of a second person, \
             more repairs should become feasible.");
     }
     builder.esra("\
-        The heliostat position sensors are still working, and can \
+        The heliostat positioning sensors are still working, and can \
         automatically calculate the optimal mirror position at any given \
         time.  However, the motor control board that actually moves the \
-        mirror into that position was destroyed, and we don't have a \
-        schematic for it.  We need you to design a new one.  It should not \
-        be too difficult for you, but as I have previously explained, you \
-        are the only living member of the crew who can do this.");
+        mirror into that position is damaged, and we don't have a schematic \
+        for it.  We need you to design a new one.  It should not be too \
+        difficult, but as I have previously explained, you are the only \
+        surviving member of the crew who can do this.");
     builder.esra("\
-        I'll upload the relevant specifications to your terminal.  Let me \
+        I will upload the relevant specifications to your terminal.  Let me \
         know when you have a working design, and then we can get it \
         installed.");
     builder.puzzle(profile, Puzzle::AutomateHeliostat)?;
@@ -234,7 +275,7 @@ pub(super) fn restore_power(profile: &Profile,
         would be either Captain Lisa Jackson, or Chief Petty Officer Henry \
         Walker, who is head of Mechanical on this ship.  I am aware that this \
         is your first mission with this crew, so you may not know him well, \
-        but he is the best-qualified person to help repair the backup \
+        but he is the best-qualified person to help you repair the backup \
         reactor.");
     builder.esra("\
         Practically speaking, my advice would be to start with Chief Walker, \
@@ -244,21 +285,21 @@ pub(super) fn restore_power(profile: &Profile,
         What is your decision, Commander?");
     let who = builder
         .choice(profile, "who")
-        .option("lisa", "We should wake Captain Jackson first.")
-        .option("henry", "We should wake Chief Walker first.")
+        .option("lisa", "\"We should wake Captain Jackson first.\"")
+        .option("henry", "\"We should wake Chief Walker first.\"")
         .done()?;
     if who == "henry" {
         builder.esra("\
             Acknowledged.  I will re-enable life support in his section of \
             the ship and start the process of thawing him out of cryo.  Once \
-            he's up and about, I'll send you both a comm with my \
-            recommendations for next repair steps.");
+            he is awake, I will send you both a comm with my recommendations \
+            for next repair steps.");
     } else {
         builder.esra("\
             Acknowledged, Commander.  In that case, I will re-enable life \
             support in the captain's quarters and start the process of \
-            thawing her out of cryo.  Once she's up and about, I'll send you \
-            a comm with my updated report on the situation.");
+            thawing her out of cryo.  Once she is awake, I will send you a \
+            comm with my updated report on the situation.");
     }
     Ok(())
 }
@@ -270,13 +311,13 @@ pub(super) fn more_components(profile: &Profile,
     builder.esra("\
         Our stocks of the most important circuit components have now been \
         restored.  However, there are still many other useful chips we could \
-        fabricate that may help you with your future designs.");
+        fabricate that could help you with your other designs.");
     builder.esra("\
-        I've taken the liberty of selecting a few possibilities that should \
+        I have taken the liberty of selecting a few possibilities that should \
         be within your current capabilities, although they may be a bit more \
-        challenging than what you've already done.  You should consider these \
-        tasks optional, but again, any that you can complete will provide new \
-        parts that you can use for other tasks.");
+        challenging than what you have already done.  You should consider \
+        these tasks optional, but again, any that you can complete will \
+        provide new components that you can use for future tasks.");
     builder.puzzles(profile, &[
         Puzzle::FabricateXor,
         Puzzle::FabricateHalve,
@@ -306,10 +347,10 @@ pub(super) fn step_two(_profile: &Profile, builder: &mut ConversationBuilder)
         on while I was asleep, but I do seem to have missed out on some kind \
         of delightfully horrifying catastrophe.\"");
     builder.esra("\
-        Hello to both of you.  I've just finished filling in Chief Walker on \
-        the situation.  Thanks to the Commander's work, we have enough solar \
-        power to sustain life support for the both of you, but no more than \
-        that.  I've asked the Chief to look into repairing the backup \
+        Hello to both of you.  I have just finished filling in Chief Walker \
+        on the situation.  Thanks to the Commander's work, we have enough \
+        solar power to sustain life support for the both of you, but no more \
+        than that.  I have asked the Chief to look into repairing the backup \
         reactor so we can generate more power.");
     builder.henry("\
         \"Yeah, I've been in to take a look.  The LTF core got smashed up \
@@ -326,7 +367,7 @@ pub(super) fn step_two(_profile: &Profile, builder: &mut ConversationBuilder)
         here, so I'll get them sent over to you.  And if it's all right, I'll \
         go ahead and start on the mechanical repairs so the reactor will be \
         all ready for the new board whenever it's done?\"");
-    builder.you("Yes, make it so, Chief.");
+    builder.you("\"Yes, make it so, Chief.\"");
     builder.henry("\
         \"Aye aye, Commander.  I'll send you those specs and then get started \
         right away.\"");
@@ -348,7 +389,7 @@ pub(super) fn reactor_specs(profile: &Profile,
         about it.  As long as the three control rod numbers add up to the \
         requested power level, it'll work fine.\"");
     builder.puzzle(profile, Puzzle::AutomateReactor)?;
-    builder.you("One reactor control board, coming up.");
+    builder.you("\"One reactor control board, coming up.\"");
     builder.henry("\
         \"Thank you, Commander!  I'm having your design fabricated right \
         now.  I've already got the other repairs on the reactor done, so I'll \
@@ -357,7 +398,7 @@ pub(super) fn reactor_specs(profile: &Profile,
         Congratulations to both of you.  Once the backup reactor comes \
         online, I will begin thawing out all the rest of the surviving crew, \
         starting with Captain Jackson.  I will brief her on our situation, \
-        and then set up comm with the three of you once she's ready.");
+        and then set up comm with the three of you once she is ready.");
     Ok(())
 }
 
@@ -409,7 +450,7 @@ pub(super) fn where_are_we(profile: &Profile,
         good to go!\"");
     builder.esra("\
         Searching...\n\n\
-        $(500)O$()dd.  There don't seem to be any navsats in range.");
+        $(500)O$()dd.  There do not seem to be any navsats in range.");
     builder.henry("\
         \"$/That$/ can't be right.\"");
     builder.you("\"No navsats at all?  Are you sure, ESRA?\"");
@@ -418,12 +459,11 @@ pub(super) fn where_are_we(profile: &Profile,
         all.  That implies that the ship is well outside Joint Federation \
         space.");
     builder.henry("\
-        \"I'll be honest, Commander, I have trouble believing we could've \
-        travelled that far off course.  I've been checking out the engines \
-        pretty carefully, and based on the level of normal wear and tear I'm \
-        seeing, I'd have guessed we've gone less than half the distance of \
-        our planned route.  That's nowhere near enough to take us outside \
-        the navsat net.\"");
+        \"Waaaiit a minute...we couldn't've travelled $/that$/ far off \
+        course, could we?  I mean, I'm a pretty good judge of normal engine \
+        wear and tear, and from looking at it I'd have guessed we've gone \
+        less than half the distance of our planned route.  That's nowhere \
+        near enough to take us outside the navsat net.\"");
     builder.you("\
         \"All right.  ESRA, keep scanning, and try to figure out where we \
         are.  Let me know as soon as you have something.\"");
@@ -435,9 +475,66 @@ pub(super) fn where_are_we(profile: &Profile,
 pub(super) fn captain_awake(profile: &Profile,
                             builder: &mut ConversationBuilder)
                             -> Result<(), ()> {
-    builder.henry("TODO");
+    builder.lisa("\
+        \"What a nightmare.  That cryo thaw hurt like a bugger, and now I \
+        find out that my ship is in pieces, half of my crew is dead, and we \
+        are $/all out of coffee$/.  Somebody, $/please$/ tell me you \
+        have good news for me.\"");
+    builder.you("\"Captain!  Glad to see you're awake.\"");
+    builder.lisa("\
+        \"It's good to see you too, $'YOURNAME'.  Sorry all this had to \
+        happen on your very first mission with us.  But the ESRA tells me \
+        that it's all thanks to you and Chief Walker that we've got power \
+        restored.  Good work.  Somehow, I had a feeling you'd come in \
+        handy.\"");
+    builder.you("\"Glad I could help.  Wish it hadn't been necessary.\"");
+    builder.lisa("\
+        \"You and me both, Commander.  But we've got a lot of work ahead of \
+        us, and a lot of good men and women still alive on this boat that \
+        need us, so I hope you're ready to help more.\"");
+    builder.esra("\
+        Hello, Captain, Commander.  I am glad to see that you are both well.  \
+        May I give my report?");
+    builder.lisa("\"Please do.\"");
+    builder.esra("\
+        All surviving crew have now been roused from cryosleep, and we have \
+        enough power to sustain basic ship operations.  The current crew \
+        complement is yourself, Commander $'YOURNAME', Chief Walker, and \
+        about two thirds of the crewmen from Mechanical.");
+    builder.lisa("\
+        \"...Okay.  I'm afraid we'll have to mourn the others later.  Our top \
+        priority is to find the other convoy ships and make sure they're \
+        safe.  Chief, how're the engines?\"");
+    builder.henry("\
+        \"The engines are fixed now, Captain, but all the fuel tanks are \
+        ruptured.  We can fix 'em too, of course, but the hyperfuel is long \
+        gone.  We could synthesize more, but only if we could mine the raw \
+        materials for it.\"");
+    builder.lisa("\
+        \"Which means we need to get down to the planet surface.  ESRA, \
+        that's an M-class planet down there, yes?\"");
+    builder.esra("\
+        Correct, Captain.  Unfortunately, the ship's lander craft was torn \
+        off and lost at some point during the disaster.");
+    builder.lisa("\
+        \"Nope, not lost, just adrift.   I saw it fly by my window five \
+        minutes ago.\"");
+    builder.you("\"Come again?\"");
+    builder.lisa("\
+        \"It looks like it's orbiting the planet, just like the $/Odyssey$/.  \
+        If we can grapple it as it goes by, we could use it to get to the \
+        surface.\"");
+    builder.henry("\
+        \"I did check on the grapple launcher along with everything else, \
+        Captain.  A lot of the coils are busted up, but I think we could make \
+        do if we could rework the control circuit to compensate.\"");
+    builder.lisa("\"Commander $'YOURNAME'?\"");
+    builder.you("\"I'll see to it, Captain.\"");
     builder.puzzle(profile, Puzzle::AutomateGrapple)?;
-    builder.henry("TODO");
+    builder.henry("\"C'mon...c'mon...aaaaaand...got 'er!\"");
+    builder.lisa("\
+        \"Great work, both of you.  Let's get that lander reeled in and \
+        patched up.\"");
     Ok(())
 }
 
@@ -454,9 +551,9 @@ pub(super) fn captains_call(_profile: &Profile,
         have good news for me.\"");
     builder.you("\"Captain!  Glad to see you're awake.\"");
     builder.lisa("\
-        \"It's good to see you too, $'YOURNAME'.  Bad luck, all this \
-        happening on your first mission with us.  But the ESRA tells me that \
-        it's all thanks to you that we've got power hardly at all.  Good \
+        \"It's good to see you too, $'YOURNAME'.  Sorry all this had to \
+        happen on your very first mission with us.  But the ESRA tells me \
+        that it's all thanks to you that we've got power hardly at all.  Good \
         work.  Somehow, I had a feeling you'd come in handy.\"");
     builder.you("\"Glad I could help.  Wish it hadn't been necessary.\"");
     builder.lisa("\
@@ -468,8 +565,8 @@ pub(super) fn captains_call(_profile: &Profile,
         appreciate that you did what you thought was best.  We'll figure this \
         out somehow.\"");
     builder.esra("\
-        Hello, Captain, Commander.  Glad to see that you are both well.  May \
-        I give my report?");
+        Hello, Captain, Commander.  I am glad to see that you are both well.  \
+        May I give my report?");
     builder.lisa("\"Please do.\"");
     builder.esra("\
         We have enough solar power right now to sustain life support for the \
@@ -480,10 +577,10 @@ pub(super) fn captains_call(_profile: &Profile,
         \"All right, for now, let's focus on what we $/can$/ fix.  In fact, \
         better question: where $/are$/ we, anyway?\"");
     builder.esra("\
-        Unfortunately, Captain, I don't know.  Main sensors have been \
-        knocked out, so we're not able to get any locator signal from any \
-        navsats that might be in range.  We're practically blind.  And I \
-        don't recognize the planet we're orbiting from my databanks.");
+        Unfortunately, Captain, I do not know.  Main sensors are offline, so \
+        we are not able to get any locator signal from any navsats that might \
+        be in range.  Moreover, the planet below does not appear to match \
+        anything in my databanks.");
     builder.lisa("\
         \"We'll, it's certainly not New Ithaca.  Hope the colony's doing okay \
         without us, because we're already nine months late for the \
@@ -506,28 +603,25 @@ pub(super) fn captains_call(_profile: &Profile,
 pub(super) fn low_visibility(profile: &Profile,
                              builder: &mut ConversationBuilder)
                              -> Result<(), ()> {
-    builder.lisa("TODO");
+    builder.esra("\
+        Here are the specifications for new sensor signal amplifiers, \
+        Commander.  The captain reports that she is ready to install the \
+        replacements as soon as you have them ready.");
     builder.puzzle(profile, Puzzle::AutomateSensors)?;
     builder.lisa("\"All right, we're live.  What've we got, ESRA?\"");
     builder.esra("\
         Searching...\n\n\
-        $(500)O$()dd.  There don't seem to be any navsats in range.");
+        $(500)O$()dd.  There do not seem to be any navsats in range.");
     builder.lisa("\
         \"Say what?  What, did we just overshoot the frontier entirely?  That \
         can't be right.\"");
     builder.esra("\
-        I'm not recognizing these star patterns at all.  I will need some \
+        I am not recognizing these star patterns at all.  I will need some \
         time to try to determine our position.");
     builder.lisa("\
-        \"Ugh.  All right.  In the meantime...ESRA, now that main sensors are \
-        working, we should be able to optmize the heliostat more accurately, \
-        right?  Wouldn't that give our solar power generation a bit of an \
-        efficiency boost?\"");
-    builder.esra("Yes.  Some, but not much.");
-    builder.lisa("\
-        \"It'll have to be enough.  ESRA, I need you to get Chief Walker \
-        awake.  Ration heat and oxygen for myself and the Commander if you \
-        have to, just make it work.  We $/need$/ that reactor back online.\"");
+        \"Ugh.  All right.  Keep working on it, and report as soon as you \
+        have something.  We $/need$/ to know where we are, and what happened \
+        to the rest of the convoy.\"");
     builder.esra("Acknowledged, Captain.  I will see what I can do.");
     Ok(())
 }
@@ -561,11 +655,17 @@ pub(super) fn an_idea(profile: &Profile, builder: &mut ConversationBuilder)
         \"$/Thank you$/, ESRA, but I don't care if it's inadvisable, because \
         it's the only chance we have right now.  And I already checked on the \
         grapple launcher before I messaged the Commander.  Enough of the \
-        coils are still working that I think we can make do, if we rebuild \
+        coils are still working that I think we can make do, if we redesign \
         the control circuit to compensate.  Commander $'YOURNAME'?\"");
     builder.you("\"I'll see to it, Captain.\"");
     builder.puzzle(profile, Puzzle::AutomateGrapple)?;
-    builder.lisa("TODO");
+    builder.lisa("\"Steady...steady...got it!\"");
+    builder.esra("Our orbit appears to still be stable.");
+    builder.lisa("\
+        \"Perfect.  ESRA, as soon as we get it reeled in and the power \
+        hooked up, get Chief Walker thawed out so we can get that backup \
+        reactor fixed.\"");
+    builder.esra("Affirmative, Captain.");
     Ok(())
 }
 
@@ -603,14 +703,24 @@ pub(super) fn more_power(profile: &Profile, builder: &mut ConversationBuilder)
         needs.  The circuit just needs to adjust the reactor control rods to \
         make those match.\"");
     builder.puzzle(profile, Puzzle::AutomateReactor)?;
-    builder.you("\"One reactor control board, coming up.\"");
-    builder.henry("\
-        \"Great!  Reactor's ready to go as soon as we can get it slotted \
-        in.\"");
+    builder.esra("\
+        Backup power has been restored.  I have roused the rest of the \
+        surviving crew from cryosleep.");
+    builder.lisa("\"Good work, everyone.  Who do we have left?\"");
+    builder.esra("\
+        The current crew complement is yourself, Commander $'YOURNAME', Chief \
+        Walker, and about two thirds of the crewmen from Mechanical.");
     builder.lisa("\
-        \"Good work, both of you.  Let's get that reactor fired up, and \
-        start thawing out the rest of the crew.  Or at least, whomever we \
-        still have left.\"");
+        \"...Okay.  We'll have to mourn the others later.  Our top priority \
+        is to find the other convoy ships and make sure they're safe.  Chief, \
+        how're the engines?\"");
+    builder.henry("\
+        \"The engines are fixable, Captain, but all the fuel tanks are \
+        ruptured, and the hyperfuel is long gone.  But we could probably \
+        synthesize more, if we could take take the lander down to the planet \
+        surface.\"");
+    builder.lisa("\
+        \"Then that's our plan.  Everyone, start making preparations.\"");
     Ok(())
 }
 
@@ -705,43 +815,43 @@ pub(super) fn sensor_results(profile: &Profile,
 pub(super) fn descent(profile: &Profile, builder: &mut ConversationBuilder)
                       -> Result<(), ()> {
     builder.henry("\
-        I've been patching up the lander, Captain.  It's pretty banged up, \
-        but life support's fine and I've got the thrusters working again.");
+        \"I've been patching up the lander, Captain.  It's pretty banged up, \
+        but life support's fine and I've got the thrusters working again.\"");
     builder.lisa("\
-        Good work, Chief.  How soon can you have it ready for descent?");
+        \"Good work, Chief.  How soon can you have it ready for descent?\"");
     builder.henry("\
-        Well, there's one problem.  The instruments on it got all fouled up, \
-        and we don't have replacements.  I don't think we can trust the \
-        current autopilot at all.  So we'd be taking it down on manual.");
+        \"Well, there's one problem.  The instruments on it got all fouled \
+        up, and we don't have replacements.  I don't think we can trust the \
+        current autopilot at all.  So we'd be taking it down on manual.\"");
     builder.esra("That would be extremely inadvisable.");
     builder.lisa("\
-        Yeah, this time I think the ESRA's right.  Manual descent on an \
+        \"Yeah, this time I think the ESRA's right.  Manual descent on an \
         unfamiliar planet is very unlikely to go well, and we don't have any \
-        spare landers if we crash this one.\n\n\
-        Also, everyone aboard would probably die.");
+        spare landers if we crash this one.\"\n\n\
+        \"Also, everyone aboard would probably die.\"");
     builder.you("\
-        Maybe I could make a new circuit to automate the landing.  Or at \
-        least, semi-automate it, to make a manual landing more feasible.");
+        \"Maybe I could make a new circuit to automate the landing.  Or at \
+        least, semi-automate it, to make a manual landing more feasible.\"");
     builder.lisa("\
-        That might be our best chance.  See what you can do, and then have \
-        the Chief install it once you're done.");
+        \"That might be our best chance.  See what you can do, and then have \
+        the Chief install it once you're done.\"");
     builder.puzzle(profile, Puzzle::CommandLander)?;
-    builder.henry("The lander's prepped and ready to go, Captain.");
+    builder.henry("\"The lander's prepped and ready to go, Captain.\"");
     builder.lisa("\
-        All right, here's the plan.  Commander, you'll be leading an away \
+        \"All right, here's the plan.  Commander, you'll be leading an away \
         team down to the surface to extract materials and start synthesizing \
         hyperfuel.  Take Chief Walker with you.  Chief, I want you to pick \
-        two of your best from Mechanical to go with you and the Commander.");
+        two of your best from Mechanical to go with you and the Commander.\"");
     builder.henry("\
-        Yes, ma'am.  Uh, for this job that'd probably be Crewman Jiménez and \
-        Crewman Patel.");
+        \"Yes, ma'am.  Uh, for this job that'd probably be Crewman Jiménez \
+        and Crewman Patel.\"");
     builder.lisa("\
-        Good.  I'll stay with the ship and supervise the remaining repairs up \
-        here.  We'll maintain radio contact as much as possible, but you'll \
-        be on point while you're down there, Commander.  No pressure or \
-        anything, but our survival and our chances of finding the rest of the \
-        convoy are absolutely dependent on your success.");
-    builder.you("Aye, Captain.");
+        \"Good.  I'll stay with the ship and supervise the remaining repairs \
+        up here.  We'll maintain radio contact as much as possible, but \
+        you'll be on point while you're down there, Commander.  No pressure \
+        or anything, but our survival and our chances of finding the rest of \
+        the convoy are absolutely dependent on your success.\"");
+    builder.you("\"Aye, Captain.\"");
     Ok(())
 }
 

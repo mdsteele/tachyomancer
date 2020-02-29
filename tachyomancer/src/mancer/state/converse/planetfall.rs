@@ -211,9 +211,9 @@ pub(super) fn advanced_circuits(
         practice using these concepts.");
     builder.puzzle(profile, Puzzle::TutorialSum)?;
     builder.henry("\
-        Commander!  The base is all set up, and I think we're ready to get \
-        started on mining, on your orders.");
-    builder.you("Thank you, Chief.  Please proceed.");
+        \"Commander!  The base is all set up, and I think we're ready to get \
+        started on mining, on your orders.\"");
+    builder.you("\"Thank you, Chief.  Please proceed.\"");
     Ok(())
 }
 
@@ -225,25 +225,25 @@ pub(super) fn scout_report(
     builder: &mut ConversationBuilder,
 ) -> Result<(), ()> {
     builder.henry("\
-        Well, Commander, I'm happy to report that the first batch of raw \
+        \"Well, Commander, I'm happy to report that the first batch of raw \
         materials is coming in.  It's slow going though, and it'll take a \
-        while to collect as much as we need.");
-    builder.you("Anything we can do to make things more efficient?");
+        while to collect as much as we need.\"");
+    builder.you("\"Anything we can do to make things more efficient?\"");
     builder.henry("\
-        Actually, Commander, there might be.  See, we've got a handful of \
+        \"Actually, Commander, there might be.  See, we've got a handful of \
         basic scout robots, and Crewman Jiménez has been setting them up to \
         travel outwards from the base and radio back to us when they find \
-        mineral deposits.  Then we go and and dig 'em up.");
+        mineral deposits.  Then we go and and dig 'em up.\"");
     builder.henry("\
-        Anyway, I was thinking we should get the robots to do the digging for \
-        us.  She and I could get them fitted with the right attachments, but \
-        it's not really what they're programmed for.  But we could swap in \
-        new logic boards easy, if you were to design one.");
-    builder.you("I'll take a look and let you know.");
+        \"Anyway, I was thinking we should get the robots to do the digging \
+        for us.  She and I could get them fitted with the right attachments, \
+        but it's not really what they're programmed for.  But we could swap \
+        in new logic boards easy, if you were to design one.\"");
+    builder.you("\"I'll take a look and let you know.\"");
     builder.puzzle(profile, Puzzle::AutomateMiningRobot)?;
     builder.henry("\
-        Thanks, Commander, these'll be perfect.  We'll get those robots \
-        retrofitted right away.");
+        \"Thanks, Commander, these'll be perfect.  We'll get those robots \
+        retrofitted right away.\"");
     Ok(())
 }
 
@@ -277,13 +277,52 @@ pub(super) fn making_fuel(
     profile: &Profile,
     builder: &mut ConversationBuilder,
 ) -> Result<(), ()> {
-    builder.you("How is progress on fuel-making, Chief?");
+    builder.you("\"How is progress on fuel-making, Chief?\"");
     builder.henry("\
-        We've got a good start.  Crewman Patel's got the catalysis equipment \
-        set up, and he'll be managing the synthesis process as we bring in \
-        materials.");
+        \"We've got a good start.  Crewman Patel's got the catalysis \
+        equipment set up, and he'll be managing the synthesis process as we \
+        bring in materials.  Reagents get pumped in as we refine them, and \
+        then when we've got enough for a batch, we pump them into the mixing \
+        chamber to be catalyzed.  Simple enough.\"");
+    builder.you("\"Huh.  I didn't realize hyperfuel was so easy to make.\"");
+    builder.henry("\
+        \"Oh sure, easy to make.  Easy to blow yourself up trying, too.\"");
+    builder.you("\"Wait.  Really?\"");
+    builder.henry("\
+        \"Haha, yep, if he ever gets the valves messed up, the whole base'll \
+        be up in smoke.  Or maybe in pieces.\"\n\n\
+        \"...Oh, uh, he'll be fine though, Commander.  He's done this sort of \
+        thing before.\"");
+    let valves = builder
+        .choice(profile, "valves")
+        .option("auto",
+                "\"No no no no no.  Sorry, Chief, but this is not good plan.  \
+                 I'd feel a lot better if I could get the valves automated.\"")
+        .option("fine",
+                "\"This seems totally safe and fine, and I have no \
+                 objections.\"")
+        .done()?;
+    if valves == "fine" {
+        builder.henry("\
+            \"Well...now that I think about it, Commander, it'd probably help \
+            our throughput if we could get the valves automated.  Plus, that \
+            would let me assign Crewman Patel some other tasks.\"");
+    } else {
+        builder.henry("\
+            \"Oh.  Well, I guess that would let me assign him some other \
+            tasks.  That would be great, actually.\"");
+    }
     builder.puzzle(profile, Puzzle::AutomateFuelSynthesis)?;
-    builder.henry("TODO");
+    if valves == "fine" {
+        builder.henry("\
+            \"Thank you, Commander, this is much better.   Now our throughput \
+            is up, $/and$/ we probably won't explode the base!\"");
+    } else {
+        builder.henry("\
+            \"You were right, Commander, this is much better.   Now our \
+            throughput is up, $/and$/ we probably won't explode the base!\"");
+    }
+    builder.you("\"I'm glad we could get that sorted out, Chief.\"");
     Ok(())
 }
 
@@ -295,36 +334,36 @@ pub(super) fn one_more_thing(
     builder: &mut ConversationBuilder,
 ) -> Result<(), ()> {
     builder.lisa("\
-        Commander, do you read me?  How are things going down there?");
+        \"Commander, do you read me?  How are things going down there?\"");
     builder.you("\
-        Going smoothly so far, Captain.  We've started extracting materials, \
-        and the Chief is overseeing fuel synthesis work.");
+        \"Going smoothly so far, Captain.  We've started extracting \
+        materials, and the Chief is overseeing fuel synthesis work.\"");
     builder.lisa("\
-        Good.  Listen, there's something else you need to do while you're \
+        \"Good.  Listen, there's something else you need to do while you're \
         down there.  I've been trying to raise the other convoy ships on \
         subspace, but I haven't picked up any signals yet.  So I need your \
         team to construct a wide-array subspace beacon on the planet \
-        surface, to give us a better chance of finding them.");
-    builder.you("How's that work?");
+        surface, to give us a better chance of finding them.\"");
+    builder.you("\"How's that work?\"");
     builder.lisa("\
-        It should be straightforward.  Have the Fabricator manufacture a \
-        bunch of subspace reflector panels, and lay them out in an array in \
+        \"It should be straightforward.  Have the Nanofabricator manufacture \
+        a bunch of subspace reflector panels, and lay them out in an array in \
         a flat area, over the space or a square kilometer or so.  Obviously, \
         that's a much wider array then we could ever fit on the ship, so it \
         should give us a much better chance of establishing a signal, if any \
-        of the missing ships are in a nearby star system.");
-    builder.you("Aye, Captain.  We'll get to work on it.");
+        of the missing ships are in a nearby star system.\"");
+    builder.you("\"Aye, Captain.  We'll get to work on it.\"");
     builder.lisa("\
-        The only trick is that you'll need to automate the array to track any \
-        signals we find.  Have the Chief and the two Crewmen get started on \
-        the panels, and meanwhile I'll send you the specs you'll need for \
-        making the control circuit.  Jackson out.");
+        \"The only trick is that you'll need to automate the array to track \
+        any signals we find.  Have the Chief and the two Crewmen get started \
+        on the panels, and meanwhile I'll send you the specs you'll need for \
+        making the control circuit.  Jackson out.\"");
     builder.puzzle(profile, Puzzle::AutomateBeacon)?;
-    builder.henry("We've got the array set up, Commander.");
+    builder.henry("\"We've got the array set up, Commander.\"");
     builder.you("\
-        Good work.  Go ahead and install this controller board, and have it \
-        start scanning.  Report to me as soon we find anything.");
-    builder.henry("Aye, Commander, will do.");
+        \"Good work.  Go ahead and install this controller board, and have it \
+        start scanning.  Report to me as soon we find anything.\"");
+    builder.henry("\"Aye, Commander, will do.\"");
     Ok(())
 }
 
@@ -336,40 +375,39 @@ pub(super) fn we_found_something(
     builder: &mut ConversationBuilder,
 ) -> Result<(), ()> {
     builder.henry("\
-        Sorry to bother you, Commander, but Crewman Jiménez just discovered \
-        something, and I thought you'd want to hear it right away.");
-    builder.you("What is it, Chief?");
+        \"Sorry to bother you, Commander, but Crewman Jiménez just discovered \
+        something, and I thought you'd want to hear it right away.\"");
+    builder.you("\"What is it, Chief?\"");
     builder.henry("\
-        Well, she's been managing all the scouting and mining robots we've \
+        \"Well, she's been managing all the scouting and mining robots we've \
         been sending out from the base, and one of them came back with some \
-        unexpected readings, so she went out to check it out herself.");
+        unexpected readings, so she went out to check it out herself.\"");
     builder.henry("\
-        Turns out, there are some $/ruins$/ about 40 klicks north of the \
+        \"Turns out, there are some $/ruins$/ about 40 klicks north of the \
         base.  Someone used to live around here; a lot of someones, in fact.  \
         And judging from her report, I'd hazard that whoever it was was at a \
         comparible level of technological development as ourselves.  This was \
-        probably one of their colony planets.");
-    builder.you("\
-        Do you think any of them are still around?");
+        probably one of their colony planets.\"");
+    builder.you("\"Do you think any of them are still around?\"");
     builder.henry("\
-        I doubt it.  Active civilization at that level of development?  We \
+        \"I doubt it.  Active civilization at that level of development?  We \
         would've seen signs of it from orbit.  City lights at night, radio \
-        transmissions, that sort of thing.");
+        transmissions, that sort of thing.\"");
     builder.henry("\
-        The thing is, though, these ruins...Jiménez showed me the phototypes \
-        she took of the site, and, well, I've served in campaigns before, \
-        Commander.  From the look of it, I'm pretty sure that city was \
-        bombed.  $/From orbit.$/  And not even all that long ago - maybe a \
-        year or two?");
+        \"The thing is, though, these ruins...Jiménez showed me the \
+        phototypes she took of the site, and, well, I've served in campaigns \
+        before, Commander.  From the look of it, that city was pretty clearly \
+        bombed.  $/From orbit.$/  And not even all that long ago--maybe a few \
+        months to a year before our convoy left spacedock?");
     builder.you("\
-        So, we may have just stumbled into the middle of an interplanetary \
-        war.");
+        \"So, we may have just stumbled into the middle of an interplanetary \
+        war.\"");
     builder.henry("\
-        Kinda puts a terrifying new spin on our situation, doesn't it?");
+        \"Kinda puts a terrifying new spin on our situation, doesn't it?\"");
     builder.you("\
-        I'll forward this information to Captain Jackson.  In the meantime, \
-        let's get that hyperfuel finished, on the double.");
-    builder.henry("Aye, Commander.");
+        \"I'll forward this information to Captain Jackson.  In the meantime, \
+        let's get that hyperfuel finished, on the double.\"");
+    builder.henry("\"Aye, Commander.\"");
     Ok(())
 }
 
@@ -381,42 +419,43 @@ pub(super) fn a_new_problem(
     builder: &mut ConversationBuilder,
 ) -> Result<(), ()> {
     builder.henry("\
-        Do you have a minute, Commander?  We've got a slightly embarrassing \
-        problem with the fuel synthesis, and I was hoping you could help.");
-    builder.you("What's the trouble?");
+        \"Do you have a minute, Commander?  We've got a slightly embarrassing \
+        problem with the fuel synthesis, and I was hoping you could help.\"");
+    builder.you("\"What's the trouble?\"");
     builder.henry("\
-        It's kind of silly, actually.  The fuel processing tanks have to be \
+        \"It's kind of silly, actually.  The fuel processing tanks have to be \
         kept below a certain pressure so they don't rupture.  Normally they \
         stay well below that threshold, but because of atomospheric \
         conditions on this planet...well, I'll spare you the details, but \
-        anyway, the pressure keeps getting a little too high.");
-    builder.you("Aren't there safety valves, to relieve the pressure?");
+        anyway, the pressure keeps getting a little too high.\"");
+    builder.you("\"Aren't there safety valves, to relieve the pressure?\"");
     builder.henry("\
-        Of course!  And normally they'd do their job, and this would all be \
+        \"Of course!  And normally they'd do their job, and this would all be \
         a non-issue.  But the darn things keep getting jammed.  Something \
         about the composition of the dust on this planet, getting into the \
         bearings.  So anyway, I've been having Crewman Patel stand by the \
         tanks and manually unjam the valves every so often, so that we don't \
         have to keep pausing the synthesis process.  Pretty standard \
-        percussive maintenance - just give 'em a good whack, basically.");
-    builder.you("Okay...");
+        percussive maintenance--just give 'em a good whack, basically.\"");
+    builder.you("\"Okay...\"");
     builder.henry("\
-        But we don't really have hands to spare right now, and I need him \
+        \"But we don't really have hands to spare right now, and I need him \
         working on other things!  So I want to detatch the external \
         manipulator arm from the lander and set it up next to the tanks to \
         unstick the valves automatically.  It's a ridiculous kludge, but I \
-        think it might actually be the quickest solution at this point.");
+        think it might actually be the quickest solution at this point.\"");
     builder.you("\
-        So we're going to use a highly-sophisticated spaceflight robotic arm \
-        to...whack some valves periodically?");
+        \"So we're going to use a highly-sophisticated spaceflight robotic \
+        arm to...whack some valves periodically?\"");
     builder.henry("\
-        That was my thinking, yes.  But we would need you to make a new \
-        control circuit for it to work.  I hate to ask, Commander, but...");
-    builder.you("Don't worry about it Chief.  I'll see what I can do.");
+        \"That was my thinking, yes, Commander.  But we would need you to \
+        make a new control circuit for it to work.  It's not my place to ask, \
+        but...\"");
+    builder.you("\"Don't worry about it Chief.  I'll see what I can do.\"");
     builder.puzzle(profile, Puzzle::AutomateRobotArm)?;
     builder.henry("\
-        Thanks so much Commander, you're a life-saver.  We should have all \
-        the fuel we need in no time.");
+        \"Thanks so much Commander, you're a life-saver.  We should have all \
+        the fuel we need in no time.\"");
     Ok(())
 }
 
@@ -428,40 +467,40 @@ pub(super) fn incoming_signal(
     builder: &mut ConversationBuilder,
 ) -> Result<(), ()> {
     builder.henry("\
-        Commander, I think we're getting a signal on the subspace beacon!  \
-        A bunch of them, actually.");
-    builder.you("Is it the other convoy ships?");
+        \"Commander, I think we're getting a signal on the subspace beacon!  \
+        A bunch of them, actually.\"");
+    builder.you("\"Is it the other convoy ships?\"");
     builder.henry("\
-        I think so?  Two of the signals do look like they have IFC carrier \
+        \"I think so?  Two of the signals do look like they have IFC carrier \
         waves, but they're really faint.  Could take hours to establish a \
-        proper lock.");
-    builder.you("Are the identifier codes coming through?");
+        proper lock.\"");
+    builder.you("\"Are the identifier codes coming through?\"");
     builder.henry("\
-        Let me see...yes.  This first one looks like the $/H.L.S. \
+        \"Let me see...yes.  This first one looks like the $/H.L.S. \
         Calliope$/.  That's the ship that Lt. Cara Powart had acting command \
         of for this mission.  Er, I know you just recently joined us, \
         Commander, so I guess you might not know the other officers well \
         yet.  Lt. Powart is our medical officier, but she's also a \
         xenolinguist.  It's a shame she's not here, because she might be \
-        able to make more sense of those ruins we found.");
-    builder.you("And the second one?");
+        able to make more sense of those ruins we found.\"");
+    builder.you("\"And the second one?\"");
     builder.henry("\
-        Second one...looks like the $/H.L.S. Orpheus$/.  Lt. Cmdr. Andrei \
+        \"Second one...looks like the $/H.L.S. Orpheus$/.  Lt. Cmdr. Andrei \
         Sholokhov had that one.  He's our communications officer, and if he \
         were here, he would be doing a much better job isolating these \
-        signals than I can.\n\n\
-        Unfortunately, I can't find any sign of the last convoy ship.");
+        signals than I can.\"\n\n\
+        \"Unfortunately, I can't find any sign of the last convoy ship.\"");
     builder.you("\
-        I'm sure you're doing fine, Chief.  What about the other subspace \
-        signals you were seeing?");
+        \"I'm sure you're doing fine, Chief.  What about the other subspace \
+        signals you were seeing?\"");
     builder.henry("\
-        They could be random noise, but they could also be alien vessels, \
+        \"They could be random noise, but they could also be alien vessels, \
         presumably native to this galaxy.  And, uh, there's definitely a \
-        chance that they're going to notice our beacon transmissions.");
-    builder.you("We'll have to take that risk.");
+        chance that they're going to notice our beacon transmissions.\"");
+    builder.you("\"We'll have to take that risk.\"");
     builder.henry("\
-        Understood, Commander.  I'll keep trying to get a better fix on the \
-        convoy ships, see if I can determine their locations.");
+        \"Understood, Commander.  I'll keep trying to get a better fix on the \
+        convoy ships, see if I can determine their locations.\"");
     Ok(())
 }
 
@@ -477,60 +516,59 @@ pub(super) fn unexpected_company(
         detecting a large number of ground objects moving towards your base \
         from all directions, and long range scans are detecting an unknown \
         vessel on course towards this planet.");
-    builder.lisa("\
-        What's going on down there?");
+    builder.lisa("\"What's going on down there?\"");
     builder.henry("\
-        Captain?  Commander?  We're getting an incoming subspace \
-        transmission!");
-    builder.lisa("From one of the convoy ships?");
-    builder.henry("Er, I don't think so...");
+        \"Captain?  Commander?  We're getting an incoming subspace \
+        transmission!\"");
+    builder.lisa("\"From one of the convoy ships?\"");
+    builder.henry("\"Er, I don't think so...\"");
     builder.purge("WE ARE THE PURGE.  YOU DO NOT BELONG.");
-    builder.you("You speak our language?");
+    builder.you("\"You speak our language?\"");
     builder.purge("\
         WE HAVE ALREADY ANALYZED YOUR LANGUAGE AND SPECIES.  YOU DO NOT \
         BELONG.");
-    builder.you("Looks like our beacon got some unwanted attention.");
+    builder.you("\"Looks like our beacon got some unwanted attention.\"");
     builder.lisa("\
-        Greetings, Purge.  My name is Captain Lisa Jackson of the Human \
+        \"Greetings, Purge.  My name is Captain Lisa Jackson of the Human \
         vessel $/H.L.S. Odyssey$/.  Please accept my regrets for our \
-        intrusion.  We mean you no harm.");
+        intrusion.  We mean you no harm.\"");
     builder.purge("UNACCEPTABLE.  YOU DO NOT BELONG.  YOU MUST BE DESTROYED.");
-    builder.henry("Well, they seem like nice fellas.");
-    builder.you("Shouldn't we be preparting to fight back?");
+    builder.henry("\"Well, they seem like nice fellas.\"");
+    builder.you("\"Shouldn't we be preparting to fight back?\"");
     builder.lisa("\
-        Only if we have to.  Look, we may not be here by choice, but if we're \
-        trespassing in their space, I can't blame them for not wanting us \
-        here.  And if we've stepped into the middle of their war, I \
-        $/definitely$/ don't want to get involved.");
+        \"Only if we have to.  Look, we may not be here by choice, but if \
+        we're trespassing in their space, I can't blame them for not wanting \
+        us here.  And if we've stepped into the middle of their war, I \
+        $/definitely$/ don't want to get involved.\"");
     builder.lisa("\
-        Purge, there is no need for conflict here.  We do not wish to \
+        \"Purge, there is no need for conflict here.  We do not wish to \
         trespass.  We were brought here by accident, and we intend to depart \
-        your territory, peacefully, as soon as possible.");
+        your territory, peacefully, as soon as possible.\"");
     builder.purge("\
         TERRITORY IS IRRELEVANT.  YOU DO NOT BELONG TO US, AND THEREFORE YOU \
-        MUST BE DESTROYED, JUST AS WE DESTROYED THE OTHER VERMIN THAT \
-        INHABITED THIS STAR SYSTEM.");
-    builder.lisa("Beg pardon?");
-    builder.henry("Like I said: nice fellas.");
+        MUST BE DESTROYED, JUST AS WE DESTROYED THE VERMIN THAT INHABITED \
+        THIS STAR SYSTEM.");
+    builder.lisa("\"Beg pardon?\"");
+    builder.henry("\"Like I said: nice fellas.\"");
     builder.purge("$/ALL$/ THAT ARE NOT OF THE PURGE MUST BE ERADIC-");
     builder.lisa("\
-        Yeah, no.  End transmission.  Okay, new plan: screw these losers.  \
-        Chief, what've you got down there for guns?");
+        \"Yeah, no.  End transmission.  Okay, new plan: screw these losers.  \
+        Chief, what've you got down there for guns?\"");
     builder.henry("\
-        Uh, the lander's pulse cannon still works.  I could rig it up on a \
-        rotating turret, but we'd need to improvise a fire control system.");
+        \"Uh, the lander's pulse cannon still works.  I could rig it up on a \
+        rotating turret, but we'd need to improvise a fire control system.\"");
     builder.lisa("\
-        Do it.  Commander, slap together a control board.  We don't have any \
-        orbital weapons up here to speak of, so you're going to have to hold \
-        off their ground forces on your own until the beacon can get a lock \
-        on the other convoy ships.  Then get in the lander and get back up \
-        here so we can all get the heck out of this system before that Purge \
-        ship arrives.");
+        \"Do it.  Commander, slap together a control board.  We don't have \
+        any orbital weapons up here to speak of, so you're going to have to \
+        hold off their ground forces on your own until the beacon can get a \
+        lock on the other convoy ships.  Then get in the lander and get back \
+        up here so we can all get the heck out of this system before that \
+        Purge ship arrives.\"");
     builder.puzzle(profile, Puzzle::CommandTurret)?;
     builder.henry("\
-        Commander!  The beacon's almost got a lock, but I don't think we can \
-        hold out for long enough to get a fix on both ships.  Which one \
-        should we scan for?");
+        \"Commander!  The beacon's almost got a lock, but I don't think we \
+        can hold out for long enough to get a fix on both ships.  Which one \
+        should we scan for?\"");
     let chapter = builder
         .choice(profile, "chapter")
         .option("calliope",
@@ -541,14 +579,15 @@ pub(super) fn unexpected_company(
                  Sholokhov's help finding the other convoy ships.\"")
         .done()?;
     if chapter == "orpheus" {
-        builder.henry("Aye aye, Commander, scanning for the $/Orpheus$/.");
+        builder.henry("\"Aye aye, Commander, scanning for the $/Orpheus$/.\"");
     } else {
-        builder.henry("Aye aye, Commander, scanning for the $/Calliope$/.");
+        builder.henry("\
+            \"Aye aye, Commander, scanning for the $/Calliope$/.\"");
     }
     builder.you("\
-        Have the Crewmen start packing, and get to the lander as soon as \
-        you've got a location fix.  I'll keep the Purge off your back until \
-        you do.");
+        \"Tell the Crewmen to finish packing, and then get to the lander as \
+        soon as you've got a location fix.  I'll keep the Purge off your back \
+        until you do.\"");
     Ok(())
 }
 

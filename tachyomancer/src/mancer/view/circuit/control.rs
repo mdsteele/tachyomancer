@@ -20,11 +20,13 @@
 use super::super::button::HoverPulse;
 use super::super::tooltip::TooltipSink;
 use super::tutorial::TutorialBubble;
+use crate::mancer::font::Align;
 use crate::mancer::gui::{Cursor, Event, Resources, Sound, Ui};
 use crate::mancer::save::{Hotkey, HotkeyCodeExt, Prefs};
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{AsFloat, Color4, Rect, RectSize};
 use tachy::save::Puzzle;
+use tachy::state::EditGrid;
 
 //===========================================================================//
 
@@ -32,8 +34,11 @@ const BUTTON_WIDTH: i32 = 48;
 const BUTTON_HEIGHT: i32 = 32;
 const BUTTON_SPACING: i32 = 8;
 
+const TIMER_FONT_SIZE: f32 = 24.0;
+const TIMER_HEIGHT: i32 = 24;
+
 const TRAY_MARGIN: i32 = 12;
-const TRAY_HEIGHT: i32 = 2 * TRAY_MARGIN + BUTTON_HEIGHT;
+const TRAY_HEIGHT: i32 = 3 * TRAY_MARGIN + TIMER_HEIGHT + BUTTON_HEIGHT;
 
 const TOOLTIP_RESET: &str = "$*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
      Resets the simulation back to the beginning and returns to edit mode.";
@@ -107,6 +112,7 @@ pub struct ControlsTray {
     rect: Rect<i32>,
     buttons: Vec<ControlsButton>,
     tutorial_bubble: Option<TutorialBubble>,
+    show_cycle_count: bool,
 }
 
 impl ControlsTray {
@@ -115,12 +121,13 @@ impl ControlsTray {
         current_puzzle: Puzzle,
         tutorial_bubble: Option<TutorialBubble>,
     ) -> ControlsTray {
+        let show_cycle_count = current_puzzle.allows_events();
         let mut actions = vec![
             (ControlsAction::Reset, Hotkey::EvalReset),
             (ControlsAction::RunOrPause, Hotkey::EvalRunPause),
             (ControlsAction::StepSubcycle, Hotkey::EvalStepSubcycle),
         ];
-        if current_puzzle.allows_events() {
+        if show_cycle_count {
             actions.push((ControlsAction::StepCycle, Hotkey::EvalStepCycle));
         }
         actions.push((ControlsAction::StepTime, Hotkey::EvalStepTime));
@@ -141,14 +148,14 @@ impl ControlsTray {
                     rect.x
                         + TRAY_MARGIN
                         + (BUTTON_WIDTH + BUTTON_SPACING) * (index as i32),
-                    rect.y + TRAY_MARGIN,
+                    rect.bottom() - (BUTTON_HEIGHT + TRAY_MARGIN),
                     BUTTON_WIDTH,
                     BUTTON_HEIGHT,
                 );
                 ControlsButton::new(action, rect, hotkey)
             })
             .collect::<Vec<ControlsButton>>();
-        ControlsTray { rect, buttons, tutorial_bubble }
+        ControlsTray { rect, buttons, tutorial_bubble, show_cycle_count }
     }
 
     pub fn draw(
@@ -156,7 +163,7 @@ impl ControlsTray {
         resources: &Resources,
         matrix: &Matrix4<f32>,
         status: ControlsStatus,
-        has_errors: bool,
+        grid: &EditGrid,
     ) {
         let ui = resources.shaders().ui();
         ui.draw_box2(
@@ -166,8 +173,41 @@ impl ControlsTray {
             &Color4::CYAN2,
             &Color4::PURPLE0_TRANSLUCENT,
         );
+
+        // Timers:
+        let (time_step, cycle, subcycle) = if let Some(eval) = grid.eval() {
+            (eval.time_step(), eval.cycle(), eval.subcycle())
+        } else {
+            (0, 0, 0)
+        };
+        let timer_top = (self.rect.y + TRAY_MARGIN) as f32;
+        resources.fonts().roman().draw(
+            matrix,
+            TIMER_FONT_SIZE,
+            Align::TopLeft,
+            ((self.rect.x + TRAY_MARGIN) as f32, timer_top),
+            &format!("Sub:{}", subcycle),
+        );
+        if self.show_cycle_count {
+            resources.fonts().roman().draw(
+                matrix,
+                TIMER_FONT_SIZE,
+                Align::TopRight,
+                ((self.rect.right() - TRAY_MARGIN - 100) as f32, timer_top),
+                &format!("Cycle:{}", cycle),
+            );
+        }
+        resources.fonts().roman().draw(
+            matrix,
+            TIMER_FONT_SIZE,
+            Align::TopRight,
+            ((self.rect.right() - TRAY_MARGIN) as f32, timer_top),
+            &format!("Time:{}", time_step),
+        );
+
+        // Buttons:
         for button in self.buttons.iter() {
-            button.draw(resources, matrix, status, has_errors);
+            button.draw(resources, matrix, status, grid.has_errors());
         }
         if let Some(ref bubble) = self.tutorial_bubble {
             let topleft = Point2::new(self.rect.x - 230, self.rect.y - 24);

@@ -207,7 +207,7 @@ impl CircuitView {
             resources,
             &projection,
             self.controls_status,
-            grid.has_errors(),
+            grid,
         );
         self.edit_grid.draw_dragged(resources);
         self.tooltip.draw(resources, &projection);

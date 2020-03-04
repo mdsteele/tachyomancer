@@ -365,7 +365,7 @@ impl UiShader {
         color2: &Color4,
         color3: &Color4,
     ) {
-        let (icon_row, icon_col) = div_mod_floor(icon_index, 3);
+        let (icon_row, icon_col) = div_mod_floor(icon_index, 4);
         let tex_rect = Rect::new(
             0.5 + 0.125 * (icon_col as f32),
             0.75 + 0.125 * (icon_row as f32),
@@ -430,7 +430,7 @@ impl UiShader {
         color3: &Color4,
     ) {
         let tex_rect =
-            Rect::new(0.875, 0.5 + 0.125 * (icon_index as f32), 0.125, 0.125);
+            Rect::new(0.5 + 0.125 * (icon_index as f32), 0.625, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.checkbox_varray.bind();
         self.checkbox_varray

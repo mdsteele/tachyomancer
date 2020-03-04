@@ -40,6 +40,7 @@ use tachy::save::HotkeyCode;
     PartialOrd,
 )]
 pub enum Hotkey {
+    EvalFastForward,
     EvalReset,
     EvalRunPause,
     EvalStepCycle,
@@ -60,18 +61,10 @@ pub enum Hotkey {
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub const HOTKEY_CATEGORIES: &[(&str, &[Hotkey])] = &[
-    ("Camera", &[
-        Hotkey::ScrollUp,
-        Hotkey::ScrollDown,
-        Hotkey::ScrollLeft,
-        Hotkey::ScrollRight,
-        Hotkey::ZoomIn,
-        Hotkey::ZoomOut,
-        Hotkey::ZoomDefault,
-    ]),
     ("Evaluation", &[
-        Hotkey::EvalReset,
         Hotkey::EvalRunPause,
+        Hotkey::EvalFastForward,
+        Hotkey::EvalReset,
         Hotkey::EvalStepTime,
         Hotkey::EvalStepCycle,
         Hotkey::EvalStepSubcycle,
@@ -81,6 +74,15 @@ pub const HOTKEY_CATEGORIES: &[(&str, &[Hotkey])] = &[
         Hotkey::RotateCcw,
         Hotkey::FlipHorz,
         Hotkey::FlipVert,
+    ]),
+    ("Camera", &[
+        Hotkey::ScrollUp,
+        Hotkey::ScrollDown,
+        Hotkey::ScrollLeft,
+        Hotkey::ScrollRight,
+        Hotkey::ZoomIn,
+        Hotkey::ZoomOut,
+        Hotkey::ZoomDefault,
     ]),
 ];
 
@@ -92,6 +94,7 @@ impl Hotkey {
 
     pub fn name(self) -> &'static str {
         match self {
+            Hotkey::EvalFastForward => "Fast-forward evaluation",
             Hotkey::EvalReset => "Reset evaluation",
             Hotkey::EvalRunPause => "Run/pause evaluation",
             Hotkey::EvalStepCycle => "Advance by one cycle",
@@ -113,6 +116,7 @@ impl Hotkey {
 
     pub fn default_keycode(self) -> HotkeyCode {
         match self {
+            Hotkey::EvalFastForward => HotkeyCode::G,
             Hotkey::EvalReset => HotkeyCode::T,
             Hotkey::EvalRunPause => HotkeyCode::R,
             Hotkey::EvalStepCycle => HotkeyCode::D,
@@ -138,6 +142,7 @@ impl Hotkey {
             HotkeyCode::D => Some(Hotkey::EvalStepCycle),
             HotkeyCode::E => Some(Hotkey::RotateCw),
             HotkeyCode::F => Some(Hotkey::EvalStepTime),
+            HotkeyCode::G => Some(Hotkey::EvalFastForward),
             HotkeyCode::Q => Some(Hotkey::RotateCcw),
             HotkeyCode::R => Some(Hotkey::EvalRunPause),
             HotkeyCode::S => Some(Hotkey::EvalStepSubcycle),

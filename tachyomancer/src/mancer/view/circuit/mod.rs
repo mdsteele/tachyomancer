@@ -61,6 +61,7 @@ use tachy::state::{
 
 //===========================================================================//
 
+const FAST_FORWARD_SPEEDUP: f64 = 5.0;
 const PARTS_CONTROLS_SPACING: i32 = 4;
 
 //===========================================================================//
@@ -333,9 +334,16 @@ impl CircuitView {
             Event::ClockTick(tick) => {
                 let mut result = EvalResult::Continue;
                 if let Some(eval) = grid.eval_mut() {
-                    if self.controls_status == ControlsStatus::Running {
-                        let seconds_per_time_step =
+                    if self.controls_status == ControlsStatus::FastForwarding
+                        || self.controls_status == ControlsStatus::Running
+                    {
+                        let mut seconds_per_time_step =
                             eval.seconds_per_time_step();
+                        if self.controls_status
+                            == ControlsStatus::FastForwarding
+                        {
+                            seconds_per_time_step /= FAST_FORWARD_SPEEDUP;
+                        }
                         self.seconds_since_time_step += tick.elapsed;
                         while self.seconds_since_time_step
                             >= seconds_per_time_step
@@ -374,6 +382,37 @@ impl CircuitView {
         ) {
             match opt_action {
                 None => {}
+                Some(ControlsAction::FastForward) => {
+                    match self.controls_status {
+                        ControlsStatus::Stopped => {
+                            debug_assert!(grid.eval().is_none());
+                            self.edit_grid.cancel_interaction(ui, grid);
+                            ui.audio().play_sound(Sound::Beep);
+                            self.seconds_since_time_step = 0.0;
+                            self.controls_status =
+                                ControlsStatus::FastForwarding;
+                            grid.start_eval();
+                            ui.request_redraw();
+                        }
+                        ControlsStatus::Running => {
+                            debug_assert!(grid.eval().is_some());
+                            self.controls_status =
+                                ControlsStatus::FastForwarding;
+                            ui.request_redraw();
+                        }
+                        ControlsStatus::Paused => {
+                            debug_assert!(grid.eval().is_some());
+                            self.seconds_since_time_step = 0.0;
+                            self.controls_status =
+                                ControlsStatus::FastForwarding;
+                            ui.request_redraw();
+                        }
+                        ControlsStatus::FastForwarding
+                        | ControlsStatus::Finished => {
+                            debug_assert!(grid.eval().is_some());
+                        }
+                    }
+                }
                 Some(ControlsAction::Reset) => {
                     if grid.eval().is_some() {
                         ui.audio().play_sound(Sound::Beep);
@@ -394,7 +433,8 @@ impl CircuitView {
                             grid.start_eval();
                             ui.request_redraw();
                         }
-                        ControlsStatus::Running => {
+                        ControlsStatus::Running
+                        | ControlsStatus::FastForwarding => {
                             debug_assert!(grid.eval().is_some());
                             self.seconds_since_time_step = 0.0;
                             self.controls_status = ControlsStatus::Paused;

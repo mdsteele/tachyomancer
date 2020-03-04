@@ -46,10 +46,13 @@ const TRAY_TAB_FONT_SIZE: f32 = 16.0;
 const TRAY_TAB_HEIGHT: f32 = 66.0;
 const TRAY_TAB_TEXT: &str = "CONTROLS";
 
+const TOOLTIP_FAST_FORWARD: &str =
+    "$*Fast-forward$* $>$G$*$[EvalFastForward]$*$D$<\n\
+     Runs the simulation at increased speed.";
 const TOOLTIP_RESET: &str = "$*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
      Resets the simulation back to the beginning and returns to edit mode.";
 const TOOLTIP_RUN_PAUSE: &str = "$*Run/pause$* $>$G$*$[EvalRunPause]$*$D$<\n\
-                                 Runs or pauses the simulation.";
+     Runs or pauses the simulation.";
 const TOOLTIP_STEP_SUBCYCLE: &str =
     "$*Step forward one subcycle$* $>$G$*$[EvalStepSubcycle]$*$D$<\n\
      Runs the simulation forward by a single subcycle, then pauses.  This \
@@ -71,12 +74,14 @@ const TOOLTIP_STEP_TIME: &str =
 pub enum ControlsStatus {
     Stopped,
     Running,
+    FastForwarding,
     Paused,
     Finished,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ControlsAction {
+    FastForward,
     Reset,
     RunOrPause,
     StepSubcycle,
@@ -87,6 +92,7 @@ pub enum ControlsAction {
 impl ControlsAction {
     fn hotkey(self) -> Hotkey {
         match self {
+            ControlsAction::FastForward => Hotkey::EvalFastForward,
             ControlsAction::Reset => Hotkey::EvalReset,
             ControlsAction::RunOrPause => Hotkey::EvalRunPause,
             ControlsAction::StepSubcycle => Hotkey::EvalStepSubcycle,
@@ -97,22 +103,26 @@ impl ControlsAction {
 
     fn icon_index(self, status: ControlsStatus) -> usize {
         match self {
+            ControlsAction::FastForward => 3,
             ControlsAction::Reset => 2,
             ControlsAction::RunOrPause => {
-                if status == ControlsStatus::Running {
-                    1
-                } else {
-                    0
+                match status {
+                    ControlsStatus::Stopped
+                    | ControlsStatus::Paused
+                    | ControlsStatus::Finished => 0, // Run
+                    ControlsStatus::Running
+                    | ControlsStatus::FastForwarding => 1, // Pause
                 }
             }
-            ControlsAction::StepSubcycle => 3,
-            ControlsAction::StepCycle => 4,
-            ControlsAction::StepTime => 5,
+            ControlsAction::StepSubcycle => 4,
+            ControlsAction::StepCycle => 5,
+            ControlsAction::StepTime => 6,
         }
     }
 
     pub fn tooltip_format(self) -> &'static str {
         match self {
+            ControlsAction::FastForward => TOOLTIP_FAST_FORWARD,
             ControlsAction::Reset => TOOLTIP_RESET,
             ControlsAction::RunOrPause => TOOLTIP_RUN_PAUSE,
             ControlsAction::StepSubcycle => TOOLTIP_STEP_SUBCYCLE,
@@ -154,7 +164,7 @@ impl ControlsTray {
         let button_top = window_size.height
             - (BUTTON_HEIGHT / 2 + RUN_BUTTON_SIZE / 2 + TRAY_INNER_MARGIN);
         buttons.push(ControlsButton::new(
-            ControlsAction::Reset, // TODO: fast forward
+            ControlsAction::FastForward,
             Rect::new(button_left, button_top, BUTTON_WIDTH, BUTTON_HEIGHT),
         ));
         button_left += BUTTON_WIDTH + BUTTON_SPACING;
@@ -384,11 +394,15 @@ impl ControlsButton {
 
     fn is_enabled(&self, status: ControlsStatus) -> bool {
         match self.action {
+            ControlsAction::FastForward => {
+                status != ControlsStatus::Finished
+                    && status != ControlsStatus::FastForwarding
+            }
             ControlsAction::Reset => status != ControlsStatus::Stopped,
             ControlsAction::RunOrPause => status != ControlsStatus::Finished,
             _ => {
-                status != ControlsStatus::Running
-                    && status != ControlsStatus::Finished
+                status == ControlsStatus::Stopped
+                    || status == ControlsStatus::Paused
             }
         }
     }

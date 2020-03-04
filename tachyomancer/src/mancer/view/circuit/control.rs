@@ -19,26 +19,32 @@
 
 use super::super::button::HoverPulse;
 use super::super::tooltip::TooltipSink;
+use super::tray::TraySlide;
 use super::tutorial::TutorialBubble;
 use crate::mancer::font::Align;
 use crate::mancer::gui::{Cursor, Event, Resources, Sound, Ui};
 use crate::mancer::save::{Hotkey, HotkeyCodeExt, Prefs};
-use cgmath::{Matrix4, Point2};
-use tachy::geom::{AsFloat, Color4, Rect, RectSize};
+use crate::mancer::shader::UiShader;
+use cgmath::{Deg, Matrix4, Point2};
+use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::save::Puzzle;
 use tachy::state::EditGrid;
 
 //===========================================================================//
 
+const RUN_BUTTON_SIZE: i32 = 60;
 const BUTTON_WIDTH: i32 = 48;
 const BUTTON_HEIGHT: i32 = 32;
 const BUTTON_SPACING: i32 = 8;
 
 const TIMER_FONT_SIZE: f32 = 24.0;
-const TIMER_HEIGHT: i32 = 24;
 
-const TRAY_MARGIN: i32 = 12;
-const TRAY_HEIGHT: i32 = 3 * TRAY_MARGIN + TIMER_HEIGHT + BUTTON_HEIGHT;
+const TRAY_EXTRA_HIDDEN_HEIGHT: i32 = 20;
+const TRAY_FLIP_HORZ: bool = false;
+const TRAY_INNER_MARGIN: i32 = 12;
+const TRAY_TAB_FONT_SIZE: f32 = 16.0;
+const TRAY_TAB_HEIGHT: f32 = 66.0;
+const TRAY_TAB_TEXT: &str = "CONTROLS";
 
 const TOOLTIP_RESET: &str = "$*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
      Resets the simulation back to the beginning and returns to edit mode.";
@@ -79,6 +85,16 @@ pub enum ControlsAction {
 }
 
 impl ControlsAction {
+    fn hotkey(self) -> Hotkey {
+        match self {
+            ControlsAction::Reset => Hotkey::EvalReset,
+            ControlsAction::RunOrPause => Hotkey::EvalRunPause,
+            ControlsAction::StepSubcycle => Hotkey::EvalStepSubcycle,
+            ControlsAction::StepCycle => Hotkey::EvalStepCycle,
+            ControlsAction::StepTime => Hotkey::EvalStepTime,
+        }
+    }
+
     fn icon_index(self, status: ControlsStatus) -> usize {
         match self {
             ControlsAction::Reset => 2,
@@ -111,8 +127,9 @@ impl ControlsAction {
 pub struct ControlsTray {
     rect: Rect<i32>,
     buttons: Vec<ControlsButton>,
-    tutorial_bubble: Option<TutorialBubble>,
     show_cycle_count: bool,
+    slide: TraySlide,
+    tutorial_bubble: Option<TutorialBubble>,
 }
 
 impl ControlsTray {
@@ -122,40 +139,76 @@ impl ControlsTray {
         tutorial_bubble: Option<TutorialBubble>,
     ) -> ControlsTray {
         let show_cycle_count = current_puzzle.allows_events();
-        let mut actions = vec![
-            (ControlsAction::Reset, Hotkey::EvalReset),
-            (ControlsAction::RunOrPause, Hotkey::EvalRunPause),
-            (ControlsAction::StepSubcycle, Hotkey::EvalStepSubcycle),
-        ];
+        let mut buttons = Vec::<ControlsButton>::new();
+        let mut button_left = TRAY_INNER_MARGIN;
+        buttons.push(ControlsButton::new(
+            ControlsAction::RunOrPause,
+            Rect::new(
+                TRAY_INNER_MARGIN,
+                window_size.height - (RUN_BUTTON_SIZE + TRAY_INNER_MARGIN),
+                RUN_BUTTON_SIZE,
+                RUN_BUTTON_SIZE,
+            ),
+        ));
+        button_left += RUN_BUTTON_SIZE + BUTTON_SPACING;
+        let button_top = window_size.height
+            - (BUTTON_HEIGHT / 2 + RUN_BUTTON_SIZE / 2 + TRAY_INNER_MARGIN);
+        buttons.push(ControlsButton::new(
+            ControlsAction::Reset, // TODO: fast forward
+            Rect::new(button_left, button_top, BUTTON_WIDTH, BUTTON_HEIGHT),
+        ));
+        button_left += BUTTON_WIDTH + BUTTON_SPACING;
+        buttons.push(ControlsButton::new(
+            ControlsAction::Reset,
+            Rect::new(button_left, button_top, BUTTON_WIDTH, BUTTON_HEIGHT),
+        ));
+        let tray_width = button_left + BUTTON_WIDTH + TRAY_INNER_MARGIN;
+        let button_left =
+            TRAY_INNER_MARGIN + RUN_BUTTON_SIZE / 2 - BUTTON_WIDTH / 2;
+        let mut button_top = window_size.height
+            - (BUTTON_HEIGHT
+                + BUTTON_SPACING
+                + RUN_BUTTON_SIZE
+                + TRAY_INNER_MARGIN);
+        buttons.push(ControlsButton::new(
+            ControlsAction::StepTime,
+            Rect::new(button_left, button_top, BUTTON_WIDTH, BUTTON_HEIGHT),
+        ));
         if show_cycle_count {
-            actions.push((ControlsAction::StepCycle, Hotkey::EvalStepCycle));
-        }
-        actions.push((ControlsAction::StepTime, Hotkey::EvalStepTime));
-        let width = 2 * TRAY_MARGIN
-            + (actions.len() as i32) * (BUTTON_WIDTH + BUTTON_SPACING)
-            - BUTTON_SPACING;
-        let rect = Rect::new(
-            (window_size.width - width) / 2,
-            window_size.height - TRAY_HEIGHT,
-            width,
-            TRAY_HEIGHT,
-        );
-        let buttons = actions
-            .into_iter()
-            .enumerate()
-            .map(|(index, (action, hotkey))| {
-                let rect = Rect::new(
-                    rect.x
-                        + TRAY_MARGIN
-                        + (BUTTON_WIDTH + BUTTON_SPACING) * (index as i32),
-                    rect.bottom() - (BUTTON_HEIGHT + TRAY_MARGIN),
+            button_top -= BUTTON_HEIGHT + BUTTON_SPACING;
+            buttons.push(ControlsButton::new(
+                ControlsAction::StepCycle,
+                Rect::new(
+                    button_left,
+                    button_top,
                     BUTTON_WIDTH,
                     BUTTON_HEIGHT,
-                );
-                ControlsButton::new(action, rect, hotkey)
-            })
-            .collect::<Vec<ControlsButton>>();
-        ControlsTray { rect, buttons, tutorial_bubble, show_cycle_count }
+                ),
+            ));
+        }
+        button_top -= BUTTON_HEIGHT + BUTTON_SPACING;
+        buttons.push(ControlsButton::new(
+            ControlsAction::StepSubcycle,
+            Rect::new(button_left, button_top, BUTTON_WIDTH, BUTTON_HEIGHT),
+        ));
+        let tray_top = button_top - TRAY_INNER_MARGIN;
+        let rect = Rect::new(
+            0,
+            tray_top,
+            tray_width,
+            window_size.height - tray_top + TRAY_EXTRA_HIDDEN_HEIGHT,
+        );
+        ControlsTray {
+            rect,
+            buttons,
+            show_cycle_count,
+            slide: TraySlide::new(rect.width),
+            tutorial_bubble,
+        }
+    }
+
+    pub fn rect(&self) -> Rect<i32> {
+        self.rect
     }
 
     pub fn draw(
@@ -165,54 +218,93 @@ impl ControlsTray {
         status: ControlsStatus,
         grid: &EditGrid,
     ) {
-        let ui = resources.shaders().ui();
-        ui.draw_box2(
+        let matrix =
+            matrix * Matrix4::trans2(-self.slide.distance() as f32, 0.0);
+        self.draw_box(resources, &matrix);
+        self.draw_timers(resources, &matrix, grid);
+        for button in self.buttons.iter() {
+            button.draw(resources, &matrix, status, grid.has_errors());
+        }
+        if let Some(ref bubble) = self.tutorial_bubble {
+            let left = self.rect.right() + 26;
+            let top = self.rect.bottom()
+                - TRAY_EXTRA_HIDDEN_HEIGHT
+                - 8
+                - bubble.height();
+            bubble.draw(resources, &matrix, Point2::new(left, top));
+        }
+    }
+
+    fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let rect = self.rect.as_f32();
+        let tab_rect =
+            UiShader::tray_tab_rect(rect, TRAY_TAB_HEIGHT, TRAY_FLIP_HORZ);
+
+        resources.shaders().ui().draw_tray(
             matrix,
-            &self.rect.as_f32(),
+            &rect,
+            TRAY_TAB_HEIGHT,
+            TRAY_FLIP_HORZ,
             &Color4::ORANGE2,
             &Color4::CYAN2,
             &Color4::PURPLE0_TRANSLUCENT,
         );
 
-        // Timers:
+        let tab_matrix = matrix
+            * Matrix4::trans2(
+                tab_rect.x + 0.5 * tab_rect.width,
+                tab_rect.y + 0.5 * tab_rect.height,
+            )
+            * Matrix4::from_angle_z(Deg(-90.0));
+        let font = resources.fonts().roman();
+        font.draw(
+            &tab_matrix,
+            TRAY_TAB_FONT_SIZE,
+            Align::MidCenter,
+            (0.0, -2.0),
+            TRAY_TAB_TEXT,
+        );
+    }
+
+    fn draw_timers(
+        &self,
+        resources: &Resources,
+        matrix: &Matrix4<f32>,
+        grid: &EditGrid,
+    ) {
         let (time_step, cycle, subcycle) = if let Some(eval) = grid.eval() {
             (eval.time_step(), eval.cycle(), eval.subcycle())
         } else {
             (0, 0, 0)
         };
-        let timer_top = (self.rect.y + TRAY_MARGIN) as f32;
+        let timer_right = (self.rect.right() - TRAY_INNER_MARGIN) as f32;
+        let mut timer_mid =
+            self.rect.y + TRAY_INNER_MARGIN + BUTTON_HEIGHT / 2;
         resources.fonts().roman().draw(
             matrix,
             TIMER_FONT_SIZE,
-            Align::TopLeft,
-            ((self.rect.x + TRAY_MARGIN) as f32, timer_top),
+            Align::MidRight,
+            (timer_right, timer_mid as f32),
             &format!("Sub:{}", subcycle),
         );
         if self.show_cycle_count {
+            timer_mid += BUTTON_HEIGHT + BUTTON_SPACING;
             resources.fonts().roman().draw(
                 matrix,
                 TIMER_FONT_SIZE,
-                Align::TopRight,
-                ((self.rect.right() - TRAY_MARGIN - 100) as f32, timer_top),
+                Align::MidRight,
+                (timer_right, timer_mid as f32),
                 &format!("Cycle:{}", cycle),
             );
         }
+        timer_mid += BUTTON_HEIGHT + BUTTON_SPACING;
         resources.fonts().roman().draw(
             matrix,
             TIMER_FONT_SIZE,
-            Align::TopRight,
-            ((self.rect.right() - TRAY_MARGIN) as f32, timer_top),
+            Align::MidRight,
+            (timer_right, timer_mid as f32),
             &format!("Time:{}", time_step),
         );
-
-        // Buttons:
-        for button in self.buttons.iter() {
-            button.draw(resources, matrix, status, grid.has_errors());
-        }
-        if let Some(ref bubble) = self.tutorial_bubble {
-            let topleft = Point2::new(self.rect.x - 230, self.rect.y - 24);
-            bubble.draw(resources, matrix, topleft);
-        }
     }
 
     pub fn on_event(
@@ -225,9 +317,11 @@ impl ControlsTray {
         tooltip: &mut dyn TooltipSink<ControlsAction>,
         prefs: &Prefs,
     ) -> Option<Option<ControlsAction>> {
+        let rel_event =
+            event.relative_to(Point2::new(-self.slide.distance(), 0));
         for button in self.buttons.iter_mut() {
             let opt_action = button.on_event(
-                event,
+                &rel_event,
                 ui,
                 status,
                 has_errors || is_interacting,
@@ -238,12 +332,30 @@ impl ControlsTray {
                 return Some(opt_action);
             }
         }
-        match event {
-            Event::MouseDown(mouse) if self.rect.contains_point(mouse.pt) => {
-                return Some(None);
+        match &rel_event {
+            Event::ClockTick(tick) => self.slide.on_clock_tick(tick, ui),
+            Event::MouseDown(mouse) => {
+                let tab_rect = UiShader::tray_tab_rect(
+                    self.rect.as_f32(),
+                    TRAY_TAB_HEIGHT,
+                    TRAY_FLIP_HORZ,
+                );
+                if tab_rect.contains_point(mouse.pt.as_f32()) {
+                    self.slide.toggle();
+                    return Some(None);
+                } else if self.rect.contains_point(mouse.pt) {
+                    return Some(None);
+                }
             }
             Event::MouseMove(mouse) | Event::MouseUp(mouse) => {
-                if self.rect.contains_point(mouse.pt) {
+                let tab_rect = UiShader::tray_tab_rect(
+                    self.rect.as_f32(),
+                    TRAY_TAB_HEIGHT,
+                    TRAY_FLIP_HORZ,
+                );
+                if self.rect.contains_point(mouse.pt)
+                    || tab_rect.contains_point(mouse.pt.as_f32())
+                {
                     ui.cursor().request(Cursor::default());
                     tooltip.hover_none(ui);
                 }
@@ -262,17 +374,12 @@ impl ControlsTray {
 struct ControlsButton {
     action: ControlsAction,
     rect: Rect<i32>,
-    hotkey: Hotkey,
     hover_pulse: HoverPulse,
 }
 
 impl ControlsButton {
-    pub fn new(
-        action: ControlsAction,
-        rect: Rect<i32>,
-        hotkey: Hotkey,
-    ) -> ControlsButton {
-        ControlsButton { action, rect, hotkey, hover_pulse: HoverPulse::new() }
+    pub fn new(action: ControlsAction, rect: Rect<i32>) -> ControlsButton {
+        ControlsButton { action, rect, hover_pulse: HoverPulse::new() }
     }
 
     fn is_enabled(&self, status: ControlsStatus) -> bool {
@@ -357,7 +464,8 @@ impl ControlsButton {
             Event::KeyDown(key) => {
                 if !controls_disabled
                     && self.is_enabled(status)
-                    && key.code == prefs.hotkey_code(self.hotkey).to_keycode()
+                    && key.code
+                        == prefs.hotkey_code(self.action.hotkey()).to_keycode()
                 {
                     self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);

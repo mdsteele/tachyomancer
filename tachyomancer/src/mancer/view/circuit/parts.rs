@@ -35,6 +35,8 @@ use tachy::save::{ChipSet, ChipType, CHIP_CATEGORIES};
 const CATEGORY_LABEL_HEIGHT: i32 = 30;
 const CATEGORY_LABEL_FONT_SIZE: f32 = 20.0;
 
+const NUM_COLUMNS: i32 = 3;
+
 const PART_WIDTH: i32 = 56;
 const PART_HEIGHT: i32 = 56;
 const PART_INNER_MARGIN: i32 = 4;
@@ -43,9 +45,9 @@ const PART_SPACING: i32 = 0;
 const SCROLLBAR_MARGIN: i32 = 8;
 const SCROLLBAR_WIDTH: i32 = 16;
 
+const TRAY_EXTRA_HIDDEN_HEIGHT: i32 = 8;
 const TRAY_FLIP_HORZ: bool = false;
 const TRAY_INNER_MARGIN: i32 = 16;
-const TRAY_OUTER_MARGIN: i32 = 32;
 const TRAY_TAB_FONT_SIZE: f32 = 16.0;
 const TRAY_TAB_HEIGHT: f32 = 60.0;
 const TRAY_TAB_TEXT: &str = "PARTS";
@@ -73,25 +75,19 @@ impl PartsTray {
     pub fn new(
         window: &Window,
         allowed: &ChipSet,
+        tray_bottom: i32,
         tutorial_bubble: Option<TutorialBubble>,
     ) -> PartsTray {
         let window_size = window.size();
-        let num_columns = if window_size.width < 1000 {
-            2
-        } else if window_size.width < 1200 {
-            3
-        } else {
-            4
-        };
-        let fbo_width = num_columns * (PART_WIDTH + PART_SPACING)
+        let fbo_width = NUM_COLUMNS * (PART_WIDTH + PART_SPACING)
             - PART_SPACING
             - 2 * PART_INNER_MARGIN;
         let tray_width = 2 * TRAY_INNER_MARGIN + fbo_width;
         let mut rect = Rect::new(
             0,
-            TRAY_OUTER_MARGIN,
+            -TRAY_EXTRA_HIDDEN_HEIGHT,
             tray_width,
-            window_size.height - 2 * TRAY_OUTER_MARGIN,
+            TRAY_EXTRA_HIDDEN_HEIGHT + tray_bottom,
         );
 
         let mut num_parts: usize = 0;
@@ -122,7 +118,7 @@ impl PartsTray {
                 let part_rect = Rect::new(left, top, PART_WIDTH, PART_HEIGHT);
                 parts.push((part_rect, ctype));
                 col += 1;
-                if col >= num_columns {
+                if col >= NUM_COLUMNS {
                     col = 0;
                     top += PART_HEIGHT + PART_SPACING;
                 }
@@ -213,31 +209,30 @@ impl PartsTray {
         matrix: &Matrix4<f32>,
         enabled: bool,
     ) {
+        let matrix =
+            matrix * Matrix4::trans2(-self.slide.distance() as f32, 0.0);
         {
-            let matrix =
-                matrix * Matrix4::trans2(-self.slide.distance() as f32, 0.0);
-            {
-                let stencil = Stencil::new();
-                self.draw_box(resources, &matrix);
-                stencil.enable_clipping();
-                self.draw_parts(resources, &matrix, enabled);
-            }
-            self.scrollbar.draw(resources, &matrix);
-            if let Some(ref bubble) = self.tutorial_bubble {
-                let topleft =
-                    Point2::new(self.rect.right() + 6, self.rect.y - 20);
-                bubble.draw(resources, &matrix, topleft);
-            }
+            let stencil = Stencil::new();
+            self.draw_box(resources, &matrix);
+            stencil.enable_clipping();
+            self.draw_parts(resources, &matrix, enabled);
+        }
+        self.scrollbar.draw(resources, &matrix);
+        if let Some(ref bubble) = self.tutorial_bubble {
+            let topleft = Point2::new(
+                self.rect.right() + 26,
+                self.rect.y + TRAY_EXTRA_HIDDEN_HEIGHT + 8,
+            );
+            bubble.draw(resources, &matrix, topleft);
         }
     }
 
     fn draw_box(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let ui = resources.shaders().ui();
         let rect = self.rect.as_f32();
         let tab_rect =
             UiShader::tray_tab_rect(rect, TRAY_TAB_HEIGHT, TRAY_FLIP_HORZ);
 
-        ui.draw_tray(
+        resources.shaders().ui().draw_tray(
             matrix,
             &rect,
             TRAY_TAB_HEIGHT,
@@ -293,7 +288,7 @@ impl PartsTray {
         self.scrollbar.on_event(&rel_event, ui);
 
         match event {
-            Event::ClockTick(tick) => self.slide.on_tick(tick, ui),
+            Event::ClockTick(tick) => self.slide.on_clock_tick(tick, ui),
             Event::MouseDown(mouse) if mouse.left => {
                 let rel_mouse_pt = mouse.pt + vec2(self.slide.distance(), 0);
                 let tab_rect = UiShader::tray_tab_rect(

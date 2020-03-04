@@ -40,7 +40,7 @@ impl TraySlide {
         self.slide.round() as i32
     }
 
-    pub fn on_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
+    pub fn on_clock_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
         let goal = if self.shown { 0.0 } else { self.max_slide };
         let new_slide = track_towards(self.slide, goal, tick);
         if self.slide != new_slide {

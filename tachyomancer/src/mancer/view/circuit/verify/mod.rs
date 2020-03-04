@@ -53,6 +53,7 @@ use tachy::state::{
 
 //===========================================================================//
 
+const TRAY_EXTRA_HIDDEN_HEIGHT: i32 = 20;
 const TRAY_FLIP_HORZ: bool = true;
 const TRAY_INNER_MARGIN: i32 = 20;
 const TRAY_TAB_FONT_SIZE: f32 = 16.0;
@@ -205,7 +206,7 @@ impl VerificationTray {
                 window_size.width - size.width,
                 window_size.height - size.height,
                 size.width,
-                size.height + 20,
+                size.height + TRAY_EXTRA_HIDDEN_HEIGHT,
             )
         };
         VerificationTray { rect, subview, slide: TraySlide::new(rect.width) }
@@ -265,9 +266,7 @@ impl VerificationTray {
         tooltip: &mut dyn TooltipSink<()>,
     ) -> bool {
         match event {
-            Event::ClockTick(tick) => {
-                self.slide.on_tick(tick, ui);
-            }
+            Event::ClockTick(tick) => self.slide.on_clock_tick(tick, ui),
             Event::MouseDown(mouse) => {
                 let rel_mouse_pt = mouse.pt - vec2(self.slide.distance(), 0);
                 let tab_rect = UiShader::tray_tab_rect(

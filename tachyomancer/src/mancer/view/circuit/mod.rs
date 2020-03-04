@@ -61,6 +61,10 @@ use tachy::state::{
 
 //===========================================================================//
 
+const PARTS_CONTROLS_SPACING: i32 = 4;
+
+//===========================================================================//
+
 pub enum CircuitAction {
     BackToMenu,
     BackToMenuWithoutSaving,
@@ -159,6 +163,14 @@ impl CircuitView {
             .iter()
             .find(|&&(pos, _)| pos == TutorialBubblePosition::PartsTray)
             .map(|&(_, format)| TutorialBubble::new(prefs, format));
+        let controls_tray =
+            ControlsTray::new(window_size, puzzle, controls_bubble);
+        let parts_tray = PartsTray::new(
+            window,
+            grid.allowed_chips(),
+            controls_tray.rect().y - PARTS_CONTROLS_SPACING,
+            parts_bubble,
+        );
         CircuitView {
             width: window_size.width as f32,
             height: window_size.height as f32,
@@ -167,16 +179,8 @@ impl CircuitView {
                 grid.bounds(),
                 bounds_bubbles,
             ),
-            controls_tray: ControlsTray::new(
-                window_size,
-                puzzle,
-                controls_bubble,
-            ),
-            parts_tray: PartsTray::new(
-                window,
-                grid.allowed_chips(),
-                parts_bubble,
-            ),
+            controls_tray,
+            parts_tray,
             specification_tray: SpecificationTray::new(
                 window_size,
                 puzzle,

@@ -35,6 +35,7 @@ const PARAGRAPH_LINE_HEIGHT: f32 = 20.0;
 const PARAGRAPH_MAX_WIDTH: f32 = 320.0;
 const PARAGRAPH_MIN_HEIGHT: i32 = 150;
 
+const TRAY_EXTRA_HIDDEN_HEIGHT: i32 = 8;
 const TRAY_FLIP_HORZ: bool = true;
 const TRAY_INNER_MARGIN: i32 = 20;
 const TRAY_TAB_FONT_SIZE: f32 = 16.0;
@@ -69,7 +70,7 @@ impl SpecificationTray {
             + 2 * TRAY_INNER_MARGIN;
         let rect = Rect::new(
             window_size.width - tray_width,
-            -8,
+            -TRAY_EXTRA_HIDDEN_HEIGHT,
             tray_width,
             tray_height,
         );
@@ -133,9 +134,7 @@ impl SpecificationTray {
         tooltip: &mut dyn TooltipSink<()>,
     ) -> bool {
         match event {
-            Event::ClockTick(tick) => {
-                self.slide.on_tick(tick, ui);
-            }
+            Event::ClockTick(tick) => self.slide.on_clock_tick(tick, ui),
             Event::MouseDown(mouse) => {
                 let rel_mouse_pt = mouse.pt - vec2(self.slide.distance(), 0);
                 let tab_rect = UiShader::tray_tab_rect(

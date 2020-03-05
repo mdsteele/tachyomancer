@@ -95,10 +95,7 @@ impl ChipExt for ChipType {
         match *self {
             ChipType::And
             | ChipType::Break(_)
-            | ChipType::Coerce(_)
             | ChipType::Comment(_)
-            | ChipType::Const(_)
-            | ChipType::Display
             | ChipType::Not => ChipAvailability::Always,
             ChipType::DocBv(_, _) | ChipType::DocEv(_, _) => {
                 ChipAvailability::DiagramOnly
@@ -108,7 +105,10 @@ impl ChipExt for ChipType {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateXor)
             }
             ChipType::Mux => ChipAvailability::UnlockedBy(Puzzle::TutorialMux),
-            ChipType::Pack | ChipType::Unpack => {
+            ChipType::Const(_)
+            | ChipType::Display
+            | ChipType::Pack
+            | ChipType::Unpack => {
                 ChipAvailability::StartingWith(Puzzle::TutorialAdd)
             }
             ChipType::Add2Bit => {
@@ -135,7 +135,7 @@ impl ChipExt for ChipType {
             ChipType::Discard | ChipType::Latest | ChipType::Sample => {
                 ChipAvailability::StartingWith(Puzzle::TutorialAmp)
             }
-            ChipType::Delay | ChipType::Join => {
+            ChipType::Coerce(_) | ChipType::Delay | ChipType::Join => {
                 ChipAvailability::StartingWith(Puzzle::TutorialSum)
             }
             ChipType::Inc => {

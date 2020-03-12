@@ -20,8 +20,7 @@
 mod bubble;
 mod sequence;
 
-use self::bubble::BubbleAction;
-use self::sequence::{BubbleSequenceView, BubblesScroll};
+use self::sequence::{BubbleSequenceView, SequenceAction};
 use super::list::{list_height_for_num_items, ListIcon, ListView};
 use crate::mancer::gui::{Event, Resources, Ui};
 use crate::mancer::state::{Cutscene, GameState};
@@ -41,6 +40,7 @@ const LIST_MARGIN_HORZ: i32 = 22;
 pub enum ConverseAction {
     GoToPuzzle(Puzzle),
     PlayCutscene(Cutscene),
+    UnlockPuzzles(Vec<Puzzle>),
 }
 
 //===========================================================================//
@@ -125,7 +125,9 @@ impl ConverseView {
         match event {
             Event::Debug(key, _) if key == "ResetConv" => {
                 state.reset_current_conversation_progress();
-                self.bubble_seq.reset(ui, state);
+                self.update_chapters(ui, state);
+                self.update_conv_list(ui, state);
+                self.bubble_seq.reset(ui, state, None);
             }
             _ => {}
         }
@@ -136,11 +138,7 @@ impl ConverseView {
         {
             state.set_current_conversation(conv);
             ui.request_redraw();
-            self.bubble_seq.update_conversation(
-                BubblesScroll::JumpToTopOrBottom,
-                ui,
-                state,
-            );
+            self.bubble_seq.reset(ui, state, None);
             return None;
         }
 
@@ -158,39 +156,25 @@ impl ConverseView {
                 .unwrap_or(Conversation::first());
             state.set_current_conversation(conv);
             ui.request_redraw();
-            self.update_conv(BubblesScroll::JumpToTopOrBottom, ui, state);
+            self.update_conv_list(ui, state);
+            self.bubble_seq.reset(ui, state, None);
             return None;
         }
 
         // Bubble sequence:
-        match self.bubble_seq.on_event(event, ui) {
-            Some(BubbleAction::Complete) => {
-                state.mark_current_conversation_complete();
-                self.update_chapters(ui, state);
-                self.update_conv(BubblesScroll::EaseToBottom, ui, state);
-            }
-            Some(BubbleAction::GoToPuzzle(puzzle)) => {
+        match self.bubble_seq.on_event(event, ui, state) {
+            Some(SequenceAction::GoToPuzzle(puzzle)) => {
                 return Some(ConverseAction::GoToPuzzle(puzzle));
             }
-            Some(BubbleAction::Increment) => {
-                state.increment_current_conversation_progress();
-                self.bubble_seq.update_conversation(
-                    BubblesScroll::EaseToBottom,
-                    ui,
-                    state,
-                );
+            Some(SequenceAction::ConversationCompleted) => {
+                self.update_chapters(ui, state);
+                self.update_conv_list(ui, state);
             }
-            Some(BubbleAction::MakeChoice(key, value)) => {
-                state.set_current_conversation_choice(key, value);
-                state.increment_current_conversation_progress();
-                self.bubble_seq.update_conversation(
-                    BubblesScroll::EaseToBottom,
-                    ui,
-                    state,
-                );
-            }
-            Some(BubbleAction::PlayCutscene(cutscene)) => {
+            Some(SequenceAction::PlayCutscene(cutscene)) => {
                 return Some(ConverseAction::PlayCutscene(cutscene));
+            }
+            Some(SequenceAction::UnlockPuzzles(puzzles)) => {
+                return Some(ConverseAction::UnlockPuzzles(puzzles));
             }
             None => {}
         }
@@ -203,7 +187,9 @@ impl ConverseView {
         ui: &mut Ui,
         state: &GameState,
     ) {
-        self.update_conv(BubblesScroll::JumpToPuzzle(puzzle), ui, state);
+        self.update_chapters(ui, state);
+        self.update_conv_list(ui, state);
+        self.bubble_seq.reset(ui, state, Some(puzzle));
     }
 
     fn update_chapters(&mut self, ui: &mut Ui, state: &GameState) {
@@ -214,18 +200,12 @@ impl ConverseView {
         );
     }
 
-    fn update_conv(
-        &mut self,
-        scroll: BubblesScroll,
-        ui: &mut Ui,
-        state: &GameState,
-    ) {
+    fn update_conv_list(&mut self, ui: &mut Ui, state: &GameState) {
         self.conv_list.set_items(
             ui,
             conv_list_items(state),
             &state.current_conversation(),
         );
-        self.bubble_seq.update_conversation(scroll, ui, state);
     }
 }
 

@@ -44,7 +44,7 @@ pub enum Portrait {
 pub enum ConversationBubble {
     YouSpeech(String),
     YouChoice(String, Vec<(String, String)>),
-    NpcSpeech(Portrait, String),
+    NpcSpeech(Portrait, String, bool),
     Cutscene(Cutscene),
     Puzzles(Vec<Puzzle>),
 }
@@ -87,48 +87,58 @@ impl ConversationBuilder {
 
     #[allow(dead_code)]
     pub(super) fn andrei(&mut self, text: &str) {
-        self.npc(Portrait::Andrei, text);
+        self.npc(Portrait::Andrei, text, false);
     }
 
     #[allow(dead_code)]
     pub(super) fn cara(&mut self, text: &str) {
-        self.npc(Portrait::Cara, text);
+        self.npc(Portrait::Cara, text, false);
     }
 
     #[allow(dead_code)]
     pub(super) fn eirene(&mut self, text: &str) {
-        self.npc(Portrait::Eirene, text);
+        self.npc(Portrait::Eirene, text, false);
     }
 
     pub(super) fn esra(&mut self, text: &str) {
-        self.npc(Portrait::Esra, text);
+        self.npc(Portrait::Esra, text, false);
+    }
+
+    pub(super) fn esra_interrupted(&mut self, text: &str) {
+        self.npc(Portrait::Esra, text, true);
     }
 
     pub(super) fn henry(&mut self, text: &str) {
-        self.npc(Portrait::Henry, text);
+        self.npc(Portrait::Henry, text, false);
     }
 
     pub(super) fn lisa(&mut self, text: &str) {
-        self.npc(Portrait::Lisa, text);
+        self.npc(Portrait::Lisa, text, false);
     }
 
     #[allow(dead_code)]
     pub(super) fn liu(&mut self, text: &str) {
-        self.npc(Portrait::Liu, text);
+        self.npc(Portrait::Liu, text, false);
     }
 
     pub(super) fn purge(&mut self, text: &str) {
-        self.npc(Portrait::Purge, text);
+        self.npc(Portrait::Purge, text, false);
     }
 
-    #[allow(dead_code)]
+    pub(super) fn purge_interrupted(&mut self, text: &str) {
+        self.npc(Portrait::Purge, text, true);
+    }
+
     pub(super) fn trevor(&mut self, text: &str) {
-        self.npc(Portrait::Trevor, text);
+        self.npc(Portrait::Trevor, text, false);
     }
 
-    fn npc(&mut self, portrait: Portrait, text: &str) {
-        self.bubbles
-            .push(ConversationBubble::NpcSpeech(portrait, text.to_string()));
+    fn npc(&mut self, portrait: Portrait, text: &str, interrupt: bool) {
+        self.bubbles.push(ConversationBubble::NpcSpeech(
+            portrait,
+            text.to_string(),
+            interrupt,
+        ));
     }
 
     pub(super) fn puzzle(

@@ -647,7 +647,7 @@ pub(super) fn an_idea(profile: &Profile, builder: &mut ConversationBuilder)
         \"The lander is adrift, but it's not lost; it looks like it's \
         orbiting the planet, just like the $/Odyssey$/.  If we can grapple \
         it as it goes by, we could use its power source.\"");
-    builder.esra("\
+    builder.esra_interrupted("\
         Unfortunately, Captain, the grapple launch coils are badly damaged.  \
         In addition, it would by inadvisable to attempt to grapple something \
         that large until the ship's engines have been properly-");

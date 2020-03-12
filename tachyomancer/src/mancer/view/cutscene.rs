@@ -19,7 +19,9 @@
 
 use super::paragraph::{Paragraph, StreamingParagraph};
 use crate::mancer::font::Align;
-use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui};
+use crate::mancer::gui::{
+    ClockEventData, Event, Keycode, Resources, Sound, Ui,
+};
 use crate::mancer::save::Prefs;
 use crate::mancer::state::{CutsceneScript, Portrait, Theater};
 use cgmath::{self, Matrix4, Point2};
@@ -169,7 +171,7 @@ impl CutsceneView {
         match event {
             Event::ClockTick(tick) => {
                 for bubble in self.talk_bubbles.values_mut() {
-                    bubble.tick(tick.elapsed, ui);
+                    bubble.on_clock_tick(tick, ui);
                 }
                 if self.skip_clicks > 0 {
                     self.skip_click_time -= tick.elapsed;
@@ -316,8 +318,8 @@ impl TalkBubble {
         self.paragraph.draw(resources, matrix, (left, top));
     }
 
-    fn tick(&mut self, elapsed: f64, ui: &mut Ui) {
-        self.paragraph.tick(elapsed, ui);
+    fn on_clock_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
+        self.paragraph.on_clock_tick(tick, ui);
     }
 
     fn skip_to_end(&mut self, ui: &mut Ui) {

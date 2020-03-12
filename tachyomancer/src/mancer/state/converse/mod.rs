@@ -32,13 +32,23 @@ use tachy::save::Conversation;
 //===========================================================================//
 
 pub trait ConversationExt {
-    fn bubbles(&self, profile: &Profile) -> Vec<ConversationBubble>;
+    /// Generates bubbles for the conversation based on the current profile.
+    /// Returns the list of bubbles, and whether that list is complete (it
+    /// could be incomplete if, for example, generation had to stop at a
+    /// dialogue choice that had not yet been made).
+    fn generate_bubbles(
+        &self,
+        profile: &Profile,
+    ) -> (Vec<ConversationBubble>, bool);
 }
 
 impl ConversationExt for Conversation {
-    fn bubbles(&self, profile: &Profile) -> Vec<ConversationBubble> {
+    fn generate_bubbles(
+        &self,
+        profile: &Profile,
+    ) -> (Vec<ConversationBubble>, bool) {
         let mut builder = ConversationBuilder::new(*self, profile);
-        let _ = match *self {
+        let result = match *self {
             Conversation::WakeUp => odyssey::wake_up(profile, &mut builder),
             Conversation::Basics => odyssey::basics(profile, &mut builder),
             Conversation::RestorePower => {
@@ -106,7 +116,7 @@ impl ConversationExt for Conversation {
                 lorelei::catching_up(profile, &mut builder)
             }
         };
-        builder.build()
+        (builder.build(), result.is_ok())
     }
 }
 

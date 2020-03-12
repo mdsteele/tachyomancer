@@ -61,6 +61,7 @@ const SECTION_TOP: i32 =
 pub enum MenuAction {
     GoToPuzzle(Puzzle),
     PlayCutscene(Cutscene),
+    UnlockPuzzles(Vec<Puzzle>),
     CopyCircuit,
     DeleteCircuit,
     EditCircuit,
@@ -356,6 +357,9 @@ impl MenuView {
                     }
                     Some(ConverseAction::PlayCutscene(cutscene)) => {
                         return Some(MenuAction::PlayCutscene(cutscene));
+                    }
+                    Some(ConverseAction::UnlockPuzzles(puzzles)) => {
+                        return Some(MenuAction::UnlockPuzzles(puzzles));
                     }
                     None => {}
                 }

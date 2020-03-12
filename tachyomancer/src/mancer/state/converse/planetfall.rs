@@ -550,7 +550,8 @@ pub(super) fn unexpected_company(
         THIS STAR SYSTEM.");
     builder.lisa("\"Beg pardon?\"");
     builder.henry("\"Like I said: nice fellas.\"");
-    builder.purge("$/ALL$/ THAT ARE NOT OF THE PURGE MUST BE ERADIC-");
+    builder.purge_interrupted("\
+        $/ALL$/ THAT ARE NOT OF THE PURGE MUST BE ERADIC-");
     builder.lisa("\
         \"Yeah, no.  End transmission.  Okay, new plan: screw these losers.  \
         Chief, what've you got down there for guns?\"");

@@ -25,7 +25,7 @@ mod types;
 
 use self::parse::Parser;
 use self::types::{CompiledLine, ParserAlign};
-use crate::mancer::gui::{Resources, Ui};
+use crate::mancer::gui::{ClockEventData, Resources, Ui};
 use crate::mancer::save::Prefs;
 use cgmath::Matrix4;
 use std::cell::Cell;
@@ -250,9 +250,9 @@ impl StreamingParagraph {
         self.millis_for_next.set((millis + needed_for_next) as f64);
     }
 
-    pub fn tick(&mut self, elapsed: f64, ui: &mut Ui) {
+    pub fn on_clock_tick(&mut self, tick: &ClockEventData, ui: &mut Ui) {
         if self.millis < self.paragraph.total_millis() as f64 {
-            self.millis += elapsed * 1000.0;
+            self.millis += tick.elapsed * 1000.0;
             if self.millis >= self.millis_for_next.get() {
                 ui.request_redraw();
             }

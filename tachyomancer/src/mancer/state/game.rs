@@ -215,10 +215,10 @@ impl GameState {
         }
     }
 
-    pub fn increment_current_conversation_progress(&mut self) {
+    pub fn set_current_conversation_progress(&mut self, progress: usize) {
         if let Some(ref mut profile) = self.profile {
             let conv = profile.current_conversation();
-            profile.increment_conversation_progress(conv);
+            profile.set_conversation_progress(conv, progress);
         }
     }
 

@@ -380,13 +380,9 @@ impl ConversationProgress {
         }
     }
 
-    pub fn increment_progress(&mut self) {
+    pub fn set_progress(&mut self, index: usize) {
         if !self.is_complete() {
-            if let Some(ref mut index) = self.data.progress {
-                *index += 1;
-            } else {
-                self.data.progress = Some(1);
-            }
+            self.data.progress = Some(index);
             self.needs_save = true;
         }
     }

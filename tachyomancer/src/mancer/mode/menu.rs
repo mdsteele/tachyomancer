@@ -59,6 +59,25 @@ pub fn run(state: &mut GameState, window: &mut Window) -> ModeChange {
                         state.set_cutscene(cutscene.script());
                         return ModeChange::Next;
                     }
+                    Some(MenuAction::UnlockPuzzles(puzzles)) => {
+                        debug_log!("Unlocking puzzles: {:?}", puzzles);
+                        let mut ui = window.ui();
+                        for puzzle in puzzles.into_iter() {
+                            match state.unlock_puzzle(puzzle) {
+                                Ok(()) => {}
+                                Err(err) => {
+                                    view.show_error(
+                                        &mut ui,
+                                        state,
+                                        "unlock puzzle",
+                                        &err,
+                                    );
+                                    break;
+                                }
+                            }
+                        }
+                        view.update_puzzle_list(&mut ui, state);
+                    }
                     Some(MenuAction::CopyCircuit) => {
                         match state.copy_current_circuit() {
                             Ok(()) => {

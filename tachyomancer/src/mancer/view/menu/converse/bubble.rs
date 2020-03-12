@@ -47,23 +47,32 @@ const PUZZLE_SPACING: i32 = 3;
 
 //===========================================================================//
 
-#[derive(Clone)]
 pub enum BubbleAction {
-    Complete,
     GoToPuzzle(Puzzle),
-    Increment,
     MakeChoice(String, String),
+    ParagraphFinished,
     PlayCutscene(Cutscene),
+}
+
+pub enum ReachedAction {
+    PlayCutscene(Cutscene),
+    UnlockPuzzles(Vec<Puzzle>),
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BubbleKind {
+    Choice,
+    Cutscene,
+    Puzzle,
+    Speech,
 }
 
 //===========================================================================//
 
 pub trait BubbleView {
-    fn rect(&self) -> Rect<i32>;
+    fn kind(&self) -> BubbleKind;
 
-    fn is_choice_or_puzzle(&self) -> bool {
-        false
-    }
+    fn rect(&self) -> Rect<i32>;
 
     fn has_puzzle(&self, _puzzle: Puzzle) -> bool {
         false
@@ -78,13 +87,23 @@ pub trait BubbleView {
     ) -> Option<BubbleAction> {
         None
     }
+
+    fn on_first_reached(&self) -> Option<ReachedAction> {
+        None
+    }
+
+    fn skip_paragraph(&mut self, _ui: &mut Ui) {}
+
+    fn should_pause_afterwards(&self) -> bool {
+        false
+    }
 }
 
 //===========================================================================//
 
 pub struct CutsceneBubbleView {
     rect: Rect<i32>,
-    button: TextButton<BubbleAction>,
+    button: TextButton<Cutscene>,
 }
 
 impl CutsceneBubbleView {
@@ -96,16 +115,16 @@ impl CutsceneBubbleView {
         let rect = Rect::new(0, top, width, CUTSCENE_BUBBLE_HEIGHT);
         Box::new(CutsceneBubbleView {
             rect,
-            button: TextButton::new(
-                rect,
-                "Replay cutscene",
-                BubbleAction::PlayCutscene(cutscene),
-            ),
+            button: TextButton::new(rect, "Replay cutscene", cutscene),
         })
     }
 }
 
 impl BubbleView for CutsceneBubbleView {
+    fn kind(&self) -> BubbleKind {
+        BubbleKind::Cutscene
+    }
+
     fn rect(&self) -> Rect<i32> {
         self.rect
     }
@@ -119,116 +138,11 @@ impl BubbleView for CutsceneBubbleView {
         event: &Event,
         ui: &mut Ui,
     ) -> Option<BubbleAction> {
-        self.button.on_event(event, ui, true)
-    }
-}
-
-//===========================================================================//
-
-pub struct NpcSpeechBubbleView {
-    rect: Rect<i32>,
-    portrait: Portrait,
-    paragraph: StreamingParagraph,
-}
-
-impl NpcSpeechBubbleView {
-    pub fn new(
-        width: i32,
-        top: i32,
-        portrait: Portrait,
-        prefs: &Prefs,
-        format: &str,
-    ) -> Box<dyn BubbleView> {
-        let wrap_width = width - PORTRAIT_WIDTH - 3 * BUBBLE_INNER_MARGIN;
-        let paragraph = Paragraph::compile(
-            BUBBLE_FONT_SIZE,
-            BUBBLE_LINE_HEIGHT,
-            wrap_width as f32,
-            prefs,
-            format,
-        );
-        let height = (PORTRAIT_HEIGHT + 2 * BUBBLE_INNER_MARGIN)
-            .max(2 * BUBBLE_INNER_MARGIN + (paragraph.height().ceil() as i32));
-        Box::new(NpcSpeechBubbleView {
-            rect: Rect::new(0, top, width, height),
-            portrait,
-            paragraph: StreamingParagraph::new(paragraph),
-        })
-    }
-}
-
-impl BubbleView for NpcSpeechBubbleView {
-    fn rect(&self) -> Rect<i32> {
-        self.rect
+        self.button.on_event(event, ui, true).map(BubbleAction::PlayCutscene)
     }
 
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        // Draw bubble:
-        resources.shaders().ui().draw_bubble(
-            matrix,
-            &self.rect.as_f32(),
-            &Color4::PURPLE2,
-            &Color4::ORANGE1,
-            &Color4::PURPLE0_TRANSLUCENT,
-        );
-
-        // Draw portrait:
-        let portrait_left_top = Point2::new(
-            self.rect.x + BUBBLE_INNER_MARGIN,
-            self.rect.y + BUBBLE_INNER_MARGIN,
-        );
-        resources.shaders().portrait().draw(
-            matrix,
-            self.portrait as u32,
-            portrait_left_top.as_f32(),
-            resources.textures().portraits(),
-        );
-
-        // Draw portrait frame:
-        let frame_rect = Rect::new(
-            self.rect.x + BUBBLE_INNER_MARGIN - 2,
-            self.rect.y + BUBBLE_INNER_MARGIN - 2,
-            72,
-            89,
-        );
-        resources.shaders().ui().draw_list_frame(
-            matrix,
-            &frame_rect.as_f32(),
-            &Color4::PURPLE2,
-            &Color4::PURPLE1,
-            &Color4::PURPLE0,
-        );
-
-        // Draw paragraph:
-        let left =
-            (self.rect.x + PORTRAIT_WIDTH + 2 * BUBBLE_INNER_MARGIN) as f32;
-        let top = (self.rect.y + BUBBLE_INNER_MARGIN) as f32;
-        self.paragraph.draw(resources, matrix, (left, top));
-    }
-
-    fn on_event(
-        &mut self,
-        event: &Event,
-        ui: &mut Ui,
-    ) -> Option<BubbleAction> {
-        match event {
-            Event::ClockTick(tick) => {
-                self.paragraph.tick(tick.elapsed, ui);
-            }
-            Event::MouseDown(mouse) if mouse.left => {
-                if self.rect.contains_point(mouse.pt) {
-                    self.paragraph.skip_to_end(ui);
-                }
-            }
-            Event::KeyDown(key) if key.code == Keycode::Return => {
-                self.paragraph.skip_to_end(ui);
-            }
-            Event::Unfocus => {
-                self.paragraph.skip_to_end(ui);
-            }
-            _ => {}
-        }
-        None
+    fn on_first_reached(&self) -> Option<ReachedAction> {
+        Some(ReachedAction::PlayCutscene(*self.button.value()))
     }
 }
 
@@ -269,12 +183,12 @@ impl PuzzleBubbleView {
 }
 
 impl BubbleView for PuzzleBubbleView {
-    fn rect(&self) -> Rect<i32> {
-        self.rect
+    fn kind(&self) -> BubbleKind {
+        BubbleKind::Puzzle
     }
 
-    fn is_choice_or_puzzle(&self) -> bool {
-        true
+    fn rect(&self) -> Rect<i32> {
+        self.rect
     }
 
     fn has_puzzle(&self, puzzle: Puzzle) -> bool {
@@ -298,6 +212,180 @@ impl BubbleView for PuzzleBubbleView {
             }
         }
         return None;
+    }
+
+    fn on_first_reached(&self) -> Option<ReachedAction> {
+        Some(ReachedAction::UnlockPuzzles(
+            self.buttons.iter().map(|button| *button.value()).collect(),
+        ))
+    }
+}
+
+//===========================================================================//
+
+pub struct SpeechBubbleView {
+    rect: Rect<i32>,
+    portrait: Option<Portrait>,
+    paragraph: StreamingParagraph,
+    paragraph_left_top: (f32, f32),
+    sent_finished: bool,
+    pause_after: bool,
+}
+
+impl SpeechBubbleView {
+    pub fn new(
+        width: i32,
+        top: i32,
+        portrait: Option<Portrait>,
+        prefs: &Prefs,
+        format: &str,
+        pause_after: bool,
+    ) -> Box<dyn BubbleView> {
+        let (height, paragraph, paragraph_left_top) = if portrait.is_some() {
+            let wrap_width = width - PORTRAIT_WIDTH - 3 * BUBBLE_INNER_MARGIN;
+            let paragraph = Paragraph::compile(
+                BUBBLE_FONT_SIZE,
+                BUBBLE_LINE_HEIGHT,
+                wrap_width as f32,
+                prefs,
+                format,
+            );
+            let height = (PORTRAIT_HEIGHT + 2 * BUBBLE_INNER_MARGIN).max(
+                2 * BUBBLE_INNER_MARGIN + (paragraph.height().ceil() as i32),
+            );
+            let paragraph_left = PORTRAIT_WIDTH + 2 * BUBBLE_INNER_MARGIN;
+            let paragraph_top = top + BUBBLE_INNER_MARGIN;
+            (height, paragraph, (paragraph_left as f32, paragraph_top as f32))
+        } else {
+            let wrap_width = width - 2 * BUBBLE_INNER_MARGIN;
+            let paragraph = Paragraph::compile(
+                BUBBLE_FONT_SIZE,
+                BUBBLE_LINE_HEIGHT,
+                wrap_width as f32,
+                prefs,
+                format,
+            );
+            let height =
+                2 * BUBBLE_INNER_MARGIN + (paragraph.height().ceil() as i32);
+            let paragraph_right = (width - BUBBLE_INNER_MARGIN) as f32;
+            let paragraph_left = (paragraph_right - paragraph.width()).floor();
+            let paragraph_top = (top + BUBBLE_INNER_MARGIN) as f32;
+            (height, paragraph, (paragraph_left, paragraph_top))
+        };
+        Box::new(SpeechBubbleView {
+            rect: Rect::new(0, top, width, height),
+            portrait,
+            paragraph: StreamingParagraph::new(paragraph),
+            paragraph_left_top,
+            sent_finished: false,
+            pause_after,
+        })
+    }
+
+    fn action(&mut self) -> Option<BubbleAction> {
+        if !self.sent_finished && self.paragraph.is_done() {
+            self.sent_finished = true;
+            Some(BubbleAction::ParagraphFinished)
+        } else {
+            None
+        }
+    }
+}
+
+impl BubbleView for SpeechBubbleView {
+    fn kind(&self) -> BubbleKind {
+        BubbleKind::Speech
+    }
+
+    fn rect(&self) -> Rect<i32> {
+        self.rect
+    }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        if let Some(portrait) = self.portrait {
+            // Draw bubble:
+            resources.shaders().ui().draw_bubble(
+                matrix,
+                &self.rect.as_f32(),
+                &Color4::PURPLE2,
+                &Color4::ORANGE1,
+                &Color4::PURPLE0_TRANSLUCENT,
+            );
+
+            // Draw portrait:
+            let portrait_left_top = Point2::new(
+                self.rect.x + BUBBLE_INNER_MARGIN,
+                self.rect.y + BUBBLE_INNER_MARGIN,
+            );
+            resources.shaders().portrait().draw(
+                matrix,
+                portrait as u32,
+                portrait_left_top.as_f32(),
+                resources.textures().portraits(),
+            );
+
+            // Draw portrait frame:
+            let frame_rect = Rect::new(
+                self.rect.x + BUBBLE_INNER_MARGIN - 2,
+                self.rect.y + BUBBLE_INNER_MARGIN - 2,
+                72,
+                89,
+            );
+            resources.shaders().ui().draw_list_frame(
+                matrix,
+                &frame_rect.as_f32(),
+                &Color4::PURPLE2,
+                &Color4::PURPLE1,
+                &Color4::PURPLE0,
+            );
+        } else {
+            // Draw bubble:
+            resources.shaders().ui().draw_bubble(
+                matrix,
+                &self.rect.as_f32(),
+                &Color4::ORANGE2,
+                &Color4::ORANGE1,
+                &Color4::ORANGE0_TRANSLUCENT,
+            );
+        }
+        self.paragraph.draw(resources, matrix, self.paragraph_left_top);
+    }
+
+    fn on_event(
+        &mut self,
+        event: &Event,
+        ui: &mut Ui,
+    ) -> Option<BubbleAction> {
+        match event {
+            Event::ClockTick(tick) => {
+                self.paragraph.on_clock_tick(tick, ui);
+                return self.action();
+            }
+            Event::MouseDown(mouse) if mouse.left => {
+                if self.rect.contains_point(mouse.pt) {
+                    self.paragraph.skip_to_end(ui);
+                    return self.action();
+                }
+            }
+            Event::KeyDown(key) if key.code == Keycode::Return => {
+                self.paragraph.skip_to_end(ui);
+                return self.action();
+            }
+            Event::Unfocus => {
+                self.paragraph.skip_to_end(ui);
+            }
+            _ => {}
+        }
+        return None;
+    }
+
+    fn skip_paragraph(&mut self, ui: &mut Ui) {
+        self.paragraph.skip_to_end(ui);
+        self.sent_finished = true;
+    }
+
+    fn should_pause_afterwards(&self) -> bool {
+        self.pause_after
     }
 }
 
@@ -345,12 +433,12 @@ impl YouChoiceBubbleView {
 }
 
 impl BubbleView for YouChoiceBubbleView {
-    fn rect(&self) -> Rect<i32> {
-        self.rect
+    fn kind(&self) -> BubbleKind {
+        BubbleKind::Choice
     }
 
-    fn is_choice_or_puzzle(&self) -> bool {
-        true
+    fn rect(&self) -> Rect<i32> {
+        self.rect
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -411,84 +499,6 @@ impl BubbleView for YouChoiceBubbleView {
             _ => {}
         }
         return None;
-    }
-}
-
-//===========================================================================//
-
-pub struct YouSpeechBubbleView {
-    rect: Rect<i32>,
-    paragraph: StreamingParagraph,
-    paragraph_left_top: (f32, f32),
-}
-
-impl YouSpeechBubbleView {
-    pub fn new(
-        width: i32,
-        top: i32,
-        prefs: &Prefs,
-        format: &str,
-    ) -> Box<dyn BubbleView> {
-        let wrap_width = width - 2 * BUBBLE_INNER_MARGIN;
-        let paragraph = Paragraph::compile(
-            BUBBLE_FONT_SIZE,
-            BUBBLE_LINE_HEIGHT,
-            wrap_width as f32,
-            prefs,
-            format,
-        );
-        let height =
-            2 * BUBBLE_INNER_MARGIN + (paragraph.height().ceil() as i32);
-        let paragraph_right = (width - BUBBLE_INNER_MARGIN) as f32;
-        let paragraph_left = (paragraph_right - paragraph.width()).floor();
-        let paragraph_top = (top + BUBBLE_INNER_MARGIN) as f32;
-        Box::new(YouSpeechBubbleView {
-            rect: Rect::new(0, top, width, height),
-            paragraph: StreamingParagraph::new(paragraph),
-            paragraph_left_top: (paragraph_left, paragraph_top),
-        })
-    }
-}
-
-impl BubbleView for YouSpeechBubbleView {
-    fn rect(&self) -> Rect<i32> {
-        self.rect
-    }
-
-    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        resources.shaders().ui().draw_bubble(
-            matrix,
-            &self.rect.as_f32(),
-            &Color4::ORANGE2,
-            &Color4::ORANGE1,
-            &Color4::ORANGE0_TRANSLUCENT,
-        );
-        self.paragraph.draw(resources, matrix, self.paragraph_left_top);
-    }
-
-    fn on_event(
-        &mut self,
-        event: &Event,
-        ui: &mut Ui,
-    ) -> Option<BubbleAction> {
-        match event {
-            Event::ClockTick(tick) => {
-                self.paragraph.tick(tick.elapsed, ui);
-            }
-            Event::MouseDown(mouse) if mouse.left => {
-                if self.rect.contains_point(mouse.pt) {
-                    self.paragraph.skip_to_end(ui);
-                }
-            }
-            Event::KeyDown(key) if key.code == Keycode::Return => {
-                self.paragraph.skip_to_end(ui);
-            }
-            Event::Unfocus => {
-                self.paragraph.skip_to_end(ui);
-            }
-            _ => {}
-        }
-        None
     }
 }
 

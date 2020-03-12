@@ -219,8 +219,12 @@ impl Profile {
         self.conversations.get(&conv).map_or(0, ConversationProgress::progress)
     }
 
-    pub fn increment_conversation_progress(&mut self, conv: Conversation) {
-        self.conversation_progress_mut(conv).increment_progress();
+    pub fn set_conversation_progress(
+        &mut self,
+        conv: Conversation,
+        progress: usize,
+    ) {
+        self.conversation_progress_mut(conv).set_progress(progress);
     }
 
     pub fn reset_conversation_progress(&mut self, conv: Conversation) {

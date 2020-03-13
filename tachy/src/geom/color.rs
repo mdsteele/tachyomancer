@@ -59,6 +59,7 @@ impl Color3 {
     pub const PURPLE4: Color3 = Color3::new(0.761, 0.341, 0.973); // #c257f8
     pub const PURPLE5: Color3 = Color3::new(0.855, 0.569, 0.996); // #da91fe
 
+    pub const YELLOW0: Color3 = Color3::new(0.318, 0.326, 0.057); // #51530f
     pub const YELLOW1: Color3 = Color3::new(0.635, 0.651, 0.114); // #a2a61d
     pub const YELLOW2: Color3 = Color3::new(0.824, 0.847, 0.161); // #d2d829
     pub const YELLOW3: Color3 = Color3::new(0.957, 0.976, 0.153); // #f4f927
@@ -76,7 +77,6 @@ pub struct Color4 {
     pub a: f32,
 }
 
-#[allow(dead_code)]
 impl Color4 {
     pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Color4 {
         Color4 { r, g, b, a }
@@ -121,9 +121,12 @@ impl Color4 {
     pub const PURPLE4: Color4 = Color3::PURPLE4.with_alpha(1.0);
     pub const PURPLE5: Color4 = Color3::PURPLE5.with_alpha(1.0);
 
+    pub const YELLOW0: Color4 = Color3::YELLOW0.with_alpha(1.0);
+    pub const YELLOW0_TRANSLUCENT: Color4 = Color3::YELLOW0.with_alpha(0.8);
     pub const YELLOW1: Color4 = Color3::YELLOW1.with_alpha(1.0);
     pub const YELLOW2: Color4 = Color3::YELLOW2.with_alpha(1.0);
     pub const YELLOW3: Color4 = Color3::YELLOW3.with_alpha(1.0);
+    pub const YELLOW3_TRANSLUCENT: Color4 = Color3::YELLOW3.with_alpha(0.8);
     pub const YELLOW4: Color4 = Color3::YELLOW4.with_alpha(1.0);
     pub const YELLOW5: Color4 = Color3::YELLOW5.with_alpha(1.0);
 }

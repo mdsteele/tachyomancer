@@ -383,6 +383,7 @@ impl BubbleSequenceView {
                     YouChoiceBubbleView::new(
                         bubble_width,
                         bubble_top,
+                        prefs,
                         key,
                         choices,
                     )

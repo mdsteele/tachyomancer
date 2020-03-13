@@ -89,12 +89,6 @@
       <path d="M 0,31.5 h 32"/>
     </g>
   </g>
-  <!-- Tutorial bubble -->
-  <g transform="translate(192, 96)">
-    <path d="M 20,0.5 A 12 12 0 0 1 31.5,12 V 20 A 12 12 0 0 1 20,31.5
-             H 12 A 12 12 0 0 1 0.5,20 V 12 A 12 12 0 0 1 12,0.5 Z"
-          fill="#00f" stroke="#f00" stroke-width="1"/>
-  </g>
   <!-- Selection box -->
   <g transform="translate(224, 96)">
     <rect x="2" y="2" width="28" height="28"
@@ -105,6 +99,29 @@
       <path d="M 2,24 v 6 h 6"/>
       <path d="M 30,24 v 6 h -6"/>
     </g>
+  </g>
+  <!-- Bubble full -->
+  <g transform="translate(128, 128)">
+    <path d="M 20,0.5 A 12 12 0 0 1 31.5,12 V 20 A 12 12 0 0 1 20,31.5
+             H 12 A 12 12 0 0 1 0.5,20 V 12 A 12 12 0 0 1 12,0.5 Z"
+          fill="#00f" stroke="#f00" stroke-width="1"/>
+  </g>
+  <!-- Bubble top -->
+  <g transform="translate(160, 128)">
+    <path d="M 20,0.5 A 12 12 0 0 1 31.5,12 V 31.5 H 0.5
+             V 12 A 12 12 0 0 1 12,0.5 Z"
+          fill="#00f" stroke="#f00" stroke-width="1"/>
+  </g>
+  <!-- Bubble mid -->
+  <g transform="translate(192, 128)">
+    <path d="M 0.5,0.5 H 31.5 V 31.5 H 0.5 Z"
+          fill="#00f" stroke="#f00" stroke-width="1"/>
+  </g>
+  <!-- Bubble bottom -->
+  <g transform="translate(224, 128)">
+    <path d="M 0.5,0.5 H 31.5 V 20 A 12 12 0 0 1 20,31.5
+             H 12 A 12 12 0 0 1 0.5,20 Z"
+          fill="#00f" stroke="#f00" stroke-width="1"/>
   </g>
   <!-- Flip horizontally icon -->
   <g transform="translate(128, 160)">

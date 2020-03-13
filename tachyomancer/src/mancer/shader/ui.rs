@@ -330,7 +330,21 @@ impl UiShader {
         color2: &Color4,
         color3: &Color4,
     ) {
-        let tex_rect = Rect::new(0.75, 0.375, 0.125, 0.125);
+        self.draw_bubble_kind(matrix, rect, 0, color1, color2, color3);
+    }
+
+    pub fn draw_bubble_kind(
+        &self,
+        matrix: &Matrix4<f32>,
+        rect: &Rect<f32>,
+        kind_index: u32,
+        color1: &Color4,
+        color2: &Color4,
+        color3: &Color4,
+    ) {
+        debug_assert!(kind_index < 4);
+        let tex_rect =
+            Rect::new(0.5 + 0.125 * (kind_index as f32), 0.5, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);
         self.bubble_varray.bind();
         self.bubble_varray.draw_elements(Primitive::Triangles, &self.ibuffer);
@@ -365,6 +379,7 @@ impl UiShader {
         color2: &Color4,
         color3: &Color4,
     ) {
+        debug_assert!(icon_index < 7);
         let (icon_row, icon_col) = div_mod_floor(icon_index, 4);
         let tex_rect = Rect::new(
             0.5 + 0.125 * (icon_col as f32),
@@ -429,6 +444,7 @@ impl UiShader {
         color2: &Color4,
         color3: &Color4,
     ) {
+        debug_assert!(icon_index < 4);
         let tex_rect =
             Rect::new(0.5 + 0.125 * (icon_index as f32), 0.625, 0.125, 0.125);
         self.bind(matrix, rect, color1, color2, color3, &tex_rect);

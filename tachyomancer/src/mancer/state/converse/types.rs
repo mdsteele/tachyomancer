@@ -206,7 +206,7 @@ impl<'a, 'b> ChoiceBuilder<'a, 'b> {
         value: &str,
         label: &str,
     ) -> ChoiceBuilder<'a, 'b> {
-        self.choices.push((value.to_string(), label.to_string()));
+        self.choices.push((value.to_string(), format!("$>{}", label)));
         self
     }
 

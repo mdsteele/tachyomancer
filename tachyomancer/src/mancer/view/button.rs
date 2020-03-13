@@ -952,6 +952,10 @@ impl<T: Clone> TextButton<T> {
         TextButton::new_with_key(rect, label, value, None)
     }
 
+    pub fn rect(&self) -> Rect<i32> {
+        self.rect
+    }
+
     pub fn value(&self) -> &T {
         &self.value
     }

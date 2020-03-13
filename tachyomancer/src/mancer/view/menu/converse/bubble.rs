@@ -17,15 +17,13 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::super::button::TextButton;
+use super::super::super::button::{HoverPulse, TextButton};
 use super::super::super::paragraph::{Paragraph, StreamingParagraph};
-use crate::mancer::font::Align;
-use crate::mancer::gui::{Event, Keycode, Resources, Ui};
+use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui};
 use crate::mancer::save::Prefs;
 use crate::mancer::state::{Cutscene, Portrait};
 use cgmath::{Matrix4, Point2};
-use num_integer::div_mod_floor;
-use tachy::geom::{AsFloat, Color3, Color4, Rect};
+use tachy::geom::{AsFloat, Color4, Rect};
 use tachy::save::Puzzle;
 
 //===========================================================================//
@@ -34,16 +32,15 @@ const BUBBLE_FONT_SIZE: f32 = 20.0;
 const BUBBLE_INNER_MARGIN: i32 = 12;
 const BUBBLE_LINE_HEIGHT: f32 = 22.0;
 
-const CHOICE_HEIGHT: i32 = 30;
-const CHOICE_SPACING: i32 = 2;
+const CHOICE_BUTTON_SPACING: i32 = 2;
 
-const CUTSCENE_BUBBLE_HEIGHT: i32 = 50;
+const CUTSCENE_BUTTON_HEIGHT: i32 = 50;
 
 const PORTRAIT_HEIGHT: i32 = 85;
 const PORTRAIT_WIDTH: i32 = 68;
 
-const PUZZLE_HEIGHT: i32 = 50;
-const PUZZLE_SPACING: i32 = 3;
+const PUZZLE_BUTTON_HEIGHT: i32 = 50;
+const PUZZLE_BUTTON_SPACING: i32 = 3;
 
 //===========================================================================//
 
@@ -102,7 +99,6 @@ pub trait BubbleView {
 //===========================================================================//
 
 pub struct CutsceneBubbleView {
-    rect: Rect<i32>,
     button: TextButton<Cutscene>,
 }
 
@@ -112,9 +108,8 @@ impl CutsceneBubbleView {
         top: i32,
         cutscene: Cutscene,
     ) -> Box<dyn BubbleView> {
-        let rect = Rect::new(0, top, width, CUTSCENE_BUBBLE_HEIGHT);
+        let rect = Rect::new(0, top, width, CUTSCENE_BUTTON_HEIGHT);
         Box::new(CutsceneBubbleView {
-            rect,
             button: TextButton::new(rect, "Replay cutscene", cutscene),
         })
     }
@@ -126,7 +121,7 @@ impl BubbleView for CutsceneBubbleView {
     }
 
     fn rect(&self) -> Rect<i32> {
-        self.rect
+        self.button.rect()
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
@@ -161,8 +156,9 @@ impl PuzzleBubbleView {
     ) -> Box<dyn BubbleView> {
         let num_puzzles = puzzles.len() as i32;
         debug_assert!(num_puzzles > 0);
-        let height =
-            (PUZZLE_HEIGHT + PUZZLE_SPACING) * num_puzzles - PUZZLE_SPACING;
+        let height = (PUZZLE_BUTTON_HEIGHT + PUZZLE_BUTTON_SPACING)
+            * num_puzzles
+            - PUZZLE_BUTTON_SPACING;
         Box::new(PuzzleBubbleView {
             rect: Rect::new(0, top, width, height),
             buttons: puzzles
@@ -170,9 +166,10 @@ impl PuzzleBubbleView {
                 .enumerate()
                 .map(|(index, puzzle)| {
                     let y = top
-                        + (PUZZLE_HEIGHT + PUZZLE_SPACING) * (index as i32);
+                        + (PUZZLE_BUTTON_HEIGHT + PUZZLE_BUTTON_SPACING)
+                            * (index as i32);
                     TextButton::new(
-                        Rect::new(0, y, width, PUZZLE_HEIGHT),
+                        Rect::new(0, y, width, PUZZLE_BUTTON_HEIGHT),
                         &format!("Go to task \"{}\"", puzzle.title()),
                         puzzle,
                     )
@@ -394,41 +391,41 @@ impl BubbleView for SpeechBubbleView {
 pub struct YouChoiceBubbleView {
     rect: Rect<i32>,
     key: String,
-    choices: Vec<(String, String)>,
-    hovering: Option<usize>,
+    choices: Vec<ChoiceButton>,
 }
 
 impl YouChoiceBubbleView {
     pub fn new(
         width: i32,
         top: i32,
+        prefs: &Prefs,
         key: String,
         choices: Vec<(String, String)>,
     ) -> Box<dyn BubbleView> {
         debug_assert!(!choices.is_empty());
-        let height = (choices.len() as i32) * (CHOICE_HEIGHT + CHOICE_SPACING)
-            - CHOICE_SPACING;
+        let mut bottom = top - CHOICE_BUTTON_SPACING;
+        let num_choices = choices.len();
+        let choices = choices
+            .into_iter()
+            .enumerate()
+            .map(|(index, (value, format))| {
+                let choice = ChoiceButton::new(
+                    width,
+                    bottom + CHOICE_BUTTON_SPACING,
+                    ChoicePosition::from_index_and_count(index, num_choices),
+                    prefs,
+                    value,
+                    &format,
+                );
+                bottom = choice.rect.bottom();
+                choice
+            })
+            .collect();
         Box::new(YouChoiceBubbleView {
-            rect: Rect::new(0, top, width, height),
+            rect: Rect::new(0, top, width, bottom - top),
             key,
             choices,
-            hovering: None,
         })
-    }
-
-    fn choice_for_pt(&self, pt: Point2<i32>) -> Option<usize> {
-        if self.rect.contains_point(pt) {
-            let rel_y = pt.y - self.rect.y;
-            let (index, offset) =
-                div_mod_floor(rel_y, CHOICE_HEIGHT + CHOICE_SPACING);
-            if offset < CHOICE_HEIGHT {
-                debug_assert!(index >= 0);
-                let index = index as usize;
-                debug_assert!(index < self.choices.len());
-                return Some(index);
-            }
-        }
-        return None;
     }
 }
 
@@ -442,31 +439,8 @@ impl BubbleView for YouChoiceBubbleView {
     }
 
     fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        for (index, &(_, ref label)) in self.choices.iter().enumerate() {
-            let color = if self.hovering == Some(index) {
-                Color3::new(1.0, 1.0, 0.1)
-            } else {
-                Color3::new(0.5, 0.5, 0.1)
-            };
-            let rect = Rect::new(
-                self.rect.x,
-                self.rect.y
-                    + (index as i32) * (CHOICE_HEIGHT + CHOICE_SPACING),
-                self.rect.width,
-                CHOICE_HEIGHT,
-            )
-            .as_f32();
-            resources.shaders().solid().fill_rect(&matrix, color, rect);
-            resources.fonts().roman().draw(
-                &matrix,
-                BUBBLE_FONT_SIZE,
-                Align::MidRight,
-                (
-                    rect.x + rect.width - BUBBLE_INNER_MARGIN as f32,
-                    rect.y + 0.5 * rect.height,
-                ),
-                &label,
-            );
+        for choice in self.choices.iter() {
+            choice.draw(resources, matrix);
         }
     }
 
@@ -475,27 +449,123 @@ impl BubbleView for YouChoiceBubbleView {
         event: &Event,
         ui: &mut Ui,
     ) -> Option<BubbleAction> {
+        for choice in self.choices.iter_mut() {
+            if let Some(value) = choice.on_event(event, ui) {
+                return Some(BubbleAction::MakeChoice(
+                    self.key.clone(),
+                    value,
+                ));
+            }
+        }
+        return None;
+    }
+}
+
+//===========================================================================//
+
+#[derive(Clone, Copy)]
+enum ChoicePosition {
+    First,
+    Middle,
+    Last,
+}
+
+impl ChoicePosition {
+    fn from_index_and_count(index: usize, count: usize) -> ChoicePosition {
+        if index == 0 {
+            ChoicePosition::First
+        } else if index + 1 == count {
+            ChoicePosition::Last
+        } else {
+            ChoicePosition::Middle
+        }
+    }
+
+    fn bubble_kind(self) -> u32 {
+        match self {
+            ChoicePosition::First => 1,
+            ChoicePosition::Middle => 2,
+            ChoicePosition::Last => 3,
+        }
+    }
+}
+
+//===========================================================================//
+
+struct ChoiceButton {
+    rect: Rect<i32>,
+    position: ChoicePosition,
+    paragraph: Paragraph,
+    paragraph_left_top: (f32, f32),
+    value: String,
+    hover_pulse: HoverPulse,
+}
+
+impl ChoiceButton {
+    fn new(
+        width: i32,
+        top: i32,
+        position: ChoicePosition,
+        prefs: &Prefs,
+        value: String,
+        format: &str,
+    ) -> ChoiceButton {
+        let wrap_width = width - 2 * BUBBLE_INNER_MARGIN;
+        let paragraph = Paragraph::compile(
+            BUBBLE_FONT_SIZE,
+            BUBBLE_LINE_HEIGHT,
+            wrap_width as f32,
+            prefs,
+            format,
+        );
+        let height =
+            2 * BUBBLE_INNER_MARGIN + (paragraph.height().ceil() as i32);
+        let paragraph_right = (width - BUBBLE_INNER_MARGIN) as f32;
+        let paragraph_left = (paragraph_right - paragraph.width()).floor();
+        let paragraph_top = (top + BUBBLE_INNER_MARGIN) as f32;
+        ChoiceButton {
+            rect: Rect::new(0, top, width, height),
+            position,
+            paragraph,
+            paragraph_left_top: (paragraph_left, paragraph_top),
+            value,
+            hover_pulse: HoverPulse::new(),
+        }
+    }
+
+    fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        let bg_color = Color4::CYAN0_TRANSLUCENT
+            .mix(Color4::CYAN3_TRANSLUCENT, self.hover_pulse.brightness());
+        resources.shaders().ui().draw_bubble_kind(
+            matrix,
+            &self.rect.as_f32(),
+            self.position.bubble_kind(),
+            &Color4::CYAN3,
+            &Color4::CYAN2,
+            &bg_color,
+        );
+        self.paragraph.draw(resources, matrix, self.paragraph_left_top);
+    }
+
+    fn on_event(&mut self, event: &Event, ui: &mut Ui) -> Option<String> {
         match event {
+            Event::ClockTick(tick) => {
+                self.hover_pulse.on_clock_tick(tick, ui);
+            }
             Event::MouseDown(mouse) => {
-                if let Some(index) = self.choice_for_pt(mouse.pt) {
-                    let key = self.key.clone();
-                    let value = self.choices[index].0.clone();
-                    return Some(BubbleAction::MakeChoice(key, value));
+                if mouse.left && self.rect.contains_point(mouse.pt) {
+                    self.hover_pulse.on_click(ui);
+                    ui.audio().play_sound(Sound::ButtonClick);
+                    return Some(self.value.clone());
                 }
             }
             Event::MouseMove(mouse) => {
-                let hovering = self.choice_for_pt(mouse.pt);
-                if self.hovering != hovering {
-                    self.hovering = hovering;
-                    ui.request_redraw();
+                let hovering = self.rect.contains_point(mouse.pt);
+                if self.hover_pulse.set_hovering(hovering, ui) {
+                    ui.audio().play_sound(Sound::ButtonHover);
                 }
             }
-            Event::Unfocus => {
-                if self.hovering.is_some() {
-                    self.hovering = None;
-                    ui.request_redraw();
-                }
-            }
+            Event::Unfocus => self.hover_pulse.unfocus(),
             _ => {}
         }
         return None;

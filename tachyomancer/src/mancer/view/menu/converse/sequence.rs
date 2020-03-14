@@ -17,28 +17,31 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::super::button::Scrollbar;
+use super::super::super::button::{HoverPulse, Scrollbar};
 use super::bubble::{
     BubbleAction, BubbleKind, BubbleView, CutsceneBubbleView,
     PuzzleBubbleView, ReachedAction, SpeechBubbleView, YouChoiceBubbleView,
 };
 use crate::mancer::font::Align;
 use crate::mancer::gl::Stencil;
-use crate::mancer::gui::{Event, Keycode, Resources, Ui};
+use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui};
 use crate::mancer::save::{Prefs, Profile};
 use crate::mancer::state::{
     ConversationBubble, ConversationExt, Cutscene, GameState,
 };
 use cgmath::{vec2, Matrix4};
-use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect};
+use tachy::geom::{AsFloat, Color4, MatrixExt, Rect};
 use tachy::save::{Conversation, Puzzle};
 
 //===========================================================================//
 
 const BUBBLE_SPACING: i32 = 16;
 
-const MORE_BUTTON_FONT_SIZE: f32 = 20.0;
-const MORE_BUTTON_HEIGHT: i32 = 30;
+const MORE_BUTTON_FONT_SIZE: f32 = 18.0;
+const MORE_BUTTON_MARGIN_TOP: i32 = 3;
+const MORE_BUTTON_MARGIN_RIGHT: i32 = 16;
+const MORE_BUTTON_WIDTH: i32 = 136;
+const MORE_BUTTON_HEIGHT: i32 = 25;
 
 const SCROLLBAR_WIDTH: i32 = 18;
 const SCROLLBAR_MARGIN: i32 = 8;
@@ -183,7 +186,7 @@ impl BubbleSequenceView {
                     if should_pause {
                         debug_assert!(self.more_button.is_some());
                         if let Some(ref mut button) = self.more_button {
-                            button.set_visible(ui, true);
+                            button.make_visible(ui);
                         }
                     } else {
                         should_advance = true;
@@ -410,7 +413,7 @@ impl BubbleSequenceView {
                 0
             } else {
                 self.bubbles[self.num_bubbles_shown - 1].rect().bottom()
-                    + BUBBLE_SPACING
+                    + MORE_BUTTON_MARGIN_TOP
             };
             Some(MoreButton::new(width, top, visible))
         } else {
@@ -437,25 +440,27 @@ impl BubbleSequenceView {
 
 struct MoreButton {
     rect: Rect<i32>,
-    hovering: bool,
+    hover_pulse: HoverPulse,
     visible: bool,
 }
 
 impl MoreButton {
     fn new(width: i32, top: i32, visible: bool) -> MoreButton {
         MoreButton {
-            rect: Rect::new(0, top, width, MORE_BUTTON_HEIGHT),
-            hovering: false,
+            rect: Rect::new(
+                width - (MORE_BUTTON_WIDTH + MORE_BUTTON_MARGIN_RIGHT),
+                top,
+                MORE_BUTTON_WIDTH,
+                MORE_BUTTON_HEIGHT,
+            ),
+            hover_pulse: HoverPulse::new(),
             visible,
         }
     }
 
-    fn set_visible(&mut self, ui: &mut Ui, visible: bool) {
-        if self.visible != visible {
-            self.visible = visible;
-            if !visible {
-                self.hovering = false;
-            }
+    fn make_visible(&mut self, ui: &mut Ui) {
+        if !self.visible {
+            self.visible = true;
             ui.request_redraw();
         }
     }
@@ -464,19 +469,23 @@ impl MoreButton {
         if !self.visible {
             return;
         }
-        let color = if self.hovering {
-            Color3::new(1.0, 0.5, 0.1)
-        } else {
-            Color3::new(0.5, 0.25, 0.1)
-        };
+        let bg_color = Color4::CYAN0_TRANSLUCENT
+            .mix(Color4::CYAN3_TRANSLUCENT, self.hover_pulse.brightness());
         let rect = self.rect.as_f32();
-        resources.shaders().solid().fill_rect(&matrix, color, rect);
+        resources.shaders().ui().draw_bubble_kind(
+            matrix,
+            &rect,
+            3,
+            &Color4::CYAN2,
+            &Color4::CYAN1,
+            &bg_color,
+        );
         resources.fonts().roman().draw(
             &matrix,
             MORE_BUTTON_FONT_SIZE,
             Align::MidCenter,
             (rect.x + 0.5 * rect.width, rect.y + 0.5 * rect.height),
-            "- More -",
+            "Press [ENTER]",
         );
     }
 
@@ -485,27 +494,26 @@ impl MoreButton {
             return false;
         }
         match event {
+            Event::ClockTick(tick) => {
+                self.hover_pulse.on_clock_tick(tick, ui);
+            }
             Event::KeyDown(key) if key.code == Keycode::Return => {
                 return true;
             }
             Event::MouseDown(mouse) => {
-                if self.rect.contains_point(mouse.pt) {
+                if mouse.left && self.rect.contains_point(mouse.pt) {
+                    self.hover_pulse.on_click(ui);
+                    ui.audio().play_sound(Sound::ButtonClick);
                     return true;
                 }
             }
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
-                if self.hovering != hovering {
-                    self.hovering = hovering;
-                    ui.request_redraw();
+                if self.hover_pulse.set_hovering(hovering, ui) {
+                    ui.audio().play_sound(Sound::ButtonHover);
                 }
             }
-            Event::Unfocus => {
-                if self.hovering {
-                    self.hovering = false;
-                    ui.request_redraw();
-                }
-            }
+            Event::Unfocus => self.hover_pulse.unfocus(),
             _ => {}
         }
         return false;

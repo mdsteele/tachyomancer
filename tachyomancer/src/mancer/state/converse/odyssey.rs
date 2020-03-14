@@ -56,7 +56,7 @@ pub(super) fn wake_up(profile: &Profile, builder: &mut ConversationBuilder)
             a moment, it was important that I start with you.  In an \
             emergency situation when all crewmembers are in cryosleep or \
             otherwise incapacitated, I do have the authority to make that \
-            call.");
+            decision.");
     } else {
         builder.esra("\
             A repair job that you alone of the surviving crew have the \
@@ -138,7 +138,7 @@ pub(super) fn basics(profile: &Profile, builder: &mut ConversationBuilder)
         So far, you have been working with 1-bit wires, which can carry two \
         different values: 0 or 1.  However, by a using a $*Pack$* chip, you \
         can join two 1-bit wires into a single 2-bit wire, which can carry \
-        2x2=4 different values, from 0 to 3.\n\n\
+        2x2=4 different values, from 0 to 3.\n\
         $=$#size = [7, 3]\n\
         [chips]\n\
         p0p0 = \"f0-DocBv(1, '1-bit')\"\n\
@@ -170,13 +170,13 @@ pub(super) fn basics(profile: &Profile, builder: &mut ConversationBuilder)
         p5p1e = 'Straight'\n\
         p5p1w = 'Straight'\n\
         p6p1w = 'Stub'\n\
-        #$<\n\n\
+        #$<\n\
         Similarly, can further join two 2-bit wires into a 4-bit wire, which \
         can carry 2x2x2x2=16 different values, from 0 to 15.  And so on.");
     builder.you("\"And I can also split those wires back up, yes?\"");
     builder.esra("\
         Correct.  You can use an $*Unpack$* chip to split a 4-bit wire back \
-        into two 2-bit wires, and so on:\n\n\
+        into two 2-bit wires, and so on:\n\
         $=$#size = [5, 2]\n\
         [chips]\n\
         p0p1 = \"f0-DocBv(4, '4-bit')\"\n\
@@ -453,17 +453,17 @@ pub(super) fn where_are_we(profile: &Profile,
         $(500)O$()dd.  There do not seem to be any navsats in range.");
     builder.henry("\
         \"$/That$/ can't be right.\"");
-    builder.you("\"No navsats at all?  Are you sure, ESRA?\"");
+    builder.you("\"None at all?  Are you sure, ESRA?\"");
     builder.esra("\
         The sensors are working perfectly, but there is no carrier wave at \
         all.  That implies that the ship is well outside Joint Federation \
         space.");
     builder.henry("\
-        \"Waaaiit a minute...we couldn't've travelled $/that$/ far off \
-        course, could we?  I mean, I'm a pretty good judge of normal engine \
-        wear and tear, and from looking at it I'd have guessed we've gone \
-        less than half the distance of our planned route.  That's nowhere \
-        near enough to take us outside the navsat net.\"");
+        \"Wait a minute...we couldn't've travelled $/that$/ far off course, \
+        could we?  I mean, I'm a pretty good judge of normal engine wear and \
+        tear, and from looking at it I'd have guessed we've gone less than \
+        half the distance of our planned route.  That's nowhere near enough \
+        to take us outside the navsat net.\"");
     builder.you("\
         \"All right.  ESRA, keep scanning, and try to figure out where we \
         are.  Let me know as soon as you have something.\"");
@@ -588,9 +588,9 @@ pub(super) fn captains_call(_profile: &Profile,
         \"Sensors, then, let's start with those.  Can we fix them?\"");
     builder.esra("\
         I believe so.  As far as I can tell from diagnostics, the exterior \
-        units are actually fine; it's just the signal amplifiers that need \
-        replacement.  Captain, you could probably reach them from where you \
-        are, if Commander $'YOURNAME' can fabricate some replacements to \
+        units are in working order; it is only the signal amplifiers that \
+        need replacement.  Captain, you could probably reach them from where \
+        you are, if Commander $'YOURNAME' can fabricate some replacements to \
         swap in.");
     builder.you("\"I think I can handle that.\"");
     builder.lisa("\

@@ -301,10 +301,17 @@ impl GameState {
         }
     }
 
+    pub fn are_any_puzzles_unlocked(&self) -> bool {
+        match self.profile.as_ref() {
+            Some(profile) => profile.are_any_puzzles_unlocked(),
+            None => false,
+        }
+    }
+
     pub fn is_puzzle_unlocked(&self, puzzle: Puzzle) -> bool {
         match self.profile.as_ref() {
             Some(profile) => profile.is_puzzle_unlocked(puzzle),
-            None => puzzle == Puzzle::first(),
+            None => false,
         }
     }
 

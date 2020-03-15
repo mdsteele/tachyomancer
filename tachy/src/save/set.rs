@@ -28,9 +28,7 @@ pub struct PuzzleSet {
 
 impl PuzzleSet {
     pub fn new() -> PuzzleSet {
-        let mut solved = HashMap::new();
-        solved.insert(Puzzle::first(), false);
-        PuzzleSet { solved }
+        PuzzleSet { solved: HashMap::new() }
     }
 
     pub fn with_everything_solved() -> PuzzleSet {
@@ -62,9 +60,11 @@ mod tests {
     use super::PuzzleSet;
 
     #[test]
-    fn first_puzzle_is_always_unlocked() {
+    fn new_puzzle_set_has_nothing_unlocked() {
         let puzzles = PuzzleSet::new();
-        assert!(puzzles.is_unlocked(Puzzle::first()));
+        for puzzle in Puzzle::all() {
+            assert!(!puzzles.is_unlocked(puzzle));
+        }
     }
 
     #[test]

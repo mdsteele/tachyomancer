@@ -369,13 +369,18 @@ impl<T: Clone + PartialEq> RadioButton<T> {
         RadioButton { inner: TextButton::new(rect, label, value) }
     }
 
+    pub fn value(&self) -> &T {
+        self.inner.value()
+    }
+
     pub fn draw(
         &self,
         resources: &Resources,
         matrix: &Matrix4<f32>,
         value: &T,
+        enabled: bool,
     ) {
-        self.inner.draw(resources, matrix, value != &self.inner.value);
+        self.inner.draw(resources, matrix, enabled && value != self.value());
     }
 
     pub fn on_event(
@@ -383,9 +388,9 @@ impl<T: Clone + PartialEq> RadioButton<T> {
         event: &Event,
         ui: &mut Ui,
         value: &T,
+        enabled: bool,
     ) -> Option<T> {
-        let enabled = value != &self.inner.value;
-        self.inner.on_event(event, ui, enabled)
+        self.inner.on_event(event, ui, enabled && value != self.value())
     }
 }
 

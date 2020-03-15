@@ -304,8 +304,12 @@ impl Profile {
         self.needs_save = true;
     }
 
+    pub fn are_any_puzzles_unlocked(&self) -> bool {
+        !self.puzzles.is_empty()
+    }
+
     pub fn is_puzzle_unlocked(&self, puzzle: Puzzle) -> bool {
-        self.puzzles.contains_key(&puzzle) || puzzle == Puzzle::first()
+        self.puzzles.contains_key(&puzzle)
     }
 
     pub fn unlock_puzzle(&mut self, puzzle: Puzzle) -> Result<(), String> {

@@ -157,7 +157,14 @@ impl MenuView {
             self.draw_section(resources, &matrix2, self.right_section, state);
         }
         for button in self.section_buttons.iter() {
-            button.draw(resources, &projection, &state.menu_section());
+            let enabled = button.value() != &MenuSection::Puzzles
+                || state.are_any_puzzles_unlocked();
+            button.draw(
+                resources,
+                &projection,
+                &state.menu_section(),
+                enabled,
+            );
         }
         if let Some(ref dialog) = self.rename_dialog {
             dialog.draw(resources, &projection, |name| {
@@ -325,8 +332,10 @@ impl MenuView {
 
         let mut next_section: Option<MenuSection> = None;
         for button in self.section_buttons.iter_mut() {
+            let enabled = button.value() != &MenuSection::Puzzles
+                || state.are_any_puzzles_unlocked();
             if let Some(section) =
-                button.on_event(event, ui, &state.menu_section())
+                button.on_event(event, ui, &state.menu_section(), enabled)
             {
                 next_section = Some(section);
                 break;

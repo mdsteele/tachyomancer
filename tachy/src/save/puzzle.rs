@@ -116,7 +116,7 @@ pub enum Puzzle {
 }
 
 impl Puzzle {
-    /// Returns the first puzzle in the game, which is always unlocked.
+    /// Returns the first puzzle in the game.
     pub const fn first() -> Puzzle {
         Puzzle::TutorialOr
     }

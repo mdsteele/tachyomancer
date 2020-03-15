@@ -187,7 +187,7 @@ impl PrefsView {
     ) {
         debug_assert!(state.profile().is_some());
         for button in self.pane_buttons.iter() {
-            button.draw(resources, matrix, &self.current_pane);
+            button.draw(resources, matrix, &self.current_pane, true);
         }
         self.quit_button.draw(resources, matrix, true);
 
@@ -220,7 +220,8 @@ impl PrefsView {
 
         let mut next_pane: Option<PrefsPane> = None;
         for button in self.pane_buttons.iter_mut() {
-            if let Some(pane) = button.on_event(event, ui, &self.current_pane)
+            if let Some(pane) =
+                button.on_event(event, ui, &self.current_pane, true)
             {
                 next_pane = Some(pane);
                 break;

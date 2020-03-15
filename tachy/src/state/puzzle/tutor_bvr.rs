@@ -84,10 +84,11 @@ const OR_EXPECTED_TABLE_VALUES: &[u32] = &[
 pub(super) const OR_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
     (
         TutorialBubblePosition::PartsTray,
-        "Drag chips from the parts\ntray onto the board.",
+        "Drag chips from the parts tray onto the board.  Press $[RotateCcw] \
+         or $[RotateCw] to rotate chips while dragging.",
     ),
     (
-        TutorialBubblePosition::Bounds(Direction::North),
+        TutorialBubblePosition::Bounds(Direction::East),
         "Drag between board squares to\ncreate wires between chip ports.",
     ),
     (

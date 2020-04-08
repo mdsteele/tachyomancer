@@ -111,6 +111,22 @@ fn robot_arm_reply_twice() {
 }
 
 #[test]
+fn sonar_crash_port() {
+    let actual = test_failure("sonar_crash_port");
+    let expected =
+        vec!["Time step 63: Crashed into the port-side canyon wall."];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn sonar_crash_stbd() {
+    let actual = test_failure("sonar_crash_stbd");
+    let expected =
+        vec!["Time step 8: Crashed into the starboard-side canyon wall."];
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn x_unit_incomplete_detonation() {
     let actual = test_failure("x_unit_incomplete_detonation");
     let expected =

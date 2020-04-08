@@ -39,6 +39,7 @@ mod sandbox;
 mod sensors;
 mod shared;
 mod shields;
+mod sonar;
 mod storage;
 mod translator;
 mod turret;
@@ -74,6 +75,7 @@ pub use self::shared::{
     FabricationData, FabricationEval, TutorialBubblePosition,
 };
 pub use self::shields::ShieldsEval;
+pub use self::sonar::SonarEval;
 pub use self::storage::StorageDepotEval;
 pub use self::translator::TranslatorEval;
 pub use self::turret::TurretEval;
@@ -172,6 +174,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
+            Puzzle::AutomateSonar => self::sonar::INTERFACES,
             Puzzle::AutomateStorageDepot => self::storage::INTERFACES,
             Puzzle::AutomateTranslator => self::translator::INTERFACES,
             Puzzle::AutomateXUnit => self::xunit::INTERFACES,
@@ -284,6 +287,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateSensors => {
             Box::new(self::sensors::SensorsEval::new(slots))
         }
+        Puzzle::AutomateSonar => Box::new(SonarEval::new(slots)),
         Puzzle::AutomateStorageDepot => Box::new(StorageDepotEval::new(slots)),
         Puzzle::AutomateTranslator => Box::new(TranslatorEval::new(slots)),
         Puzzle::AutomateXUnit => Box::new(XUnitEval::new(slots)),

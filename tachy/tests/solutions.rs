@@ -89,6 +89,11 @@ fn automate_sensors_small() {
 }
 
 #[test]
+fn automate_sonar() {
+    test_solution("automate_sonar");
+}
+
+#[test]
 fn automate_storage_depot() {
     test_solution("automate_storage_depot");
 }

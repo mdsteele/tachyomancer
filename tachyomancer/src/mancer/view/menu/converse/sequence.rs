@@ -95,13 +95,11 @@ impl BubbleSequenceView {
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         // Define clipping area:
         let stencil = Stencil::new();
-        {
-            resources.shaders().solid().tint_rect(
-                &matrix,
-                Color4::TRANSPARENT,
-                self.rect.as_f32(),
-            );
-        }
+        resources.shaders().solid().tint_rect(
+            &matrix,
+            Color4::TRANSPARENT,
+            self.rect.as_f32(),
+        );
         stencil.enable_clipping();
 
         // Draw conversation bubbles:
@@ -127,6 +125,7 @@ impl BubbleSequenceView {
                 button.draw(resources, &bubble_matrix);
             }
         }
+        stencil.disable();
 
         // Draw scrollbar:
         self.scrollbar.draw(resources, matrix);

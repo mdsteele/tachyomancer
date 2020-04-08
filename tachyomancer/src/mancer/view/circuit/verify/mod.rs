@@ -29,6 +29,7 @@ mod robotarm;
 mod sensors;
 mod shared;
 mod shields;
+mod sonar;
 mod storage;
 mod translator;
 mod turret;
@@ -120,6 +121,9 @@ impl VerificationTray {
             }
             Puzzle::AutomateSensors => {
                 self::sensors::SensorsVerifyView::new(right_bottom)
+            }
+            Puzzle::AutomateSonar => {
+                self::sonar::SonarVerifyView::new(right_bottom)
             }
             Puzzle::AutomateStorageDepot => {
                 self::storage::StorageDepotVerifyView::new(right_bottom)

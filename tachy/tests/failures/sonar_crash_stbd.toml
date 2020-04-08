@@ -1,0 +1,12 @@
+puzzle = "AutomateSonar"
+score = 0
+time_steps = 200
+
+[circuit]
+size = [1, 3]
+
+[circuit.chips]
+p0p2 = "f1-Const(2)"
+
+[circuit.wires]
+p0p2s = "Stub"

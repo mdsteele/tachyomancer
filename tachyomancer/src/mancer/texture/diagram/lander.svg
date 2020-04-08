@@ -32,4 +32,37 @@
              V 130 H -2 Z"
           fill="#883916" stroke="#d99353" stroke-width="2"/>
   </g>
+  <!-- AUV -->
+  <g transform="translate(96, 0)">
+    <g fill="#883916" stroke="#d99353" stroke-width="2">
+      <path d="M 16,5 L 22,30 L 10,30 Z"/>
+    </g>
+  </g>
+  <!-- Canyon wall -->
+  <g transform="translate(96, 32)">
+    <g fill="#883916" stroke="#d99353" stroke-width="2">
+      <path d="M 14,1 H 18 L 20,31 H 14" fill="none"/>
+      <circle cx="0" cy="0" r="4"
+              transform="translate(20, 5.25) rotate(15) scale(1.4, 1)"/>
+      <circle cx="0" cy="0" r="4"
+              transform="translate(27, 10) rotate(-10) scale(1, 1.3)"/>
+      <circle cx="0" cy="0" r="5"
+              transform="translate(21, 26) scale(1.5, 1)"/>
+      <circle cx="0" cy="0" r="3"
+              transform="translate(28, 20) rotate(5) scale(1, 1.6)"/>
+      <circle cx="0" cy="0" r="4.5"
+              transform="translate(21, 12) rotate(-20) scale(1, 1.2)"/>
+      <circle cx="0" cy="0" r="3.5"
+              transform="translate(21, 19) rotate(5) scale(1.2, 1)"/>
+    </g>
+  </g>
+  <!-- Sonar ping -->
+  <g transform="translate(112, 64)">
+    <g fill="none" stroke="#65ebfb" stroke-width="2">
+      <path d="M 15,14 A 2.83 2.83 0 0 0 15,18"/>
+      <path d="M 12,11 A 7.07 7.07 0 0 0 12,21"/>
+      <path d="M 9,8 A 11.31 11.31 0 0 0 9,24"/>
+      <path d="M 6,5 A 15.56 15.56 0 0 0 6,27"/>
+    </g>
+  </g>
 </svg>

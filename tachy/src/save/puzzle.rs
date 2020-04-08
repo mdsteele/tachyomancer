@@ -106,6 +106,7 @@ pub enum Puzzle {
     FabricateStopwatch,
     AutomateDrillingRig,
     AutomateIncubator,
+    AutomateSonar,
     CommandShields,
     // Lorelei:
     AutomateGeigerCounter,
@@ -368,6 +369,18 @@ impl Puzzle {
                      value to terminate the scan.\n\
                      * $!Note that ($/x$/ AND 1) is 0 when $/x$/ is even, \
                      and 1 when $/x$/ is odd.",
+            },
+            Puzzle::AutomateSonar => &PuzzleData {
+                title: "Sonar Navigation",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (9, 7),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 1000),
+                description:
+                    "Use sonar to guide an autonomous underwater vehicle \
+                     through a submarine canyon.",
+                instructions: "TODO",
             },
             Puzzle::AutomateStorageDepot => &PuzzleData {
                 title: "Storage Depot",

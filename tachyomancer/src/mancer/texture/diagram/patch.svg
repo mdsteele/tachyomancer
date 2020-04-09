@@ -1,14 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="512" height="512">
+  <!-- Background -->
+  <circle cx="256" cy="256" r="252" fill="#246272" stroke="none"/>
+  <g transform="translate(256, 256) rotate(-60)"
+     fill="none" stroke="#225c6a" stroke-width="6">
+    <path d="M -77,-240 H 77"/>
+    <path d="M -139,-210 H 139"/>
+    <path d="M -176,-180 H 176"/>
+    <path d="M -202,-150 H 202"/>
+    <path d="M -222,-120 H 222"/>
+    <path d="M -235,-90 H 235"/>
+    <path d="M -245,-60 H 245"/>
+    <path d="M -250,-30 H 250"/>
+    <path d="M -252,0 H 252"/>
+    <path d="M -250,30 H 250"/>
+    <path d="M -245,60 H 245"/>
+    <path d="M -235,90 H 235"/>
+    <path d="M -222,120 H 222"/>
+    <path d="M -202,150 H 202"/>
+    <path d="M -176,180 H 176"/>
+    <path d="M -139,210 H 139"/>
+    <path d="M -77,240 H 77"/>
+  </g>
   <!-- Frame -->
   <g fill="none" stroke="#d99353">
     <g stroke-width="8">
-      <circle cx="256" cy="256" r="252" fill="#246272"/>
+      <circle cx="256" cy="256" r="252"/>
       <circle cx="256" cy="256" r="191"/>
     </g>
     <g stroke-width="6">
       <path d="M 145,100 H 367"/>
-      <path d="M 95,150 H 417"/>
+      <path d="M 96,150 H 416"/>
+      <path d="M 70,300 H 442"/>
+      <path d="M 130,400 H 382"/>
+    </g>
+  </g>
+  <g fill="none" stroke="#e6b688">
+    <circle cx="256" cy="256" r="252" stroke-width="4"/>
+    <circle cx="256" cy="256" r="191" stroke-width="3"/>
+    <g stroke-width="2">
+      <path d="M 145,100 H 367"/>
+      <path d="M 96,150 H 416"/>
       <path d="M 70,300 H 442"/>
       <path d="M 130,400 H 382"/>
     </g>

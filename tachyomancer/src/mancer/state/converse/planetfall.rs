@@ -273,6 +273,22 @@ pub(super) fn additional_chips(
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn more_prototypes(
+    profile: &Profile,
+    builder: &mut ConversationBuilder,
+) -> Result<(), ()> {
+    builder.esra("\
+        Event-based circuits can quickly become complex, so you may find \
+        yourself wanting to do additional prototyping and testing.  The \
+        datalink below will provide an area for experimenting with these \
+        circuits.");
+    builder.puzzle(profile, Puzzle::SandboxEvent)?;
+    Ok(())
+}
+
+//===========================================================================//
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 pub(super) fn making_fuel(
     profile: &Profile,
     builder: &mut ConversationBuilder,

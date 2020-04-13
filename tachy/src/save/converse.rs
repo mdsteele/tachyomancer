@@ -107,6 +107,7 @@ pub enum Conversation {
     AdvancedCircuits,
     ScoutReport,
     AdditionalChips,
+    MorePrototypes,
     MakingFuel,
     OneMoreThing,
     WeFoundSomething,
@@ -157,6 +158,7 @@ impl Conversation {
             Conversation::AdvancedCircuits => "Advanced Circuits",
             Conversation::ScoutReport => "Scout Report",
             Conversation::AdditionalChips => "Additional Chips",
+            Conversation::MorePrototypes => "More Prototypes",
             Conversation::MakingFuel => "Making Fuel",
             Conversation::OneMoreThing => "One More Thing",
             Conversation::WeFoundSomething => "We Found Something",
@@ -192,6 +194,7 @@ impl Conversation {
             Conversation::AdvancedCircuits
             | Conversation::ScoutReport
             | Conversation::AdditionalChips
+            | Conversation::MorePrototypes
             | Conversation::MakingFuel
             | Conversation::OneMoreThing
             | Conversation::WeFoundSomething
@@ -261,6 +264,7 @@ impl Conversation {
             }
             Conversation::ScoutReport
             | Conversation::AdditionalChips
+            | Conversation::MorePrototypes
             | Conversation::MakingFuel
             | Conversation::OneMoreThing => {
                 &Prereq::Complete(Conversation::AdvancedCircuits)

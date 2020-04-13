@@ -87,11 +87,14 @@ impl ConversationExt for Conversation {
             Conversation::AdvancedCircuits => {
                 planetfall::advanced_circuits(profile, &mut builder)
             }
+            Conversation::ScoutReport => {
+                planetfall::scout_report(profile, &mut builder)
+            }
             Conversation::AdditionalChips => {
                 planetfall::additional_chips(profile, &mut builder)
             }
-            Conversation::ScoutReport => {
-                planetfall::scout_report(profile, &mut builder)
+            Conversation::MorePrototypes => {
+                planetfall::more_prototypes(profile, &mut builder)
             }
             Conversation::MakingFuel => {
                 planetfall::making_fuel(profile, &mut builder)

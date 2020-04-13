@@ -133,6 +133,7 @@ impl PuzzleExt for Puzzle {
             | Puzzle::FabricateMul
             | Puzzle::FabricateXor => &[Conversation::MoreComponents],
             Puzzle::SandboxBehavior => &[Conversation::Prototyping],
+            Puzzle::SandboxEvent => &[Conversation::MorePrototypes],
             Puzzle::TutorialAdd | Puzzle::TutorialMux | Puzzle::TutorialOr => {
                 &[Conversation::Basics]
             }

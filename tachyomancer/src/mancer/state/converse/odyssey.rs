@@ -330,6 +330,25 @@ pub(super) fn more_components(profile: &Profile,
     Ok(())
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub(super) fn prototyping(profile: &Profile, builder: &mut ConversationBuilder)
+                          -> Result<(), ()> {
+    builder.esra("\
+        As we repair various parts of the ship, Commander, you may find it \
+        useful to experiment with prototype circuits that may not be directly \
+        related to any particular repair task.  Or, perhaps you might wish to \
+        work on some freeform circuit designs to practice your skills.  This \
+        is optional, of course, but the following datalink will give you a \
+        way to do so if you choose.");
+    builder.esra("\
+        Within this sandbox area, you will also have access to additional \
+        circuit components that aren't relevant to most repair tasks, such as \
+        manual toggle switches.  You may find these components useful for \
+        your experimentation.");
+    builder.puzzle(profile, Puzzle::SandboxBehavior)?;
+    Ok(())
+}
+
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]

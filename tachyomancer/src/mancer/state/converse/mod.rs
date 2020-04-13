@@ -57,6 +57,9 @@ impl ConversationExt for Conversation {
             Conversation::MoreComponents => {
                 odyssey::more_components(profile, &mut builder)
             }
+            Conversation::Prototyping => {
+                odyssey::prototyping(profile, &mut builder)
+            }
             Conversation::StepTwo => odyssey::step_two(profile, &mut builder),
             Conversation::ReactorSpecs => {
                 odyssey::reactor_specs(profile, &mut builder)

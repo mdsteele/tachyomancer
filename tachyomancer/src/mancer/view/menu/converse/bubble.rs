@@ -24,7 +24,7 @@ use crate::mancer::save::Prefs;
 use crate::mancer::state::{Cutscene, Portrait};
 use cgmath::{Matrix4, Point2};
 use tachy::geom::{AsFloat, Color4, Rect};
-use tachy::save::Puzzle;
+use tachy::save::{Puzzle, PuzzleKind};
 
 //===========================================================================//
 
@@ -94,6 +94,8 @@ pub trait BubbleView {
     fn should_pause_afterwards(&self) -> bool {
         false
     }
+
+    fn is_finished(&self) -> bool;
 }
 
 //===========================================================================//
@@ -139,6 +141,10 @@ impl BubbleView for CutsceneBubbleView {
     fn on_first_reached(&self) -> Option<ReachedAction> {
         Some(ReachedAction::PlayCutscene(*self.button.value()))
     }
+
+    fn is_finished(&self) -> bool {
+        true
+    }
 }
 
 //===========================================================================//
@@ -168,9 +174,14 @@ impl PuzzleBubbleView {
                     let y = top
                         + (PUZZLE_BUTTON_HEIGHT + PUZZLE_BUTTON_SPACING)
                             * (index as i32);
+                    let label = if puzzle.kind() == PuzzleKind::Sandbox {
+                        format!("Go to \"{}\" sandbox", puzzle.title())
+                    } else {
+                        format!("Go to task \"{}\"", puzzle.title())
+                    };
                     TextButton::new(
                         Rect::new(0, y, width, PUZZLE_BUTTON_HEIGHT),
-                        &format!("Go to task \"{}\"", puzzle.title()),
+                        &label,
                         puzzle,
                     )
                 })
@@ -215,6 +226,10 @@ impl BubbleView for PuzzleBubbleView {
         Some(ReachedAction::UnlockPuzzles(
             self.buttons.iter().map(|button| *button.value()).collect(),
         ))
+    }
+
+    fn is_finished(&self) -> bool {
+        true
     }
 }
 
@@ -384,6 +399,10 @@ impl BubbleView for SpeechBubbleView {
     fn should_pause_afterwards(&self) -> bool {
         self.pause_after
     }
+
+    fn is_finished(&self) -> bool {
+        self.sent_finished
+    }
 }
 
 //===========================================================================//
@@ -458,6 +477,10 @@ impl BubbleView for YouChoiceBubbleView {
             }
         }
         return None;
+    }
+
+    fn is_finished(&self) -> bool {
+        false
     }
 }
 

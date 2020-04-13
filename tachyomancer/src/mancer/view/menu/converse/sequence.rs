@@ -139,11 +139,10 @@ impl BubbleSequenceView {
     ) -> Option<SequenceAction> {
         // Handle scrollbar events:
         self.scrollbar.on_event(event, ui);
-        match event {
-            Event::Scroll(scroll) if self.rect.contains_point(scroll.pt) => {
+        if let Event::Scroll(scroll) = event {
+            if self.rect.contains_point(scroll.pt) {
                 self.scrollbar.scroll_by(scroll.delta.y, ui);
             }
-            _ => {}
         }
 
         // Handle more-button events:
@@ -211,6 +210,17 @@ impl BubbleSequenceView {
                 state
                     .set_current_conversation_progress(self.num_bubbles_shown);
                 return self.advance(ui, state);
+            }
+        }
+
+        // Catch-all to make sure that conversations get marked complete:
+        if self.bubbles_are_complete
+            && self.num_bubbles_shown >= self.bubbles.len()
+            && !state.is_conversation_complete(self.conv)
+        {
+            if self.bubbles.last().map(|b| b.is_finished()).unwrap_or(true) {
+                state.mark_current_conversation_complete();
+                return Some(SequenceAction::ConversationCompleted);
             }
         }
         return None;

@@ -89,6 +89,7 @@ pub enum Conversation {
     Basics,
     RestorePower,
     MoreComponents,
+    Prototyping,
     // Odyssey Henry track:
     StepTwo,
     ReactorSpecs,
@@ -138,6 +139,7 @@ impl Conversation {
             Conversation::Basics => "Circuit Basics",
             Conversation::RestorePower => "Restoring Power",
             Conversation::MoreComponents => "More Components",
+            Conversation::Prototyping => "Prototyping",
             // Odyssey Henry track:
             Conversation::StepTwo => "Step Two",
             Conversation::ReactorSpecs => "Reactor Specs",
@@ -176,6 +178,7 @@ impl Conversation {
             | Conversation::Basics
             | Conversation::RestorePower
             | Conversation::MoreComponents
+            | Conversation::Prototyping
             | Conversation::StepTwo
             | Conversation::ReactorSpecs
             | Conversation::WhereAreWe
@@ -208,6 +211,9 @@ impl Conversation {
             Conversation::Basics => &Prereq::Complete(Conversation::WakeUp),
             Conversation::RestorePower | Conversation::MoreComponents => {
                 &Prereq::Complete(Conversation::Basics)
+            }
+            Conversation::Prototyping => {
+                &Prereq::Complete(Conversation::RestorePower)
             }
             // Odyssey Henry track:
             Conversation::StepTwo => &Prereq::Choice(

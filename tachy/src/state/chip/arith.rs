@@ -309,6 +309,45 @@ impl ChipEval for Mul4BitChipEval {
 
 //===========================================================================//
 
+pub const NEG_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+    ],
+    constraints: &[AbstractConstraint::Equal(0, 1)],
+    dependencies: &[(0, 1)],
+};
+
+pub struct NegChipEval {
+    size: WireSize,
+    input: usize,
+    output: usize,
+}
+
+impl NegChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), NEG_CHIP_DATA.ports.len());
+        let chip_eval = NegChipEval {
+            size: slots[1].1,
+            input: slots[0].0,
+            output: slots[1].0,
+        };
+        vec![(1, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for NegChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let input = state.recv_behavior(self.input);
+        let output = (!input).wrapping_add(1) & self.size.mask();
+        state.send_behavior(self.output, output);
+    }
+}
+
+//===========================================================================//
+
 pub const SUB_CHIP_DATA: &ChipData = ADD_CHIP_DATA;
 
 pub struct SubChipEval {

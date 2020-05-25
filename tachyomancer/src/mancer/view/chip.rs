@@ -338,6 +338,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
             }
         }
         ChipType::Mux => ChipIcon::Mux,
+        ChipType::Neg => ChipIcon::Sub,
         ChipType::Not => ChipIcon::Not,
         ChipType::Or => ChipIcon::Or,
         ChipType::Pack => {

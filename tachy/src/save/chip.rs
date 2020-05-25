@@ -59,6 +59,7 @@ pub enum ChipType {
     Mul,
     Mul4Bit,
     Mux,
+    Neg,
     Not,
     Or,
     Pack,
@@ -91,6 +92,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Add,
         ChipType::Add2Bit,
         ChipType::Inc,
+        ChipType::Neg,
         ChipType::Sub,
         ChipType::Mul,
         ChipType::Mul4Bit,
@@ -160,15 +162,38 @@ impl ChipType {
             ChipType::Const(value) => format!("Constant ({})", value),
             ChipType::EggTimer => "Egg Timer".to_string(),
             ChipType::Mul4Bit => "4-Bit Mul".to_string(),
+            ChipType::Neg => "Negate".to_string(),
             ChipType::Toggle(false) => "Toggle Switch (off)".to_string(),
             ChipType::Toggle(true) => "Toggle Switch (on)".to_string(),
             other => format!("{}", other),
         };
         let description = match self {
             ChipType::Add => {
-                "Outputs the sum of the two inputs.  If the sum is too large \
-                 for the wire size, the value will wrap around (for example, \
-                 5 + 12 on a 4-bit wire will result in 1 instead of 17)."
+                "Outputs the sum of the two inputs.\n\
+                 $=$#size = [5, 2]\n\
+                 [chips]\n\
+                 p0p0 = \"f0-DocBv(4, '7')\"\n\
+                 p0p1 = \"f0-DocBv(4, '5')\"\n\
+                 p2p0 = 'f0-Add'\n\
+                 p4p0 = \"f0-DocBv(4, '12')\"\n\
+                 [wires]\n\
+                 p0p0e = 'Stub'\n\
+                 p0p1e = 'Stub'\n\
+                 p1p0e = 'Straight'\n\
+                 p1p0w = 'Straight'\n\
+                 p1p1e = 'Straight'\n\
+                 p1p1w = 'Straight'\n\
+                 p2p0e = 'Stub'\n\
+                 p2p0s = 'Stub'\n\
+                 p2p0w = 'Stub'\n\
+                 p2p1n = 'TurnRight'\n\
+                 p2p1w = 'TurnLeft'\n\
+                 p3p0e = 'Straight'\n\
+                 p3p0w = 'Straight'\n\
+                 p4p0w = 'Stub'\n\
+                 #\n\
+                 $<If the sum is too large for the wire size, the value will \
+                 wrap around."
             }
             ChipType::Add2Bit => "TODO",
             ChipType::And => {
@@ -299,10 +324,31 @@ impl ChipType {
                  #"
             }
             ChipType::Mul => {
-                "Outputs the product of the two inputs.  If the product is \
-                 too large for the wire size, the value will wrap around (for \
-                 example, 3 \u{d7} 6 on a 4-bit wire will result in 2 instead \
-                 of 18)."
+                "Outputs the product of the two inputs.\n\
+                 $=$#size = [5, 2]\n\
+                 [chips]\n\
+                 p0p0 = \"f0-DocBv(4, '4')\"\n\
+                 p0p1 = \"f0-DocBv(4, '3')\"\n\
+                 p2p0 = 'f0-Mul'\n\
+                 p4p0 = \"f0-DocBv(4, '12')\"\n\
+                 [wires]\n\
+                 p0p0e = 'Stub'\n\
+                 p0p1e = 'Stub'\n\
+                 p1p0e = 'Straight'\n\
+                 p1p0w = 'Straight'\n\
+                 p1p1e = 'Straight'\n\
+                 p1p1w = 'Straight'\n\
+                 p2p0e = 'Stub'\n\
+                 p2p0s = 'Stub'\n\
+                 p2p0w = 'Stub'\n\
+                 p2p1n = 'TurnRight'\n\
+                 p2p1w = 'TurnLeft'\n\
+                 p3p0e = 'Straight'\n\
+                 p3p0w = 'Straight'\n\
+                 p4p0w = 'Stub'\n\
+                 #\n\
+                 $<If the product is too large for the wire size, the value \
+                 will wrap around."
             }
             ChipType::Mul4Bit => "TODO",
             ChipType::Mux => {
@@ -332,6 +378,33 @@ impl ChipType {
                  p3p1e = 'Straight'\n\
                  p3p1w = 'Straight'\n\
                  p4p1w = 'Stub'\n\
+                 #"
+            }
+            ChipType::Neg => {
+                "Negates the input, wrapping around based on the wire size.  \
+                 Use this with an $*Add$* chip to perform subtraction.\n\
+                 $=$#size = [5, 2]\n\
+                 [chips]\n\
+                 p0p0 = \"f0-DocBv(4, '12')\"\n\
+                 p0p1 = \"f0-DocBv(4, '5')\"\n\
+                 p1p1 = 'f0-Neg'\n\
+                 p2p0 = 'f0-Add'\n\
+                 p4p0 = \"f0-DocBv(4, '7')\"\n\
+                 [wires]\n\
+                 p0p0e = 'Stub'\n\
+                 p0p1e = 'Stub'\n\
+                 p1p0e = 'Straight'\n\
+                 p1p0w = 'Straight'\n\
+                 p1p1e = 'Stub'\n\
+                 p1p1w = 'Stub'\n\
+                 p2p0e = 'Stub'\n\
+                 p2p0s = 'Stub'\n\
+                 p2p0w = 'Stub'\n\
+                 p2p1n = 'TurnRight'\n\
+                 p2p1w = 'TurnLeft'\n\
+                 p3p0e = 'Straight'\n\
+                 p3p0w = 'Straight'\n\
+                 p4p0w = 'Stub'\n\
                  #"
             }
             ChipType::Not => {
@@ -490,6 +563,7 @@ impl str::FromStr for ChipType {
             "Mul" => Ok(ChipType::Mul),
             "Mul4Bit" => Ok(ChipType::Mul4Bit),
             "Mux" => Ok(ChipType::Mux),
+            "Neg" => Ok(ChipType::Neg),
             "Not" => Ok(ChipType::Not),
             "Or" => Ok(ChipType::Or),
             "Pack" => Ok(ChipType::Pack),

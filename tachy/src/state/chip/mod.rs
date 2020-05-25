@@ -115,7 +115,7 @@ impl ChipExt for ChipType {
             ChipType::Add2Bit => {
                 ChipAvailability::OnlyIn(&[Puzzle::TutorialAdd])
             }
-            ChipType::Add | ChipType::Sub => {
+            ChipType::Add | ChipType::Neg | ChipType::Sub => {
                 ChipAvailability::UnlockedBy(Puzzle::TutorialAdd)
             }
             ChipType::Halve => {
@@ -283,6 +283,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Mul => self::arith::MUL_CHIP_DATA,
         ChipType::Mul4Bit => self::arith::MUL_4BIT_CHIP_DATA,
         ChipType::Mux => self::logic::MUX_CHIP_DATA,
+        ChipType::Neg => self::arith::NEG_CHIP_DATA,
         ChipType::Not => self::logic::NOT_CHIP_DATA,
         ChipType::Or => self::logic::OR_CHIP_DATA,
         ChipType::Pack => self::value::PACK_CHIP_DATA,
@@ -342,6 +343,7 @@ pub(super) fn new_chip_evals(
         ChipType::Mul => self::arith::MulChipEval::new_evals(slots),
         ChipType::Mul4Bit => self::arith::Mul4BitChipEval::new_evals(slots),
         ChipType::Mux => self::logic::MuxChipEval::new_evals(slots),
+        ChipType::Neg => self::arith::NegChipEval::new_evals(slots),
         ChipType::Not => self::logic::NotChipEval::new_evals(slots),
         ChipType::Or => self::logic::OrChipEval::new_evals(slots),
         ChipType::Pack => self::value::PackChipEval::new_evals(slots),

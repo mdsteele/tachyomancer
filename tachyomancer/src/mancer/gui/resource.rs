@@ -21,6 +21,7 @@ use crate::mancer::font::Fonts;
 use crate::mancer::shader::Shaders;
 use crate::mancer::texture::Textures;
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use tachy::geom::RectSize;
 use tachy::save::{Puzzle, ScoreCurve, ScoreCurveMap};
 
@@ -39,9 +40,14 @@ impl Resources {
         window_size: RectSize<i32>,
         global_scores: Arc<Mutex<ScoreCurveMap>>,
     ) -> Result<Resources, String> {
+        let start_time = Instant::now();
         let fonts = Fonts::new()?;
         let shaders = Shaders::new(window_size)?;
         let textures = Textures::new()?;
+        debug_log!(
+            "Generated resources in {} seconds",
+            Instant::now().duration_since(start_time).as_secs_f64()
+        );
         Ok(Resources { window_size, fonts, global_scores, shaders, textures })
     }
 

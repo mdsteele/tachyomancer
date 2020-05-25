@@ -1,2 +1,9 @@
 [workspace]
 members = ["tachy", "tachyomancer", "tachyoscope"]
+
+# Optimize image decoding libraries even for dev builds, because doing so
+# significantly improves the game's startup time (by multiple seconds).
+[profile.dev.package.jpeg-decoder]
+opt-level = 3
+[profile.dev.package.png]
+opt-level = 3

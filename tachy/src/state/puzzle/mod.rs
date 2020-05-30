@@ -33,6 +33,7 @@ mod injector;
 mod lander;
 mod mining;
 mod reactor;
+mod resonator;
 mod rng;
 mod robotarm;
 mod sandbox;
@@ -69,6 +70,7 @@ pub use self::injector::InjectorEval;
 pub use self::lander::LanderEval;
 pub use self::mining::MiningRobotEval;
 pub use self::reactor::ReactorEval;
+pub use self::resonator::ResonatorEval;
 pub use self::robotarm::RobotArmEval;
 pub use self::sensors::SensorsEval;
 pub use self::shared::{
@@ -174,6 +176,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateInjector => self::injector::INTERFACES,
             Puzzle::AutomateMiningRobot => self::mining::INTERFACES,
             Puzzle::AutomateReactor => self::reactor::INTERFACES,
+            Puzzle::AutomateResonator => self::resonator::INTERFACES,
             Puzzle::AutomateRobotArm => self::robotarm::INTERFACES,
             Puzzle::AutomateSensors => self::sensors::INTERFACES,
             Puzzle::AutomateSonar => self::sonar::INTERFACES,
@@ -285,6 +288,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateReactor => {
             Box::new(self::reactor::ReactorEval::new(slots))
         }
+        Puzzle::AutomateResonator => Box::new(ResonatorEval::new(slots)),
         Puzzle::AutomateRobotArm => Box::new(RobotArmEval::new(slots)),
         Puzzle::AutomateSensors => {
             Box::new(self::sensors::SensorsEval::new(slots))

@@ -74,6 +74,16 @@ fn automate_reactor_small() {
 }
 
 #[test]
+fn automate_resonator_fast() {
+    test_solution("automate_resonator_fast");
+}
+
+#[test]
+fn automate_resonator_small() {
+    test_solution("automate_resonator_small");
+}
+
+#[test]
 fn automate_robot_arm() {
     test_solution("automate_robot_arm");
 }

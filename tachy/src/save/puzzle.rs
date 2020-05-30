@@ -107,6 +107,7 @@ pub enum Puzzle {
     AutomateDrillingRig,
     AutomateIncubator,
     AutomateSonar,
+    AutomateResonator,
     CommandShields,
     // Lorelei:
     AutomateGeigerCounter,
@@ -332,6 +333,18 @@ impl Puzzle {
                 description:
                     "Manipulate the reactor's control rods to adjust the \
                      power output to the desired level.",
+                instructions: "TODO",
+            },
+            Puzzle::AutomateResonator => &PuzzleData {
+                title: "Strike Resonator",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (9, 7),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 500),
+                description:
+                    "Deliver timed pulses to a resonator crystal in order to \
+                     charge up the STRIKE beam weapon.",
                 instructions: "TODO",
             },
             Puzzle::AutomateRobotArm => &PuzzleData {

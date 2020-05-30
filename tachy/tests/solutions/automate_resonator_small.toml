@@ -1,0 +1,46 @@
+puzzle = "AutomateResonator"
+score = 262
+time_steps = 262
+
+[circuit]
+size = [7, 5]
+
+[circuit.chips]
+p0p1 = "f1-Not"
+p0p2 = "f0-Demux"
+p0p3 = "t1-Sample"
+p1p0 = "f2-Latest"
+p1p2 = "f1-Coerce(8)"
+p2p0 = "t2-Delay"
+p2p1 = "t2-Halve"
+p2p3 = "t3-EggTimer"
+p3p3 = "f3-Sample"
+p4p0 = "t2-Join"
+p4p3 = "t2-Const(1)"
+p5p0 = "t2-Sample"
+p5p1 = "t1-Stopwatch"
+
+[circuit.wires]
+m1p2e = "Stub"
+p0p0e = "TurnLeft"
+p0p1s = "Stub"
+p0p2s = "Stub"
+p0p4n = "TurnLeft"
+p1p0e = "Stub"
+p1p1e = "TurnLeft"
+p1p3w = "TurnLeft"
+p1p4e = "Straight"
+p3p0e = "Straight"
+p3p0s = "Straight"
+p3p1e = "Straight"
+p3p1s = "Straight"
+p3p2e = "SplitTee"
+p3p3e = "Stub"
+p3p4w = "TurnLeft"
+p4p0e = "Stub"
+p4p1e = "Straight"
+p4p1s = "Straight"
+p4p2w = "TurnLeft"
+p6p0s = "TurnLeft"
+p6p1w = "SplitTee"
+p6p2n = "SplitTee"

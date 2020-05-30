@@ -116,6 +116,10 @@ impl VerificationTray {
             Puzzle::AutomateReactor => {
                 self::reactor::ReactorVerifyView::new(right_bottom)
             }
+            Puzzle::AutomateResonator => {
+                // TODO: Make a verification view for AutomateResonator
+                self::shared::NullVerifyView::new()
+            }
             Puzzle::AutomateRobotArm => {
                 self::robotarm::RobotArmVerifyView::new(right_bottom)
             }

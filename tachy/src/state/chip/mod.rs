@@ -45,6 +45,7 @@ const CLOCK_ONLY_PUZZLES: &[Puzzle] = &[
     Puzzle::AutomateDrillingRig,
     Puzzle::AutomateIncubator,
     Puzzle::AutomateSonar,
+    Puzzle::AutomateResonator,
     Puzzle::CommandShields,
 ];
 

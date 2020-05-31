@@ -96,10 +96,10 @@ pub enum Puzzle {
     TutorialRam,
     FabricateStack,
     FabricateQueue,
+    AutomateCryocycler,
     AutomateInjector,
     AutomateCollector,
     AutomateTranslator,
-    AutomateStorageDepot,
     // Orpheus:
     TutorialClock,
     FabricateEggTimer,
@@ -111,6 +111,7 @@ pub enum Puzzle {
     CommandShields,
     // Lorelei:
     AutomateGeigerCounter,
+    AutomateStorageDepot,
     AutomateXUnit,
     // Sandboxes:
     SandboxBehavior,
@@ -186,6 +187,16 @@ impl Puzzle {
                 kind: PuzzleKind::Automate,
                 allow_events: true,
                 init_size: (8, 6),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 500),
+                description: "TODO",
+                instructions: "TODO",
+            },
+            Puzzle::AutomateCryocycler => &PuzzleData {
+                title: "Cryocycler",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (9, 5),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
                 description: "TODO",

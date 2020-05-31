@@ -4,6 +4,32 @@ use tachy::save::SolutionData;
 use tachy::state::verify_solution;
 
 #[test]
+fn cryocycler_already_thawed() {
+    let actual = test_failure("cryocycler_already_thawed");
+    let expected =
+        vec!["Time step 36: Pod number 26 has already been thawed."];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn cryocycler_invalid_pod() {
+    let actual = test_failure("cryocycler_invalid_pod");
+    let expected =
+        vec!["Time step 0: Invalid pod number: 100 is not in the range 1-96."];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn cryocycler_unready_pod() {
+    let actual = test_failure("cryocycler_unready_pod");
+    let expected = vec![
+        "Time step 1: Pod number 1 is not ready this time step (the ready \
+         pods are 22 and 30).",
+    ];
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn fab_behavior_wrong() {
     let actual = test_failure("fab_behavior_wrong");
     let expected =

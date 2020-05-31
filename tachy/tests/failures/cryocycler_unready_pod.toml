@@ -1,0 +1,12 @@
+puzzle = "AutomateCryocycler"
+score = 0
+time_steps = 200
+
+[circuit]
+size = [1, 2]
+
+[circuit.chips]
+p0p1 = "f0-Const(1)"
+
+[circuit.wires]
+p0p1e = "Stub"

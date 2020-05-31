@@ -86,6 +86,10 @@ impl VerificationTray {
                 // TODO: Make a verification view for AutomateCollector
                 self::shared::NullVerifyView::new()
             }
+            Puzzle::AutomateCryocycler => {
+                // TODO: Make a verification view for AutomateCryocycler
+                self::shared::NullVerifyView::new()
+            }
             Puzzle::AutomateDrillingRig => {
                 // TODO: Make a verification view for AutomateDrillingRig
                 self::shared::NullVerifyView::new()

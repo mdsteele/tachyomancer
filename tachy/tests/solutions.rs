@@ -9,6 +9,11 @@ fn automate_collector() {
 }
 
 #[test]
+fn automate_cryocycler() {
+    test_solution("automate_cryocycler");
+}
+
+#[test]
 fn automate_drilling_rig() {
     test_solution("automate_drilling_rig");
 }

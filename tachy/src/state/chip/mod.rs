@@ -143,6 +143,9 @@ impl ChipExt for ChipType {
             ChipType::Inc => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateInc)
             }
+            ChipType::Latch => {
+                ChipAvailability::UnlockedBy(Puzzle::FabricateLatch)
+            }
             ChipType::Counter => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateCounter)
             }
@@ -280,6 +283,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Halve => self::arith::HALVE_CHIP_DATA,
         ChipType::Inc => self::arith::INC_CHIP_DATA,
         ChipType::Join => self::value::JOIN_CHIP_DATA,
+        ChipType::Latch => self::memory::LATCH_CHIP_DATA,
         ChipType::Latest => self::memory::LATEST_CHIP_DATA,
         ChipType::Mul => self::arith::MUL_CHIP_DATA,
         ChipType::Mul4Bit => self::arith::MUL_4BIT_CHIP_DATA,
@@ -340,6 +344,7 @@ pub(super) fn new_chip_evals(
         ChipType::Halve => self::arith::HalveChipEval::new_evals(slots),
         ChipType::Inc => self::arith::IncChipEval::new_evals(slots),
         ChipType::Join => self::value::JoinChipEval::new_evals(slots),
+        ChipType::Latch => self::memory::LatchChipEval::new_evals(slots),
         ChipType::Latest => self::memory::LatestChipEval::new_evals(slots),
         ChipType::Mul => self::arith::MulChipEval::new_evals(slots),
         ChipType::Mul4Bit => self::arith::Mul4BitChipEval::new_evals(slots),

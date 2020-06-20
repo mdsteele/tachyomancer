@@ -86,6 +86,7 @@ pub enum Puzzle {
     TutorialAmp,
     TutorialSum,
     FabricateInc,
+    FabricateLatch,
     FabricateCounter,
     AutomateMiningRobot,
     AutomateFuelSynthesis,
@@ -564,6 +565,25 @@ impl Puzzle {
                      * $!When an input event arrives, the circuit should \
                      add the input behavior value to the event value, \
                      and emit an output event with the sum.",
+            },
+            Puzzle::FabricateLatch => &PuzzleData {
+                title: "Latch",
+                kind: PuzzleKind::Fabricate,
+                allow_events: true,
+                init_size: (5, 5),
+                score_units: ScoreUnits::WireLength,
+                graph_bounds: (100, 100),
+                description:
+                    "Build a memory chip that can flip-flop between two \
+                     states.\n\n\
+                     Once this task is completed, you will be able to use \
+                     $*Latch$* chips in future tasks.",
+                instructions: "* $!The output should start at 0.\n\
+                     * $!When a $*Set$* event arrives, the output should be \
+                     set to 1.  When a $*Rst$* event arrives, the output \
+                     should be reset back to 0.\n\
+                     * $!If a $*Set$* and $*Rst$* event arrive \
+                     simultaneously, the current output should be toggled.",
             },
             Puzzle::FabricateMul => &PuzzleData {
                 title: "Multiplier",

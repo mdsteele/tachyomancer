@@ -1,0 +1,32 @@
+puzzle = "FabricateLatch"
+score = 34
+time_steps = 10
+
+[circuit]
+size = [6, 3]
+
+[circuit.chips]
+p0p1 = "f0-Demux"
+p1p1 = "f0-Sample"
+p1p2 = "f3-Const(1)"
+p2p1 = "f0-Join"
+p2p2 = "f3-Sample"
+p3p1 = "f0-Delay"
+p4p1 = "f0-Latest"
+
+[circuit.wires]
+m1p1e = "Stub"
+p0p0e = "TurnLeft"
+p0p1e = "Stub"
+p1p0e = "Straight"
+p1p1e = "Stub"
+p1p1s = "Stub"
+p2p0e = "Straight"
+p2p1e = "Stub"
+p2p1s = "Stub"
+p2p2s = "Stub"
+p3p0e = "Straight"
+p3p1e = "Stub"
+p4p0e = "Straight"
+p5p0s = "TurnLeft"
+p5p1n = "SplitTee"

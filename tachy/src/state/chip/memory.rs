@@ -84,6 +84,59 @@ impl ChipEval for CounterChipEval {
 
 //===========================================================================//
 
+pub const LATCH_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::Zero),
+        AbstractConstraint::Exact(1, WireSize::Zero),
+        AbstractConstraint::Exact(2, WireSize::One),
+    ],
+    dependencies: &[(0, 2), (1, 2)],
+};
+
+pub struct LatchChipEval {
+    set: usize,
+    reset: usize,
+    output: usize,
+    state: u32,
+}
+
+impl LatchChipEval {
+    pub fn new_evals(
+        slots: &[(usize, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), LATCH_CHIP_DATA.ports.len());
+        let chip_eval = LatchChipEval {
+            set: slots[0].0,
+            reset: slots[1].0,
+            output: slots[2].0,
+            state: 0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for LatchChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let set = state.has_event(self.set);
+        let reset = state.has_event(self.reset);
+        if set && reset {
+            self.state = 1 & !self.state;
+        } else if set {
+            self.state = 1;
+        } else if reset {
+            self.state = 0;
+        }
+        state.send_behavior(self.output, self.state);
+    }
+}
+
+//===========================================================================//
+
 pub const LATEST_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),

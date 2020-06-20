@@ -62,7 +62,9 @@ pub use self::fab_arith::{
 pub use self::fab_clock::{
     FABRICATE_EGG_TIMER_DATA, FABRICATE_STOPWATCH_DATA,
 };
-pub use self::fab_event::{FABRICATE_COUNTER_DATA, FABRICATE_INC_DATA};
+pub use self::fab_event::{
+    FABRICATE_COUNTER_DATA, FABRICATE_INC_DATA, FABRICATE_LATCH_DATA,
+};
 pub use self::fab_memory::{FABRICATE_QUEUE_DATA, FABRICATE_STACK_DATA};
 pub use self::fuel::FuelEval;
 pub use self::geiger::GeigerEval;
@@ -146,9 +148,9 @@ impl PuzzleExt for Puzzle {
             Puzzle::TutorialAmp
             | Puzzle::TutorialDemux
             | Puzzle::TutorialSum => &[Conversation::AdvancedCircuits],
-            Puzzle::FabricateInc | Puzzle::FabricateCounter => {
-                &[Conversation::AdditionalChips]
-            }
+            Puzzle::FabricateInc
+            | Puzzle::FabricateLatch
+            | Puzzle::FabricateCounter => &[Conversation::AdditionalChips],
             Puzzle::TutorialClock => &[Conversation::KeepingTime],
             Puzzle::TutorialRam => &[Conversation::Memory],
             _ => &[], // TODO: origin_conversations for other puzzles
@@ -196,6 +198,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::FabricateEggTimer => self::fab_clock::EGG_TIMER_INTERFACES,
             Puzzle::FabricateHalve => self::fab_arith::HALVE_INTERFACES,
             Puzzle::FabricateInc => self::fab_event::INC_INTERFACES,
+            Puzzle::FabricateLatch => self::fab_event::LATCH_INTERFACES,
             Puzzle::FabricateMul => self::fab_arith::MUL_INTERFACES,
             Puzzle::FabricateQueue => self::fab_memory::QUEUE_INTERFACES,
             Puzzle::FabricateStack => self::fab_memory::STACK_INTERFACES,
@@ -319,6 +322,9 @@ pub(super) fn new_puzzle_eval(
         }
         Puzzle::FabricateInc => {
             Box::new(FabricationEval::new(FABRICATE_INC_DATA, slots))
+        }
+        Puzzle::FabricateLatch => {
+            Box::new(FabricationEval::new(FABRICATE_LATCH_DATA, slots))
         }
         Puzzle::FabricateMul => {
             Box::new(FabricationEval::new(FABRICATE_MUL_DATA, slots))

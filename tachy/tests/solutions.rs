@@ -164,6 +164,11 @@ fn fabricate_inc() {
 }
 
 #[test]
+fn fabricate_latch() {
+    test_solution("fabricate_latch");
+}
+
+#[test]
 fn fabricate_mul() {
     test_solution("fabricate_mul");
 }

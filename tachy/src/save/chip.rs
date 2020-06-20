@@ -55,6 +55,7 @@ pub enum ChipType {
     Halve,
     Inc,
     Join,
+    Latch,
     Latest,
     Mul,
     Mul4Bit,
@@ -113,6 +114,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
     ]),
     ("Memory", &[
         ChipType::Latest,
+        ChipType::Latch,
         ChipType::Counter,
         ChipType::Ram,
         ChipType::Stack,
@@ -304,6 +306,7 @@ impl ChipType {
                  the antipodal input port is sent on, and the event from the \
                  lateral input port is ignored."
             }
+            ChipType::Latch => "TODO",
             ChipType::Latest => {
                 "Outputs the value of the most recent event to arrive (or \
                  zero if no events have arrived yet).\n\
@@ -559,6 +562,7 @@ impl str::FromStr for ChipType {
             "Halve" => Ok(ChipType::Halve),
             "Inc" => Ok(ChipType::Inc),
             "Join" => Ok(ChipType::Join),
+            "Latch" => Ok(ChipType::Latch),
             "Latest" => Ok(ChipType::Latest),
             "Mul" => Ok(ChipType::Mul),
             "Mul4Bit" => Ok(ChipType::Mul4Bit),

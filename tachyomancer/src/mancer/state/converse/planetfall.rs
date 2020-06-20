@@ -261,6 +261,7 @@ pub(super) fn additional_chips(
         case you choose to do that.");
     builder.puzzles(profile, &[
         Puzzle::FabricateInc,
+        Puzzle::FabricateLatch,
         Puzzle::FabricateCounter,
     ])?;
     builder.esra("\

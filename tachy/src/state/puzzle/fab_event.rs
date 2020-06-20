@@ -180,3 +180,68 @@ const INC_EXPECTED_TABLE_VALUES: &[u32] = &[
 ];
 
 //===========================================================================//
+
+pub const FABRICATE_LATCH_DATA: &FabricationData = &FabricationData {
+    interfaces: LATCH_INTERFACES,
+    expected_table_values: LATCH_EXPECTED_TABLE_VALUES,
+};
+
+pub(super) const LATCH_INTERFACES: &[Interface] = &[
+    Interface {
+        name: "Set",
+        description:
+            "When an event arrives here, the output should be set to 1.",
+        side: Direction::West,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Set",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Zero,
+        }],
+    },
+    Interface {
+        name: "Rst",
+        description:
+            "When an event arrives here, the output should be reset to 0.",
+        side: Direction::South,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Rst",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Zero,
+        }],
+    },
+    Interface {
+        name: "Out",
+        description: "Should be set to the current output (initially zero).",
+        side: Direction::East,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Behavior,
+            size: WireSize::One,
+        }],
+    },
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const LATCH_EXPECTED_TABLE_VALUES: &[u32] = &[
+    NIL, NIL, 0,
+      0, NIL, 1,
+    NIL,   0, 0,
+    NIL,   0, 0,
+      0, NIL, 1,
+      0, NIL, 1,
+    NIL, NIL, 1,
+      0,   0, 0,
+    NIL, NIL, 0,
+      0,   0, 1,
+];
+
+//===========================================================================//

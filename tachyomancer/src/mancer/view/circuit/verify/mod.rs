@@ -46,11 +46,11 @@ use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
 use tachy::save::Puzzle;
 use tachy::state::{
     CircuitEval, FABRICATE_COUNTER_DATA, FABRICATE_EGG_TIMER_DATA,
-    FABRICATE_HALVE_DATA, FABRICATE_INC_DATA, FABRICATE_MUL_DATA,
-    FABRICATE_QUEUE_DATA, FABRICATE_STACK_DATA, FABRICATE_STOPWATCH_DATA,
-    FABRICATE_XOR_DATA, TUTORIAL_ADD_DATA, TUTORIAL_AMP_DATA,
-    TUTORIAL_CLOCK_DATA, TUTORIAL_DEMUX_DATA, TUTORIAL_MUX_DATA,
-    TUTORIAL_OR_DATA, TUTORIAL_RAM_DATA, TUTORIAL_SUM_DATA,
+    FABRICATE_HALVE_DATA, FABRICATE_INC_DATA, FABRICATE_LATCH_DATA,
+    FABRICATE_MUL_DATA, FABRICATE_QUEUE_DATA, FABRICATE_STACK_DATA,
+    FABRICATE_STOPWATCH_DATA, FABRICATE_XOR_DATA, TUTORIAL_ADD_DATA,
+    TUTORIAL_AMP_DATA, TUTORIAL_CLOCK_DATA, TUTORIAL_DEMUX_DATA,
+    TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA, TUTORIAL_RAM_DATA, TUTORIAL_SUM_DATA,
 };
 
 //===========================================================================//
@@ -169,6 +169,9 @@ impl VerificationTray {
             }
             Puzzle::FabricateInc => {
                 FabricationVerifyView::new(right_bottom, FABRICATE_INC_DATA)
+            }
+            Puzzle::FabricateLatch => {
+                FabricationVerifyView::new(right_bottom, FABRICATE_LATCH_DATA)
             }
             Puzzle::FabricateMul => {
                 FabricationVerifyView::new(right_bottom, FABRICATE_MUL_DATA)

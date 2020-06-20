@@ -26,6 +26,7 @@ mod lander;
 mod mining;
 mod reactor;
 mod robotarm;
+mod sapper;
 mod sensors;
 mod shared;
 mod shields;
@@ -145,6 +146,9 @@ impl VerificationTray {
             }
             Puzzle::CommandLander => {
                 self::lander::LanderVerifyView::new(right_bottom)
+            }
+            Puzzle::CommandSapper => {
+                self::sapper::SapperVerifyView::new(right_bottom)
             }
             Puzzle::CommandShields => {
                 self::shields::ShieldsVerifyView::new(right_bottom)

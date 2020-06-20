@@ -38,6 +38,7 @@ mod resonator;
 mod rng;
 mod robotarm;
 mod sandbox;
+mod sapper;
 mod sensors;
 mod shared;
 mod shields;
@@ -74,6 +75,7 @@ pub use self::mining::MiningRobotEval;
 pub use self::reactor::ReactorEval;
 pub use self::resonator::ResonatorEval;
 pub use self::robotarm::RobotArmEval;
+pub use self::sapper::SapperEval;
 pub use self::sensors::SensorsEval;
 pub use self::shared::{
     FabricationData, FabricationEval, TutorialBubblePosition,
@@ -187,6 +189,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateTranslator => self::translator::INTERFACES,
             Puzzle::AutomateXUnit => self::xunit::INTERFACES,
             Puzzle::CommandLander => self::lander::INTERFACES,
+            Puzzle::CommandSapper => self::sapper::INTERFACES,
             Puzzle::CommandShields => self::shields::INTERFACES,
             Puzzle::CommandTurret => self::turret::INTERFACES,
             Puzzle::FabricateCounter => self::fab_event::COUNTER_INTERFACES,
@@ -302,6 +305,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateTranslator => Box::new(TranslatorEval::new(slots)),
         Puzzle::AutomateXUnit => Box::new(XUnitEval::new(slots)),
         Puzzle::CommandLander => Box::new(LanderEval::new(slots)),
+        Puzzle::CommandSapper => Box::new(SapperEval::new(slots)),
         Puzzle::CommandShields => Box::new(ShieldsEval::new(slots)),
         Puzzle::CommandTurret => Box::new(TurretEval::new(slots)),
         Puzzle::FabricateCounter => {

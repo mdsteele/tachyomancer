@@ -134,6 +134,11 @@ fn command_lander_manual() {
 }
 
 #[test]
+fn command_sapper_manual() {
+    test_solution("command_sapper_manual");
+}
+
+#[test]
 fn command_shields_manual() {
     test_solution("command_shields_manual");
 }

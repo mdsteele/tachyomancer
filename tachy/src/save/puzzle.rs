@@ -100,6 +100,7 @@ pub enum Puzzle {
     AutomateInjector,
     AutomateCollector,
     AutomateTranslator,
+    CommandSapper,
     // Orpheus:
     TutorialClock,
     FabricateEggTimer,
@@ -461,6 +462,19 @@ impl Puzzle {
                 description:
                     "Operate the lander thrusters during descent for a soft \
                      landing.",
+                instructions: "TODO",
+            },
+            Puzzle::CommandSapper => &PuzzleData {
+                title: "Sapper Drone",
+                kind: PuzzleKind::Command,
+                allow_events: true,
+                init_size: (9, 7),
+                score_units: ScoreUnits::ManualInputs,
+                graph_bounds: (500, 500),
+                description:
+                    "Pilot a remote drone through the minefield to each of \
+                     the control satellites to enable the mines' cloaking \
+                     devices.",
                 instructions: "TODO",
             },
             Puzzle::CommandShields => &PuzzleData {

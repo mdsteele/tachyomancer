@@ -256,7 +256,7 @@ impl PuzzleEval for RobotArmEval {
                 } else {
                     MotorMovement::TurningCw(TIME_PER_TURN)
                 };
-            } else if state.recv_event(self.manip_wire).is_some() {
+            } else if state.has_event(self.manip_wire) {
                 // TODO: Don't fail for incorrect manipulation until the arm hs
                 //   extended.
                 if self.current_position != self.last_command {

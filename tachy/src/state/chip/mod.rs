@@ -137,11 +137,11 @@ impl ChipExt for ChipType {
             ChipType::Discard | ChipType::Latest | ChipType::Sample => {
                 ChipAvailability::StartingWith(Puzzle::TutorialAmp)
             }
-            ChipType::Coerce(_) | ChipType::Delay | ChipType::Join => {
-                ChipAvailability::StartingWith(Puzzle::TutorialSum)
-            }
             ChipType::Inc => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateInc)
+            }
+            ChipType::Coerce(_) | ChipType::Delay | ChipType::Join => {
+                ChipAvailability::StartingWith(Puzzle::TutorialSum)
             }
             ChipType::Latch => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateLatch)

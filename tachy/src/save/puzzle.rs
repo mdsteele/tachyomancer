@@ -84,8 +84,8 @@ pub enum Puzzle {
     // Planetfall:
     TutorialDemux,
     TutorialAmp,
-    TutorialSum,
     FabricateInc,
+    TutorialSum,
     FabricateLatch,
     FabricateCounter,
     AutomateMiningRobot,

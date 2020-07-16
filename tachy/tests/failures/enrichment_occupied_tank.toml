@@ -1,0 +1,34 @@
+puzzle = "AutomateEnrichment"
+score = 0
+time_steps = 100
+
+[circuit]
+size = [5, 4]
+
+[circuit.chips]
+p0p1 = "f1-Discard"
+p0p2 = "f1-Clock"
+p1p1 = "f0-Const(13)"
+p1p2 = "f0-Const(11)"
+p1p3 = "t0-Latch"
+p2p0 = "f1-Const(11)"
+p2p1 = "t0-Mux"
+p3p0 = "f1-Const(10)"
+p3p2 = "t0-Mux"
+
+[circuit.wires]
+p0p0s = "TurnLeft"
+p0p1s = "Stub"
+p0p3n = "TurnLeft"
+p1p1e = "Stub"
+p2p0s = "Stub"
+p2p2e = "Straight"
+p2p2s = "Straight"
+p2p3n = "SplitTee"
+p3p1e = "Straight"
+p3p1s = "Straight"
+p3p3w = "TurnLeft"
+p4p0e = "TurnLeft"
+p4p1e = "TurnLeft"
+p4p1w = "TurnLeft"
+p4p2w = "TurnLeft"

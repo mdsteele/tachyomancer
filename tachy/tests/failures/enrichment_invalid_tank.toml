@@ -1,0 +1,15 @@
+puzzle = "AutomateEnrichment"
+score = 0
+time_steps = 100
+
+[circuit]
+size = [2, 3]
+
+[circuit.chips]
+p0p1 = "f1-Discard"
+p0p2 = "f1-Sample"
+
+[circuit.wires]
+p0p0s = "TurnLeft"
+p0p1s = "Stub"
+p0p2s = "Stub"

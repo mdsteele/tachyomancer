@@ -19,6 +19,11 @@ fn automate_drilling_rig() {
 }
 
 #[test]
+fn automate_enrichment() {
+    test_solution("automate_enrichment");
+}
+
+#[test]
 fn automate_fuel_synth() {
     test_solution("automate_fuel_synth");
 }

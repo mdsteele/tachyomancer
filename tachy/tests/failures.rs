@@ -30,6 +30,21 @@ fn cryocycler_unready_pod() {
 }
 
 #[test]
+fn enrichment_invalid_tank() {
+    let actual = test_failure("enrichment_invalid_tank");
+    let expected = vec!["Time step 0: 0 is not a valid tank number."];
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn enrichment_occupied_tank() {
+    let actual = test_failure("enrichment_occupied_tank");
+    let expected =
+        vec!["Time step 1: Cannot transfer material to occupied tank #10"];
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn fab_behavior_wrong() {
     let actual = test_failure("fab_behavior_wrong");
     let expected =

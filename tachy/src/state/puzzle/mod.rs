@@ -21,6 +21,7 @@ mod beacon;
 mod collector;
 mod cryocycler;
 mod drill;
+mod enrichment;
 mod fab_arith;
 mod fab_clock;
 mod fab_event;
@@ -56,6 +57,7 @@ pub use self::beacon::BeaconEval;
 pub use self::collector::CollectorEval;
 pub use self::cryocycler::CryocyclerEval;
 pub use self::drill::DrillingRigEval;
+pub use self::enrichment::EnrichmentEval;
 pub use self::fab_arith::{
     FABRICATE_HALVE_DATA, FABRICATE_MUL_DATA, FABRICATE_XOR_DATA,
 };
@@ -175,6 +177,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateCollector => self::collector::INTERFACES,
             Puzzle::AutomateCryocycler => self::cryocycler::INTERFACES,
             Puzzle::AutomateDrillingRig => self::drill::INTERFACES,
+            Puzzle::AutomateEnrichment => self::enrichment::INTERFACES,
             Puzzle::AutomateFuelSynthesis => self::fuel::INTERFACES,
             Puzzle::AutomateGeigerCounter => self::geiger::INTERFACES,
             Puzzle::AutomateGrapple => self::grapple::INTERFACES,
@@ -288,6 +291,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateCollector => Box::new(CollectorEval::new(slots)),
         Puzzle::AutomateCryocycler => Box::new(CryocyclerEval::new(slots)),
         Puzzle::AutomateDrillingRig => Box::new(DrillingRigEval::new(slots)),
+        Puzzle::AutomateEnrichment => Box::new(EnrichmentEval::new(slots)),
         Puzzle::AutomateFuelSynthesis => Box::new(FuelEval::new(slots)),
         Puzzle::AutomateGeigerCounter => Box::new(GeigerEval::new(slots)),
         Puzzle::AutomateGrapple => Box::new(GrappleEval::new(slots)),

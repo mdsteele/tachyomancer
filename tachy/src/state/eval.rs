@@ -396,6 +396,7 @@ impl CircuitState {
         ));
     }
 
+    #[must_use = "Did you forget to push the EvalError into the errors Vec?"]
     pub fn fatal_error(&self, message: String) -> EvalError {
         EvalError {
             time_step: self.time_step,
@@ -405,6 +406,7 @@ impl CircuitState {
         }
     }
 
+    #[must_use = "Did you forget to push the EvalError into the errors Vec?"]
     pub fn port_error(
         &self,
         port: (Coords, Direction),
@@ -418,6 +420,7 @@ impl CircuitState {
         }
     }
 
+    #[must_use = "Did you forget to push the EvalError into the errors Vec?"]
     pub fn fatal_port_error(
         &self,
         port: (Coords, Direction),

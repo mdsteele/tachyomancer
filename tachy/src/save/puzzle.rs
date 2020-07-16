@@ -114,6 +114,7 @@ pub enum Puzzle {
     // Lorelei:
     AutomateGeigerCounter,
     AutomateStorageDepot,
+    AutomateEnrichment,
     AutomateXUnit,
     // Sandboxes:
     SandboxBehavior,
@@ -216,6 +217,30 @@ impl Puzzle {
                      drill head.",
                 instructions: "TODO",
             },
+            Puzzle::AutomateEnrichment => &PuzzleData {
+                title: "U-235 Enrichment",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (10, 7),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 300),
+                description:
+                    "Transfer fissile material between cascade centrifuges \
+                     via intermediate storage tanks.",
+                instructions:
+                    "* $!The centrifuge tanks are connected by intermediate \
+                     storage tanks in a tree configuration.\n\
+                     * $!Each tank has a unique ID from 1 to 15.  Use the \
+                     catalog interface to determine the connections between \
+                     tanks.\n\
+                     * $!Use the valve interface to transfer material \
+                     between two connected tanks.  Each transfer takes one \
+                     time step to complete.\n\
+                     * $!The control interface will indicate when material is \
+                     ready to be moved out of a centrifuge; use a series of \
+                     transfers through intermediate tanks to bring it to its \
+                     destination.",
+            },
             Puzzle::AutomateFuelSynthesis => &PuzzleData {
                 title: "Fuel Synthesis",
                 kind: PuzzleKind::Automate,
@@ -242,7 +267,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (10, 9),
                 score_units: ScoreUnits::Cycles,
-                graph_bounds: (400, 5000),
+                graph_bounds: (500, 5000),
                 description:
                     "Calculate the number of radiation particles detected \
                      over a sliding window of time.",
@@ -437,7 +462,7 @@ impl Puzzle {
                 allow_events: true,
                 init_size: (12, 9),
                 score_units: ScoreUnits::Time,
-                graph_bounds: (300, 300),
+                graph_bounds: (500, 300),
                 description:
                     "Ensure that all the implosion charges surrounding the \
                      fissile core detonate simultaneously.",

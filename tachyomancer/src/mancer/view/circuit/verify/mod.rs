@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 mod beacon;
+mod enrichment;
 mod fuel;
 mod grapple;
 mod heliostat;
@@ -94,6 +95,9 @@ impl VerificationTray {
             Puzzle::AutomateDrillingRig => {
                 // TODO: Make a verification view for AutomateDrillingRig
                 self::shared::NullVerifyView::new()
+            }
+            Puzzle::AutomateEnrichment => {
+                self::enrichment::EnrichmentVerifyView::new(right_bottom)
             }
             Puzzle::AutomateFuelSynthesis => {
                 self::fuel::FuelVerifyView::new(right_bottom)

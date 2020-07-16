@@ -215,9 +215,11 @@ impl QueueChipEval {
 
 impl ChipEval for QueueChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
+        let max_len = WireSize::Eight.mask() as usize;
+        debug_assert!(self.queue.len() <= max_len);
         let pop = state.has_event(self.pop);
         if let Some(value) = state.recv_event(self.push) {
-            if pop || self.queue.len() < 256 {
+            if pop || self.queue.len() < max_len {
                 self.queue.push_back(value);
             }
         }
@@ -226,7 +228,7 @@ impl ChipEval for QueueChipEval {
                 state.send_event(self.out, value);
             }
         }
-        debug_assert!(self.queue.len() <= (WireSize::Eight.mask() as usize));
+        debug_assert!(self.queue.len() <= max_len);
         state.send_behavior(self.count, self.queue.len() as u32);
     }
 }
@@ -489,9 +491,11 @@ impl StackChipEval {
 
 impl ChipEval for StackChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
+        let max_len = WireSize::Eight.mask() as usize;
+        debug_assert!(self.stack.len() <= max_len);
         let pop = state.has_event(self.pop);
         if let Some(value) = state.recv_event(self.push) {
-            if pop || self.stack.len() < 256 {
+            if pop || self.stack.len() < max_len {
                 self.stack.push(value);
             }
         }
@@ -500,7 +504,7 @@ impl ChipEval for StackChipEval {
                 state.send_event(self.out, value);
             }
         }
-        debug_assert!(self.stack.len() <= (WireSize::Eight.mask() as usize));
+        debug_assert!(self.stack.len() <= max_len);
         state.send_behavior(self.count, self.stack.len() as u32);
     }
 }

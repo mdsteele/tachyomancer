@@ -116,6 +116,7 @@ pub enum Puzzle {
     AutomateStorageDepot,
     AutomateEnrichment,
     AutomateXUnit,
+    AutomateGuidance,
     // Sandboxes:
     SandboxBehavior,
     SandboxEvent,
@@ -283,6 +284,18 @@ impl Puzzle {
                 description:
                     "Regulate the discharge of the grapple launcher's \
                      magnetic coils.",
+                instructions: "TODO",
+            },
+            Puzzle::AutomateGuidance => &PuzzleData {
+                title: "Guidance System",
+                kind: PuzzleKind::Automate,
+                allow_events: true,
+                init_size: (5, 9),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (500, 300),
+                description:
+                    "Navigate the guided thermonuclear torpedo around enemy \
+                     fighters in order to strike the mothership.",
                 instructions: "TODO",
             },
             Puzzle::AutomateHeliostat => &PuzzleData {

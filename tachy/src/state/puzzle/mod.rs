@@ -29,6 +29,7 @@ mod fab_memory;
 mod fuel;
 mod geiger;
 mod grapple;
+mod guidance;
 mod heliostat;
 mod incubator;
 mod injector;
@@ -71,6 +72,7 @@ pub use self::fab_memory::{FABRICATE_QUEUE_DATA, FABRICATE_STACK_DATA};
 pub use self::fuel::FuelEval;
 pub use self::geiger::GeigerEval;
 pub use self::grapple::GrappleEval;
+pub use self::guidance::GuidanceEval;
 pub use self::heliostat::HeliostatEval;
 pub use self::incubator::IncubatorEval;
 pub use self::injector::InjectorEval;
@@ -181,6 +183,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::AutomateFuelSynthesis => self::fuel::INTERFACES,
             Puzzle::AutomateGeigerCounter => self::geiger::INTERFACES,
             Puzzle::AutomateGrapple => self::grapple::INTERFACES,
+            Puzzle::AutomateGuidance => self::guidance::INTERFACES,
             Puzzle::AutomateHeliostat => self::heliostat::INTERFACES,
             Puzzle::AutomateIncubator => self::incubator::INTERFACES,
             Puzzle::AutomateInjector => self::injector::INTERFACES,
@@ -295,6 +298,7 @@ pub(super) fn new_puzzle_eval(
         Puzzle::AutomateFuelSynthesis => Box::new(FuelEval::new(slots)),
         Puzzle::AutomateGeigerCounter => Box::new(GeigerEval::new(slots)),
         Puzzle::AutomateGrapple => Box::new(GrappleEval::new(slots)),
+        Puzzle::AutomateGuidance => Box::new(GuidanceEval::new(slots)),
         Puzzle::AutomateHeliostat => Box::new(HeliostatEval::new(slots)),
         Puzzle::AutomateIncubator => Box::new(IncubatorEval::new(slots)),
         Puzzle::AutomateInjector => Box::new(InjectorEval::new(slots)),

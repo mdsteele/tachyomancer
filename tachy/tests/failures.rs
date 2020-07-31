@@ -99,6 +99,14 @@ fn fuel_synth_tank_2_overflow() {
 }
 
 #[test]
+fn guidance_shot_down() {
+    let actual = test_failure("guidance_shot_down");
+    let expected =
+        vec!["Time step 17: Torpdeo was shot down by enemy fighter."];
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn infinite_loop() {
     let actual = test_failure("infinite_loop");
     let expected = vec!["Time step 0: Exceeded 1000 cycles."];

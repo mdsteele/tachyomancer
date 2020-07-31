@@ -21,6 +21,7 @@ mod beacon;
 mod enrichment;
 mod fuel;
 mod grapple;
+mod guidance;
 mod heliostat;
 mod injector;
 mod lander;
@@ -108,6 +109,9 @@ impl VerificationTray {
             }
             Puzzle::AutomateGrapple => {
                 self::grapple::GrappleVerifyView::new(right_bottom)
+            }
+            Puzzle::AutomateGuidance => {
+                self::guidance::GuidanceVerifyView::new(right_bottom)
             }
             Puzzle::AutomateHeliostat => {
                 self::heliostat::HeliostatVerifyView::new(right_bottom)

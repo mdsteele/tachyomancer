@@ -1,0 +1,10 @@
+puzzle = "AutomateGuidance"
+score = 0
+time_steps = 200
+
+[circuit]
+size = [3, 1]
+
+[circuit.chips]
+
+[circuit.wires]

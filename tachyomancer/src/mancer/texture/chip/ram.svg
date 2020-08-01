@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="64" height="64">
+  <!-- Array: -->
+  <path d="M 38,31.5 V 6 H 26 V 19.5 M 26,26.5 V 58 H 38 V 38.5"
+        fill="none" stroke="black" stroke-width="2" stroke-linejoin="round"/>
+  <g fill="black" stroke="black" stroke-width="1">
+    <rect x="28.5" y="9" width="7" height="4"/>
+    <rect x="28.5" y="15" width="7" height="4"/>
+    <rect x="10.5" y="21" width="25" height="4"/>
+    <rect x="28.5" y="27" width="7" height="4"/>
+    <rect x="28.5" y="33" width="25" height="4"/>
+    <rect x="28.5" y="39" width="7" height="4"/>
+    <rect x="28.5" y="45" width="7" height="4"/>
+    <rect x="28.5" y="51" width="7" height="4"/>
+  </g>
+  <!-- Addr-1 arrow: -->
+  <path d="M 0,13 H 4 V 23 H 8"
+        fill="none" stroke="black" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M 9,23 l -2.5,-2.5 v 5 z" fill="black" stroke="none"/>
+  <!-- Set-1 arrow: -->
+  <path d="M 13,2 V 16"
+        fill="none" stroke="black" stroke-width="3" stroke-dasharray="2 1"/>
+  <path d="M 13,19 l 4,-4 h -8 z" fill="black" stroke="none"/>
+  <!-- Value-1 arrow: -->
+  <path d="M 13,27 V 48 a 3 3 0 0 1 -3,3 H 4"
+        fill="none" stroke="black" stroke-width="3"/>
+  <path d="M 2,51 l 4,4 v -8 z" fill="black" stroke="none"/>
+  <!-- Addr-2 arrow: -->
+  <path d="M 64,51 H 60 V 35 H 57"
+        fill="none" stroke="black" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M 55,35 l 2.5,-2.5 v 5 z" fill="black" stroke="none"/>
+  <!-- Set-2 arrow: -->
+  <path d="M 51,62 V 42"
+        fill="none" stroke="black" stroke-width="3" stroke-dasharray="2 1"/>
+  <path d="M 51,39 l 4,4 h -8 z" fill="black" stroke="none"/>
+  <!-- Value-2 arrow: -->
+  <path d="M 51,31 V 16 a 3 3 0 0 1 3,-3 H 60"
+        fill="none" stroke="black" stroke-width="3"/>
+  <path d="M 62,13 l -4,4 v -8 z" fill="black" stroke="none"/>
+</svg>

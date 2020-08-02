@@ -558,13 +558,8 @@ impl TextDialogBox {
 
 //===========================================================================//
 
-const WIRE_SIZES: &[WireSize] = &[
-    WireSize::One,
-    WireSize::Two,
-    WireSize::Four,
-    WireSize::Eight,
-    WireSize::Sixteen,
-];
+const WIRE_SIZES: &[WireSize] =
+    &[WireSize::One, WireSize::Two, WireSize::Four, WireSize::Eight];
 
 pub struct WireSizeDialogBox {
     rect: Rect<i32>,

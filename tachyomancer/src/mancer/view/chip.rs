@@ -582,8 +582,7 @@ fn draw_port(
         WireSize::One => 0.4,
         WireSize::Two => 0.5,
         WireSize::Four => 0.6,
-        WireSize::Eight => 0.75,
-        WireSize::Sixteen => 0.9,
+        WireSize::Eight => 0.8,
     };
     shader.draw(width_scale);
 }

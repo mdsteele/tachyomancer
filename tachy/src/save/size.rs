@@ -29,14 +29,11 @@ pub enum WireSize {
     Two,
     Four,
     Eight,
-    Sixteen,
 }
 
 impl WireSize {
-    pub fn min_for_value(value: u16) -> WireSize {
-        if value > 0xff {
-            WireSize::Sixteen
-        } else if value > 0xf {
+    pub fn min_for_value(value: u8) -> WireSize {
+        if value > 0xf {
             WireSize::Eight
         } else if value > 3 {
             WireSize::Four
@@ -56,7 +53,6 @@ impl WireSize {
             WireSize::Two => WireSize::One,
             WireSize::Four => WireSize::Two,
             WireSize::Eight => WireSize::Four,
-            WireSize::Sixteen => WireSize::Eight,
         }
     }
 
@@ -66,8 +62,7 @@ impl WireSize {
             WireSize::One => Some(WireSize::Two),
             WireSize::Two => Some(WireSize::Four),
             WireSize::Four => Some(WireSize::Eight),
-            WireSize::Eight => Some(WireSize::Sixteen),
-            WireSize::Sixteen => None,
+            WireSize::Eight => None,
         }
     }
 
@@ -78,7 +73,6 @@ impl WireSize {
             WireSize::Two => 2,
             WireSize::Four => 4,
             WireSize::Eight => 8,
-            WireSize::Sixteen => 16,
         }
     }
 
@@ -89,7 +83,6 @@ impl WireSize {
             WireSize::Two => 0x3,
             WireSize::Four => 0xf,
             WireSize::Eight => 0xff,
-            WireSize::Sixteen => 0xffff,
         }
     }
 }
@@ -99,7 +92,7 @@ impl Bounded for WireSize {
         WireSize::Zero
     }
     fn max_value() -> WireSize {
-        WireSize::Sixteen
+        WireSize::Eight
     }
 }
 
@@ -113,13 +106,11 @@ impl str::FromStr for WireSize {
             "2" => Ok(WireSize::Two),
             "4" => Ok(WireSize::Four),
             "8" => Ok(WireSize::Eight),
-            "16" => Ok(WireSize::Sixteen),
             "Zero" => Ok(WireSize::Zero),
             "One" => Ok(WireSize::One),
             "Two" => Ok(WireSize::Two),
             "Four" => Ok(WireSize::Four),
             "Eight" => Ok(WireSize::Eight),
-            "Sixteen" => Ok(WireSize::Sixteen),
             _ => Err(()),
         }
     }
@@ -238,7 +229,7 @@ impl Eq for WireSizeInterval {}
 #[cfg(test)]
 mod tests {
     use super::{WireSize, WireSizeInterval};
-    use std::u16;
+    use std::u8;
 
     const ALL_WIRE_SIZES: &[WireSize] = &[
         WireSize::Zero,
@@ -246,15 +237,14 @@ mod tests {
         WireSize::Two,
         WireSize::Four,
         WireSize::Eight,
-        WireSize::Sixteen,
     ];
 
     #[test]
     fn min_wire_size() {
         for &size in ALL_WIRE_SIZES {
             let mask = size.mask();
-            assert!(mask <= (u16::MAX as u32));
-            assert_eq!(size, WireSize::min_for_value(mask as u16));
+            assert!(mask <= (u8::MAX as u32));
+            assert_eq!(size, WireSize::min_for_value(mask as u8));
         }
     }
 
@@ -277,11 +267,11 @@ mod tests {
         );
         assert_eq!(
             WireSizeInterval::full().half(),
-            WireSizeInterval::new(WireSize::One, WireSize::Eight)
+            WireSizeInterval::new(WireSize::One, WireSize::Four)
         );
         assert_eq!(
-            WireSizeInterval::new(WireSize::Four, WireSize::Sixteen).half(),
-            WireSizeInterval::new(WireSize::Two, WireSize::Eight)
+            WireSizeInterval::new(WireSize::Four, WireSize::Eight).half(),
+            WireSizeInterval::new(WireSize::Two, WireSize::Four)
         );
     }
 
@@ -292,16 +282,16 @@ mod tests {
             WireSizeInterval::empty()
         );
         assert_eq!(
-            WireSizeInterval::exactly(WireSize::Sixteen).double(),
+            WireSizeInterval::exactly(WireSize::Eight).double(),
             WireSizeInterval::empty()
         );
         assert_eq!(
-            WireSizeInterval::new(WireSize::Two, WireSize::Eight).double(),
-            WireSizeInterval::new(WireSize::Four, WireSize::Sixteen)
+            WireSizeInterval::new(WireSize::Two, WireSize::Four).double(),
+            WireSizeInterval::new(WireSize::Four, WireSize::Eight)
         );
         assert_eq!(
-            WireSizeInterval::new(WireSize::One, WireSize::Sixteen).double(),
-            WireSizeInterval::new(WireSize::Two, WireSize::Sixteen)
+            WireSizeInterval::new(WireSize::One, WireSize::Eight).double(),
+            WireSizeInterval::new(WireSize::Two, WireSize::Eight)
         );
     }
 }

@@ -42,7 +42,7 @@ pub enum ChipType {
     CmpEq,
     Coerce(WireSize),
     Comment([u8; MAX_COMMENT_CHARS]),
-    Const(u16),
+    Const(u8),
     Counter,
     Delay,
     Demux,
@@ -794,7 +794,7 @@ mod tests {
     use super::super::hotkey::HotkeyCode;
     use super::super::size::WireSize;
     use super::{ChipSet, ChipType, CHIP_CATEGORIES};
-    use std::u16;
+    use std::u8;
 
     #[test]
     fn chip_type_is_small() {
@@ -810,23 +810,20 @@ mod tests {
             ChipType::Coerce(WireSize::One),
             ChipType::Coerce(WireSize::Two),
             ChipType::Coerce(WireSize::Four),
-            ChipType::Coerce(WireSize::Sixteen),
             ChipType::Comment(*b"Blarg"),
             ChipType::Comment(*b" \x1b\"~ "),
             ChipType::Const(0),
             ChipType::Const(13),
-            ChipType::Const(u16::MAX),
+            ChipType::Const(u8::MAX),
             ChipType::DocBv(WireSize::One, *b"Blarg"),
             ChipType::DocBv(WireSize::Two, *b" \x1b\"~ "),
             ChipType::DocBv(WireSize::Four, *b"Foo  "),
             ChipType::DocBv(WireSize::Eight, *b" Bar "),
-            ChipType::DocBv(WireSize::Sixteen, *b"  Baz"),
             ChipType::DocEv(WireSize::Zero, *b"'\"):@"),
             ChipType::DocEv(WireSize::One, *b"Blarg"),
             ChipType::DocEv(WireSize::Two, *b" \x1b\"~ "),
             ChipType::DocEv(WireSize::Four, *b"Foo  "),
             ChipType::DocEv(WireSize::Eight, *b" Bar "),
-            ChipType::DocEv(WireSize::Sixteen, *b"  Baz"),
             ChipType::Toggle(true),
         ];
         for &(_, ctypes) in CHIP_CATEGORIES.iter() {

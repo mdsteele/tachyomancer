@@ -67,22 +67,12 @@ const COERCE_CHIP_DATA_8: &ChipData = &ChipData {
     dependencies: &[(0, 1)],
 };
 
-const COERCE_CHIP_DATA_16: &ChipData = &ChipData {
-    ports: COERCE_PORTS,
-    constraints: &[
-        AbstractConstraint::Exact(0, WireSize::Sixteen),
-        AbstractConstraint::Exact(1, WireSize::Sixteen),
-    ],
-    dependencies: &[(0, 1)],
-};
-
 pub fn coerce_chip_data(size: WireSize) -> &'static ChipData {
     match size {
         WireSize::Zero | WireSize::One => COERCE_CHIP_DATA_1,
         WireSize::Two => COERCE_CHIP_DATA_2,
         WireSize::Four => COERCE_CHIP_DATA_4,
         WireSize::Eight => COERCE_CHIP_DATA_8,
-        WireSize::Sixteen => COERCE_CHIP_DATA_16,
     }
 }
 
@@ -135,19 +125,12 @@ const CONST_CHIP_DATA_8: &ChipData = &ChipData {
     dependencies: &[],
 };
 
-const CONST_CHIP_DATA_16: &ChipData = &ChipData {
-    ports: CONST_PORTS,
-    constraints: &[AbstractConstraint::AtLeast(0, WireSize::Sixteen)],
-    dependencies: &[],
-};
-
-pub fn const_chip_data(value: u16) -> &'static ChipData {
+pub fn const_chip_data(value: u8) -> &'static ChipData {
     match WireSize::min_for_value(value) {
         WireSize::Zero | WireSize::One => CONST_CHIP_DATA_1,
         WireSize::Two => CONST_CHIP_DATA_2,
         WireSize::Four => CONST_CHIP_DATA_4,
         WireSize::Eight => CONST_CHIP_DATA_8,
-        WireSize::Sixteen => CONST_CHIP_DATA_16,
     }
 }
 
@@ -158,7 +141,7 @@ pub struct ConstChipEval {
 
 impl ConstChipEval {
     pub fn new_evals(
-        value: u16,
+        value: u8,
         slots: &[(usize, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), const_chip_data(value).ports.len());

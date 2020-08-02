@@ -69,7 +69,7 @@ pub enum EditGridAction {
     EditButton(Coords, Option<HotkeyCode>),
     EditCoerce(Coords, WireSize),
     EditComment(Coords, String),
-    EditConst(Coords, u16),
+    EditConst(Coords, u8),
 }
 
 //===========================================================================//

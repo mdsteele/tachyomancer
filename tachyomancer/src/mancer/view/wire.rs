@@ -143,7 +143,6 @@ fn wire_size_index(size: WireSize) -> usize {
         WireSize::Two => 2,
         WireSize::Four => 3,
         WireSize::Eight => 4,
-        WireSize::Sixteen => 5,
     }
 }
 

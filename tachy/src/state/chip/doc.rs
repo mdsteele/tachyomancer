@@ -65,22 +65,12 @@ const DOC_BV_CHIP_DATA_8: &ChipData = &ChipData {
     dependencies: &[],
 };
 
-const DOC_BV_CHIP_DATA_16: &ChipData = &ChipData {
-    ports: DOC_BV_PORTS,
-    constraints: &[
-        AbstractConstraint::Exact(0, WireSize::Sixteen),
-        AbstractConstraint::Exact(1, WireSize::Sixteen),
-    ],
-    dependencies: &[],
-};
-
 pub fn doc_bv_chip_data(size: WireSize) -> &'static ChipData {
     match size {
         WireSize::Zero | WireSize::One => DOC_BV_CHIP_DATA_1,
         WireSize::Two => DOC_BV_CHIP_DATA_2,
         WireSize::Four => DOC_BV_CHIP_DATA_4,
         WireSize::Eight => DOC_BV_CHIP_DATA_8,
-        WireSize::Sixteen => DOC_BV_CHIP_DATA_16,
     }
 }
 
@@ -136,15 +126,6 @@ const DOC_EV_CHIP_DATA_8: &ChipData = &ChipData {
     dependencies: &[],
 };
 
-const DOC_EV_CHIP_DATA_16: &ChipData = &ChipData {
-    ports: DOC_EV_PORTS,
-    constraints: &[
-        AbstractConstraint::Exact(0, WireSize::Sixteen),
-        AbstractConstraint::Exact(1, WireSize::Sixteen),
-    ],
-    dependencies: &[],
-};
-
 pub fn doc_ev_chip_data(size: WireSize) -> &'static ChipData {
     match size {
         WireSize::Zero => DOC_EV_CHIP_DATA_0,
@@ -152,7 +133,6 @@ pub fn doc_ev_chip_data(size: WireSize) -> &'static ChipData {
         WireSize::Two => DOC_EV_CHIP_DATA_2,
         WireSize::Four => DOC_EV_CHIP_DATA_4,
         WireSize::Eight => DOC_EV_CHIP_DATA_8,
-        WireSize::Sixteen => DOC_EV_CHIP_DATA_16,
     }
 }
 

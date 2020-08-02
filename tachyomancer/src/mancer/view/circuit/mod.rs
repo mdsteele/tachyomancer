@@ -49,7 +49,7 @@ use super::tooltip::Tooltip;
 use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui, Window};
 use crate::mancer::save::Prefs;
 use cgmath;
-use std::u16;
+use std::u8;
 use tachy::geom::{Coords, Direction, RectSize};
 use tachy::save::{
     ChipType, HotkeyCode, Puzzle, ScoreCurve, SolutionData, WireSize,
@@ -283,7 +283,7 @@ impl CircuitView {
         if let Some((mut dialog, coords)) = self.edit_const_dialog.take() {
             match dialog.on_event(event, ui, is_valid_const) {
                 Some(DialogAction::Value(text)) => {
-                    if let Ok(new_value) = text.parse::<u16>() {
+                    if let Ok(new_value) = text.parse::<u8>() {
                         change_const_chip_value(ui, grid, coords, new_value);
                     }
                 }
@@ -592,7 +592,7 @@ impl CircuitView {
                     prefs,
                     "Choose new const value:",
                     &value.to_string(),
-                    u16::MAX.to_string().len(),
+                    u8::MAX.to_string().len(),
                 );
                 self.edit_const_dialog = Some((dialog, coords));
                 ui.request_redraw();
@@ -777,7 +777,7 @@ impl CircuitView {
 }
 
 fn is_valid_const(text: &str) -> bool {
-    text.parse::<u16>().is_ok()
+    text.parse::<u8>().is_ok()
 }
 
 fn change_button_chip_hotkey(
@@ -860,7 +860,7 @@ fn change_const_chip_value(
     ui: &mut Ui,
     grid: &mut EditGrid,
     coords: Coords,
-    new_value: u16,
+    new_value: u8,
 ) {
     if let Some((coords, ChipType::Const(old_value), orient)) =
         grid.chip_at(coords)

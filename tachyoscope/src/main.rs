@@ -65,7 +65,9 @@ fn parse_flags() -> Result<StartupFlags, String> {
 
     let host: IpAddr = matches
         .opt_get_default("host", IpAddr::V4(Ipv4Addr::LOCALHOST))
-        .map_err(|err| format!("{:?}", err))?;
+        .map_err(|err| {
+            format!("{:?} for {:?}", err, matches.opt_str("host"))
+        })?;
     let port: u16 = matches
         .opt_get_default("port", 8080)
         .map_err(|err| format!("{:?}", err))?;
@@ -87,6 +89,7 @@ fn make_router() -> Router {
         Arc::new(Box::new(InMemoryScoreDatabase::new()));
     let mut router = Router::new();
     router.get("/", LandingPageHandler { db: db.clone() }, "LandingPage");
+    router.get("/readiness_check", ReadinessHandler {}, "Readiness");
     router.get("/scores", GetScoresHandler { db: db.clone() }, "GetScores");
     router.post(
         "/submit_solution",
@@ -101,6 +104,22 @@ fn internal_error(err: String) -> IronError {
     let msg = format!("{}\n", err);
     let io_err = io::Error::new(io::ErrorKind::Other, err);
     IronError::new(io_err, (status::InternalServerError, msg))
+}
+
+//===========================================================================//
+
+struct GetScoresHandler {
+    db: Arc<Box<dyn ScoreDatabase>>,
+}
+
+impl Handler for GetScoresHandler {
+    fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        debug_log!("Received GetScoresHandler request.");
+        let scores = self.db.load_scores().map_err(internal_error)?;
+        let response = scores.serialize_to_string().map_err(internal_error)?;
+        debug_log!("Sending GetScoresHandler response.");
+        Ok(Response::with((status::Ok, response)))
+    }
 }
 
 //===========================================================================//
@@ -122,17 +141,11 @@ impl Handler for LandingPageHandler {
 
 //===========================================================================//
 
-struct GetScoresHandler {
-    db: Arc<Box<dyn ScoreDatabase>>,
-}
+struct ReadinessHandler {}
 
-impl Handler for GetScoresHandler {
+impl Handler for ReadinessHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        debug_log!("Received GetScoresHandler request.");
-        let scores = self.db.load_scores().map_err(internal_error)?;
-        let response = scores.serialize_to_string().map_err(internal_error)?;
-        debug_log!("Sending GetScoresHandler response.");
-        Ok(Response::with((status::Ok, response)))
+        Ok(Response::with((status::Ok, "ready\n")))
     }
 }
 

@@ -17,67 +17,57 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-extern crate tachy;
+extern crate iron;
+extern crate portpicker;
+extern crate tachyoscope;
+extern crate ureq;
 
-use std::fs;
-use std::path::PathBuf;
-use tachy::save::{CircuitData, Puzzle, PuzzleSet};
-use tachy::state::EditGrid;
+use std::io::Read;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
+//===========================================================================//
+
+const CONNECT_TIMEOUT_MS: u64 = 5000;
+const WRITE_TIMEOUT_MS: u64 = 1000;
+const READ_TIMEOUT_MS: u64 = 1000;
 
 //===========================================================================//
 
 #[test]
-fn chip_not_allowed() {
-    test_malformed_circuit("disallowed_or_gate", Puzzle::TutorialOr);
+fn readiness_check() {
+    let port = portpicker::pick_unused_port().unwrap();
+    let flags = tachyoscope::StartupFlags {
+        addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port),
+    };
+    let _server = Server(tachyoscope::run_server(&flags).unwrap());
+    let response =
+        http_get(&format!("http://localhost:{}/readiness_check", port));
+    assert_eq!(response.status(), 200);
+    let mut payload = String::new();
+    response.into_reader().read_to_string(&mut payload).unwrap();
+    assert_eq!(payload, "ready\n");
 }
 
-#[test]
-fn chip_out_of_bounds() {
-    test_malformed_circuit("chip_out_of_bounds", Puzzle::SandboxEvent);
-}
+// TODO: test submitting a solution and retrieving scores
 
-#[test]
-fn empty_bounds() {
-    test_malformed_circuit("empty_bounds", Puzzle::SandboxEvent);
-}
+//===========================================================================//
 
-#[test]
-fn mismatched_wires() {
-    test_malformed_circuit("mismatched_wires", Puzzle::SandboxEvent);
-}
+struct Server(iron::Listening);
 
-#[test]
-fn overlapping_chips() {
-    test_malformed_circuit("overlapping_chips", Puzzle::SandboxEvent);
-}
-
-#[test]
-fn wires_out_of_bounds() {
-    test_malformed_circuit("wires_out_of_bounds", Puzzle::TutorialOr);
-}
-
-#[test]
-fn wires_underneath_chips() {
-    test_malformed_circuit("wires_underneath_chips", Puzzle::SandboxEvent);
+impl Drop for Server {
+    fn drop(&mut self) {
+        self.0.close().unwrap();
+    }
 }
 
 //===========================================================================//
 
-fn test_malformed_circuit(name: &str, puzzle: Puzzle) {
-    let original_path =
-        PathBuf::from(format!("tests/malformed/{}.original.toml", name));
-    let original_data = CircuitData::load(&original_path).unwrap();
-    let grid = EditGrid::from_circuit_data(
-        puzzle,
-        &PuzzleSet::with_everything_solved(),
-        &original_data,
-    );
-    let actual_repaired_string =
-        grid.to_circuit_data().serialize_to_string().unwrap();
-    let repaired_path =
-        PathBuf::from(format!("tests/malformed/{}.repaired.toml", name));
-    let expected_repaired_string = fs::read_to_string(&repaired_path).unwrap();
-    assert_eq!(actual_repaired_string, expected_repaired_string);
+fn http_get(url: &str) -> ureq::Response {
+    ureq::get(url)
+        .timeout_connect(CONNECT_TIMEOUT_MS)
+        .timeout_write(WRITE_TIMEOUT_MS)
+        .timeout_read(READ_TIMEOUT_MS)
+        .call()
 }
 
 //===========================================================================//

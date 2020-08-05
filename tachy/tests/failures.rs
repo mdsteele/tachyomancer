@@ -1,7 +1,28 @@
+// +--------------------------------------------------------------------------+
+// | Copyright 2018 Matthew D. Steele <mdsteele@alum.mit.edu>                 |
+// |                                                                          |
+// | This file is part of Tachyomancer.                                       |
+// |                                                                          |
+// | Tachyomancer is free software: you can redistribute it and/or modify it  |
+// | under the terms of the GNU General Public License as published by the    |
+// | Free Software Foundation, either version 3 of the License, or (at your   |
+// | option) any later version.                                               |
+// |                                                                          |
+// | Tachyomancer is distributed in the hope that it will be useful, but      |
+// | WITHOUT ANY WARRANTY; without even the implied warranty of               |
+// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU        |
+// | General Public License for details.                                      |
+// |                                                                          |
+// | You should have received a copy of the GNU General Public License along  |
+// | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
+// +--------------------------------------------------------------------------+
+
 extern crate tachy;
 
 use tachy::save::SolutionData;
 use tachy::state::verify_solution;
+
+//===========================================================================//
 
 #[test]
 fn cryocycler_already_thawed() {
@@ -183,8 +204,12 @@ fn x_unit_incomplete_detonation() {
     assert_eq!(actual, expected);
 }
 
+//===========================================================================//
+
 fn test_failure(name: &str) -> Vec<String> {
     let path = format!("tests/failures/{}.toml", name);
     let data = SolutionData::load(&path).unwrap();
     verify_solution(&data)
 }
+
+//===========================================================================//

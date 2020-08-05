@@ -12,3 +12,7 @@ iron = "0.6"
 router = "0.6"
 sha = "1"
 tachy = { path = "../tachy" }
+
+[dev-dependencies]
+portpicker = "0.1"
+ureq = "1"

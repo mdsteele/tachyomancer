@@ -24,7 +24,6 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use tachy::save::{ScoreCurveMap, SolutionData};
-use toml;
 use ureq;
 
 //===========================================================================//
@@ -125,14 +124,12 @@ fn fetch_global_scores(server_addr: &str) -> Result<ScoreCurveMap, String> {
     set_up_request(&mut request);
     let response = request.call();
     require_200(&response)?;
-    let mut bytes = Vec::<u8>::new();
+    let mut payload = String::new();
     response
         .into_reader()
-        .read_to_end(&mut bytes)
+        .read_to_string(&mut payload)
         .map_err(|err| format!("Failed to read response body: {}", err))?;
-    let scores: ScoreCurveMap = toml::from_slice(&bytes)
-        .map_err(|err| format!("Could not deserialize scores: {}", err))?;
-    return Ok(scores);
+    ScoreCurveMap::deserialize_from_string(&payload)
 }
 
 fn submit_a_queued_solution(

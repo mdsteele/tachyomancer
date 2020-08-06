@@ -19,11 +19,13 @@
 
 extern crate iron;
 extern crate portpicker;
+extern crate tachy;
 extern crate tachyoscope;
 extern crate ureq;
 
 use std::io::Read;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use tachy::save::{ScoreCurveMap, SolutionData};
 
 //===========================================================================//
 
@@ -48,7 +50,46 @@ fn readiness_check() {
     assert_eq!(payload, "ready\n");
 }
 
-// TODO: test submitting a solution and retrieving scores
+#[test]
+fn submit_solution() {
+    // Start a score server with a fresh database:
+    let port = portpicker::pick_unused_port().unwrap();
+    let flags = tachyoscope::StartupFlags {
+        addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port),
+    };
+    let _server = Server(tachyoscope::run_server(&flags).unwrap());
+
+    // Load a solution:
+    let solution =
+        SolutionData::load("tests/solutions/tutorial_or_1.toml").unwrap();
+
+    // Get the initial set of scores:
+    let response = http_get(&format!("http://localhost:{}/scores", port));
+    assert_eq!(response.status(), 200);
+    let mut payload = String::new();
+    response.into_reader().read_to_string(&mut payload).unwrap();
+    let scores = ScoreCurveMap::deserialize_from_string(&payload).unwrap();
+    assert!(scores.get(solution.puzzle).is_empty());
+
+    // Submit the solution:
+    let response = http_post(
+        &format!("http://localhost:{}/submit_solution", port),
+        "application/toml",
+        &solution.serialize_to_string().unwrap(),
+    );
+    assert_eq!(response.status(), 200);
+
+    // Get the scores again and make sure the submitted solution is there:
+    let response = http_get(&format!("http://localhost:{}/scores", port));
+    assert_eq!(response.status(), 200);
+    let mut payload = String::new();
+    response.into_reader().read_to_string(&mut payload).unwrap();
+    let scores = ScoreCurveMap::deserialize_from_string(&payload).unwrap();
+    assert_eq!(
+        scores.get(solution.puzzle).scores(),
+        &[(solution.circuit.size.area(), solution.score)]
+    );
+}
 
 //===========================================================================//
 
@@ -68,6 +109,15 @@ fn http_get(url: &str) -> ureq::Response {
         .timeout_write(WRITE_TIMEOUT_MS)
         .timeout_read(READ_TIMEOUT_MS)
         .call()
+}
+
+fn http_post(url: &str, mime_type: &str, payload: &str) -> ureq::Response {
+    ureq::post(url)
+        .timeout_connect(CONNECT_TIMEOUT_MS)
+        .timeout_write(WRITE_TIMEOUT_MS)
+        .timeout_read(READ_TIMEOUT_MS)
+        .set("Content-Type", &format!("{}; charset=utf-8", mime_type))
+        .send_bytes(payload.as_bytes())
 }
 
 //===========================================================================//

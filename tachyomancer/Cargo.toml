@@ -29,7 +29,7 @@ lewton = "0.10"
 num-integer = "0.1"
 png = "0.13"
 rand = "0.6"
-sdl2 = { version = "0.32", features = ["use_mac_framework"] }
+sdl2 = { version = "0.34", features = ["use_mac_framework"] }
 serde = "1"
 serde_derive = "1"
 static_assertions = "1.1"

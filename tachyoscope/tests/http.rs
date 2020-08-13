@@ -75,7 +75,7 @@ fn submit_solution() {
     let response = http_post(
         &format!("http://localhost:{}/submit_solution", port),
         "application/toml",
-        &solution.serialize_to_string().unwrap(),
+        &solution.serialize_to_string().unwrap().as_bytes(),
     );
     assert_eq!(response.status(), 200);
 
@@ -89,6 +89,42 @@ fn submit_solution() {
         scores.get(solution.puzzle).scores(),
         &[(solution.circuit.size.area(), solution.score)]
     );
+}
+
+#[test]
+fn submit_invalid_utf8() {
+    let port = portpicker::pick_unused_port().unwrap();
+    let flags = tachyoscope::StartupFlags {
+        addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port),
+    };
+    let _server = Server(tachyoscope::run_server(&flags).unwrap());
+    let response = http_post(
+        &format!("http://localhost:{}/submit_solution", port),
+        "application/toml",
+        b"\x80\x81\x82\x83",
+    );
+    assert_eq!(response.status(), 400);
+    let mut payload = String::new();
+    response.into_reader().read_to_string(&mut payload).unwrap();
+    assert_eq!(payload, "stream did not contain valid UTF-8\n");
+}
+
+#[test]
+fn submit_invalid_solution_toml() {
+    let port = portpicker::pick_unused_port().unwrap();
+    let flags = tachyoscope::StartupFlags {
+        addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port),
+    };
+    let _server = Server(tachyoscope::run_server(&flags).unwrap());
+    let response = http_post(
+        &format!("http://localhost:{}/submit_solution", port),
+        "application/toml",
+        b"puzzle = \"Foobar\"\n",
+    );
+    assert_eq!(response.status(), 400);
+    let mut payload = String::new();
+    response.into_reader().read_to_string(&mut payload).unwrap();
+    assert!(payload.starts_with("Could not deserialize solution"));
 }
 
 //===========================================================================//
@@ -111,13 +147,13 @@ fn http_get(url: &str) -> ureq::Response {
         .call()
 }
 
-fn http_post(url: &str, mime_type: &str, payload: &str) -> ureq::Response {
+fn http_post(url: &str, mime_type: &str, payload: &[u8]) -> ureq::Response {
     ureq::post(url)
         .timeout_connect(CONNECT_TIMEOUT_MS)
         .timeout_write(WRITE_TIMEOUT_MS)
         .timeout_read(READ_TIMEOUT_MS)
         .set("Content-Type", &format!("{}; charset=utf-8", mime_type))
-        .send_bytes(payload.as_bytes())
+        .send_bytes(payload)
 }
 
 //===========================================================================//

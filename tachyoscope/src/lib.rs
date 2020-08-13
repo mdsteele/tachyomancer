@@ -155,8 +155,7 @@ impl Handler for SubmitSolutionHandler {
         );
 
         // Ignore solutions that fall outside graph bounds:
-        let (max_area, max_score) = data.puzzle.graph_bounds();
-        if data.score > max_score || data.circuit.size.area() > max_area {
+        if solution_is_out_of_bounds(&data) {
             debug_log!("This solution is outside the graph; ignoring it.");
             let response = "Solution is not within graph bounds.".to_string();
             debug_log!("Sending SubmitSolutionHandler response.");
@@ -194,6 +193,52 @@ impl Handler for SubmitSolutionHandler {
 
         debug_log!("Sending SubmitSolutionHandler response.");
         return Ok(Response::with((status::Ok, "ok\n")));
+    }
+}
+
+fn solution_is_out_of_bounds(solution: &SolutionData) -> bool {
+    let (max_area, max_score) = solution.puzzle.graph_bounds();
+    // Check for extreme size values before calculating area, to avoid crashing
+    // on overflow.
+    solution.score > max_score
+        || solution.circuit.size.width <= 0
+        || solution.circuit.size.height <= 0
+        || solution.circuit.size.width > max_area
+        || solution.circuit.size.height > max_area
+        || solution.circuit.size.area() > max_area
+}
+
+//===========================================================================//
+
+#[cfg(test)]
+mod tests {
+    use super::solution_is_out_of_bounds;
+    use tachy::save::{CircuitData, Puzzle, SolutionData};
+
+    #[test]
+    fn out_of_bounds_solution() {
+        let mut solution = SolutionData {
+            install_id: None,
+            puzzle: Puzzle::TutorialOr,
+            score: 20,
+            time_steps: 4,
+            circuit: CircuitData::new(5, 5),
+            inputs: None,
+        };
+        assert!(!solution_is_out_of_bounds(&solution));
+
+        solution.score = 5000;
+        assert!(solution_is_out_of_bounds(&solution));
+
+        solution.score = 20;
+        solution.circuit = CircuitData::new(1000, 1000);
+        assert!(solution_is_out_of_bounds(&solution));
+
+        solution.circuit = CircuitData::new(i32::MAX, i32::MAX);
+        assert!(solution_is_out_of_bounds(&solution));
+
+        solution.circuit = CircuitData::new(i32::MIN, i32::MIN);
+        assert!(solution_is_out_of_bounds(&solution));
     }
 }
 

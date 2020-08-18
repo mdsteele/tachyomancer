@@ -9,17 +9,21 @@
   <!-- Dialog -->
   <g transform="translate(0, 128)">
     <!-- Outline -->
-    <path d="M 2,2 H 102 L 126,26 V 126 H 40 L 2,88 z"
-          fill="#00f" stroke="#0f0" stroke-width="2"/>
+    <g fill="#00f" stroke="#0f0" stroke-width="2">
+      <path d="M 2,2 H 96 L 126,32 V 126 H 40 L 2,88 Z"/>
+      <path d="M 34,126 H 6 L 2,122 V 94 Z"/>
+      <path d="M 102,2 H 122 L 126,6 V 26 Z"/>
+    </g>
     <!-- Stripes -->
     <g fill="none" stroke="#0f0" stroke-width="2">
+      <path d="M 2,118 H 26"/>
       <path d="M 32,118 H 126"/>
       <path d="M 52,122 H 108"/>
-      <path d="M 96.343,2 L 126,31.657"/>
     </g>
     <!-- Hatch marks -->
     <g transform="translate(38.5, 126) skewX(45) scale(1,12)"
        fill="#0f0" stroke="none">
+      <rect x="-18" y="-1" width="2.82842" height="1"/>
       <rect x="8" y="-1" width="2.82842" height="1"/>
       <rect x="16" y="-1" width="2.82842" height="1"/>
       <rect x="24" y="-1" width="2.82842" height="1"/>

@@ -27,7 +27,7 @@ use super::paragraph::Paragraph;
 use crate::mancer::gui::{Cursor, Event, Keycode, Resources, Ui};
 use crate::mancer::save::Prefs;
 use cgmath::{Matrix4, Point2};
-use tachy::geom::{AsFloat, Color4, Rect, RectSize};
+use tachy::geom::{AsFloat, Color3, Color4, Rect, RectSize};
 use tachy::save::{HotkeyCode, Puzzle, ScoreCurve, WireSize};
 
 //===========================================================================//
@@ -35,6 +35,7 @@ use tachy::save::{HotkeyCode, Puzzle, ScoreCurve, WireSize};
 const DIALOG_COLOR_1: Color4 = Color4::CYAN4;
 const DIALOG_COLOR_2: Color4 = Color4::ORANGE5;
 const DIALOG_COLOR_3: Color4 = Color4::PURPLE0_TRANSLUCENT;
+const DIALOG_SHADOW_COLOR: Color3 = Color3::ORANGE1;
 
 const BUTTON_HEIGHT: i32 = 40;
 const BUTTON_INNER_MARGIN: i32 = 10;
@@ -136,14 +137,7 @@ impl<T: Clone> ButtonDialogBox<T> {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let rect = self.rect.as_f32();
-        resources.shaders().ui().draw_dialog(
-            &matrix,
-            &rect,
-            &DIALOG_COLOR_1,
-            &DIALOG_COLOR_2,
-            &DIALOG_COLOR_3,
-        );
+        draw_dialog_box(resources, matrix, self.rect);
 
         let left = (self.rect.x + MARGIN) as f32;
         let top = (self.rect.y + MARGIN) as f32;
@@ -254,14 +248,7 @@ impl HotkeyDialogBox {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let rect = self.rect.as_f32();
-        resources.shaders().ui().draw_dialog(
-            &matrix,
-            &rect,
-            &DIALOG_COLOR_1,
-            &DIALOG_COLOR_2,
-            &DIALOG_COLOR_3,
-        );
+        draw_dialog_box(resources, matrix, self.rect);
 
         let left = (self.rect.x + MARGIN) as f32;
         let top = (self.rect.y + MARGIN) as f32;
@@ -392,14 +379,7 @@ impl<T: Clone> ScoreGraphDialogBox<T> {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let rect = self.rect.as_f32();
-        resources.shaders().ui().draw_dialog(
-            &matrix,
-            &rect,
-            &DIALOG_COLOR_1,
-            &DIALOG_COLOR_2,
-            &DIALOG_COLOR_3,
-        );
+        draw_dialog_box(resources, matrix, self.rect);
 
         let left = (self.rect.x + MARGIN) as f32;
         let top = (self.rect.y + MARGIN) as f32;
@@ -512,14 +492,7 @@ impl TextDialogBox {
     ) where
         F: Fn(&str) -> bool,
     {
-        let rect = self.rect.as_f32();
-        resources.shaders().ui().draw_dialog(
-            &matrix,
-            &rect,
-            &DIALOG_COLOR_1,
-            &DIALOG_COLOR_2,
-            &DIALOG_COLOR_3,
-        );
+        draw_dialog_box(resources, matrix, self.rect);
 
         let left = (self.rect.x + MARGIN) as f32;
         let top = (self.rect.y + MARGIN) as f32;
@@ -677,14 +650,7 @@ impl WireSizeDialogBox {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
-        let rect = self.rect.as_f32();
-        resources.shaders().ui().draw_dialog(
-            &matrix,
-            &rect,
-            &DIALOG_COLOR_1,
-            &DIALOG_COLOR_2,
-            &DIALOG_COLOR_3,
-        );
+        draw_dialog_box(resources, matrix, self.rect);
 
         let left = (self.rect.x + MARGIN) as f32;
         let top = (self.rect.y + MARGIN) as f32;
@@ -719,6 +685,29 @@ impl WireSizeDialogBox {
         }
         return None;
     }
+}
+
+//===========================================================================//
+
+fn draw_dialog_box(
+    resources: &Resources,
+    matrix: &Matrix4<f32>,
+    rect: Rect<i32>,
+) {
+    let rect = rect.as_f32();
+    resources.shaders().shadow().rect_shadow_depth(
+        matrix,
+        rect,
+        DIALOG_SHADOW_COLOR,
+        4.0,
+    );
+    resources.shaders().ui().draw_dialog(
+        &matrix,
+        &rect,
+        &DIALOG_COLOR_1,
+        &DIALOG_COLOR_2,
+        &DIALOG_COLOR_3,
+    );
 }
 
 //===========================================================================//

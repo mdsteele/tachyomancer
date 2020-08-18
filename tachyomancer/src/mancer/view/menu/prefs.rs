@@ -396,6 +396,11 @@ impl AudioVideoPane {
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
         for rect in self.category_frames.iter() {
+            resources.shaders().shadow().rect_shadow_basic(
+                matrix,
+                *rect,
+                Color3::CYAN1,
+            );
             resources.shaders().ui().draw_bubble(
                 matrix,
                 rect,
@@ -554,6 +559,11 @@ impl HotkeysPane {
         matrix: &Matrix4<f32>,
         state: &GameState,
     ) {
+        resources.shaders().shadow().rect_shadow_basic(
+            matrix,
+            self.rect.as_f32(),
+            Color3::CYAN1,
+        );
         resources.shaders().ui().draw_bubble(
             matrix,
             &self.rect.as_f32(),
@@ -696,6 +706,11 @@ impl ProfilesPane {
         matrix: &Matrix4<f32>,
         state: &GameState,
     ) {
+        resources.shaders().shadow().rect_shadow_basic(
+            matrix,
+            self.frame_rect,
+            Color3::CYAN1,
+        );
         debug_assert!(state.profile().is_some());
         let current_profile_name = state.profile().unwrap().name();
         self.profile_list.draw(resources, matrix, &self.selected_profile_name);
@@ -904,6 +919,11 @@ impl CreditsPane {
     }
 
     pub fn draw(&self, resources: &Resources, matrix: &Matrix4<f32>) {
+        resources.shaders().shadow().rect_shadow_basic(
+            matrix,
+            self.frame_rect,
+            Color3::CYAN1,
+        );
         let stencil = Stencil::new();
         resources.shaders().ui().draw_bubble(
             matrix,

@@ -93,6 +93,11 @@ impl<T: Clone + Eq> ListView<T> {
         Q: PartialEq + ?Sized,
         T: Borrow<Q>,
     {
+        resources.shaders().shadow().rect_shadow_basic(
+            matrix,
+            self.rect.as_f32(),
+            Color3::CYAN1,
+        );
         {
             let stencil = Stencil::new();
             self.draw_background(resources, matrix);

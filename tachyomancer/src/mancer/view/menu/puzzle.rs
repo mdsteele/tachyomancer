@@ -308,6 +308,11 @@ impl DescriptionPanel {
         matrix: &Matrix4<f32>,
         state: &GameState,
     ) {
+        resources.shaders().shadow().rect_shadow_basic(
+            matrix,
+            self.rect,
+            Color3::CYAN1,
+        );
         resources.shaders().ui().draw_box2(
             matrix,
             &self.rect,
@@ -445,6 +450,11 @@ impl ScoreGraphPanel {
         matrix: &Matrix4<f32>,
         state: &GameState,
     ) {
+        resources.shaders().shadow().rect_shadow_basic(
+            matrix,
+            self.rect,
+            Color3::PURPLE1,
+        );
         resources.shaders().ui().draw_scroll_bar(
             matrix,
             &self.rect,
@@ -554,6 +564,11 @@ impl CircuitPreviewPanel {
         matrix: &Matrix4<f32>,
         state: &GameState,
     ) {
+        resources.shaders().shadow().rect_shadow_basic(
+            matrix,
+            self.rect,
+            Color3::CYAN1,
+        );
         resources.shaders().ui().draw_box2(
             matrix,
             &self.rect,

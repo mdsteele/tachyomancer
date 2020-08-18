@@ -22,7 +22,7 @@ use crate::mancer::gui::{
     ClockEventData, Cursor, Event, Keycode, Resources, Sound, Ui,
 };
 use crate::mancer::save::HotkeyCodeExt;
-use cgmath::{Matrix4, Point2};
+use cgmath::{vec2, Matrix4, Point2};
 use tachy::geom::{AsFloat, Color3, Color4, Rect};
 use tachy::save::HotkeyCode;
 
@@ -315,6 +315,11 @@ impl HoverPulse {
 
     pub fn brightness(&self) -> f32 {
         self.brightness as f32
+    }
+
+    pub fn clickedness(&self) -> f32 {
+        ((self.brightness.max(HOVER_PULSE_HOVERING) - HOVER_PULSE_HOVERING)
+            / (HOVER_PULSE_CLICK - HOVER_PULSE_HOVERING)) as f32
     }
 
     pub fn on_click(&mut self, ui: &mut Ui) {
@@ -986,13 +991,20 @@ impl<T: Clone> TextButton<T> {
         matrix: &Matrix4<f32>,
         enabled: bool,
     ) {
+        let offset = 3.0 * self.hover_pulse.clickedness();
+        let rect = self.rect.as_f32() + vec2(offset, offset);
+        resources.shaders().shadow().rect_shadow_depth(
+            matrix,
+            rect,
+            Color3::CYAN1.mix(Color3::CYAN3, self.hover_pulse.brightness()),
+            4.0 - offset,
+        );
         let bg_color = if !enabled {
             GRAYED_OUT_COLOR
         } else {
             Color4::CYAN0_TRANSLUCENT
                 .mix(Color4::CYAN3_TRANSLUCENT, self.hover_pulse.brightness())
         };
-        let rect = self.rect.as_f32();
         resources.shaders().ui().draw_box4(
             &matrix,
             &rect,

@@ -26,6 +26,7 @@ mod icon;
 mod port;
 mod portrait;
 mod scene;
+mod shadow;
 mod solid;
 mod ui;
 mod wire;
@@ -39,6 +40,7 @@ pub use self::icon::IconShader;
 pub use self::port::PortShader;
 pub use self::portrait::PortraitShader;
 pub use self::scene::SceneShader;
+pub use self::shadow::ShadowShader;
 pub use self::solid::SolidShader;
 pub use self::ui::UiShader;
 pub use self::wire::WireShader;
@@ -56,6 +58,7 @@ pub struct Shaders {
     port: PortShader,
     portrait: PortraitShader,
     scene: SceneShader,
+    shadow: ShadowShader,
     solid: SolidShader,
     ui: UiShader,
     wire: WireShader,
@@ -73,6 +76,7 @@ impl Shaders {
             port: PortShader::new()?,
             portrait: PortraitShader::new()?,
             scene: SceneShader::new()?,
+            shadow: ShadowShader::new()?,
             solid: SolidShader::new()?,
             ui: UiShader::new()?,
             wire: WireShader::new()?,
@@ -113,6 +117,10 @@ impl Shaders {
 
     pub fn scene(&self) -> &SceneShader {
         &self.scene
+    }
+
+    pub fn shadow(&self) -> &ShadowShader {
+        &self.shadow
     }
 
     pub fn solid(&self) -> &SolidShader {

@@ -35,6 +35,14 @@ impl Color3 {
         Color4::new(self.r, self.g, self.b, alpha)
     }
 
+    pub fn mix(&self, other: Color3, param: f32) -> Color3 {
+        Color3 {
+            r: self.r + param * (other.r - self.r),
+            g: self.g + param * (other.g - self.g),
+            b: self.b + param * (other.b - self.b),
+        }
+    }
+
     pub const BLACK: Color3 = Color3::new(0.0, 0.0, 0.0);
     pub const WHITE: Color3 = Color3::new(1.0, 1.0, 1.0);
 
@@ -143,6 +151,19 @@ mod tests {
             Color3::new(0.1, 0.2, 0.3).with_alpha(0.4),
             Color4::new(0.1, 0.2, 0.3, 0.4)
         );
+    }
+
+    #[test]
+    fn color3_mix() {
+        let color1 = Color3::new(0.25, 0.75, 1.0);
+        let color2 = Color3::new(0.75, 0.0, 0.25);
+        assert_eq!(color1.mix(color2, 0.0), color1);
+        assert_eq!(
+            color1.mix(color2, 0.25),
+            Color3::new(0.375, 0.5625, 0.8125)
+        );
+        assert_eq!(color1.mix(color2, 0.5), Color3::new(0.5, 0.375, 0.625));
+        assert_eq!(color1.mix(color2, 1.0), color2);
     }
 
     #[test]

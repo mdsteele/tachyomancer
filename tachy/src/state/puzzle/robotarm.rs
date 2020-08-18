@@ -33,7 +33,7 @@ const TIME_PER_TURN: u32 = 3;
 const TIME_PER_MANIPULATE: u32 = 4;
 const TIME_BETWEEN_COMMANDS: u32 = 9;
 
-const COMMANDS: &[u32] = &[3, 7, 5, 2, 0, 4, 1, 6, 3, 7, 5, 1, 6, 2];
+const COMMANDS: &[u32] = &[3, 5, 2, 4, 0, 7, 1, 6, 3, 7, 1, 6, 2, 5];
 
 //===========================================================================//
 

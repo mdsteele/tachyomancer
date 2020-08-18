@@ -1,6 +1,6 @@
 puzzle = "AutomateRobotArm"
-score = 326
-time_steps = 326
+score = 353
+time_steps = 353
 
 [circuit]
 size = [9, 8]

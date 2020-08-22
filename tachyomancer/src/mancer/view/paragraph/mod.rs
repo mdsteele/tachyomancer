@@ -34,11 +34,6 @@ use tachy::geom::{Color4, MatrixExt, RectSize};
 
 //===========================================================================//
 
-const GREEN: Color4 = Color4::new(0.0, 1.0, 0.0, 1.0);
-const RED: Color4 = Color4::new(1.0, 0.0, 0.0, 1.0);
-
-//===========================================================================//
-
 pub struct Paragraph {
     lines: Vec<CompiledLine>,
     font_size: f32,
@@ -110,11 +105,11 @@ impl Paragraph {
                     Some('/') => parser.toggle_italic(),
                     Some('C') => parser.set_color(Color4::CYAN3),
                     Some('D') => parser.set_color_to_default(),
-                    Some('G') => parser.set_color(GREEN),
+                    Some('G') => parser.set_color(Color4::GREEN3),
                     Some('K') => parser.set_color(Color4::BLACK),
                     Some('O') => parser.set_color(Color4::ORANGE3),
                     Some('P') => parser.set_color(Color4::PURPLE3),
-                    Some('R') => parser.set_color(RED),
+                    Some('R') => parser.set_color(Color4::RED3),
                     Some('W') => parser.set_color(Color4::WHITE),
                     Some('Y') => parser.set_color(Color4::YELLOW3),
                     Some('{') => parser.set_font(&parse_arg(&mut chars, '}')),

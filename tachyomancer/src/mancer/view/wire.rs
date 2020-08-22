@@ -25,7 +25,6 @@ use tachy::state::WireColor;
 
 //===========================================================================//
 
-const WIRE_COLOR_ERROR: Color3 = Color3::new(1.0, 0.0, 0.0);
 const WIRE_COLOR_UNKNOWN: Color3 = Color3::new(0.65, 0.65, 0.65);
 
 //===========================================================================//
@@ -130,7 +129,7 @@ fn obj_to_grid(coords: Coords, dir: Direction) -> Matrix4<f32> {
 fn wire_color(color: WireColor) -> &'static Color3 {
     match color {
         WireColor::Unknown => &WIRE_COLOR_UNKNOWN,
-        WireColor::Ambiguous => &WIRE_COLOR_ERROR,
+        WireColor::Ambiguous => &Color3::RED3,
         WireColor::Behavior => &Color3::ORANGE3,
         WireColor::Event => &Color3::CYAN3,
     }

@@ -74,9 +74,12 @@ pub enum EditGridAction {
 
 //===========================================================================//
 
+// TODO: Extract camera state and operations into a separate Camera struct in
+//   a separate submodule.
 pub struct EditGridView {
     size: RectSize<f32>,
     scroll: Vector2<i32>,
+    scroll_goal: Option<Vector2<i32>>,
     zoom: f32,
     interaction: Interaction,
     tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
@@ -97,6 +100,7 @@ impl EditGridView {
                 pixel_bounds.x + pixel_bounds.width / 2,
                 pixel_bounds.y + pixel_bounds.height / 2,
             ),
+            scroll_goal: None,
             zoom: ZOOM_DEFAULT,
             interaction: Interaction::Nothing,
             tutorial_bubbles,
@@ -137,11 +141,7 @@ impl EditGridView {
         resources.shaders().board().draw(grid_matrix, bounds.as_f32());
 
         let bounds = bounds.as_f32();
-        let color = if is_acceptable {
-            Color3::PURPLE2
-        } else {
-            Color3::new(1.0, 0.0, 0.0)
-        };
+        let color = if is_acceptable { Color3::PURPLE2 } else { Color3::RED3 };
         let rect = Rect::new(
             bounds.x - BOUNDS_MARGIN,
             bounds.y - BOUNDS_MARGIN,
@@ -573,6 +573,18 @@ impl EditGridView {
         }
         match event {
             Event::ClockTick(tick) => {
+                if let Some(goal) = self.scroll_goal {
+                    if self.scroll != goal {
+                        self.scroll.x =
+                            track_towards(self.scroll.x, goal.x, tick);
+                        self.scroll.y =
+                            track_towards(self.scroll.y, goal.y, tick);
+                        ui.request_redraw();
+                    }
+                    if self.scroll == goal {
+                        self.scroll_goal = None;
+                    }
+                }
                 // Scroll if we're holding down any scroll key(s):
                 let left = is_hotkey_held(Hotkey::ScrollLeft, ui, prefs);
                 let right = is_hotkey_held(Hotkey::ScrollRight, ui, prefs);
@@ -1073,6 +1085,17 @@ impl EditGridView {
         }
     }
 
+    pub fn camera_center(&self) -> Point2<f32> {
+        Point2::new(0.0, 0.0) + self.scroll.as_f32() / (GRID_CELL_SIZE as f32)
+    }
+
+    pub fn set_camera_goal(&mut self, grid_pt: Point2<f32>) {
+        self.scroll_goal = Some(
+            (grid_pt * (GRID_CELL_SIZE as f32)).as_i32_round()
+                - Point2::new(0, 0),
+        );
+    }
+
     fn zoom_by(&mut self, factor: f32, ui: &mut Ui) {
         if factor < 1.0 {
             let minimum =
@@ -1123,7 +1146,16 @@ fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {
     let tracking_base: f64 = 0.0001; // smaller = faster tracking
     let difference = (goal - current) as f64;
     let change = difference * (1.0 - tracking_base.powf(tick.elapsed));
-    current + (change.round() as i32)
+    let change = change.round() as i32;
+    if change != 0 {
+        current + change
+    } else if goal > current {
+        current + 1
+    } else if goal < current {
+        current - 1
+    } else {
+        goal
+    }
 }
 
 fn try_toggle_break(

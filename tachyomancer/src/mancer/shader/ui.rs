@@ -379,7 +379,7 @@ impl UiShader {
         color2: &Color4,
         color3: &Color4,
     ) {
-        debug_assert!(icon_index < 7);
+        debug_assert!(icon_index < 8);
         let (icon_row, icon_col) = div_mod_floor(icon_index, 4);
         let tex_rect = Rect::new(
             0.5 + 0.125 * (icon_col as f32),

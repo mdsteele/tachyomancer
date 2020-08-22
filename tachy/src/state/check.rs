@@ -42,12 +42,27 @@ pub enum WireColor {
 
 //===========================================================================//
 
+// TODO: struct WireId { index: usize } and NULL_WIRE_ID = WireId(usize::MAX)
+
+//===========================================================================//
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum WireError {
     MultipleSenders(usize),
     PortColorMismatch(usize),
     NoValidSize(usize),
     UnbrokenLoop(Vec<usize>, bool),
+}
+
+impl WireError {
+    pub fn wire_ids(&self) -> Vec<usize> {
+        match self {
+            WireError::MultipleSenders(wire_id)
+            | WireError::PortColorMismatch(wire_id)
+            | WireError::NoValidSize(wire_id) => vec![*wire_id],
+            WireError::UnbrokenLoop(wire_ids, _) => wire_ids.clone(),
+        }
+    }
 }
 
 //===========================================================================//

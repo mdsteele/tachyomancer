@@ -817,7 +817,7 @@ impl TextBox {
         );
         // Cursor:
         if self.cursor_blink_is_visible() {
-            let color = Color3::new(0.5, 0.5, 0.0);
+            let color = Color3::YELLOW2;
             let cursor_rect = Rect::new(
                 rect.x
                     + TEXT_BOX_INNER_MARGIN

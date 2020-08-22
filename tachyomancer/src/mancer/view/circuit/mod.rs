@@ -48,9 +48,9 @@ use super::paragraph::Paragraph;
 use super::tooltip::Tooltip;
 use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui, Window};
 use crate::mancer::save::Prefs;
-use cgmath;
+use cgmath::{self, vec2, MetricSpace, Point2};
 use std::u8;
-use tachy::geom::{Coords, Direction, RectSize};
+use tachy::geom::{AsFloat, Coords, Direction, RectSize};
 use tachy::save::{
     ChipType, HotkeyCode, Puzzle, ScoreCurve, SolutionData, WireSize,
     MAX_COMMENT_CHARS,
@@ -375,7 +375,7 @@ impl CircuitView {
             event,
             ui,
             self.controls_status,
-            grid.has_errors(),
+            grid,
             self.edit_grid.is_dragging(),
             &mut self.tooltip.sink(CircuitTooltipTag::Controls),
             prefs,
@@ -412,6 +412,9 @@ impl CircuitView {
                             debug_assert!(grid.eval().is_some());
                         }
                     }
+                }
+                Some(ControlsAction::GoToError) => {
+                    self.move_camera_to_grid_error(ui, grid);
                 }
                 Some(ControlsAction::Reset) => {
                     if grid.eval().is_some() {
@@ -616,6 +619,12 @@ impl CircuitView {
                 self.seconds_since_time_step = 0.0;
                 self.controls_status = ControlsStatus::Paused;
                 ui.request_redraw();
+                // TODO: If there are multiple simultaneous breakpoints, go to
+                //   the one closest to the current camera center.
+                if let Some(&coords) = coords_vec.first() {
+                    let goal = coords.as_f32() + vec2(0.5, 0.5);
+                    self.edit_grid.set_camera_goal(goal);
+                }
                 None
             }
             EvalResult::Victory(score) => {
@@ -640,6 +649,7 @@ impl CircuitView {
             }
             EvalResult::Failure => {
                 debug_log!("Failure!");
+                // TODO: If fatal port error, move camera to show port.
                 if cfg!(debug_assertions) {
                     for error in grid.eval().unwrap().errors() {
                         debug_log!(
@@ -653,6 +663,32 @@ impl CircuitView {
                 ui.request_redraw();
                 None
             }
+        }
+    }
+
+    fn move_camera_to_grid_error(&mut self, ui: &mut Ui, grid: &mut EditGrid) {
+        self.edit_grid.cancel_interaction(ui, grid);
+        let center = self.edit_grid.camera_center();
+        let mut nearest: Option<Point2<f32>> = None;
+        let mut best_dist = f32::INFINITY;
+        for error in grid.errors() {
+            for wire_id in error.wire_ids() {
+                for ((coords, dir), _) in
+                    grid.wire_fragments_for_wire_index(wire_id)
+                {
+                    let point = coords.as_f32()
+                        + vec2(0.5, 0.5)
+                        + dir.delta().as_f32() * 0.5;
+                    let dist = point.distance2(center);
+                    if dist < best_dist {
+                        nearest = Some(point);
+                        best_dist = dist;
+                    }
+                }
+            }
+        }
+        if let Some(goal) = nearest {
+            self.edit_grid.set_camera_goal(goal);
         }
     }
 

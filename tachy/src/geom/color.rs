@@ -53,6 +53,8 @@ impl Color3 {
     pub const CYAN4: Color3 = Color3::new(0.396, 0.922, 0.984); // #65ebfb
     pub const CYAN5: Color3 = Color3::new(0.592, 0.949, 0.988); // #97f2fc
 
+    pub const GREEN3: Color3 = Color3::new(0.235, 0.980, 0.310); // #3cfa4f
+
     pub const ORANGE0: Color3 = Color3::new(0.267, 0.112, 0.043); // #441d0b
     pub const ORANGE1: Color3 = Color3::new(0.533, 0.224, 0.086); // #883916
     pub const ORANGE2: Color3 = Color3::new(0.761, 0.310, 0.122); // #c24f1f
@@ -66,6 +68,9 @@ impl Color3 {
     pub const PURPLE3: Color3 = Color3::new(0.643, 0.216, 0.988); // #a437fc
     pub const PURPLE4: Color3 = Color3::new(0.761, 0.341, 0.973); // #c257f8
     pub const PURPLE5: Color3 = Color3::new(0.855, 0.569, 0.996); // #da91fe
+
+    pub const RED2: Color3 = Color3::new(0.451, 0.024, 0.059); // #73060f
+    pub const RED3: Color3 = Color3::new(0.980, 0.047, 0.125); // #fa0c20
 
     pub const YELLOW0: Color3 = Color3::new(0.318, 0.326, 0.057); // #51530f
     pub const YELLOW1: Color3 = Color3::new(0.635, 0.651, 0.114); // #a2a61d
@@ -112,6 +117,8 @@ impl Color4 {
     pub const CYAN4: Color4 = Color3::CYAN4.with_alpha(1.0);
     pub const CYAN5: Color4 = Color3::CYAN5.with_alpha(1.0);
 
+    pub const GREEN3: Color4 = Color3::GREEN3.with_alpha(1.0);
+
     pub const ORANGE0: Color4 = Color3::ORANGE0.with_alpha(1.0);
     pub const ORANGE0_TRANSLUCENT: Color4 = Color3::ORANGE0.with_alpha(0.8);
     pub const ORANGE1: Color4 = Color3::ORANGE1.with_alpha(1.0);
@@ -128,6 +135,9 @@ impl Color4 {
     pub const PURPLE3_TRANSLUCENT: Color4 = Color3::PURPLE3.with_alpha(0.8);
     pub const PURPLE4: Color4 = Color3::PURPLE4.with_alpha(1.0);
     pub const PURPLE5: Color4 = Color3::PURPLE5.with_alpha(1.0);
+
+    pub const RED2: Color4 = Color3::RED2.with_alpha(1.0);
+    pub const RED3: Color4 = Color3::RED3.with_alpha(1.0);
 
     pub const YELLOW0: Color4 = Color3::YELLOW0.with_alpha(1.0);
     pub const YELLOW0_TRANSLUCENT: Color4 = Color3::YELLOW0.with_alpha(0.8);

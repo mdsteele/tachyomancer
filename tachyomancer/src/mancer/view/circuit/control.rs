@@ -26,7 +26,7 @@ use crate::mancer::gui::{Cursor, Event, Resources, Sound, Ui};
 use crate::mancer::save::{Hotkey, HotkeyCodeExt, Prefs};
 use crate::mancer::shader::UiShader;
 use cgmath::{Deg, Matrix4, Point2};
-use tachy::geom::{AsFloat, Color4, MatrixExt, Rect, RectSize};
+use tachy::geom::{AsFloat, Color3, Color4, MatrixExt, Rect, RectSize};
 use tachy::save::Puzzle;
 use tachy::state::EditGrid;
 
@@ -49,6 +49,9 @@ const TRAY_TAB_TEXT: &str = "CONTROLS";
 const TOOLTIP_FAST_FORWARD: &str =
     "$*Fast-forward$* $>$G$*$[EvalFastForward]$*$D$<\n\
      Runs the simulation at increased speed.";
+const TOOLTIP_GO_TO_ERROR: &str =
+    "$*Go to error$* $>$G$*$[EvalRunPause]$*$D$<\n\
+     Your circuit has errors.  Click to debug.";
 const TOOLTIP_RESET: &str = "$*Reset simulation$* $>$G$*$[EvalReset]$*$D$<\n\
      Resets the simulation back to the beginning and returns to edit mode.";
 const TOOLTIP_RUN_PAUSE: &str = "$*Run/pause$* $>$G$*$[EvalRunPause]$*$D$<\n\
@@ -79,9 +82,10 @@ pub enum ControlsStatus {
     Finished,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumString, Eq, PartialEq)]
 pub enum ControlsAction {
     FastForward,
+    GoToError,
     Reset,
     RunOrPause,
     StepSubcycle,
@@ -93,6 +97,7 @@ impl ControlsAction {
     fn hotkey(self) -> Hotkey {
         match self {
             ControlsAction::FastForward => Hotkey::EvalFastForward,
+            ControlsAction::GoToError => Hotkey::EvalRunPause,
             ControlsAction::Reset => Hotkey::EvalReset,
             ControlsAction::RunOrPause => Hotkey::EvalRunPause,
             ControlsAction::StepSubcycle => Hotkey::EvalStepSubcycle,
@@ -104,6 +109,7 @@ impl ControlsAction {
     fn icon_index(self, status: ControlsStatus) -> usize {
         match self {
             ControlsAction::FastForward => 3,
+            ControlsAction::GoToError => 7,
             ControlsAction::Reset => 2,
             ControlsAction::RunOrPause => {
                 match status {
@@ -123,6 +129,7 @@ impl ControlsAction {
     pub fn tooltip_format(self) -> &'static str {
         match self {
             ControlsAction::FastForward => TOOLTIP_FAST_FORWARD,
+            ControlsAction::GoToError => TOOLTIP_GO_TO_ERROR,
             ControlsAction::Reset => TOOLTIP_RESET,
             ControlsAction::RunOrPause => TOOLTIP_RUN_PAUSE,
             ControlsAction::StepSubcycle => TOOLTIP_STEP_SUBCYCLE,
@@ -233,7 +240,7 @@ impl ControlsTray {
         self.draw_box(resources, &matrix);
         self.draw_timers(resources, &matrix, grid);
         for button in self.buttons.iter() {
-            button.draw(resources, &matrix, status, grid.has_errors());
+            button.draw(resources, &matrix, status, grid);
         }
         if let Some(ref bubble) = self.tutorial_bubble {
             let left = self.rect.right() + 26;
@@ -322,7 +329,7 @@ impl ControlsTray {
         event: &Event,
         ui: &mut Ui,
         status: ControlsStatus,
-        has_errors: bool,
+        grid: &EditGrid,
         is_interacting: bool,
         tooltip: &mut dyn TooltipSink<ControlsAction>,
         prefs: &Prefs,
@@ -334,7 +341,8 @@ impl ControlsTray {
                 &rel_event,
                 ui,
                 status,
-                has_errors || is_interacting,
+                grid,
+                is_interacting,
                 tooltip,
                 prefs,
             );
@@ -344,6 +352,11 @@ impl ControlsTray {
         }
         match &rel_event {
             Event::ClockTick(tick) => self.slide.on_clock_tick(tick, ui),
+            Event::Debug(key, value) if key == "ControlsAction" => {
+                if let Ok(action) = value.parse::<ControlsAction>() {
+                    return Some(Some(action));
+                }
+            }
             Event::MouseDown(mouse) => {
                 let tab_rect = UiShader::tray_tab_rect(
                     self.rect.as_f32(),
@@ -382,25 +395,44 @@ impl ControlsTray {
 //===========================================================================//
 
 struct ControlsButton {
-    action: ControlsAction,
+    base_action: ControlsAction,
     rect: Rect<i32>,
     hover_pulse: HoverPulse,
 }
 
 impl ControlsButton {
-    pub fn new(action: ControlsAction, rect: Rect<i32>) -> ControlsButton {
-        ControlsButton { action, rect, hover_pulse: HoverPulse::new() }
+    pub fn new(
+        base_action: ControlsAction,
+        rect: Rect<i32>,
+    ) -> ControlsButton {
+        ControlsButton { base_action, rect, hover_pulse: HoverPulse::new() }
     }
 
-    fn is_enabled(&self, status: ControlsStatus) -> bool {
-        match self.action {
+    fn action(&self, grid: &EditGrid) -> ControlsAction {
+        if self.base_action == ControlsAction::RunOrPause && grid.has_errors()
+        {
+            ControlsAction::GoToError
+        } else {
+            self.base_action
+        }
+    }
+
+    fn is_enabled(&self, status: ControlsStatus, grid: &EditGrid) -> bool {
+        let action = self.action(grid);
+        if action != ControlsAction::GoToError && grid.has_errors() {
+            return false;
+        }
+        match action {
             ControlsAction::FastForward => {
                 status != ControlsStatus::Finished
                     && status != ControlsStatus::FastForwarding
             }
+            ControlsAction::GoToError => true,
             ControlsAction::Reset => status != ControlsStatus::Stopped,
             ControlsAction::RunOrPause => status != ControlsStatus::Finished,
-            _ => {
+            ControlsAction::StepSubcycle
+            | ControlsAction::StepCycle
+            | ControlsAction::StepTime => {
                 status == ControlsStatus::Stopped
                     || status == ControlsStatus::Paused
             }
@@ -412,14 +444,14 @@ impl ControlsButton {
         resources: &Resources,
         matrix: &Matrix4<f32>,
         status: ControlsStatus,
-        has_errors: bool,
+        grid: &EditGrid,
     ) {
         let ui = resources.shaders().ui();
-        let enabled = !has_errors && self.is_enabled(status);
+        let enabled = self.is_enabled(status, grid);
 
         let rect = self.rect.as_f32();
         let bg_color = if !enabled {
-            Color4::new(1.0, 1.0, 1.0, 0.1)
+            Color3::WHITE.with_alpha(0.1)
         } else {
             Color4::PURPLE0_TRANSLUCENT.mix(
                 Color4::PURPLE3_TRANSLUCENT,
@@ -440,7 +472,7 @@ impl ControlsButton {
             rect.height,
             rect.height,
         );
-        let icon_index = self.action.icon_index(status);
+        let icon_index = self.action(grid).icon_index(status);
         if enabled {
             ui.draw_controls_icon(
                 matrix,
@@ -448,7 +480,7 @@ impl ControlsButton {
                 icon_index,
                 &Color4::ORANGE4,
                 &Color4::ORANGE3,
-                &Color4::ORANGE2,
+                &Color4::RED2,
             );
         } else {
             ui.draw_controls_icon(
@@ -467,44 +499,40 @@ impl ControlsButton {
         event: &Event,
         ui: &mut Ui,
         status: ControlsStatus,
-        controls_disabled: bool,
+        grid: &EditGrid,
+        is_interacting: bool,
         tooltip: &mut dyn TooltipSink<ControlsAction>,
         prefs: &Prefs,
     ) -> Option<ControlsAction> {
+        let action = self.action(grid);
+        let enabled = !is_interacting && self.is_enabled(status, grid);
         match event {
             Event::ClockTick(tick) => {
                 self.hover_pulse.on_clock_tick(tick, ui);
             }
             Event::KeyDown(key) => {
-                if !controls_disabled
-                    && self.is_enabled(status)
+                if enabled
                     && key.code
-                        == prefs.hotkey_code(self.action.hotkey()).to_keycode()
+                        == prefs.hotkey_code(action.hotkey()).to_keycode()
                 {
                     self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
-                    return Some(self.action);
+                    return Some(action);
                 }
             }
             Event::MouseDown(mouse) if mouse.left => {
-                if !controls_disabled
-                    && self.is_enabled(status)
-                    && self.rect.contains_point(mouse.pt)
-                {
+                if enabled && self.rect.contains_point(mouse.pt) {
                     self.hover_pulse.on_click(ui);
                     ui.audio().play_sound(Sound::ButtonClick);
-                    return Some(self.action);
+                    return Some(action);
                 }
             }
             Event::MouseMove(mouse) => {
                 let hovering = self.rect.contains_point(mouse.pt);
                 if hovering {
-                    tooltip.hover_tag(mouse.pt, ui, self.action);
+                    tooltip.hover_tag(mouse.pt, ui, action);
                 }
-                if self.hover_pulse.set_hovering(hovering, ui)
-                    && !controls_disabled
-                    && self.is_enabled(status)
-                {
+                if self.hover_pulse.set_hovering(hovering, ui) && enabled {
                     ui.audio().play_sound(Sound::ButtonHover);
                 }
             }

@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -82,12 +82,12 @@ pub const EVENT_INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct SandboxBehaviorEval {
-    time_wire: usize,
+    time_wire: WireId,
 }
 
 impl SandboxBehaviorEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> SandboxBehaviorEval {
         debug_assert_eq!(slots.len(), 1);
         debug_assert_eq!(slots[0].len(), 1);
@@ -108,14 +108,14 @@ impl PuzzleEval for SandboxBehaviorEval {
 //===========================================================================//
 
 pub struct SandboxEventEval {
-    init_wire: usize,
-    time_wire: usize,
-    tick_wire: usize,
+    init_wire: WireId,
+    time_wire: WireId,
+    tick_wire: WireId,
 }
 
 impl SandboxEventEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> SandboxEventEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 1);

@@ -22,7 +22,7 @@ use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use super::rng::SimpleRng;
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use cgmath::Point2;
 use num_integer::Roots;
 
@@ -95,11 +95,11 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct BeaconEval {
-    opt_x_wire: usize,
-    opt_y_wire: usize,
-    pos_x_wire: usize,
-    pos_y_wire: usize,
-    motor_wire: usize,
+    opt_x_wire: WireId,
+    opt_y_wire: WireId,
+    pos_x_wire: WireId,
+    pos_y_wire: WireId,
+    motor_wire: WireId,
     current_opt: Point2<u32>,
     current_pos: Point2<u32>,
     energy: u32,
@@ -107,7 +107,7 @@ pub struct BeaconEval {
 }
 
 impl BeaconEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> BeaconEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> BeaconEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 3);

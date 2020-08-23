@@ -21,7 +21,7 @@ use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::Direction;
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -40,14 +40,14 @@ pub const AND_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct AndChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl AndChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), AND_CHIP_DATA.ports.len());
         let chip_eval = AndChipEval {
@@ -86,15 +86,15 @@ pub const DEMUX_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct DemuxChipEval {
-    input: usize,
-    output1: usize,
-    output2: usize,
-    control: usize,
+    input: WireId,
+    output1: WireId,
+    output2: WireId,
+    control: WireId,
 }
 
 impl DemuxChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), DEMUX_CHIP_DATA.ports.len());
         let chip_eval = DemuxChipEval {
@@ -138,15 +138,15 @@ pub const MUX_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct MuxChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
-    control: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
+    control: WireId,
 }
 
 impl MuxChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), MUX_CHIP_DATA.ports.len());
         let chip_eval = MuxChipEval {
@@ -183,13 +183,13 @@ pub const NOT_CHIP_DATA: &ChipData = &ChipData {
 
 pub struct NotChipEval {
     size: WireSize,
-    input: usize,
-    output: usize,
+    input: WireId,
+    output: WireId,
 }
 
 impl NotChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), NOT_CHIP_DATA.ports.len());
         let chip_eval = NotChipEval {
@@ -213,14 +213,14 @@ impl ChipEval for NotChipEval {
 pub const OR_CHIP_DATA: &ChipData = AND_CHIP_DATA;
 
 pub struct OrChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl OrChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), OR_CHIP_DATA.ports.len());
         let chip_eval = OrChipEval {
@@ -245,14 +245,14 @@ impl ChipEval for OrChipEval {
 pub const XOR_CHIP_DATA: &ChipData = AND_CHIP_DATA;
 
 pub struct XorChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl XorChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), XOR_CHIP_DATA.ports.len());
         let chip_eval = XorChipEval {

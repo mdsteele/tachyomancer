@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use std::collections::VecDeque;
 
 //===========================================================================//
@@ -138,8 +138,8 @@ const SONAR_PORTS: &[InterfacePort] = &[
 
 struct SonarUnit {
     walls: &'static [i32],
-    ping_wire: usize,
-    echo_wire: usize,
+    ping_wire: WireId,
+    echo_wire: WireId,
     pings: VecDeque<(u32, u32)>,
     num_pending_echoes: u32,
 }
@@ -147,7 +147,7 @@ struct SonarUnit {
 impl SonarUnit {
     fn new(
         walls: &'static [i32],
-        slots: &[((Coords, Direction), usize)],
+        slots: &[((Coords, Direction), WireId)],
     ) -> SonarUnit {
         debug_assert_eq!(slots.len(), 2);
         SonarUnit {
@@ -212,8 +212,8 @@ impl SonarUnit {
 pub struct SonarEval {
     port_sonar: SonarUnit,
     stbd_sonar: SonarUnit,
-    prop_wire: usize,
-    dist_wire: usize,
+    prop_wire: WireId,
+    dist_wire: WireId,
     should_send_dist: bool,
     heading: i32,
     horz_position: i32,
@@ -221,7 +221,7 @@ pub struct SonarEval {
 }
 
 impl SonarEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> SonarEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> SonarEval {
         debug_assert_eq!(slots.len(), 4);
         debug_assert_eq!(slots[2].len(), 1);
         debug_assert_eq!(slots[3].len(), 1);

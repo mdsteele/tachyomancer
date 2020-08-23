@@ -34,17 +34,17 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
     if !grid.start_eval() {
         for error in grid.errors() {
             errors.push(match error {
-                WireError::MultipleSenders(idx) => {
-                    format!("Wire {} has multiple senders", idx)
+                WireError::MultipleSenders(id) => {
+                    format!("Wire {} has multiple senders", id.0)
                 }
-                WireError::PortColorMismatch(idx) => {
-                    format!("Wire {} has a color mismatch", idx)
+                WireError::PortColorMismatch(id) => {
+                    format!("Wire {} has a color mismatch", id.0)
                 }
-                WireError::NoValidSize(idx) => {
-                    format!("Wire {} has a size mismatch", idx)
+                WireError::NoValidSize(id) => {
+                    format!("Wire {} has a size mismatch", id.0)
                 }
-                WireError::UnbrokenLoop(idxs, _) => {
-                    format!("Wires {:?} form a loop", idxs)
+                WireError::UnbrokenLoop(ids, _) => {
+                    format!("Wires {:?} form a loop", ids)
                 }
             });
         }

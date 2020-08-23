@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::change::GridChange;
-use super::check::{self, WireColor, WireError, WireInfo};
+use super::check::{self, WireColor, WireError, WireId, WireInfo};
 use super::chip::{new_chip_evals, ChipExt};
 use super::eval::{ChipEval, CircuitEval};
 use super::interface::Interface;
@@ -33,7 +33,6 @@ use crate::save::{
 use std::collections::{hash_map, hash_set, HashMap, HashSet};
 use std::mem;
 use std::time::{Duration, Instant};
-use std::usize;
 
 //===========================================================================//
 
@@ -53,11 +52,11 @@ pub struct EditGrid {
     allowed_chips: ChipSet,
     bounds: CoordsRect,
     interfaces: &'static [Interface],
-    fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
+    fragments: HashMap<(Coords, Direction), (WireShape, WireId)>,
     chips: HashMap<Coords, ChipCell>,
     wires: Vec<WireInfo>,
-    wires_for_ports: HashMap<(Coords, Direction), usize>,
-    wire_groups: Vec<Vec<usize>>,
+    wires_for_ports: HashMap<(Coords, Direction), WireId>,
+    wire_groups: Vec<Vec<WireId>>,
     errors: Vec<WireError>,
     eval: Option<CircuitEval>,
     undo_stack: Vec<Vec<GridChange>>,
@@ -325,17 +324,17 @@ impl EditGrid {
         WireFragmentsIter { inner: self.fragments.iter(), wires: &self.wires }
     }
 
-    pub fn wire_fragments_for_wire_index(
+    pub fn wire_fragments_for_wire_id(
         &self,
-        wire_index: usize,
+        wire_id: WireId,
     ) -> WireFragmentsForWireIter {
         WireFragmentsForWireIter {
-            inner: self.wires[wire_index].fragments.iter(),
+            inner: self.wires[wire_id.0].fragments.iter(),
             fragments: &self.fragments,
         }
     }
 
-    pub fn wire_index_group(&self, group_index: usize) -> &[usize] {
+    pub fn wire_index_group(&self, group_index: usize) -> &[WireId] {
         if group_index < self.wire_groups.len() {
             &self.wire_groups[group_index]
         } else {
@@ -395,12 +394,12 @@ impl EditGrid {
         return None;
     }
 
-    pub fn wire_index_at(
+    pub fn wire_id_at(
         &self,
         coords: Coords,
         dir: Direction,
-    ) -> Option<usize> {
-        self.fragments.get(&(coords, dir)).map(|&(_, index)| index)
+    ) -> Option<WireId> {
+        self.fragments.get(&(coords, dir)).map(|&(_, id)| id)
     }
 
     pub fn wire_shape_at(
@@ -779,7 +778,7 @@ impl EditGrid {
     }
 
     fn set_frag(&mut self, coords: Coords, dir: Direction, shape: WireShape) {
-        self.fragments.insert((coords, dir), (shape, usize::MAX));
+        self.fragments.insert((coords, dir), (shape, WireId::NULL));
     }
 
     fn typecheck_wires(&mut self) {
@@ -859,19 +858,20 @@ impl EditGrid {
             return false;
         }
 
-        let mut wires_for_ports = HashMap::<(Coords, Direction), usize>::new();
+        let mut wires_for_ports =
+            HashMap::<(Coords, Direction), WireId>::new();
         let mut groups_for_ports =
             HashMap::<(Coords, Direction), usize>::new();
-        let mut null_wires = HashSet::<usize>::new();
+        let mut null_wires = HashSet::<WireId>::new();
         for (group_index, group) in self.wire_groups.iter().enumerate() {
-            for &wire_index in group.iter() {
-                let wire = &self.wires[wire_index];
+            for &wire_id in group.iter() {
+                let wire = &self.wires[wire_id.0];
                 if wire.fragments.is_empty() {
-                    null_wires.insert(wire_index);
+                    null_wires.insert(wire_id);
                 }
                 for (&loc, &(flow, _)) in wire.ports.iter() {
                     debug_assert!(!wires_for_ports.contains_key(&loc));
-                    wires_for_ports.insert(loc, wire_index);
+                    wires_for_ports.insert(loc, wire_id);
                     debug_assert!(!groups_for_ports.contains_key(&loc));
                     if flow == PortFlow::Send {
                         groups_for_ports.insert(loc, group_index);
@@ -884,14 +884,14 @@ impl EditGrid {
             (0..self.wire_groups.len()).map(|_| vec![]).collect();
         for (coords, ctype, orient) in self.chips() {
             let ports = ctype.ports(coords, orient);
-            let wires: Vec<(usize, WireSize)> = ports
+            let wires: Vec<(WireId, WireSize)> = ports
                 .iter()
                 .map(|port| {
-                    let wire_index = wires_for_ports[&port.loc()];
-                    let wire = &self.wires[wire_index];
+                    let wire_id = wires_for_ports[&port.loc()];
+                    let wire = &self.wires[wire_id.0];
                     debug_assert!(!wire.has_error);
                     debug_assert!(!wire.size.is_empty());
-                    (wire_index, wire.size.lower_bound().unwrap())
+                    (wire_id, wire.size.lower_bound().unwrap())
                 })
                 .collect();
             for (port_index, chip_eval) in
@@ -904,7 +904,7 @@ impl EditGrid {
         }
 
         let puzzle_eval = {
-            let slots: Vec<Vec<((Coords, Direction), usize)>> = self
+            let slots: Vec<Vec<((Coords, Direction), WireId)>> = self
                 .interfaces
                 .iter()
                 .map(|interface| {
@@ -947,16 +947,16 @@ impl EditGrid {
         return None;
     }
 
-    pub fn wire_tooltip_format(&self, index: usize) -> String {
-        if index >= self.wires.len() {
+    pub fn wire_tooltip_format(&self, wire_id: WireId) -> String {
+        if wire_id.0 >= self.wires.len() {
             // This shouldn't happen.
             return format!(
                 "ERROR: index={} num_wires={}",
-                index,
+                wire_id.0,
                 self.wires.len()
             );
         }
-        let wire = &self.wires[index];
+        let wire = &self.wires[wire_id.0];
         let size = if let Some(size) = wire.size.lower_bound() {
             format!("{}-bit", size.num_bits())
         } else {
@@ -974,11 +974,11 @@ impl EditGrid {
                 WireColor::Behavior => {
                     fmt.push_str(&format!(
                         "\nCurrent value: {}",
-                        eval.wire_value(index)
+                        eval.wire_value(wire_id)
                     ));
                 }
                 WireColor::Event => {
-                    if let Some(value) = eval.wire_event(index) {
+                    if let Some(value) = eval.wire_event(wire_id) {
                         if wire.size.lower_bound() == Some(WireSize::Zero) {
                             fmt.push_str("\nCurrently has an event.");
                         } else {
@@ -995,14 +995,14 @@ impl EditGrid {
         }
         for error in self.errors.iter() {
             match *error {
-                WireError::MultipleSenders(idx) if idx == index => {
+                WireError::MultipleSenders(id) if id == wire_id => {
                     fmt.push_str(
                         "\n\n$RError:$D This wire is connected to \
                          multiple send ports.  Disconnect it from \
                          all but one of those ports.",
                     );
                 }
-                WireError::PortColorMismatch(idx) if idx == index => {
+                WireError::PortColorMismatch(id) if id == wire_id => {
                     fmt.push_str(
                         "\n\n$RError:$D This wire is connected to \
                          both a $Obehavior$D and an $Cevent$D \
@@ -1010,7 +1010,7 @@ impl EditGrid {
                          same type.",
                     );
                 }
-                WireError::NoValidSize(idx) if idx == index => {
+                WireError::NoValidSize(id) if id == wire_id => {
                     // TODO: Make this message more helpful.  For example, if
                     //   the wire must be exactly 2 bits on one side and 4 bits
                     //   on the other, we should give those values.
@@ -1019,8 +1019,8 @@ impl EditGrid {
                          mismatching bit sizes.",
                     );
                 }
-                WireError::UnbrokenLoop(ref indices, contains_events)
-                    if indices.contains(&index) =>
+                WireError::UnbrokenLoop(ref ids, contains_events)
+                    if ids.contains(&wire_id) =>
                 {
                     fmt.push_str(
                         "\n\n$RError:$D This wire forms a closed \
@@ -1204,7 +1204,7 @@ impl<'a> Iterator for ChipsIter<'a> {
 //===========================================================================//
 
 pub struct WireFragmentsIter<'a> {
-    inner: hash_map::Iter<'a, (Coords, Direction), (WireShape, usize)>,
+    inner: hash_map::Iter<'a, (Coords, Direction), (WireShape, WireId)>,
     wires: &'a [WireInfo],
 }
 
@@ -1215,8 +1215,8 @@ impl<'a> Iterator for WireFragmentsIter<'a> {
         &mut self,
     ) -> Option<(Coords, Direction, WireShape, WireSize, WireColor, bool)>
     {
-        if let Some((&(coords, dir), &(shape, index))) = self.inner.next() {
-            let wire = &self.wires[index];
+        if let Some((&(coords, dir), &(shape, id))) = self.inner.next() {
+            let wire = &self.wires[id.0];
             let size = wire.size.lower_bound().unwrap_or(WireSize::One);
             Some((coords, dir, shape, size, wire.color, wire.has_error))
         } else {
@@ -1239,7 +1239,7 @@ impl<'a> ExactSizeIterator for WireFragmentsIter<'a> {
 
 pub struct WireFragmentsForWireIter<'a> {
     inner: hash_set::Iter<'a, (Coords, Direction)>,
-    fragments: &'a HashMap<(Coords, Direction), (WireShape, usize)>,
+    fragments: &'a HashMap<(Coords, Direction), (WireShape, WireId)>,
 }
 
 impl<'a> Iterator for WireFragmentsForWireIter<'a> {

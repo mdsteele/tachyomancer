@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -104,11 +104,11 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct LanderEval {
-    alt_wire: usize,
-    angle_wire: usize,
-    fuel_wire: usize,
-    port_wire: usize,
-    stbd_wire: usize,
+    alt_wire: WireId,
+    angle_wire: WireId,
+    fuel_wire: WireId,
+    port_wire: WireId,
+    stbd_wire: WireId,
     current_altitude: f64,
     current_velocity: f64,
     current_angle: i32,
@@ -120,7 +120,7 @@ pub struct LanderEval {
 impl LanderEval {
     pub const INITIAL_ALTITUDE: f64 = INIT_ALTITUDE;
 
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> LanderEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> LanderEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 3);
         debug_assert_eq!(slots[1].len(), 2);

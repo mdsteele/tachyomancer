@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -78,13 +78,13 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct GeigerEval {
-    click_wire: usize,
+    click_wire: WireId,
     count_port: (Coords, Direction),
-    count_wire: usize,
+    count_wire: WireId,
 }
 
 impl GeigerEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> GeigerEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> GeigerEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);

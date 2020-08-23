@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -74,9 +74,9 @@ pub const INTERFACES: &[Interface] = &[
 const GOALS: &[u32] = &[5, 9, 15, 7, 11, 1, 3, 13];
 
 pub struct SensorsEval {
-    upper_wire: usize,
-    lower_wire: usize,
-    out_wire: usize,
+    upper_wire: WireId,
+    lower_wire: WireId,
+    out_wire: WireId,
     current_upper: u32,
     current_lower: u32,
     current_goal: u32,
@@ -84,7 +84,7 @@ pub struct SensorsEval {
 }
 
 impl SensorsEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> SensorsEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> SensorsEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);

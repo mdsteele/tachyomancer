@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -110,18 +110,18 @@ pub const INTERFACES: &[Interface] = &[
 
 pub struct GrappleEval {
     port_ctrl_port: (Coords, Direction),
-    port_ctrl_wire: usize,
-    port_charge_wire: usize,
+    port_ctrl_wire: WireId,
+    port_charge_wire: WireId,
     stbd_ctrl_port: (Coords, Direction),
-    stbd_ctrl_wire: usize,
-    stbd_charge_wire: usize,
+    stbd_ctrl_wire: WireId,
+    stbd_charge_wire: WireId,
     current_port_charge: u32,
     current_stbd_charge: u32,
     num_coils_fired: usize,
 }
 
 impl GrappleEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> GrappleEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> GrappleEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 2);

@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -109,17 +109,19 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct GuidanceEval {
-    enemy_wire: usize,
-    port_wire: usize,
-    xpos_wire: usize,
-    stbd_wire: usize,
+    enemy_wire: WireId,
+    port_wire: WireId,
+    xpos_wire: WireId,
+    stbd_wire: WireId,
     torp_x_pos: u32,
     dist_travelled: i32,
     num_enemies_signaled: usize,
 }
 
 impl GuidanceEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> GuidanceEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
+    ) -> GuidanceEval {
         debug_assert_eq!(slots.len(), 4);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 1);

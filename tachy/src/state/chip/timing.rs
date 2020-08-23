@@ -21,7 +21,7 @@ use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::Direction;
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -38,15 +38,15 @@ pub const CLOCK_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct ClockChipEval {
-    input: usize,
-    output: usize,
+    input: WireId,
+    output: WireId,
     received: bool,
     should_send: bool,
 }
 
 impl ClockChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), CLOCK_CHIP_DATA.ports.len());
         let chip_eval = ClockChipEval {
@@ -92,14 +92,14 @@ pub const DELAY_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct DelayChipEval {
-    input: usize,
-    output: usize,
+    input: WireId,
+    output: WireId,
     value: Option<u32>,
 }
 
 impl DelayChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), DELAY_CHIP_DATA.ports.len());
         let chip_eval = DelayChipEval {
@@ -144,16 +144,16 @@ pub const EGG_TIMER_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct EggTimerChipEval {
-    set: usize,
-    remain: usize,
-    alarm: usize,
+    set: WireId,
+    remain: WireId,
+    alarm: WireId,
     time: u32,
     should_send: bool,
 }
 
 impl EggTimerChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), EGG_TIMER_CHIP_DATA.ports.len());
         let chip_eval = EggTimerChipEval {
@@ -210,10 +210,10 @@ pub const STOPWATCH_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct StopwatchChipEval {
-    start: usize,
-    stop: usize,
-    reset: usize,
-    output: usize,
+    start: WireId,
+    stop: WireId,
+    reset: WireId,
+    output: WireId,
     size: WireSize,
     time: u32,
     running: bool,
@@ -221,7 +221,7 @@ pub struct StopwatchChipEval {
 
 impl StopwatchChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), STOPWATCH_CHIP_DATA.ports.len());
         let chip_eval = StopwatchChipEval {

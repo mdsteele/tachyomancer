@@ -24,13 +24,12 @@ use crate::mancer::gl::Depth;
 use crate::mancer::gui::Resources;
 use cgmath::{Matrix4, Vector2};
 use std::collections::HashMap;
-use std::usize;
 use tachy::geom::{
     Color4, Coords, CoordsSize, Direction, MatrixExt, Orientation,
 };
 use tachy::save::{ChipType, CircuitData, WireShape, WireSize};
 use tachy::state::{
-    self, ChipExt, PortColor, PortConstraint, PortFlow, WireInfo,
+    self, ChipExt, PortColor, PortConstraint, PortFlow, WireId, WireInfo,
 };
 
 //===========================================================================//
@@ -93,12 +92,12 @@ impl ParserPiece for ParserCircuitPiece {
             .iter()
             .map(|(delta, ctype, orient)| (origin + delta, (ctype, orient)))
             .collect();
-        let mut fragments: HashMap<(Coords, Direction), (WireShape, usize)> =
+        let mut fragments: HashMap<(Coords, Direction), (WireShape, WireId)> =
             self.data
                 .wires
                 .iter()
                 .map(|(delta, dir, shape)| {
-                    ((origin + delta, dir), (shape, usize::MAX))
+                    ((origin + delta, dir), (shape, WireId::NULL))
                 })
                 .collect();
         // TODO: Perform fragment repair, like in EditGrid::from_circuit_data,
@@ -145,7 +144,7 @@ struct CompiledCircuitPiece {
     num_millis: usize,
     size: CoordsSize,
     chips: HashMap<Coords, (ChipType, Orientation)>,
-    fragments: HashMap<(Coords, Direction), (WireShape, usize)>,
+    fragments: HashMap<(Coords, Direction), (WireShape, WireId)>,
     wires: Vec<WireInfo>,
 }
 
@@ -189,8 +188,8 @@ impl CompiledPiece for CompiledCircuitPiece {
             );
         }
         // Draw wires:
-        for (&(coords, dir), &(shape, index)) in self.fragments.iter() {
-            let info = &self.wires[index];
+        for (&(coords, dir), &(shape, wire_id)) in self.fragments.iter() {
+            let info = &self.wires[wire_id.0];
             let size = info.size.lower_bound().unwrap_or(WireSize::One);
             WireModel::draw_fragment(
                 resources,

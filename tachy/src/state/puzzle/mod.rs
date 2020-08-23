@@ -100,6 +100,7 @@ pub use self::tutor_evt::{
 };
 pub use self::tutor_ram::TUTORIAL_RAM_DATA;
 pub use self::xunit::XUnitEval;
+use super::check::WireId;
 use super::chip::{ChipAvailability, ChipExt};
 use super::eval::PuzzleEval;
 use super::interface::Interface;
@@ -287,7 +288,7 @@ fn is_chip_allowed_in(
 
 pub(super) fn new_puzzle_eval(
     puzzle: Puzzle,
-    slots: Vec<Vec<((Coords, Direction), usize)>>,
+    slots: Vec<Vec<((Coords, Direction), WireId)>>,
 ) -> Box<dyn PuzzleEval> {
     match puzzle {
         Puzzle::AutomateBeacon => Box::new(BeaconEval::new(slots)),

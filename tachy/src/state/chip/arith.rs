@@ -21,7 +21,7 @@ use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::Direction;
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -41,14 +41,14 @@ pub const ADD_CHIP_DATA: &ChipData = &ChipData {
 
 pub struct AddChipEval {
     size: WireSize,
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl AddChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), ADD_CHIP_DATA.ports.len());
         let chip_eval = AddChipEval {
@@ -93,15 +93,15 @@ pub const ADD_2BIT_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct Add2BitChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
-    carry: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
+    carry: WireId,
 }
 
 impl Add2BitChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), ADD_2BIT_CHIP_DATA.ports.len());
         let chip_eval = Add2BitChipEval {
@@ -142,13 +142,13 @@ pub const HALVE_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct HalveChipEval {
-    input: usize,
-    output: usize,
+    input: WireId,
+    output: WireId,
 }
 
 impl HalveChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), HALVE_CHIP_DATA.ports.len());
         let chip_eval =
@@ -182,14 +182,14 @@ pub const INC_CHIP_DATA: &ChipData = &ChipData {
 
 pub struct IncChipEval {
     size: WireSize,
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl IncChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), INC_CHIP_DATA.ports.len());
         let chip_eval = IncChipEval {
@@ -218,14 +218,14 @@ pub const MUL_CHIP_DATA: &ChipData = ADD_CHIP_DATA;
 
 pub struct MulChipEval {
     size: WireSize,
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl MulChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), MUL_CHIP_DATA.ports.len());
         let chip_eval = MulChipEval {
@@ -270,15 +270,15 @@ pub const MUL_4BIT_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct Mul4BitChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
-    carry: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
+    carry: WireId,
 }
 
 impl Mul4BitChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), MUL_4BIT_CHIP_DATA.ports.len());
         let chip_eval = Mul4BitChipEval {
@@ -320,13 +320,13 @@ pub const NEG_CHIP_DATA: &ChipData = &ChipData {
 
 pub struct NegChipEval {
     size: WireSize,
-    input: usize,
-    output: usize,
+    input: WireId,
+    output: WireId,
 }
 
 impl NegChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), NEG_CHIP_DATA.ports.len());
         let chip_eval = NegChipEval {
@@ -351,14 +351,14 @@ impl ChipEval for NegChipEval {
 pub const SUB_CHIP_DATA: &ChipData = ADD_CHIP_DATA;
 
 pub struct SubChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl SubChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), SUB_CHIP_DATA.ports.len());
         let chip_eval = SubChipEval {

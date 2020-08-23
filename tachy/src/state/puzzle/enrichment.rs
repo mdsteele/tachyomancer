@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use std::collections::VecDeque;
 
 //===========================================================================//
@@ -142,13 +142,13 @@ pub const INTERFACES: &[Interface] = &[
 
 pub struct EnrichmentEval {
     child_port: (Coords, Direction),
-    child_wire: usize,
-    parent_wire: usize,
-    origin_wire: usize,
-    dest_wire: usize,
-    from_wire: usize,
+    child_wire: WireId,
+    parent_wire: WireId,
+    origin_wire: WireId,
+    dest_wire: WireId,
+    from_wire: WireId,
     to_port: (Coords, Direction),
-    to_wire: usize,
+    to_wire: WireId,
     contents: Vec<u8>,
     num_transfers_completed: usize,
     current_goal: Option<(u8, u32)>,
@@ -158,7 +158,7 @@ pub struct EnrichmentEval {
 
 impl EnrichmentEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> EnrichmentEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 2);

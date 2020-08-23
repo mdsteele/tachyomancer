@@ -21,7 +21,7 @@ use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::{Coords, Direction};
 use crate::save::{HotkeyCode, WireSize};
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -36,15 +36,15 @@ pub const BREAK_CHIP_DATA: &ChipData = &ChipData {
 
 pub struct BreakChipEval {
     enabled: bool,
-    input: usize,
-    output: usize,
+    input: WireId,
+    output: WireId,
     coords: Coords,
 }
 
 impl BreakChipEval {
     pub fn new_evals(
         enabled: bool,
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
         coords: Coords,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), BREAK_CHIP_DATA.ports.len());
@@ -96,7 +96,7 @@ pub const BUTTON_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct ButtonChipEval {
-    output: usize,
+    output: WireId,
     coords: Coords,
     hotkey: Option<HotkeyCode>,
     press_count: u32,
@@ -105,7 +105,7 @@ pub struct ButtonChipEval {
 impl ButtonChipEval {
     pub fn new_evals(
         hotkey: Option<HotkeyCode>,
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
         coords: Coords,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), BUTTON_CHIP_DATA.ports.len());
@@ -168,7 +168,7 @@ pub const TOGGLE_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct ToggleChipEval {
-    output: usize,
+    output: WireId,
     value: bool,
     coords: Coords,
     toggle_count: u32,
@@ -177,7 +177,7 @@ pub struct ToggleChipEval {
 impl ToggleChipEval {
     pub fn new_evals(
         value: bool,
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
         coords: Coords,
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), TOGGLE_CHIP_DATA.ports.len());

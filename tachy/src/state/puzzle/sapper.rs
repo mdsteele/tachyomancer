@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{AsFloat, Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use cgmath::{Deg, Point2};
 
 //===========================================================================//
@@ -158,15 +158,15 @@ enum EngineMovement {
 //===========================================================================//
 
 pub struct SapperEval {
-    scan_wire: usize,
-    face_wire: usize,
-    xpos_wire: usize,
-    ypos_wire: usize,
-    ready_wire: usize,
+    scan_wire: WireId,
+    face_wire: WireId,
+    xpos_wire: WireId,
+    ypos_wire: WireId,
+    ready_wire: WireId,
     move_port: (Coords, Direction),
-    move_wire: usize,
+    move_wire: WireId,
     turn_port: (Coords, Direction),
-    turn_wire: usize,
+    turn_wire: WireId,
     position: Point2<i32>,
     direction: Direction,
     engine_movement: EngineMovement,
@@ -177,7 +177,7 @@ pub struct SapperEval {
 impl SapperEval {
     pub const NUM_SECTIONS: usize = NUM_SECTIONS;
 
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> SapperEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> SapperEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 3);

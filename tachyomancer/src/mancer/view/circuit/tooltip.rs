@@ -22,7 +22,7 @@ use super::manip::ManipulationAction;
 use cgmath::Point2;
 use tachy::geom::{AsInt, Coords, Direction, PolygonRef};
 use tachy::save::{ChipType, WireShape};
-use tachy::state::EditGrid;
+use tachy::state::{EditGrid, WireId};
 
 //===========================================================================//
 
@@ -31,7 +31,7 @@ pub enum GridTooltipTag {
     Chip(Coords, ChipType),
     Interface(usize),
     Manipulation(ManipulationAction),
-    Wire(usize),
+    Wire(WireId),
 }
 
 impl GridTooltipTag {
@@ -80,8 +80,8 @@ impl GridTooltipTag {
             }
         }
         if let Some(dir) = wire_dir {
-            let index = grid.wire_index_at(coords, dir).unwrap();
-            return Some(GridTooltipTag::Wire(index));
+            let wire_id = grid.wire_id_at(coords, dir).unwrap();
+            return Some(GridTooltipTag::Wire(wire_id));
         }
         return None;
     }
@@ -93,7 +93,7 @@ impl GridTooltipTag {
                 grid.interfaces()[index].tooltip_format()
             }
             GridTooltipTag::Manipulation(action) => action.tooltip_format(),
-            GridTooltipTag::Wire(index) => grid.wire_tooltip_format(index),
+            GridTooltipTag::Wire(id) => grid.wire_tooltip_format(id),
         }
     }
 }

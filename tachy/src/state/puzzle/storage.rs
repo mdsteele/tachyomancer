@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use std::mem;
 
 //===========================================================================//
@@ -175,14 +175,14 @@ enum MotorMovement {
 //===========================================================================//
 
 pub struct StorageDepotEval {
-    recv_wire: usize,
-    xmit_wire: usize,
-    pos_wire: usize,
-    held_wire: usize,
-    turn_wire: usize,
+    recv_wire: WireId,
+    xmit_wire: WireId,
+    pos_wire: WireId,
+    held_wire: WireId,
+    turn_wire: WireId,
     grab_port: (Coords, Direction),
-    grab_wire: usize,
-    done_wire: usize,
+    grab_wire: WireId,
+    done_wire: WireId,
     motor_movement: MotorMovement,
     movement_is_done: bool,
     current_position: u32,
@@ -197,7 +197,7 @@ pub struct StorageDepotEval {
 
 impl StorageDepotEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> StorageDepotEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 2);

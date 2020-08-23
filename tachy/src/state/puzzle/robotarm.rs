@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -121,14 +121,14 @@ enum MotorMovement {
 //===========================================================================//
 
 pub struct RobotArmEval {
-    recv_wire: usize,
+    recv_wire: WireId,
     xmit_port: (Coords, Direction),
-    xmit_wire: usize,
-    pos_wire: usize,
-    turn_wire: usize,
+    xmit_wire: WireId,
+    pos_wire: WireId,
+    turn_wire: WireId,
     manip_port: (Coords, Direction),
-    manip_wire: usize,
-    done_wire: usize,
+    manip_wire: WireId,
+    done_wire: WireId,
     motor_movement: MotorMovement,
     movement_is_done: bool,
     current_position: u32,
@@ -141,7 +141,9 @@ pub struct RobotArmEval {
 }
 
 impl RobotArmEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> RobotArmEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
+    ) -> RobotArmEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 4);

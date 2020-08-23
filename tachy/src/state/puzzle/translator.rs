@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -177,12 +177,12 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct TranslatorEval {
-    read_wire: usize,
+    read_wire: WireId,
     print_port: (Coords, Direction),
-    print_wire: usize,
+    print_wire: WireId,
     alien_port: (Coords, Direction),
-    alien_wire: usize,
-    human_wire: usize,
+    alien_wire: WireId,
+    human_wire: WireId,
     num_bytes_read: usize,
     translation_buffer: Vec<u8>,
     pending_translation: Option<(u32, Vec<u8>)>,
@@ -191,7 +191,7 @@ pub struct TranslatorEval {
 
 impl TranslatorEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> TranslatorEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);

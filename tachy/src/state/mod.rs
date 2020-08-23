@@ -30,7 +30,7 @@ mod verify;
 pub use self::change::GridChange;
 pub use self::check::{
     detect_loops, determine_wire_sizes, group_wires, map_ports_to_wires,
-    recolor_wires, WireColor, WireError, WireInfo,
+    recolor_wires, WireColor, WireError, WireId, WireInfo,
 };
 pub use self::chip::ChipExt;
 pub use self::edit::{ChipsIter, EditGrid, WireFragmentsIter};

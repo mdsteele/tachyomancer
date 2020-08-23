@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -113,10 +113,10 @@ enum EggState {
 
 struct IncubatorSlot {
     delays: &'static [u32],
-    next_wire: usize,
+    next_wire: WireId,
     load_port: (Coords, Direction),
-    load_wire: usize,
-    done_wire: usize,
+    load_wire: WireId,
+    done_wire: WireId,
     egg_state: EggState,
     num_eggs_completed: usize,
 }
@@ -274,14 +274,14 @@ impl IncubatorSlot {
 
 pub struct IncubatorEval {
     heat_port: (Coords, Direction),
-    heat_wire: usize,
+    heat_wire: WireId,
     left_slot: IncubatorSlot,
     right_slot: IncubatorSlot,
 }
 
 impl IncubatorEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> IncubatorEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);

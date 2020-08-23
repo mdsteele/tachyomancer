@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use std::collections::{BTreeSet, HashMap};
 
 //===========================================================================//
@@ -113,17 +113,17 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct XUnitEval {
-    proxy_wire: usize,
-    ping_wire: usize,
-    fire_wire: usize,
-    pong_wire: usize,
+    proxy_wire: WireId,
+    ping_wire: WireId,
+    fire_wire: WireId,
+    pong_wire: WireId,
     test_signals: HashMap<u32, BTreeSet<u32>>,
     detonations: HashMap<u32, BTreeSet<u32>>,
     any_detonated: bool,
 }
 
 impl XUnitEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> XUnitEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> XUnitEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 1);
         debug_assert_eq!(slots[1].len(), 3);

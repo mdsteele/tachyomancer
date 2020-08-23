@@ -19,9 +19,9 @@
 
 use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort};
-use super::super::port::{PortColor, PortFlow};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
+use crate::state::{PortColor, PortFlow, WireId};
 use std::collections::HashSet;
 use std::u32;
 
@@ -63,17 +63,17 @@ impl FabricationData {
 
 pub struct FabricationEval {
     interfaces: &'static [Interface],
-    slots: Vec<Vec<((Coords, Direction), usize)>>,
+    slots: Vec<Vec<((Coords, Direction), WireId)>>,
     num_columns: usize,
     expected_table_values: &'static [u32],
     table_values: Vec<u32>,
-    has_received_events: HashSet<usize>,
+    has_received_events: HashSet<WireId>,
 }
 
 impl FabricationEval {
     pub fn new(
         data: &FabricationData,
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> FabricationEval {
         let mut num_columns: usize = 0;
         debug_assert_eq!(slots.len(), data.interfaces.len());

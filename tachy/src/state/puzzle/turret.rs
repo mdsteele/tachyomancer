@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -149,15 +149,15 @@ enum MotorMovement {
 //===========================================================================//
 
 pub struct TurretEval {
-    dir_wire: usize,
-    dist_wire: usize,
+    dir_wire: WireId,
+    dist_wire: WireId,
     fire_port: (Coords, Direction),
-    fire_wire: usize,
-    loaded_wire: usize,
-    face_wire: usize,
+    fire_wire: WireId,
+    loaded_wire: WireId,
+    face_wire: WireId,
     rotate_port: (Coords, Direction),
-    rotate_wire: usize,
-    done_wire: usize,
+    rotate_wire: WireId,
+    done_wire: WireId,
     radar_position: u32,
     radar_position_degrees: u32,
     cannon_cooldown: u32,
@@ -172,7 +172,7 @@ pub struct TurretEval {
 }
 
 impl TurretEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> TurretEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> TurretEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 2);

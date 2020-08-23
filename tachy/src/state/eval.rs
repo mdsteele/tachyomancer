@@ -17,6 +17,7 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
+use super::check::WireId;
 use crate::geom::{Coords, Direction};
 use crate::save::{HotkeyCode, InputsData, ScoreUnits};
 use downcast_rs::{impl_downcast, Downcast};
@@ -66,7 +67,7 @@ impl CircuitEval {
     pub fn new(
         num_wire_fragments: usize,
         num_wires: usize,
-        null_wires: HashSet<usize>,
+        null_wires: HashSet<WireId>,
         chip_groups: Vec<Vec<Box<dyn ChipEval>>>,
         puzzle_eval: Box<dyn PuzzleEval>,
         score_units: ScoreUnits,
@@ -154,16 +155,16 @@ impl CircuitEval {
         return Some(inputs);
     }
 
-    pub fn wire_event(&self, wire_index: usize) -> Option<u32> {
-        self.state.recv_event(wire_index)
+    pub fn wire_event(&self, wire_id: WireId) -> Option<u32> {
+        self.state.recv_event(wire_id)
     }
 
-    pub fn wire_value(&self, wire_index: usize) -> u32 {
-        self.state.values[wire_index].0
+    pub fn wire_value(&self, wire_id: WireId) -> u32 {
+        self.state.values[wire_id.0].0
     }
 
-    pub fn wire_has_change(&self, wire_index: usize) -> bool {
-        self.state.values[wire_index].1
+    pub fn wire_has_change(&self, wire_id: WireId) -> bool {
+        self.state.values[wire_id.0].1
     }
 
     /// Returns display data for the chip at the given coordinates, if any.
@@ -313,7 +314,7 @@ pub struct CircuitState {
     // We treat them as wires for ease of evaluation, but we don't count the
     // circuit state as having "changed" for the purposes of debug stepping
     // when one of these ports changes values.
-    null_wires: HashSet<usize>,
+    null_wires: HashSet<WireId>,
     values: Vec<(u32, bool)>,
     breakpoints: Vec<Coords>,
     hotkey_presses: HashMap<HotkeyCode, u32>,
@@ -322,7 +323,7 @@ pub struct CircuitState {
 }
 
 impl CircuitState {
-    fn new(num_values: usize, null_wires: HashSet<usize>) -> CircuitState {
+    fn new(num_values: usize, null_wires: HashSet<WireId>) -> CircuitState {
         CircuitState {
             time_step: 0,
             cycle: 0,
@@ -339,16 +340,16 @@ impl CircuitState {
         self.time_step
     }
 
-    pub fn recv_behavior(&self, slot: usize) -> u32 {
-        self.values[slot].0
+    pub fn recv_behavior(&self, slot: WireId) -> u32 {
+        self.values[slot.0].0
     }
 
-    pub fn behavior_changed(&self, slot: usize) -> bool {
-        self.values[slot].1
+    pub fn behavior_changed(&self, slot: WireId) -> bool {
+        self.values[slot.0].1
     }
 
-    pub fn recv_event(&self, slot: usize) -> Option<u32> {
-        let (value, has_event) = self.values[slot];
+    pub fn recv_event(&self, slot: WireId) -> Option<u32> {
+        let (value, has_event) = self.values[slot.0];
         if has_event {
             Some(value)
         } else {
@@ -356,19 +357,19 @@ impl CircuitState {
         }
     }
 
-    pub fn has_event(&self, slot: usize) -> bool {
-        self.values[slot].1
+    pub fn has_event(&self, slot: WireId) -> bool {
+        self.values[slot.0].1
     }
 
-    pub fn send_behavior(&mut self, slot: usize, value: u32) {
-        if self.values[slot].0 != value {
-            self.values[slot] = (value, true);
+    pub fn send_behavior(&mut self, slot: WireId, value: u32) {
+        if self.values[slot.0].0 != value {
+            self.values[slot.0] = (value, true);
             self.changed = !self.null_wires.contains(&slot);
         }
     }
 
-    pub fn send_event(&mut self, slot: usize, value: u32) {
-        self.values[slot] = (value, true);
+    pub fn send_event(&mut self, slot: WireId, value: u32) {
+        self.values[slot.0] = (value, true);
         self.changed = !self.null_wires.contains(&slot);
     }
 

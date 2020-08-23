@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use std::collections::VecDeque;
 
 //===========================================================================//
@@ -83,9 +83,9 @@ pub const INTERFACES: &[Interface] = &[Interface {
 //===========================================================================//
 
 pub struct DrillingRigEval {
-    depth_wire: usize,
-    speed_wire: usize,
-    jolt_wire: usize,
+    depth_wire: WireId,
+    speed_wire: WireId,
+    jolt_wire: WireId,
     current_depth: u32,
     recent_jolts: VecDeque<bool>,
     hit_jolt: bool,
@@ -93,7 +93,7 @@ pub struct DrillingRigEval {
 
 impl DrillingRigEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> DrillingRigEval {
         debug_assert_eq!(slots.len(), 1);
         debug_assert_eq!(slots[0].len(), 3);

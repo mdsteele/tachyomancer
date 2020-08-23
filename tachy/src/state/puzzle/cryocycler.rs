@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use std::collections::HashSet;
 
 //===========================================================================//
@@ -99,17 +99,17 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct CryocyclerEval {
-    pod1_wire: usize,
-    pod2_wire: usize,
+    pod1_wire: WireId,
+    pod2_wire: WireId,
     thaw_port: (Coords, Direction),
-    thaw_wire: usize,
+    thaw_wire: WireId,
     thawed: HashSet<u32>,
     cycle_index: usize,
 }
 
 impl CryocyclerEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> CryocyclerEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);

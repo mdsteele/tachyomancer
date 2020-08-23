@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use std::collections::HashSet;
 
 //===========================================================================//
@@ -147,18 +147,18 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct CollectorEval {
-    rx_wire: usize,
-    xpos_wire: usize,
+    rx_wire: WireId,
+    xpos_wire: WireId,
     xmove_port: (Coords, Direction),
-    xmove_wire: usize,
-    xdone_wire: usize,
-    ypos_wire: usize,
+    xmove_wire: WireId,
+    xdone_wire: WireId,
+    ypos_wire: WireId,
     ymove_port: (Coords, Direction),
-    ymove_wire: usize,
-    ydone_wire: usize,
+    ymove_wire: WireId,
+    ydone_wire: WireId,
     cmove_port: (Coords, Direction),
-    cmove_wire: usize,
-    cdone_wire: usize,
+    cmove_wire: WireId,
+    cdone_wire: WireId,
     position: (u32, u32),
     x_moving: Option<u32>,
     y_moving: Option<u32>,
@@ -169,7 +169,7 @@ pub struct CollectorEval {
 
 impl CollectorEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> CollectorEval {
         debug_assert_eq!(slots.len(), 4);
         debug_assert_eq!(slots[0].len(), 1);

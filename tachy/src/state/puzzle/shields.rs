@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -174,13 +174,13 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct ShieldsEval {
-    dist_wire: usize,
-    torp_wire: usize,
+    dist_wire: WireId,
+    torp_wire: WireId,
     fire_port: (Coords, Direction),
-    fire_wire: usize,
-    power_wire: usize,
+    fire_wire: WireId,
+    power_wire: WireId,
     raise_port: (Coords, Direction),
-    raise_wire: usize,
+    raise_wire: WireId,
     torpedoes: Vec<(u32, u32)>, // (dist, speed)
     num_torpedoes_fired: usize,
     beam_cooldown: u32,
@@ -193,7 +193,7 @@ pub struct ShieldsEval {
 }
 
 impl ShieldsEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> ShieldsEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> ShieldsEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 1);

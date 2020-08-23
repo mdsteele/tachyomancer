@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -92,9 +92,9 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct ResonatorEval {
-    rear_wire: usize,
-    front_wire: usize,
-    pulse_wire: usize,
+    rear_wire: WireId,
+    front_wire: WireId,
+    pulse_wire: WireId,
     wave_position: i32,
     wave_dir: i32,
     speed_index: usize,
@@ -102,7 +102,7 @@ pub struct ResonatorEval {
 
 impl ResonatorEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> ResonatorEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 1);

@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -99,12 +99,12 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct MiningRobotEval {
-    dist_wire: usize,
-    back_wire: usize,
-    carry_wire: usize,
-    found_wire: usize,
+    dist_wire: WireId,
+    back_wire: WireId,
+    carry_wire: WireId,
+    found_wire: WireId,
     dig_port: (Coords, Direction),
-    dig_wire: usize,
+    dig_wire: WireId,
     ore_carried: u32,
     ore_at_base: u32,
     current_position: usize,
@@ -114,7 +114,7 @@ pub struct MiningRobotEval {
 
 impl MiningRobotEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> MiningRobotEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);

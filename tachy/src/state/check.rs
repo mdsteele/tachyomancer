@@ -42,20 +42,25 @@ pub enum WireColor {
 
 //===========================================================================//
 
-// TODO: struct WireId { index: usize } and NULL_WIRE_ID = WireId(usize::MAX)
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct WireId(pub usize);
+
+impl WireId {
+    pub const NULL: WireId = WireId(usize::MAX);
+}
 
 //===========================================================================//
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum WireError {
-    MultipleSenders(usize),
-    PortColorMismatch(usize),
-    NoValidSize(usize),
-    UnbrokenLoop(Vec<usize>, bool),
+    MultipleSenders(WireId),
+    PortColorMismatch(WireId),
+    NoValidSize(WireId),
+    UnbrokenLoop(Vec<WireId>, bool),
 }
 
 impl WireError {
-    pub fn wire_ids(&self) -> Vec<usize> {
+    pub fn wire_ids(&self) -> Vec<WireId> {
         match self {
             WireError::MultipleSenders(wire_id)
             | WireError::PortColorMismatch(wire_id)
@@ -95,7 +100,7 @@ impl WireInfo {
 
 pub fn group_wires(
     all_ports: &HashMap<(Coords, Direction), (PortFlow, PortColor)>,
-    all_fragments: &mut HashMap<(Coords, Direction), (WireShape, usize)>,
+    all_fragments: &mut HashMap<(Coords, Direction), (WireShape, WireId)>,
 ) -> Vec<WireInfo> {
     // TODO: Allow more limited starts for incremental typechecking.
     let mut starts: IndexMap<(Coords, Direction), WireShape> =
@@ -152,10 +157,10 @@ pub fn group_wires(
                 }
             }
         }
-        let wire_index = wires.len();
+        let wire_id = WireId(wires.len());
         for loc in wire_fragments.iter() {
-            if let Some(&mut (_, ref mut index)) = all_fragments.get_mut(loc) {
-                *index = wire_index;
+            if let Some(&mut (_, ref mut id)) = all_fragments.get_mut(loc) {
+                *id = wire_id;
             }
         }
         wires.push(WireInfo::new(wire_fragments, wire_ports));
@@ -195,7 +200,7 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
             wire.color = WireColor::Ambiguous;
             wire.size = WireSizeInterval::at_least(WireSize::One);
             wire.has_error = true;
-            errors.push(WireError::PortColorMismatch(index));
+            errors.push(WireError::PortColorMismatch(WireId(index)));
         } else if has_behavior {
             wire.color = WireColor::Behavior;
             wire.size = WireSizeInterval::at_least(WireSize::One);
@@ -208,7 +213,7 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
         }
         if num_senders > 1 {
             wire.has_error = true;
-            errors.push(WireError::MultipleSenders(index));
+            errors.push(WireError::MultipleSenders(WireId(index)));
         }
     }
     errors
@@ -218,11 +223,11 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
 
 pub fn map_ports_to_wires(
     wires: &Vec<WireInfo>,
-) -> HashMap<(Coords, Direction), usize> {
-    let mut wires_for_ports = HashMap::<(Coords, Direction), usize>::new();
+) -> HashMap<(Coords, Direction), WireId> {
+    let mut wires_for_ports = HashMap::<(Coords, Direction), WireId>::new();
     for (index, wire) in wires.iter().enumerate() {
         for &loc in wire.ports.keys() {
-            wires_for_ports.insert(loc, index);
+            wires_for_ports.insert(loc, WireId(index));
         }
     }
     wires_for_ports
@@ -232,7 +237,7 @@ pub fn map_ports_to_wires(
 
 pub fn determine_wire_sizes(
     wires: &mut Vec<WireInfo>,
-    wires_for_ports: &HashMap<(Coords, Direction), usize>,
+    wires_for_ports: &HashMap<(Coords, Direction), WireId>,
     mut constraints: Vec<PortConstraint>,
 ) -> Vec<WireError> {
     let mut changed = true;
@@ -241,7 +246,7 @@ pub fn determine_wire_sizes(
         constraints.retain(|&constraint| {
             match constraint {
                 PortConstraint::Exact(loc, size) => {
-                    let wire = &mut wires[wires_for_ports[&loc]];
+                    let wire = &mut wires[wires_for_ports[&loc].0];
                     let new_size = wire
                         .size
                         .intersection(WireSizeInterval::exactly(size));
@@ -251,47 +256,47 @@ pub fn determine_wire_sizes(
                     }
                 }
                 PortConstraint::AtLeast(loc, size) => {
-                    let wire = &mut wires[wires_for_ports[&loc]];
+                    let wire = &mut wires[wires_for_ports[&loc].0];
                     changed |= wire.size.make_at_least(size);
                 }
                 PortConstraint::AtMost(loc, size) => {
-                    let wire = &mut wires[wires_for_ports[&loc]];
+                    let wire = &mut wires[wires_for_ports[&loc].0];
                     changed |= wire.size.make_at_most(size);
                 }
                 PortConstraint::Equal(loc1, loc2) => {
-                    let index1 = wires_for_ports[&loc1];
-                    let index2 = wires_for_ports[&loc2];
-                    if index1 != index2 {
-                        let size1 = wires[index1].size;
-                        let size2 = wires[index2].size;
+                    let id1 = wires_for_ports[&loc1];
+                    let id2 = wires_for_ports[&loc2];
+                    if id1 != id2 {
+                        let size1 = wires[id1.0].size;
+                        let size2 = wires[id2.0].size;
                         if !size1.is_empty() && !size2.is_empty() {
                             let new_size = size1.intersection(size2);
                             changed = changed
                                 || new_size != size1
                                 || new_size != size2;
-                            wires[index1].size = new_size;
-                            wires[index2].size = new_size;
+                            wires[id1.0].size = new_size;
+                            wires[id2.0].size = new_size;
                             return new_size.is_ambiguous();
                         }
                     }
                 }
                 PortConstraint::Double(loc1, loc2) => {
-                    let index1 = wires_for_ports[&loc1];
-                    let index2 = wires_for_ports[&loc2];
-                    if index1 == index2 {
-                        let wire = &mut wires[index1];
+                    let id1 = wires_for_ports[&loc1];
+                    let id2 = wires_for_ports[&loc2];
+                    if id1 == id2 {
+                        let wire = &mut wires[id1.0];
                         changed |= !wire.size.is_empty();
                         wire.size = WireSizeInterval::empty();
                     } else {
-                        let size1 = wires[index1].size;
-                        let size2 = wires[index2].size;
+                        let size1 = wires[id1.0].size;
+                        let size2 = wires[id2.0].size;
                         if !size1.is_empty() && !size2.is_empty() {
                             let new_size1 = size1.intersection(size2.double());
                             let new_size2 = size2.intersection(size1.half());
                             changed |=
                                 new_size1 != size1 || new_size2 != size2;
-                            wires[index1].size = new_size1;
-                            wires[index2].size = new_size2;
+                            wires[id1.0].size = new_size1;
+                            wires[id2.0].size = new_size2;
                             return new_size1.is_ambiguous()
                                 || new_size2.is_ambiguous();
                         }
@@ -306,7 +311,7 @@ pub fn determine_wire_sizes(
     for (index, wire) in wires.iter_mut().enumerate() {
         if wire.color != WireColor::Unknown && wire.size.is_empty() {
             wire.has_error = true;
-            errors.push(WireError::NoValidSize(index));
+            errors.push(WireError::NoValidSize(WireId(index)));
         }
     }
     errors
@@ -316,26 +321,26 @@ pub fn determine_wire_sizes(
 
 pub fn detect_loops(
     wires: &mut Vec<WireInfo>,
-    wires_for_ports: &HashMap<(Coords, Direction), usize>,
+    wires_for_ports: &HashMap<(Coords, Direction), WireId>,
     dependencies: Vec<PortDependency>,
-) -> Result<Vec<Vec<usize>>, Vec<WireError>> {
-    let wire_indices: Vec<usize> = (0..wires.len()).collect();
-    let mut wire_successors: HashMap<usize, Vec<usize>> =
-        wire_indices.iter().map(|&index| (index, Vec::new())).collect();
+) -> Result<Vec<Vec<WireId>>, Vec<WireError>> {
+    let wire_ids: Vec<WireId> = (0..wires.len()).map(WireId).collect();
+    let mut wire_successors: HashMap<WireId, Vec<WireId>> =
+        wire_ids.iter().map(|&id| (id, Vec::new())).collect();
     for dependency in dependencies.into_iter() {
         let recv = wires_for_ports[&dependency.recv];
         let send = wires_for_ports[&dependency.send];
         wire_successors.get_mut(&recv).unwrap().push(send);
     }
 
-    match topological_sort_into_groups(&wire_indices, |index| {
-        wire_successors[&index].iter().copied()
+    match topological_sort_into_groups(&wire_ids, |id| {
+        wire_successors[&id].iter().copied()
     }) {
         Ok(groups) => return Ok(groups),
         Err((_, remaining)) => {
             let mut errors = Vec::<WireError>::new();
-            let comps = strongly_connected_components(&remaining, |index| {
-                wire_successors.get(index).unwrap().iter().copied()
+            let comps = strongly_connected_components(&remaining, |id| {
+                wire_successors.get(id).unwrap().iter().copied()
             });
             for comp in comps.into_iter() {
                 // By definition, a wire that isn't part of any cycle forms a
@@ -349,7 +354,7 @@ pub fn detect_loops(
                     }
                 }
                 let mut contains_events = false;
-                for &index in comp.iter() {
+                for &WireId(index) in comp.iter() {
                     contains_events |= wires[index].color == WireColor::Event;
                     wires[index].has_error = true;
                 }
@@ -365,7 +370,6 @@ pub fn detect_loops(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::usize;
 
     #[test]
     fn group_no_wires() {
@@ -388,30 +392,30 @@ mod tests {
             (PortFlow::Recv, PortColor::Behavior),
         );
         let mut frags =
-            HashMap::<(Coords, Direction), (WireShape, usize)>::new();
+            HashMap::<(Coords, Direction), (WireShape, WireId)>::new();
         frags.insert(
             ((0, 0).into(), Direction::East),
-            (WireShape::Stub, usize::MAX),
+            (WireShape::Stub, WireId::NULL),
         );
         frags.insert(
             ((1, 0).into(), Direction::West),
-            (WireShape::TurnRight, usize::MAX),
+            (WireShape::TurnRight, WireId::NULL),
         );
         frags.insert(
             ((1, 0).into(), Direction::South),
-            (WireShape::TurnLeft, usize::MAX),
+            (WireShape::TurnLeft, WireId::NULL),
         );
         frags.insert(
             ((1, 1).into(), Direction::North),
-            (WireShape::Stub, usize::MAX),
+            (WireShape::Stub, WireId::NULL),
         );
         frags.insert(
             ((1, 1).into(), Direction::East),
-            (WireShape::Stub, usize::MAX),
+            (WireShape::Stub, WireId::NULL),
         );
         frags.insert(
             ((2, 1).into(), Direction::West),
-            (WireShape::Stub, usize::MAX),
+            (WireShape::Stub, WireId::NULL),
         );
         let mut wires = group_wires(&ports, &mut frags);
         assert_eq!(2, wires.len(), "wires: {:?}", wires);
@@ -480,7 +484,7 @@ mod tests {
         let wires_for_ports = map_ports_to_wires(&wires);
         let errors =
             determine_wire_sizes(&mut wires, &wires_for_ports, constraints);
-        assert_eq!(vec![WireError::NoValidSize(0)], errors);
+        assert_eq!(vec![WireError::NoValidSize(WireId(0))], errors);
         assert!(wires[0].size.is_empty());
     }
 

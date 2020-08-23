@@ -21,7 +21,7 @@ use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, ChipData};
 use crate::geom::Direction;
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -39,14 +39,14 @@ pub const CMP_CHIP_DATA: &ChipData = &ChipData {
 };
 
 pub struct CmpChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl CmpChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), CMP_CHIP_DATA.ports.len());
         let chip_eval = CmpChipEval {
@@ -72,14 +72,14 @@ impl ChipEval for CmpChipEval {
 pub const CMPEQ_CHIP_DATA: &ChipData = CMP_CHIP_DATA;
 
 pub struct CmpEqChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl CmpEqChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), CMPEQ_CHIP_DATA.ports.len());
         let chip_eval = CmpEqChipEval {
@@ -105,14 +105,14 @@ impl ChipEval for CmpEqChipEval {
 pub const EQ_CHIP_DATA: &ChipData = CMP_CHIP_DATA;
 
 pub struct EqChipEval {
-    input1: usize,
-    input2: usize,
-    output: usize,
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
 }
 
 impl EqChipEval {
     pub fn new_evals(
-        slots: &[(usize, WireSize)],
+        slots: &[(WireId, WireSize)],
     ) -> Vec<(usize, Box<dyn ChipEval>)> {
         debug_assert_eq!(slots.len(), EQ_CHIP_DATA.ports.len());
         let chip_eval = EqChipEval {

@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 use num_integer::mod_floor;
 
 //===========================================================================//
@@ -95,10 +95,10 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct HeliostatEval {
-    goal_wire: usize,
-    efficiency_wire: usize,
-    pos_wire: usize,
-    motor_wire: usize,
+    goal_wire: WireId,
+    efficiency_wire: WireId,
+    pos_wire: WireId,
+    motor_wire: WireId,
     current_goal: u32,
     current_pos: u32,
     current_efficiency: u32,
@@ -108,7 +108,7 @@ pub struct HeliostatEval {
 
 impl HeliostatEval {
     pub fn new(
-        slots: Vec<Vec<((Coords, Direction), usize)>>,
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
     ) -> HeliostatEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);

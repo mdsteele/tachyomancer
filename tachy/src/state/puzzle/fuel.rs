@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -108,15 +108,18 @@ const TANK_PORTS: &[InterfacePort] = &[
 struct TankState {
     index: usize,
     valve_port: (Coords, Direction),
-    valve_wire: usize,
-    pump_wire: usize,
+    valve_wire: WireId,
+    pump_wire: WireId,
     amount: u32,
     to_be_drained: u32,
     did_pump: bool,
 }
 
 impl TankState {
-    fn new(index: usize, slots: &[((Coords, Direction), usize)]) -> TankState {
+    fn new(
+        index: usize,
+        slots: &[((Coords, Direction), WireId)],
+    ) -> TankState {
         debug_assert_eq!(slots.len(), 2);
         TankState {
             index,
@@ -182,14 +185,14 @@ impl TankState {
 pub struct FuelEval {
     tanks: [TankState; NUM_TANKS],
     mix_port: (Coords, Direction),
-    mix_wire: usize,
-    done_wire: usize,
+    mix_wire: WireId,
+    done_wire: WireId,
     mix_timer: Option<u32>,
     num_batches_finished: u32,
 }
 
 impl FuelEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> FuelEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> FuelEval {
         debug_assert_eq!(slots.len(), 3);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), 2);

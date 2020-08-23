@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -100,9 +100,9 @@ const_assert_eq!(INTERFACES[1].ports.len(), NUM_RODS);
 //===========================================================================//
 
 pub struct ReactorEval {
-    power_wire: usize,
-    target_wire: usize,
-    rod_wires: Vec<usize>,
+    power_wire: WireId,
+    target_wire: WireId,
+    rod_wires: Vec<WireId>,
     rod_values: Vec<u32>,
     current_power: f64,
     current_target: u32,
@@ -111,7 +111,7 @@ pub struct ReactorEval {
 }
 
 impl ReactorEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> ReactorEval {
+    pub fn new(slots: Vec<Vec<((Coords, Direction), WireId)>>) -> ReactorEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 2);
         debug_assert_eq!(slots[1].len(), NUM_RODS);

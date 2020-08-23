@@ -674,7 +674,7 @@ impl CircuitView {
         for error in grid.errors() {
             for wire_id in error.wire_ids() {
                 for ((coords, dir), _) in
-                    grid.wire_fragments_for_wire_index(wire_id)
+                    grid.wire_fragments_for_wire_id(wire_id)
                 {
                     let point = coords.as_f32()
                         + vec2(0.5, 0.5)

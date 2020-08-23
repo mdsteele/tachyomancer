@@ -28,6 +28,7 @@ mod timing;
 mod value;
 
 use self::data::{localize, AbstractConstraint, ChipData};
+use super::check::WireId;
 use super::eval::ChipEval;
 use super::port::{
     PortColor, PortConstraint, PortDependency, PortFlow, PortSpec,
@@ -311,7 +312,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
 pub(super) fn new_chip_evals(
     ctype: ChipType,
     coords: Coords,
-    slots: &[(usize, WireSize)],
+    slots: &[(WireId, WireSize)],
 ) -> Vec<(usize, Box<dyn ChipEval>)> {
     debug_assert_eq!(slots.len(), chip_data(ctype).ports.len());
     match ctype {

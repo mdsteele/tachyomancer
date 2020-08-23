@@ -43,7 +43,7 @@ use tachy::geom::{
     Orientation, Rect, RectSize,
 };
 use tachy::save::{ChipType, HotkeyCode, WireSize};
-use tachy::state::{EditGrid, GridChange, WireColor};
+use tachy::state::{EditGrid, GridChange, WireColor, WireId};
 
 //===========================================================================//
 
@@ -83,7 +83,7 @@ pub struct EditGridView {
     zoom: f32,
     interaction: Interaction,
     tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
-    hover_wire: Option<usize>,
+    hover_wire: Option<WireId>,
     manip_buttons: ManipulationButtons,
 }
 
@@ -262,12 +262,12 @@ impl EditGridView {
         grid_matrix: &Matrix4<f32>,
         grid: &EditGrid,
     ) {
-        let subcycle_wires: HashSet<usize> = if let Some(eval) = grid.eval() {
+        let subcycle_wires: HashSet<WireId> = if let Some(eval) = grid.eval() {
             if eval.subcycle() > 0 {
                 grid.wire_index_group(eval.subcycle() - 1)
                     .iter()
                     .copied()
-                    .filter(|&wire_index| eval.wire_has_change(wire_index))
+                    .filter(|&wire_id| eval.wire_has_change(wire_id))
                     .collect()
             } else {
                 HashSet::new()
@@ -284,10 +284,10 @@ impl EditGridView {
         for (coords, dir, shape, size, color, has_error) in
             grid.wire_fragments()
         {
-            let wire_index = grid.wire_index_at(coords, dir).unwrap();
-            let hilight = if self.hover_wire == Some(wire_index) {
+            let wire_id = grid.wire_id_at(coords, dir).unwrap();
+            let hilight = if self.hover_wire == Some(wire_id) {
                 &Color4::CYAN5
-            } else if subcycle_wires.contains(&wire_index) {
+            } else if subcycle_wires.contains(&wire_id) {
                 &Color4::YELLOW5
             } else {
                 &Color4::TRANSPARENT

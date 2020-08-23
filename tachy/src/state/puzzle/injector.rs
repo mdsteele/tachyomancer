@@ -21,7 +21,7 @@ use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort, InterfacePosition};
 use crate::geom::{Coords, Direction};
 use crate::save::WireSize;
-use crate::state::{PortColor, PortFlow};
+use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
@@ -93,11 +93,11 @@ pub const INTERFACES: &[Interface] = &[
 //===========================================================================//
 
 pub struct InjectorEval {
-    dir_wire: usize,
-    pos_wire: usize,
+    dir_wire: WireId,
+    pos_wire: WireId,
     inj_port: (Coords, Direction),
-    inj_wire: usize,
-    sensor_wire: usize,
+    inj_wire: WireId,
+    sensor_wire: WireId,
     position: usize,
     pending: Vec<u32>,
     sensor_queue: &'static [u32],
@@ -106,7 +106,9 @@ pub struct InjectorEval {
 }
 
 impl InjectorEval {
-    pub fn new(slots: Vec<Vec<((Coords, Direction), usize)>>) -> InjectorEval {
+    pub fn new(
+        slots: Vec<Vec<((Coords, Direction), WireId)>>,
+    ) -> InjectorEval {
         debug_assert_eq!(slots.len(), 2);
         debug_assert_eq!(slots[0].len(), 3);
         debug_assert_eq!(slots[1].len(), 1);

@@ -442,7 +442,9 @@ impl Converter {
             rgba,
         )
         .unwrap();
-        if pixel_format != icns::PixelFormat::RGBA {
+        if pixel_format == icns::PixelFormat::RGBA {
+            premultiply_image(&mut image);
+        } else {
             image = image.convert_to(pixel_format);
         }
         image.write_png(File::create(&png_path).unwrap()).unwrap();
@@ -502,6 +504,20 @@ struct ResourceInfo {
     license: String,
     year: i32,
     url: String,
+}
+
+//===========================================================================//
+
+fn premultiply_image(image: &mut icns::Image) {
+    let data = image.data_mut();
+    let num_pixels = data.len() / 4;
+    for index in 0..num_pixels {
+        let alpha = (data[4 * index + 3] as f64) / 255.0;
+        for offset in 0..3 {
+            let color = (data[4 * index + offset] as f64) / 255.0;
+            data[4 * index + offset] = (color * alpha * 255.0).round() as u8;
+        }
+    }
 }
 
 //===========================================================================//

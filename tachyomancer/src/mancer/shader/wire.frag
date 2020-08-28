@@ -14,7 +14,7 @@ void main() {
   float wire_alpha = tex.g;
   float hilight_brightness = tex.b;
   float hilight_alpha = tex.a;
-  color = vec4(WireColor * wire_brightness +
-               HilightColor.rgb * hilight_brightness,
+  color = vec4(WireColor * wire_brightness * wire_alpha +
+               HilightColor.rgb * hilight_brightness * hilight_alpha,
                wire_alpha + HilightColor.a * hilight_alpha);
 }

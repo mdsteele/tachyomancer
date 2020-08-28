@@ -19,6 +19,7 @@
 
 //===========================================================================//
 
+/// Represents an RGB color.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color3 {
     pub r: f32,
@@ -82,6 +83,7 @@ impl Color3 {
 
 //===========================================================================//
 
+/// Represents a non-premultiplied RGBA color.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color4 {
     pub r: f32,

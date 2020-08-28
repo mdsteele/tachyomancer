@@ -71,7 +71,14 @@ impl UniformValue for Color4 {
     }
     fn set_uniform(&self, loc: GLint) {
         unsafe {
-            gl::Uniform4f(loc, self.r, self.g, self.b, self.a);
+            // Premultiply the color before passing it to the shader.
+            gl::Uniform4f(
+                loc,
+                self.r * self.a,
+                self.g * self.a,
+                self.b * self.a,
+                self.a,
+            );
         }
     }
 }

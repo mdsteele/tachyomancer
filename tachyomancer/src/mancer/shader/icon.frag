@@ -8,6 +8,5 @@ uniform sampler2D IconTexture;
 out vec4 color;
 
 void main() {
-  float alpha = texture(IconTexture, textureUV).r;
-  color = vec4(IconColor.rgb, IconColor.a * alpha);
+  color = IconColor * texture(IconTexture, textureUV).r;
 }

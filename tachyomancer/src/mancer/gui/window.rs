@@ -134,8 +134,12 @@ impl<'a> Window<'a> {
             .video_subsystem
             .gl_set_swap_interval(sdl2::video::SwapInterval::VSync)?;
         unsafe {
+            // Our shaders all use premultiplied colors, so set the blend
+            // function appropriately.
             gl::Enable(gl::BLEND);
-            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+            gl::BlendFunc(gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
+            // We keep the depth test disabled for most rendering, and
+            // selectively enable it for rendering certain things.
             gl::Disable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS);
             debug_assert_eq!(gl::GetError(), gl::NO_ERROR);

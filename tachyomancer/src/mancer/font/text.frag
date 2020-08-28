@@ -8,6 +8,5 @@ uniform sampler2D Font;
 out vec4 color;
 
 void main() {
-  color = Color;
-  color.a *= texture(Font, textureUV).r;
+  color = Color * texture(Font, textureUV).r;
 }

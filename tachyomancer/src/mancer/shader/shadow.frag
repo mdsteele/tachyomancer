@@ -30,5 +30,5 @@ float boxShadow(vec2 lower, vec2 upper, vec2 point, float sigma) {
 void main() {
   float mask = boxShadow(vec2(0, 0), RectSize, relativePoint,
                          0.3 * ShadowRadius);
-  color = vec4(ShadowColor.rgb, ShadowColor.a * mask);
+  color = ShadowColor * mask;
 }

@@ -117,6 +117,8 @@ pub struct Texture2D {
 assert_not_impl_any!(Texture2D: Send, Sync);
 
 impl Texture2D {
+    /// Creates a new RGBA texture.  The width and height must each be a power
+    /// of two, and the data array must have four bytes for each pixel.
     pub fn new_rgba(
         width: usize,
         height: usize,

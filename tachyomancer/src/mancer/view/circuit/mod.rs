@@ -18,6 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 mod bounds;
+mod camera;
 mod chipdrag;
 mod control;
 mod export;

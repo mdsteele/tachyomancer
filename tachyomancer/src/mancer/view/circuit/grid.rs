@@ -23,6 +23,7 @@ use super::super::chip::{
 use super::super::tooltip::TooltipSink;
 use super::super::wire::WireModel;
 use super::bounds::{BoundsDrag, BoundsHandle, BOUNDS_MARGIN};
+use super::camera::EditGridCamera;
 use super::chipdrag::ChipDrag;
 use super::manip::{ManipulationAction, ManipulationButtons};
 use super::select::{self, SelectingDrag, Selection, SelectionDrag};
@@ -31,11 +32,10 @@ use super::tutorial::TutorialBubble;
 use super::wiredrag::WireDrag;
 use crate::mancer::gl::Depth;
 use crate::mancer::gui::{
-    ClockEventData, Cursor, Event, Keycode, MouseEventData, NextCursor,
-    Resources, Sound, Ui,
+    Cursor, Event, Keycode, MouseEventData, NextCursor, Resources, Sound, Ui,
 };
 use crate::mancer::save::{Hotkey, HotkeyCodeExt, Prefs};
-use cgmath::{self, vec2, Matrix4, Point2, Vector2};
+use cgmath::{self, vec2, Matrix4, Point2};
 use std::collections::HashSet;
 use std::mem;
 use tachy::geom::{
@@ -47,19 +47,6 @@ use tachy::state::{EditGrid, GridChange, WireColor, WireId};
 
 //===========================================================================//
 
-// The size, in screen pixels, of a grid cell at 1x zoom:
-const GRID_CELL_SIZE: i32 = 64;
-
-// How far we scroll per second while holding down a scroll hotkey, in grid
-// cells, at max zoom:
-const SCROLL_GRID_CELLS_PER_SECOND: f64 = 12.0;
-
-// The minimum zoom multiplier (i.e. how far zoomed out you can be):
-const ZOOM_MIN: f32 = 0.25;
-// The default zoom multiplier:
-const ZOOM_DEFAULT: f32 = 1.0;
-// The maximum zoom multiplier (i.e. how far zoomed in you can be):
-const ZOOM_MAX: f32 = 2.0;
 // How much to multiply/divide the zoom by when pressing a zoom hotkey:
 const ZOOM_PER_KEYDOWN: f32 = 1.415; // slightly more than sqrt(2)
 
@@ -74,13 +61,8 @@ pub enum EditGridAction {
 
 //===========================================================================//
 
-// TODO: Extract camera state and operations into a separate Camera struct in
-//   a separate submodule.
 pub struct EditGridView {
-    size: RectSize<f32>,
-    scroll: Vector2<i32>,
-    scroll_goal: Option<Vector2<i32>>,
-    zoom: f32,
+    camera: EditGridCamera,
     interaction: Interaction,
     tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
     hover_wire: Option<WireId>,
@@ -93,15 +75,8 @@ impl EditGridView {
         init_circuit_bounds: CoordsRect,
         tutorial_bubbles: Vec<(Direction, TutorialBubble)>,
     ) -> EditGridView {
-        let pixel_bounds = init_circuit_bounds * GRID_CELL_SIZE;
         EditGridView {
-            size: window_size.as_f32(),
-            scroll: Vector2::new(
-                pixel_bounds.x + pixel_bounds.width / 2,
-                pixel_bounds.y + pixel_bounds.height / 2,
-            ),
-            scroll_goal: None,
-            zoom: ZOOM_DEFAULT,
+            camera: EditGridCamera::new(window_size, init_circuit_bounds),
             interaction: Interaction::Nothing,
             tutorial_bubbles,
             hover_wire: None,
@@ -110,18 +85,21 @@ impl EditGridView {
     }
 
     fn draw_background(&self, resources: &Resources) {
-        let size = self.size / self.zoom;
+        let size = self.camera.grid_view_size();
+        let center = self.camera.center_grid_pt();
         let parallax = 0.9;
-        let texel_rect = Rect::new(
-            parallax * (self.scroll.x as f32) - 0.5 * size.width,
-            parallax * (self.scroll.y as f32) - 0.5 * size.height,
+        let grid_rect = Rect::new(
+            parallax * center.x - 0.5 * size.width,
+            parallax * center.y - 0.5 * size.height,
             size.width,
             size.height,
         );
+        let grid_cells_per_texture_tile = 8.0;
+        let texel_rect = grid_rect / grid_cells_per_texture_tile;
         resources.shaders().diagram().draw(
             &cgmath::ortho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0),
             Rect::new(0.0, 0.0, 1.0, 1.0),
-            texel_rect / 512.0,
+            texel_rect,
             resources.textures().diagram_background(),
         );
     }
@@ -173,7 +151,7 @@ impl EditGridView {
     }
 
     fn draw_tutorial_bubbles(&self, resources: &Resources, grid: &EditGrid) {
-        let matrix = self.unzoomed_matrix();
+        let matrix = self.camera.unzoomed_matrix();
         let bounds =
             if let Interaction::DraggingBounds(ref drag) = self.interaction {
                 drag.bounds()
@@ -181,7 +159,7 @@ impl EditGridView {
                 grid.bounds()
             };
         let bounds = bounds.as_f32().expand(BOUNDS_MARGIN)
-            * ((GRID_CELL_SIZE as f32) * self.zoom);
+            * self.camera.grid_cell_size_in_pixels();
         let margin: i32 = 8;
         for &(dir, ref bubble) in self.tutorial_bubbles.iter() {
             let topleft = match dir {
@@ -322,17 +300,17 @@ impl EditGridView {
     }
 
     fn draw_selection_box_if_any(&self, resources: &Resources) {
-        let grid_cell_size = (GRID_CELL_SIZE as f32) * self.zoom;
+        let grid_cell_size = self.camera.grid_cell_size_in_pixels();
         match self.interaction {
             Interaction::SelectingRect(ref drag) => {
                 drag.draw_box(
                     resources,
-                    &self.unzoomed_matrix(),
+                    &self.camera.unzoomed_matrix(),
                     grid_cell_size,
                 );
             }
             Interaction::RectSelected(rect) => {
-                let matrix = self.unzoomed_matrix();
+                let matrix = self.camera.unzoomed_matrix();
                 Selection::draw_box(resources, &matrix, rect, grid_cell_size);
                 self.manip_buttons.draw(
                     resources,
@@ -344,7 +322,7 @@ impl EditGridView {
             Interaction::DraggingSelection(ref drag) => {
                 drag.draw_selection(
                     resources,
-                    &self.unzoomed_matrix(),
+                    &self.camera.unzoomed_matrix(),
                     grid_cell_size,
                 );
             }
@@ -353,8 +331,7 @@ impl EditGridView {
     }
 
     pub fn draw_board(&self, resources: &Resources, grid: &EditGrid) {
-        let grid_matrix =
-            self.vp_matrix() * Matrix4::from_scale(GRID_CELL_SIZE as f32);
+        let grid_matrix = self.camera.grid_matrix();
         self.draw_background(resources);
         self.draw_bounds(resources, &grid_matrix, grid);
         self.draw_tutorial_bubbles(resources, grid);
@@ -371,9 +348,8 @@ impl EditGridView {
     pub fn draw_dragged(&self, resources: &Resources) {
         if let Interaction::DraggingChip(ref drag) = self.interaction {
             let pt = drag.chip_topleft();
-            let grid_matrix = self.vp_matrix()
-                * Matrix4::from_scale(GRID_CELL_SIZE as f32)
-                * Matrix4::trans2(pt.x, pt.y);
+            let grid_matrix =
+                self.camera.grid_matrix() * Matrix4::trans2(pt.x, pt.y);
             let depth = Depth::enable_with_face_culling(false);
             ChipModel::draw_chip(
                 resources,
@@ -385,31 +361,6 @@ impl EditGridView {
             );
             depth.disable();
         }
-    }
-
-    fn ortho_matrix(&self) -> Matrix4<f32> {
-        cgmath::ortho(
-            -0.5 * self.size.width,
-            0.5 * self.size.width,
-            0.5 * self.size.height,
-            -0.5 * self.size.height,
-            -100.0,
-            100.0,
-        )
-    }
-
-    fn vp_matrix(&self) -> Matrix4<f32> {
-        self.ortho_matrix()
-            * Matrix4::from_scale(self.zoom)
-            * Matrix4::trans2(-self.scroll.x as f32, -self.scroll.y as f32)
-    }
-
-    fn unzoomed_matrix(&self) -> Matrix4<f32> {
-        self.ortho_matrix()
-            * Matrix4::trans2(
-                (-self.scroll.x as f32) * self.zoom,
-                (-self.scroll.y as f32) * self.zoom,
-            )
     }
 
     pub fn request_interaction_cursor(
@@ -502,14 +453,11 @@ impl EditGridView {
 
     fn on_hotkey(&mut self, hotkey: Hotkey, ui: &mut Ui, grid: &mut EditGrid) {
         if hotkey == Hotkey::ZoomIn {
-            self.zoom_by(ZOOM_PER_KEYDOWN, ui);
+            self.camera.zoom_by(ZOOM_PER_KEYDOWN, ui);
         } else if hotkey == Hotkey::ZoomOut {
-            self.zoom_by(1.0 / ZOOM_PER_KEYDOWN, ui);
+            self.camera.zoom_by(1.0 / ZOOM_PER_KEYDOWN, ui);
         } else if hotkey == Hotkey::ZoomDefault {
-            if self.zoom != ZOOM_DEFAULT {
-                self.zoom = ZOOM_DEFAULT;
-                ui.request_redraw();
-            }
+            self.camera.reset_zoom_to_default(ui);
         } else if let Some(action) = ManipulationAction::from_hotkey(hotkey) {
             self.apply_manipulation(action, ui, grid);
         }
@@ -564,7 +512,8 @@ impl EditGridView {
         prefs: &Prefs,
     ) -> Option<EditGridAction> {
         if let Interaction::RectSelected(rect) = self.interaction {
-            let top_left = self.grid_pt_to_screen_pt(rect.top_left().as_f32());
+            let top_left =
+                self.camera.grid_pt_to_screen_pt(rect.top_left().as_f32());
             let act = self.manip_buttons.on_event(event, ui, rect, top_left);
             if let Some(action) = act {
                 self.apply_manipulation(action, ui, grid);
@@ -573,64 +522,7 @@ impl EditGridView {
         }
         match event {
             Event::ClockTick(tick) => {
-                if let Some(goal) = self.scroll_goal {
-                    if self.scroll != goal {
-                        self.scroll.x =
-                            track_towards(self.scroll.x, goal.x, tick);
-                        self.scroll.y =
-                            track_towards(self.scroll.y, goal.y, tick);
-                        ui.request_redraw();
-                    }
-                    if self.scroll == goal {
-                        self.scroll_goal = None;
-                    }
-                }
-                // Scroll if we're holding down any scroll key(s):
-                let left = is_hotkey_held(Hotkey::ScrollLeft, ui, prefs);
-                let right = is_hotkey_held(Hotkey::ScrollRight, ui, prefs);
-                let up = is_hotkey_held(Hotkey::ScrollUp, ui, prefs);
-                let down = is_hotkey_held(Hotkey::ScrollDown, ui, prefs);
-                let dist = ((SCROLL_GRID_CELLS_PER_SECOND * tick.elapsed)
-                    * (GRID_CELL_SIZE as f64))
-                    .round() as i32;
-                if left && !right {
-                    self.scroll_by_screen_dist(-dist, 0, ui);
-                } else if right && !left {
-                    self.scroll_by_screen_dist(dist, 0, ui);
-                }
-                if up && !down {
-                    self.scroll_by_screen_dist(0, -dist, ui);
-                } else if down && !up {
-                    self.scroll_by_screen_dist(0, dist, ui);
-                }
-                // Spring back to scroll bounds:
-                let expand = (self.size * (0.25 / self.zoom)).as_i32_round();
-                let scroll_limit = (grid.bounds() * GRID_CELL_SIZE)
-                    .expand2(expand.width, expand.height);
-                if self.scroll.x < scroll_limit.x {
-                    self.scroll.x =
-                        track_towards(self.scroll.x, scroll_limit.x, tick);
-                    ui.request_redraw();
-                } else if self.scroll.x > scroll_limit.right() {
-                    self.scroll.x = track_towards(
-                        self.scroll.x,
-                        scroll_limit.right(),
-                        tick,
-                    );
-                    ui.request_redraw();
-                }
-                if self.scroll.y < scroll_limit.y {
-                    self.scroll.y =
-                        track_towards(self.scroll.y, scroll_limit.y, tick);
-                    ui.request_redraw();
-                } else if self.scroll.y > scroll_limit.bottom() {
-                    self.scroll.y = track_towards(
-                        self.scroll.y,
-                        scroll_limit.bottom(),
-                        tick,
-                    );
-                    ui.request_redraw();
-                }
+                self.camera.on_clock_tick(tick, ui, grid.bounds(), prefs);
             }
             Event::KeyDown(key) => {
                 if key.code == Keycode::Backspace
@@ -676,8 +568,9 @@ impl EditGridView {
                                 self.cancel_interaction(ui, grid);
                                 let size = selection.size().as_f32();
                                 let rel = vec2(size.width, size.height) * 0.5;
-                                let grid_pt =
-                                    self.screen_pt_to_grid_pt(key.mouse_pt);
+                                let grid_pt = self
+                                    .camera
+                                    .screen_pt_to_grid_pt(key.mouse_pt);
                                 let drag = SelectionDrag::new(
                                     selection, rel, grid_pt, None,
                                 );
@@ -721,7 +614,7 @@ impl EditGridView {
                 self.stop_hover(ui);
             }
             Event::MouseDown(mouse) if mouse.left => {
-                let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
+                let grid_pt = self.camera.screen_pt_to_grid_pt(mouse.pt);
                 self.stop_hover(ui);
                 if grid.eval().is_some() {
                     match grid.chip_at(grid_pt.as_i32_floor()) {
@@ -849,7 +742,7 @@ impl EditGridView {
                     //   Break/Toggle chips during evaluation.
                     return None;
                 }
-                let coords = self.coords_for_screen_pt(mouse.pt);
+                let coords = self.camera.coords_for_screen_pt(mouse.pt);
                 match grid.chip_at(coords) {
                     Some((_, ChipType::Break(enabled), orient)) => {
                         if try_toggle_break(coords, enabled, orient, grid) {
@@ -892,7 +785,7 @@ impl EditGridView {
                 }
             }
             Event::MouseMove(mouse) => {
-                let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
+                let grid_pt = self.camera.screen_pt_to_grid_pt(mouse.pt);
                 ui.cursor().request(self.cursor_for_grid_pt(grid_pt, grid));
                 match self.interaction {
                     Interaction::Nothing | Interaction::RectSelected(_) => {
@@ -949,18 +842,22 @@ impl EditGridView {
                             drag.finish(ui, grid);
                         }
                     }
-                    let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
+                    let grid_pt = self.camera.screen_pt_to_grid_pt(mouse.pt);
                     let cursor = self.cursor_for_grid_pt(grid_pt, grid);
                     ui.cursor().request(cursor);
                 }
             }
             Event::Multitouch(touch) => {
                 self.stop_hover(ui);
-                self.zoom_by(touch.scale, ui);
+                self.camera.zoom_by(touch.scale, ui);
             }
             Event::Scroll(scroll) => {
                 self.stop_hover(ui);
-                self.scroll_by_screen_dist(scroll.delta.x, scroll.delta.y, ui);
+                self.camera.scroll_by_screen_dist(
+                    scroll.delta.x,
+                    scroll.delta.y,
+                    ui,
+                );
             }
             Event::Unfocus => {
                 self.stop_hover(ui);
@@ -992,7 +889,7 @@ impl EditGridView {
             );
             return;
         }
-        let grid_pt = self.screen_pt_to_grid_pt(mouse.pt);
+        let grid_pt = self.camera.screen_pt_to_grid_pt(mouse.pt);
         if let Some(tag) = GridTooltipTag::for_grid_pt(grid, grid_pt) {
             if let GridTooltipTag::Wire(wire) = tag {
                 if self.interaction.is_nothing()
@@ -1029,7 +926,7 @@ impl EditGridView {
         let start = 0.5 * Point2::new(size.width, size.height).as_f32();
         let mut drag =
             ChipDrag::new(ctype, Orientation::default(), None, start);
-        drag.move_to(self.screen_pt_to_grid_pt(screen_pt), ui);
+        drag.move_to(self.camera.screen_pt_to_grid_pt(screen_pt), ui);
         self.interaction = Interaction::DraggingChip(drag);
         ui.request_redraw();
         ui.audio().play_sound(Sound::GrabChip);
@@ -1085,76 +982,13 @@ impl EditGridView {
         }
     }
 
+    /// Returns the current center of the camera view, in grid coordinates.
     pub fn camera_center(&self) -> Point2<f32> {
-        Point2::new(0.0, 0.0) + self.scroll.as_f32() / (GRID_CELL_SIZE as f32)
+        self.camera.center_grid_pt()
     }
 
     pub fn set_camera_goal(&mut self, grid_pt: Point2<f32>) {
-        self.scroll_goal = Some(
-            (grid_pt * (GRID_CELL_SIZE as f32)).as_i32_round()
-                - Point2::new(0, 0),
-        );
-    }
-
-    fn zoom_by(&mut self, factor: f32, ui: &mut Ui) {
-        if factor < 1.0 {
-            let minimum =
-                if self.zoom > ZOOM_DEFAULT { ZOOM_DEFAULT } else { ZOOM_MIN };
-            self.zoom = (self.zoom * factor).max(minimum);
-            ui.request_redraw();
-        } else if factor > 1.0 {
-            let maximum =
-                if self.zoom < ZOOM_DEFAULT { ZOOM_DEFAULT } else { ZOOM_MAX };
-            self.zoom = (self.zoom * factor).min(maximum);
-            ui.request_redraw();
-        }
-    }
-
-    fn scroll_by_screen_dist(&mut self, x: i32, y: i32, ui: &mut Ui) {
-        self.scroll += (vec2(x, y).as_f32() / self.zoom).as_i32_round();
-        ui.request_redraw();
-    }
-
-    fn screen_pt_to_grid_pt(&self, screen_pt: Point2<i32>) -> Point2<f32> {
-        let half_size = self.size * 0.5;
-        let relative_to_center =
-            screen_pt.as_f32() - vec2(half_size.width, half_size.height);
-        let zoomed = relative_to_center / self.zoom;
-        let scrolled = zoomed.as_i32_round() + self.scroll;
-        scrolled.as_f32() / (GRID_CELL_SIZE as f32)
-    }
-
-    fn grid_pt_to_screen_pt(&self, grid_pt: Point2<f32>) -> Point2<i32> {
-        let scrolled = (grid_pt * (GRID_CELL_SIZE as f32)).as_i32_round();
-        let zoomed = (scrolled - self.scroll).as_f32();
-        let relative_to_center = zoomed * self.zoom;
-        let half_size = self.size * 0.5;
-        (relative_to_center + vec2(half_size.width, half_size.height))
-            .as_i32_round()
-    }
-
-    fn coords_for_screen_pt(&self, screen_pt: Point2<i32>) -> Coords {
-        self.screen_pt_to_grid_pt(screen_pt).as_i32_floor()
-    }
-}
-
-fn is_hotkey_held(hotkey: Hotkey, ui: &Ui, prefs: &Prefs) -> bool {
-    ui.keyboard().is_held(prefs.hotkey_code(hotkey).to_keycode())
-}
-
-fn track_towards(current: i32, goal: i32, tick: &ClockEventData) -> i32 {
-    let tracking_base: f64 = 0.0001; // smaller = faster tracking
-    let difference = (goal - current) as f64;
-    let change = difference * (1.0 - tracking_base.powf(tick.elapsed));
-    let change = change.round() as i32;
-    if change != 0 {
-        current + change
-    } else if goal > current {
-        current + 1
-    } else if goal < current {
-        current - 1
-    } else {
-        goal
+        self.camera.set_goal(grid_pt);
     }
 }
 

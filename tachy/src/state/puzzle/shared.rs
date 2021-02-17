@@ -19,7 +19,7 @@
 
 use super::super::eval::{CircuitState, EvalError, PuzzleEval};
 use super::super::interface::{Interface, InterfacePort};
-use crate::geom::{Coords, Direction};
+use crate::geom::{Coords, Direction, Fixed};
 use crate::save::WireSize;
 use crate::state::{PortColor, PortFlow, WireId};
 use std::collections::HashSet;
@@ -125,6 +125,11 @@ impl PuzzleEval for FabricationEval {
                                 debug_assert!(value <= port.size.mask());
                                 state.send_event(wire, value);
                             }
+                        }
+                        PortColor::Analog => {
+                            debug_assert_eq!(port.size, WireSize::ANALOG);
+                            let fixed = Fixed::from_encoded(value);
+                            state.send_analog(wire, fixed);
                         }
                     }
                 }
@@ -236,6 +241,20 @@ impl PuzzleEval for FabricationEval {
                                     };
                                     errors.push(state.port_error(loc, msg));
                                 }
+                            }
+                        }
+                        PortColor::Analog => {
+                            let actual_fixed = state.recv_analog(wire);
+                            self.table_values[start + column_index] =
+                                actual_fixed.to_encoded();
+                            let expected_fixed = Fixed::from_encoded(expected);
+                            if actual_fixed != expected_fixed {
+                                let msg = format!(
+                                    "Expected value of {} for {}, \
+                                     but got value of {}.",
+                                    expected_fixed, port.name, actual_fixed
+                                );
+                                errors.push(state.port_error(loc, msg));
                             }
                         }
                     }

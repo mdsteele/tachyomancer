@@ -161,6 +161,14 @@ pub const DISPLAY_CHIP_DATA: &ChipData = &ChipData {
 
 //===========================================================================//
 
+pub const METER_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[(PortFlow::Recv, PortColor::Analog, (0, 1), Direction::West)],
+    constraints: &[AbstractConstraint::Exact(0, WireSize::ANALOG)],
+    dependencies: &[],
+};
+
+//===========================================================================//
+
 pub const TOGGLE_CHIP_DATA: &ChipData = &ChipData {
     ports: &[(PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East)],
     constraints: &[AbstractConstraint::Exact(0, WireSize::One)],

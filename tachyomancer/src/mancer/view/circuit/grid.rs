@@ -39,8 +39,8 @@ use cgmath::{self, vec2, Matrix4, Point2};
 use std::collections::HashSet;
 use std::mem;
 use tachy::geom::{
-    AsFloat, AsInt, Color3, Color4, Coords, CoordsRect, Direction, MatrixExt,
-    Orientation, Rect, RectSize,
+    AsFloat, AsInt, Color3, Color4, Coords, CoordsRect, Direction, Fixed,
+    MatrixExt, Orientation, Rect, RectSize,
 };
 use tachy::save::{ChipType, HotkeyCode, WireSize};
 use tachy::state::{EditGrid, GridChange, WireColor, WireId};
@@ -57,6 +57,7 @@ pub enum EditGridAction {
     EditCoerce(Coords, WireSize),
     EditComment(Coords, String),
     EditConst(Coords, u8),
+    EditVref(Coords, Fixed),
 }
 
 //===========================================================================//
@@ -774,6 +775,9 @@ impl EditGridView {
                             ui.request_redraw();
                             return None;
                         }
+                    }
+                    Some((_, ChipType::Vref(value), _)) => {
+                        return Some(EditGridAction::EditVref(coords, value));
                     }
                     _ => {}
                 }

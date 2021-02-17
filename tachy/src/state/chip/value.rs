@@ -19,7 +19,7 @@
 
 use super::super::eval::{ChipEval, CircuitState};
 use super::data::{AbstractConstraint, AbstractPort, ChipData};
-use crate::geom::Direction;
+use crate::geom::{Direction, Fixed};
 use crate::save::WireSize;
 use crate::state::{PortColor, PortFlow, WireId};
 use rand;
@@ -420,6 +420,36 @@ impl ChipEval for UnpackChipEval {
         let output2 = input >> self.output_size.num_bits();
         state.send_behavior(self.output1, output1);
         state.send_behavior(self.output2, output2);
+    }
+}
+
+//===========================================================================//
+
+pub const VREF_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[(PortFlow::Send, PortColor::Analog, (0, 0), Direction::East)],
+    constraints: &[AbstractConstraint::Exact(0, WireSize::ANALOG)],
+    dependencies: &[],
+};
+
+pub struct VrefChipEval {
+    output: WireId,
+    value: Fixed,
+}
+
+impl VrefChipEval {
+    pub fn new_evals(
+        value: Fixed,
+        slots: &[(WireId, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), VREF_CHIP_DATA.ports.len());
+        let chip_eval = VrefChipEval { value, output: slots[0].0 };
+        vec![(0, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for VrefChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        state.send_analog(self.output, self.value);
     }
 }
 

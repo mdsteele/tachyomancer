@@ -17,11 +17,61 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{ChipEval, CircuitState};
+use super::super::eval::{ChipEval, CircuitState, MAX_CYCLES_PER_TIME_STEP};
 use super::data::{AbstractConstraint, ChipData};
-use crate::geom::Direction;
+use crate::geom::{Direction, Fixed};
 use crate::save::WireSize;
 use crate::state::{PortColor, PortFlow, WireId};
+
+//===========================================================================//
+
+pub const BUFFER_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
+        (PortFlow::Send, PortColor::Analog, (0, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::ANALOG),
+        AbstractConstraint::Exact(1, WireSize::ANALOG),
+    ],
+    dependencies: &[],
+};
+
+pub struct BufferChipEval {
+    input: WireId,
+    output: WireId,
+    prev_value: Fixed,
+}
+
+impl BufferChipEval {
+    pub fn new_evals(
+        slots: &[(WireId, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), BUFFER_CHIP_DATA.ports.len());
+        let chip_eval = BufferChipEval {
+            input: slots[0].0,
+            output: slots[1].0,
+            prev_value: Fixed::ZERO,
+        };
+        vec![(1, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for BufferChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        state.send_analog(self.output, self.prev_value);
+    }
+
+    fn needs_another_cycle(&mut self, state: &CircuitState) -> bool {
+        let value = state.recv_analog(self.input);
+        if value != self.prev_value {
+            self.prev_value = value;
+            state.cycle() + 1 < MAX_CYCLES_PER_TIME_STEP
+        } else {
+            false
+        }
+    }
+}
 
 //===========================================================================//
 

@@ -23,14 +23,17 @@ use crate::mancer::gl::{
 };
 use cgmath::Matrix4;
 use tachy::geom::Color4;
+use tachy::state::{PortColor, PortFlow};
 
 //===========================================================================//
 
 const PORT_VERT_CODE: &[u8] = include_bytes!("port.vert");
 const PORT_FRAG_CODE: &[u8] = include_bytes!("port.frag");
 
-const BEHAVIOR_WIRE_COLOR: Color4 = Color4::ORANGE4;
-const EVENT_WIRE_COLOR: Color4 = Color4::new(0.533, 0.667, 0.667, 1.0);
+// TODO: use Color3 here and in the uniform
+const ANALOG_PORT_COLOR: Color4 = Color4::new(0.5, 0.7, 0.5, 1.0);
+const BEHAVIOR_PORT_COLOR: Color4 = Color4::ORANGE4;
+const EVENT_PORT_COLOR: Color4 = Color4::new(0.533, 0.667, 0.667, 1.0);
 
 //===========================================================================//
 
@@ -113,16 +116,24 @@ impl PortShader {
         self.mvp.set(mvp);
     }
 
-    pub fn set_port_flow_and_color(&self, flow: bool, color: bool) {
+    pub fn set_port_flow_and_color(&self, flow: PortFlow, color: PortColor) {
         let mut value = 0;
-        if flow {
-            value |= 0x2;
+        match flow {
+            PortFlow::Send => value |= 0x1,
+            PortFlow::Recv => {}
         }
-        if color {
-            value |= 0x1;
-            self.color_tint.set(&EVENT_WIRE_COLOR);
-        } else {
-            self.color_tint.set(&BEHAVIOR_WIRE_COLOR);
+        match color {
+            PortColor::Behavior => {
+                self.color_tint.set(&BEHAVIOR_PORT_COLOR);
+            }
+            PortColor::Event => {
+                value |= 0x2;
+                self.color_tint.set(&EVENT_PORT_COLOR);
+            }
+            PortColor::Analog => {
+                value |= 0x4;
+                self.color_tint.set(&ANALOG_PORT_COLOR);
+            }
         }
         self.flow_and_color.set(&value);
     }

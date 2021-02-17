@@ -967,6 +967,7 @@ impl EditGrid {
             WireColor::Ambiguous => format!("$*{} $Rambiguous$D wire$*", size),
             WireColor::Behavior => format!("$*{} $Obehavior$D wire$*", size),
             WireColor::Event => format!("$*{} $Cevent$D wire$*", size),
+            WireColor::Analog => "$*$GAnalog$D wire$*".to_string(),
         };
         if let Some(ref eval) = self.eval {
             match wire.color {
@@ -990,6 +991,12 @@ impl EditGrid {
                     } else {
                         fmt.push_str("\nNo current event.");
                     }
+                }
+                WireColor::Analog => {
+                    fmt.push_str(&format!(
+                        "\nCurrent voltage: {}",
+                        eval.wire_analog(wire_id)
+                    ));
                 }
             }
         }

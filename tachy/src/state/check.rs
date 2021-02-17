@@ -38,6 +38,8 @@ pub enum WireColor {
     Behavior,
     /// An event wire.
     Event,
+    /// An analog wire.
+    Analog,
 }
 
 //===========================================================================//
@@ -186,6 +188,7 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
         let mut num_senders = 0;
         let mut has_behavior = false;
         let mut has_event = false;
+        let mut has_analog = false;
         for &(flow, color) in wire.ports.values() {
             match flow {
                 PortFlow::Send => num_senders += 1,
@@ -194,9 +197,11 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
             match color {
                 PortColor::Behavior => has_behavior = true,
                 PortColor::Event => has_event = true,
+                PortColor::Analog => has_analog = true,
             }
         }
-        if has_behavior && has_event {
+        if has_behavior && (has_event || has_analog) || has_event && has_analog
+        {
             wire.color = WireColor::Ambiguous;
             wire.size = WireSizeInterval::at_least(WireSize::One);
             wire.has_error = true;
@@ -207,6 +212,9 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
         } else if has_event {
             wire.color = WireColor::Event;
             wire.size = WireSizeInterval::full();
+        } else if has_analog {
+            wire.color = WireColor::Analog;
+            wire.size = WireSizeInterval::exactly(WireSize::ANALOG);
         } else {
             wire.color = WireColor::Unknown;
             wire.size = WireSizeInterval::empty();

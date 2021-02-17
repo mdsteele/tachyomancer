@@ -132,6 +132,7 @@ fn wire_color(color: WireColor) -> &'static Color3 {
         WireColor::Ambiguous => &Color3::RED3,
         WireColor::Behavior => &Color3::ORANGE3,
         WireColor::Event => &Color3::CYAN3,
+        WireColor::Analog => &Color3::GREEN3,
     }
 }
 

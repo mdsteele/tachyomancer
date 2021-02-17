@@ -185,7 +185,7 @@ impl PuzzleEval for GuidanceEval {
         self.signal_next_enemy_if_needed(state)
     }
 
-    fn needs_another_cycle(&self, _time_step: u32) -> bool {
+    fn needs_another_cycle(&self, _state: &CircuitState) -> bool {
         self.should_signal_next_enemy()
     }
 

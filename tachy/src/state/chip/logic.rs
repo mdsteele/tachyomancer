@@ -242,6 +242,57 @@ impl ChipEval for OrChipEval {
 
 //===========================================================================//
 
+pub const RELAY_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Analog, (0, 0), Direction::East),
+        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::North),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::ANALOG),
+        AbstractConstraint::Exact(1, WireSize::ANALOG),
+        AbstractConstraint::Exact(2, WireSize::ANALOG),
+        AbstractConstraint::Exact(3, WireSize::One),
+    ],
+    dependencies: &[(0, 2), (1, 2), (3, 2)],
+};
+
+pub struct RelayChipEval {
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
+    control: WireId,
+}
+
+impl RelayChipEval {
+    pub fn new_evals(
+        slots: &[(WireId, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), RELAY_CHIP_DATA.ports.len());
+        let chip_eval = RelayChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+            control: slots[3].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for RelayChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let output = if state.recv_behavior(self.control) == 0 {
+            state.recv_analog(self.input1)
+        } else {
+            state.recv_analog(self.input2)
+        };
+        state.send_analog(self.output, output);
+    }
+}
+
+//===========================================================================//
+
 pub const XOR_CHIP_DATA: &ChipData = AND_CHIP_DATA;
 
 pub struct XorChipEval {

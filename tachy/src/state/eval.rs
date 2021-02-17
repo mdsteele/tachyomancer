@@ -18,7 +18,7 @@
 // +--------------------------------------------------------------------------+
 
 use super::check::WireId;
-use crate::geom::{Coords, Direction};
+use crate::geom::{Coords, Direction, Fixed};
 use crate::save::{HotkeyCode, InputsData, ScoreUnits};
 use downcast_rs::{impl_downcast, Downcast};
 use std::collections::{HashMap, HashSet};
@@ -26,7 +26,7 @@ use std::mem;
 
 //===========================================================================//
 
-const MAX_CYCLES_PER_TIME_STEP: u32 = 1000;
+pub const MAX_CYCLES_PER_TIME_STEP: u32 = 1000;
 
 //===========================================================================//
 
@@ -155,6 +155,10 @@ impl CircuitEval {
         return Some(inputs);
     }
 
+    pub fn wire_analog(&self, wire_id: WireId) -> Fixed {
+        self.state.recv_analog(wire_id)
+    }
+
     pub fn wire_event(&self, wire_id: WireId) -> Option<u32> {
         self.state.recv_event(wire_id)
     }
@@ -199,21 +203,21 @@ impl CircuitEval {
                     return EvalResult::Failure;
                 }
                 needs_another_cycle |=
-                    self.puzzle_eval.needs_another_cycle(self.time_step());
-                if self.cycle() + 1 >= MAX_CYCLES_PER_TIME_STEP {
-                    self.errors.push(self.state.fatal_error(format!(
-                        "Exceeded {} cycles.",
-                        MAX_CYCLES_PER_TIME_STEP
-                    )));
-                    return EvalResult::Failure;
-                }
+                    self.puzzle_eval.needs_another_cycle(&self.state);
                 self.subcycle = 0;
                 self.state.cycle += 1;
                 self.total_cycles += 1;
                 if needs_another_cycle {
+                    if self.cycle() >= MAX_CYCLES_PER_TIME_STEP {
+                        self.errors.push(self.state.fatal_error(format!(
+                            "Exceeded {} cycles.",
+                            MAX_CYCLES_PER_TIME_STEP
+                        )));
+                        return EvalResult::Failure;
+                    }
                     debug_log!(
                         "  Cycle {} complete, starting another cycle",
-                        self.cycle()
+                        self.state.cycle - 1
                     );
                     self.state.reset_for_cycle();
                     self.puzzle_eval.begin_additional_cycle(&mut self.state);
@@ -340,6 +344,18 @@ impl CircuitState {
         self.time_step
     }
 
+    pub fn cycle(&self) -> u32 {
+        self.cycle
+    }
+
+    pub fn is_null_wire(&self, slot: WireId) -> bool {
+        self.null_wires.contains(&slot)
+    }
+
+    pub fn recv_analog(&self, slot: WireId) -> Fixed {
+        Fixed::from_encoded(self.values[slot.0].0)
+    }
+
     pub fn recv_behavior(&self, slot: WireId) -> u32 {
         self.values[slot.0].0
     }
@@ -361,16 +377,24 @@ impl CircuitState {
         self.values[slot.0].1
     }
 
+    pub fn send_analog(&mut self, slot: WireId, value: Fixed) {
+        let encoded = value.to_encoded();
+        if self.values[slot.0].0 != encoded {
+            self.values[slot.0] = (encoded, true);
+            self.changed |= !self.null_wires.contains(&slot);
+        }
+    }
+
     pub fn send_behavior(&mut self, slot: WireId, value: u32) {
         if self.values[slot.0].0 != value {
             self.values[slot.0] = (value, true);
-            self.changed = !self.null_wires.contains(&slot);
+            self.changed |= !self.null_wires.contains(&slot);
         }
     }
 
     pub fn send_event(&mut self, slot: WireId, value: u32) {
         self.values[slot.0] = (value, true);
-        self.changed = !self.null_wires.contains(&slot);
+        self.changed |= !self.null_wires.contains(&slot);
     }
 
     pub fn breakpoint(&mut self, coords: Coords) {
@@ -463,8 +487,8 @@ pub trait PuzzleEval: Downcast {
     fn begin_time_step(&mut self, state: &mut CircuitState);
 
     /// Called at the beginning of each cycle except the first; optionally
-    /// sends additional events for that time step.  The default implementation
-    /// is a no-op.
+    /// sends additional events for that time step or updates analog values.
+    /// The default implementation is a no-op.
     fn begin_additional_cycle(&mut self, _state: &mut CircuitState) {}
 
     /// Called at the end of each cycle; returns a list of errors (if any) that
@@ -480,7 +504,7 @@ pub trait PuzzleEval: Downcast {
 
     /// Called after end_cycle(); returns true if another cycle is needed.  The
     /// default implementation always returns false.
-    fn needs_another_cycle(&self, _time_step: u32) -> bool {
+    fn needs_another_cycle(&self, _state: &CircuitState) -> bool {
         false
     }
 

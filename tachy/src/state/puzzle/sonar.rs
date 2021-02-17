@@ -289,7 +289,7 @@ impl PuzzleEval for SonarEval {
         errors
     }
 
-    fn needs_another_cycle(&self, _time_step: u32) -> bool {
+    fn needs_another_cycle(&self, _state: &CircuitState) -> bool {
         self.port_sonar.needs_another_cycle()
             || self.stbd_sonar.needs_another_cycle()
     }

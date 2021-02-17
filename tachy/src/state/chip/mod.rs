@@ -67,6 +67,8 @@ pub enum ChipAvailability {
 //===========================================================================//
 
 pub trait ChipExt {
+    fn uses_analog(&self) -> bool;
+
     fn uses_events(&self) -> bool;
 
     fn availibility(&self) -> ChipAvailability;
@@ -87,6 +89,13 @@ pub trait ChipExt {
 }
 
 impl ChipExt for ChipType {
+    fn uses_analog(&self) -> bool {
+        chip_data(*self)
+            .ports
+            .iter()
+            .any(|&(_, color, _, _)| color == PortColor::Analog)
+    }
+
     fn uses_events(&self) -> bool {
         chip_data(*self)
             .ports
@@ -96,13 +105,21 @@ impl ChipExt for ChipType {
 
     fn availibility(&self) -> ChipAvailability {
         match *self {
-            ChipType::And
+            ChipType::AAdd
+            | ChipType::ACmp
+            | ChipType::AMul
+            | ChipType::And
             | ChipType::Break(_)
+            | ChipType::Buffer
             | ChipType::Comment(_)
-            | ChipType::Not => ChipAvailability::Always,
-            ChipType::DocBv(_, _) | ChipType::DocEv(_, _) => {
-                ChipAvailability::DiagramOnly
-            }
+            | ChipType::Integrate
+            | ChipType::Meter
+            | ChipType::Not
+            | ChipType::Relay
+            | ChipType::Vref(_) => ChipAvailability::Always,
+            ChipType::DocAn(_)
+            | ChipType::DocBv(_, _)
+            | ChipType::DocEv(_, _) => ChipAvailability::DiagramOnly,
             ChipType::Or => ChipAvailability::UnlockedBy(Puzzle::TutorialOr),
             ChipType::Xor => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateXor)
@@ -176,11 +193,11 @@ impl ChipExt for ChipType {
             }
             ChipType::Random => ChipAvailability::UnlockedByButOnlyIn(
                 Puzzle::TutorialAmp,
-                &[Puzzle::SandboxEvent],
+                &[Puzzle::SandboxEvent, Puzzle::SandboxAnalog],
             ),
             ChipType::Screen => ChipAvailability::UnlockedByButOnlyIn(
                 Puzzle::TutorialRam,
-                &[Puzzle::SandboxEvent],
+                &[Puzzle::SandboxEvent, Puzzle::SandboxAnalog],
             ),
         }
     }
@@ -261,10 +278,14 @@ impl ChipExt for ChipType {
 
 fn chip_data(ctype: ChipType) -> &'static ChipData {
     match ctype {
+        ChipType::AAdd => self::arith::AADD_CHIP_DATA,
+        ChipType::ACmp => self::compare::ACMP_CHIP_DATA,
+        ChipType::AMul => self::arith::AMUL_CHIP_DATA,
         ChipType::Add => self::arith::ADD_CHIP_DATA,
         ChipType::Add2Bit => self::arith::ADD_2BIT_CHIP_DATA,
         ChipType::And => self::logic::AND_CHIP_DATA,
         ChipType::Break(_) => self::debug::BREAK_CHIP_DATA,
+        ChipType::Buffer => self::timing::BUFFER_CHIP_DATA,
         ChipType::Button(_) => self::debug::BUTTON_CHIP_DATA,
         ChipType::Clock => self::timing::CLOCK_CHIP_DATA,
         ChipType::Cmp => self::compare::CMP_CHIP_DATA,
@@ -277,15 +298,18 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Demux => self::logic::DEMUX_CHIP_DATA,
         ChipType::Discard => self::value::DISCARD_CHIP_DATA,
         ChipType::Display => self::debug::DISPLAY_CHIP_DATA,
+        ChipType::DocAn(_) => self::doc::DOC_AN_CHIP_DATA,
         ChipType::DocBv(size, _) => self::doc::doc_bv_chip_data(size),
         ChipType::DocEv(size, _) => self::doc::doc_ev_chip_data(size),
         ChipType::EggTimer => self::timing::EGG_TIMER_CHIP_DATA,
         ChipType::Eq => self::compare::EQ_CHIP_DATA,
         ChipType::Halve => self::arith::HALVE_CHIP_DATA,
         ChipType::Inc => self::arith::INC_CHIP_DATA,
+        ChipType::Integrate => self::memory::INTEGRATE_CHIP_DATA,
         ChipType::Join => self::value::JOIN_CHIP_DATA,
         ChipType::Latch => self::memory::LATCH_CHIP_DATA,
         ChipType::Latest => self::memory::LATEST_CHIP_DATA,
+        ChipType::Meter => self::debug::METER_CHIP_DATA,
         ChipType::Mul => self::arith::MUL_CHIP_DATA,
         ChipType::Mul4Bit => self::arith::MUL_4BIT_CHIP_DATA,
         ChipType::Mux => self::logic::MUX_CHIP_DATA,
@@ -296,6 +320,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Queue => self::memory::QUEUE_CHIP_DATA,
         ChipType::Ram => self::memory::RAM_CHIP_DATA,
         ChipType::Random => self::value::RANDOM_CHIP_DATA,
+        ChipType::Relay => self::logic::RELAY_CHIP_DATA,
         ChipType::Sample => self::value::SAMPLE_CHIP_DATA,
         ChipType::Screen => self::memory::SCREEN_CHIP_DATA,
         ChipType::Stack => self::memory::STACK_CHIP_DATA,
@@ -303,6 +328,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
         ChipType::Sub => self::arith::SUB_CHIP_DATA,
         ChipType::Toggle(_) => self::debug::TOGGLE_CHIP_DATA,
         ChipType::Unpack => self::value::UNPACK_CHIP_DATA,
+        ChipType::Vref(_) => self::value::VREF_CHIP_DATA,
         ChipType::Xor => self::logic::XOR_CHIP_DATA,
     }
 }
@@ -316,12 +342,16 @@ pub(super) fn new_chip_evals(
 ) -> Vec<(usize, Box<dyn ChipEval>)> {
     debug_assert_eq!(slots.len(), chip_data(ctype).ports.len());
     match ctype {
+        ChipType::AAdd => self::arith::AAddChipEval::new_evals(slots),
+        ChipType::ACmp => self::compare::ACmpChipEval::new_evals(slots),
+        ChipType::AMul => self::arith::AMulChipEval::new_evals(slots),
         ChipType::Add => self::arith::AddChipEval::new_evals(slots),
         ChipType::Add2Bit => self::arith::Add2BitChipEval::new_evals(slots),
         ChipType::And => self::logic::AndChipEval::new_evals(slots),
         ChipType::Break(enabled) => {
             self::debug::BreakChipEval::new_evals(enabled, slots, coords)
         }
+        ChipType::Buffer => self::timing::BufferChipEval::new_evals(slots),
         ChipType::Button(hotkey) => {
             self::debug::ButtonChipEval::new_evals(hotkey, slots, coords)
         }
@@ -338,15 +368,20 @@ pub(super) fn new_chip_evals(
         ChipType::Demux => self::logic::DemuxChipEval::new_evals(slots),
         ChipType::Discard => self::value::DiscardChipEval::new_evals(slots),
         ChipType::Display => vec![],
-        ChipType::DocBv(_, _) => vec![],
-        ChipType::DocEv(_, _) => vec![],
+        ChipType::DocAn(_) | ChipType::DocBv(_, _) | ChipType::DocEv(_, _) => {
+            vec![]
+        }
         ChipType::EggTimer => self::timing::EggTimerChipEval::new_evals(slots),
         ChipType::Eq => self::compare::EqChipEval::new_evals(slots),
         ChipType::Halve => self::arith::HalveChipEval::new_evals(slots),
         ChipType::Inc => self::arith::IncChipEval::new_evals(slots),
+        ChipType::Integrate => {
+            self::memory::IntegrateChipEval::new_evals(slots)
+        }
         ChipType::Join => self::value::JoinChipEval::new_evals(slots),
         ChipType::Latch => self::memory::LatchChipEval::new_evals(slots),
         ChipType::Latest => self::memory::LatestChipEval::new_evals(slots),
+        ChipType::Meter => vec![],
         ChipType::Mul => self::arith::MulChipEval::new_evals(slots),
         ChipType::Mul4Bit => self::arith::Mul4BitChipEval::new_evals(slots),
         ChipType::Mux => self::logic::MuxChipEval::new_evals(slots),
@@ -357,6 +392,7 @@ pub(super) fn new_chip_evals(
         ChipType::Queue => self::memory::QueueChipEval::new_evals(slots),
         ChipType::Ram => self::memory::RamChipEval::new_evals(slots),
         ChipType::Random => self::value::RandomChipEval::new_evals(slots),
+        ChipType::Relay => self::logic::RelayChipEval::new_evals(slots),
         ChipType::Sample => self::value::SampleChipEval::new_evals(slots),
         ChipType::Screen => {
             self::memory::ScreenChipEval::new_evals(slots, coords)
@@ -370,6 +406,9 @@ pub(super) fn new_chip_evals(
             self::debug::ToggleChipEval::new_evals(value, slots, coords)
         }
         ChipType::Unpack => self::value::UnpackChipEval::new_evals(slots),
+        ChipType::Vref(value) => {
+            self::value::VrefChipEval::new_evals(value, slots)
+        }
         ChipType::Xor => self::logic::XorChipEval::new_evals(slots),
     }
 }

@@ -25,6 +25,50 @@ use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
+pub const AADD_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Analog, (0, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::ANALOG),
+        AbstractConstraint::Exact(1, WireSize::ANALOG),
+        AbstractConstraint::Exact(2, WireSize::ANALOG),
+    ],
+    dependencies: &[(0, 2), (1, 2)],
+};
+
+pub struct AAddChipEval {
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
+}
+
+impl AAddChipEval {
+    pub fn new_evals(
+        slots: &[(WireId, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), AADD_CHIP_DATA.ports.len());
+        let chip_eval = AAddChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for AAddChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let input1 = state.recv_analog(self.input1);
+        let input2 = state.recv_analog(self.input2);
+        state.send_analog(self.output, input1 + input2);
+    }
+}
+
+//===========================================================================//
+
 pub const ADD_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
@@ -127,6 +171,38 @@ impl ChipEval for Add2BitChipEval {
             state.send_behavior(self.output, lo);
             state.send_behavior(self.carry, hi);
         }
+    }
+}
+
+//===========================================================================//
+
+pub const AMUL_CHIP_DATA: &ChipData = AADD_CHIP_DATA;
+
+pub struct AMulChipEval {
+    input1: WireId,
+    input2: WireId,
+    output: WireId,
+}
+
+impl AMulChipEval {
+    pub fn new_evals(
+        slots: &[(WireId, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), AMUL_CHIP_DATA.ports.len());
+        let chip_eval = AMulChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            output: slots[2].0,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for AMulChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        let input1 = state.recv_analog(self.input1);
+        let input2 = state.recv_analog(self.input2);
+        state.send_analog(self.output, input1 * input2);
     }
 }
 

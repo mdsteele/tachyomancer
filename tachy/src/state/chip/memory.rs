@@ -17,11 +17,12 @@
 // | with Tachyomancer.  If not, see <http://www.gnu.org/licenses/>.          |
 // +--------------------------------------------------------------------------+
 
-use super::super::eval::{ChipEval, CircuitState};
+use super::super::eval::{ChipEval, CircuitState, MAX_CYCLES_PER_TIME_STEP};
 use super::data::{AbstractConstraint, ChipData};
-use crate::geom::{Coords, Direction};
+use crate::geom::{Coords, Direction, Fixed};
 use crate::save::WireSize;
 use crate::state::{PortColor, PortFlow, WireId};
+use std::cmp::Ordering;
 use std::collections::VecDeque;
 
 //===========================================================================//
@@ -79,6 +80,67 @@ impl ChipEval for CounterChipEval {
             self.value = self.value.wrapping_sub(1) & self.size.mask();
         }
         state.send_behavior(self.output, self.value);
+    }
+}
+
+//===========================================================================//
+
+pub const INTEGRATE_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Analog, (0, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::ANALOG),
+        AbstractConstraint::Exact(1, WireSize::Zero),
+        AbstractConstraint::Exact(2, WireSize::ANALOG),
+    ],
+    dependencies: &[(0, 2), (1, 2)],
+};
+
+pub struct IntegrateChipEval {
+    input: WireId,
+    reset: WireId,
+    output: WireId,
+    last_input: Fixed,
+    value: Fixed,
+}
+
+impl IntegrateChipEval {
+    pub fn new_evals(
+        slots: &[(WireId, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), INTEGRATE_CHIP_DATA.ports.len());
+        let chip_eval = IntegrateChipEval {
+            input: slots[0].0,
+            reset: slots[1].0,
+            output: slots[2].0,
+            last_input: Fixed::ZERO,
+            value: Fixed::ZERO,
+        };
+        vec![(2, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for IntegrateChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if state.has_event(self.reset) {
+            self.value = Fixed::ZERO;
+        }
+        state.send_analog(self.output, self.value);
+        self.last_input = state.recv_analog(self.input);
+        let dt = Fixed::from_f64((MAX_CYCLES_PER_TIME_STEP as f64).recip());
+        self.value += self.last_input * dt;
+    }
+
+    fn needs_another_cycle(&mut self, state: &CircuitState) -> bool {
+        state.cycle() + 1 < MAX_CYCLES_PER_TIME_STEP
+            && match self.last_input.cmp(&Fixed::ZERO) {
+                Ordering::Less => self.value != -Fixed::ONE,
+                Ordering::Equal => false,
+                Ordering::Greater => self.value != Fixed::ONE,
+            }
     }
 }
 

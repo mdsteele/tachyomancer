@@ -182,7 +182,7 @@ impl PuzzleEval for InjectorEval {
         errors
     }
 
-    fn needs_another_cycle(&self, _time_step: u32) -> bool {
+    fn needs_another_cycle(&self, _state: &CircuitState) -> bool {
         !self.sensor_queue.is_empty()
     }
 

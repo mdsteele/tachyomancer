@@ -19,9 +19,10 @@
 
 use super::hotkey::HotkeyCode;
 use super::size::WireSize;
-use crate::geom::CoordsSize;
+use crate::geom::{CoordsSize, Fixed};
 use std::collections::HashSet;
 use std::fmt;
+use std::mem;
 use std::str;
 
 //===========================================================================//
@@ -32,10 +33,14 @@ pub const MAX_COMMENT_CHARS: usize = 5;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChipType {
+    AAdd,
+    ACmp,
+    AMul,
     Add,
     Add2Bit,
     And,
     Break(bool),
+    Buffer,
     Button(Option<HotkeyCode>),
     Clock,
     Cmp,
@@ -48,15 +53,18 @@ pub enum ChipType {
     Demux,
     Discard,
     Display,
+    DocAn([u8; MAX_COMMENT_CHARS]),
     DocBv(WireSize, [u8; MAX_COMMENT_CHARS]),
     DocEv(WireSize, [u8; MAX_COMMENT_CHARS]),
     EggTimer,
     Eq,
     Halve,
     Inc,
+    Integrate,
     Join,
     Latch,
     Latest,
+    Meter,
     Mul,
     Mul4Bit,
     Mux,
@@ -67,6 +75,7 @@ pub enum ChipType {
     Queue,
     Ram,
     Random,
+    Relay,
     Sample,
     Screen,
     Stack,
@@ -74,6 +83,7 @@ pub enum ChipType {
     Sub,
     Toggle(bool),
     Unpack,
+    Vref(Fixed),
     Xor,
 }
 
@@ -87,6 +97,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Sample,
         ChipType::Join,
         ChipType::Coerce(WireSize::Eight),
+        ChipType::Vref(Fixed::ONE),
         ChipType::Random,
     ]),
     ("Arithmetic", &[
@@ -98,11 +109,14 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Mul,
         ChipType::Mul4Bit,
         ChipType::Halve,
+        ChipType::AAdd,
+        ChipType::AMul,
     ]),
     ("Comparison", &[
         ChipType::Cmp,
         ChipType::CmpEq,
         ChipType::Eq,
+        ChipType::ACmp,
     ]),
     ("Logic", &[
         ChipType::Not,
@@ -111,6 +125,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Xor,
         ChipType::Mux,
         ChipType::Demux,
+        ChipType::Relay,
     ]),
     ("Memory", &[
         ChipType::Latest,
@@ -119,6 +134,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Ram,
         ChipType::Stack,
         ChipType::Queue,
+        ChipType::Integrate,
         ChipType::Screen,
     ]),
     ("Timing", &[
@@ -126,11 +142,13 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::Clock,
         ChipType::EggTimer,
         ChipType::Stopwatch,
+        ChipType::Buffer,
     ]),
     ("Debug", &[
         ChipType::Comment(*b"#    "),
         ChipType::Display,
         ChipType::Break(true),
+        ChipType::Meter,
         ChipType::Toggle(false),
         ChipType::Button(None),
     ]),
@@ -144,9 +162,10 @@ impl ChipType {
             | ChipType::Display
             | ChipType::EggTimer
             | ChipType::Stopwatch => CoordsSize::new(2, 1),
-            ChipType::Ram | ChipType::Stack | ChipType::Queue => {
-                CoordsSize::new(2, 2)
-            }
+            ChipType::Meter
+            | ChipType::Queue
+            | ChipType::Ram
+            | ChipType::Stack => CoordsSize::new(2, 2),
             ChipType::Screen => CoordsSize::new(5, 5),
             _ => CoordsSize::new(1, 1),
         }
@@ -167,9 +186,20 @@ impl ChipType {
             ChipType::Neg => "Negate".to_string(),
             ChipType::Toggle(false) => "Toggle Switch (off)".to_string(),
             ChipType::Toggle(true) => "Toggle Switch (on)".to_string(),
+            ChipType::Vref(value) => format!("Vref ({:+})", value),
             other => format!("{}", other),
         };
         let description = match self {
+            ChipType::AAdd => {
+                "Outputs the sum of the two input voltages, clamped to the \
+                 range [-1, +1]."
+            }
+            ChipType::ACmp => {
+                "When an input event arrives, sends an output event with a \
+                 value of 1 if the one input voltage is lower than the other, \
+                 or 0 otherwise."
+            }
+            ChipType::AMul => "Outputs the product of the two input voltages.",
             ChipType::Add => {
                 "Outputs the sum of the two inputs.\n\
                  $=$#size = [5, 2]\n\
@@ -207,6 +237,11 @@ impl ChipType {
                  automatically pauses the simulation whenever an event goes \
                  through.\n\
                  $'Right-click' to toggle whether the breakpoint is enabled."
+            }
+            ChipType::Buffer => {
+                "Allows for feedback loops within analog circuits.  It takes \
+                 one cycle for a change in voltage to propagate through the \
+                 buffer."
             }
             ChipType::Button(_) => "TODO",
             ChipType::Clock => {
@@ -290,7 +325,8 @@ impl ChipType {
                  p4p0w = 'Stub'\n\
                  #"
             }
-            ChipType::Display => "TODO",
+            ChipType::Display => "Displays the input value.",
+            ChipType::DocAn(_) => "",
             ChipType::DocBv(_, _) => "",
             ChipType::DocEv(_, _) => "",
             ChipType::EggTimer => "TODO",
@@ -299,6 +335,11 @@ impl ChipType {
             }
             ChipType::Halve => "Outputs half the input, rounded down.",
             ChipType::Inc => "TODO",
+            ChipType::Integrate => {
+                "Outputs the integral of the input voltage over time, \
+                 starting from a initial condition of zero.  Resets the \
+                 output back to zero whenever a reset event arrives."
+            }
             ChipType::Join => {
                 "Merges two event streams into one; when an event arrives at \
                  either input port, it is sent to the output port.  If an \
@@ -326,6 +367,7 @@ impl ChipType {
                  p4p0w = 'Stub'\n\
                  #"
             }
+            ChipType::Meter => "Measures and displays the input voltage.",
             ChipType::Mul => {
                 "Outputs the product of the two inputs.\n\
                  $=$#size = [5, 2]\n\
@@ -477,6 +519,35 @@ impl ChipType {
                  evenly distributed among all possible values for the size of \
                  the output wire."
             }
+            ChipType::Relay => {
+                "When $*Ctrl$* is 0, outputs the $*In0$* voltage.  When \
+                 $*Ctrl$* is 1, outputs the $*In1$* voltage instead.\n\
+                 $=$#size = [5, 3]\n\
+                 [chips]\n\
+                 p0p1 = \"f0-DocAn('In0')\"\n\
+                 p0p2 = \"f0-DocAn('In1')\"\n\
+                 p2p0 = \"f1-DocBv(1, 'Ctrl')\"\n\
+                 p2p1 = 'f0-Relay'\n\
+                 p4p1 = \"f0-DocAn('Out')\"\n\
+                 [wires]\n\
+                 p0p1e = 'Stub'\n\
+                 p0p2e = 'Stub'\n\
+                 p1p1e = 'Straight'\n\
+                 p1p1w = 'Straight'\n\
+                 p1p2e = 'Straight'\n\
+                 p1p2w = 'Straight'\n\
+                 p2p0s = 'Stub'\n\
+                 p2p1e = 'Stub'\n\
+                 p2p1n = 'Stub'\n\
+                 p2p1s = 'Stub'\n\
+                 p2p1w = 'Stub'\n\
+                 p2p2n = 'TurnRight'\n\
+                 p2p2w = 'TurnLeft'\n\
+                 p3p1e = 'Straight'\n\
+                 p3p1w = 'Straight'\n\
+                 p4p1w = 'Stub'\n\
+                 #"
+            }
             ChipType::Sample => {
                 "Transforms 0-bit events into value-carrying events by \
                  sampling the value of the behavior wire when an event \
@@ -500,6 +571,10 @@ impl ChipType {
                  as many bits.  The antipodal output has the low bits of the \
                  input, and the lateral output has the high bits."
             }
+            ChipType::Vref(_) => {
+                "Outputs a constant reference voltage.\n\
+                 $'Right-click' on the chip to change the output voltage."
+            }
             ChipType::Xor => {
                 "For each bit in the wire, the output is 1 if exactly one \
                  input is 1, or 0 if the inputs are both 0 or both 1."
@@ -521,6 +596,8 @@ impl fmt::Display for ChipType {
             }
             ChipType::Comment(bytes) => formatter
                 .pad(&format!("Comment('{}')", escape(bytes).trim_end())),
+            ChipType::DocAn(bytes) => formatter
+                .pad(&format!("DocAn('{}')", escape(bytes).trim_end())),
             ChipType::DocBv(size, bytes) => formatter.pad(&format!(
                 "DocBv({}, '{}')",
                 size.num_bits(),
@@ -531,6 +608,9 @@ impl fmt::Display for ChipType {
                 size.num_bits(),
                 escape(bytes).trim_end()
             )),
+            ChipType::Vref(value) => {
+                formatter.pad(&format!("Vref({})", value))
+            }
             _ => fmt::Debug::fmt(self, formatter),
         }
     }
@@ -541,12 +621,16 @@ impl str::FromStr for ChipType {
 
     fn from_str(string: &str) -> Result<ChipType, String> {
         match string {
+            "AAdd" => Ok(ChipType::AAdd),
+            "ACmp" => Ok(ChipType::ACmp),
+            "AMul" => Ok(ChipType::AMul),
             "Add" => Ok(ChipType::Add),
             "Add2Bit" => Ok(ChipType::Add2Bit),
             "And" => Ok(ChipType::And),
             "Break" => Ok(ChipType::Break(true)),
             "Break(false)" => Ok(ChipType::Break(false)),
             "Break(true)" => Ok(ChipType::Break(true)),
+            "Buffer" => Ok(ChipType::Buffer),
             "Button" => Ok(ChipType::Button(None)),
             "Button(None)" => Ok(ChipType::Button(None)),
             "Clock" => Ok(ChipType::Clock),
@@ -561,9 +645,11 @@ impl str::FromStr for ChipType {
             "Eq" => Ok(ChipType::Eq),
             "Halve" => Ok(ChipType::Halve),
             "Inc" => Ok(ChipType::Inc),
+            "Integrate" => Ok(ChipType::Integrate),
             "Join" => Ok(ChipType::Join),
             "Latch" => Ok(ChipType::Latch),
             "Latest" => Ok(ChipType::Latest),
+            "Meter" => Ok(ChipType::Meter),
             "Mul" => Ok(ChipType::Mul),
             "Mul4Bit" => Ok(ChipType::Mul4Bit),
             "Mux" => Ok(ChipType::Mux),
@@ -574,6 +660,7 @@ impl str::FromStr for ChipType {
             "Queue" => Ok(ChipType::Queue),
             "Ram" => Ok(ChipType::Ram),
             "Random" => Ok(ChipType::Random),
+            "Relay" => Ok(ChipType::Relay),
             "Sample" => Ok(ChipType::Sample),
             "Screen" => Ok(ChipType::Screen),
             "Stack" => Ok(ChipType::Stack),
@@ -606,6 +693,10 @@ impl str::FromStr for ChipType {
                     if let Some(bytes) = parse_comment_bytes(inner) {
                         return Ok(ChipType::Comment(bytes));
                     }
+                } else if let Some(inner) = within(string, "DocAn(", ")") {
+                    if let Some(bytes) = parse_comment_bytes(inner) {
+                        return Ok(ChipType::DocAn(bytes));
+                    }
                 } else if let Some(inner) = within(string, "DocBv(", ")") {
                     if let Some((size, bytes)) = parse_size_and_comment(inner)
                     {
@@ -617,6 +708,15 @@ impl str::FromStr for ChipType {
                     if let Some((size, bytes)) = parse_size_and_comment(inner)
                     {
                         return Ok(ChipType::DocEv(size, bytes));
+                    }
+                } else if let Some(inner) = within(string, "Vref(Fixed(", "))")
+                {
+                    if let Ok(value) = inner.parse::<i32>() {
+                        return Ok(ChipType::Vref(Fixed::new(value)));
+                    }
+                } else if let Some(inner) = within(string, "Vref(", ")") {
+                    if let Ok(value) = inner.parse::<f64>() {
+                        return Ok(ChipType::Vref(Fixed::from_f64(value)));
                     }
                 }
                 return Err(string.to_string());
@@ -730,60 +830,20 @@ fn within<'a>(string: &'a str, prefix: &str, suffix: &str) -> Option<&'a str> {
 //===========================================================================//
 
 pub struct ChipSet {
-    ctypes: HashSet<ChipType>,
+    inner: HashSet<mem::Discriminant<ChipType>>,
 }
 
 impl ChipSet {
     pub fn new() -> ChipSet {
-        ChipSet { ctypes: HashSet::new() }
+        ChipSet { inner: HashSet::new() }
     }
 
     pub fn contains(&self, ctype: ChipType) -> bool {
-        match ctype {
-            ChipType::Break(_) => {
-                self.ctypes.contains(&ChipType::Break(false))
-            }
-            ChipType::Button(_) => {
-                self.ctypes.contains(&ChipType::Button(None))
-            }
-            ChipType::Coerce(_) => {
-                self.ctypes.contains(&ChipType::Coerce(WireSize::One))
-            }
-            ChipType::Comment(_) => {
-                self.ctypes.contains(&ChipType::Comment(*b"     "))
-            }
-            ChipType::Const(_) => self.ctypes.contains(&ChipType::Const(0)),
-            ChipType::Toggle(_) => {
-                self.ctypes.contains(&ChipType::Toggle(false))
-            }
-            _ => self.ctypes.contains(&ctype),
-        }
+        self.inner.contains(&mem::discriminant(&ctype))
     }
 
     pub fn insert(&mut self, ctype: ChipType) {
-        match ctype {
-            ChipType::Break(_) => {
-                self.ctypes.insert(ChipType::Break(false));
-            }
-            ChipType::Button(_) => {
-                self.ctypes.insert(ChipType::Button(None));
-            }
-            ChipType::Coerce(_) => {
-                self.ctypes.insert(ChipType::Coerce(WireSize::One));
-            }
-            ChipType::Comment(_) => {
-                self.ctypes.insert(ChipType::Comment(*b"     "));
-            }
-            ChipType::Const(_) => {
-                self.ctypes.insert(ChipType::Const(0));
-            }
-            ChipType::Toggle(_) => {
-                self.ctypes.insert(ChipType::Toggle(false));
-            }
-            _ => {
-                self.ctypes.insert(ctype);
-            }
-        }
+        self.inner.insert(mem::discriminant(&ctype));
     }
 }
 
@@ -794,6 +854,7 @@ mod tests {
     use super::super::hotkey::HotkeyCode;
     use super::super::size::WireSize;
     use super::{ChipSet, ChipType, CHIP_CATEGORIES};
+    use crate::geom::Fixed;
     use std::u8;
 
     #[test]
@@ -815,6 +876,7 @@ mod tests {
             ChipType::Const(0),
             ChipType::Const(13),
             ChipType::Const(u8::MAX),
+            ChipType::DocAn(*b"'\"): "),
             ChipType::DocBv(WireSize::One, *b"Blarg"),
             ChipType::DocBv(WireSize::Two, *b" \x1b\"~ "),
             ChipType::DocBv(WireSize::Four, *b"Foo  "),
@@ -825,6 +887,10 @@ mod tests {
             ChipType::DocEv(WireSize::Four, *b"Foo  "),
             ChipType::DocEv(WireSize::Eight, *b" Bar "),
             ChipType::Toggle(true),
+            ChipType::Vref(Fixed::ZERO),
+            ChipType::Vref(-Fixed::ONE),
+            ChipType::Vref(Fixed::from_f64(0.25)),
+            ChipType::Vref(Fixed::from_f64(std::f64::consts::FRAC_1_PI)),
         ];
         for &(_, ctypes) in CHIP_CATEGORIES.iter() {
             chip_types.extend_from_slice(ctypes);

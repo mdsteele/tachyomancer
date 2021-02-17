@@ -32,6 +32,8 @@ pub enum WireSize {
 }
 
 impl WireSize {
+    pub const ANALOG: WireSize = WireSize::Two;
+
     pub fn min_for_value(value: u8) -> WireSize {
         if value > 0xf {
             WireSize::Eight

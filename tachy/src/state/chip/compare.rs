@@ -25,6 +25,57 @@ use crate::state::{PortColor, PortFlow, WireId};
 
 //===========================================================================//
 
+pub const ACMP_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::East),
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Send, PortColor::Event, (0, 0), Direction::North),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::ANALOG),
+        AbstractConstraint::Exact(1, WireSize::ANALOG),
+        AbstractConstraint::Exact(2, WireSize::Zero),
+        AbstractConstraint::Exact(3, WireSize::One),
+    ],
+    dependencies: &[(0, 3), (1, 3), (2, 3)],
+};
+
+pub struct ACmpChipEval {
+    input1: WireId,
+    input2: WireId,
+    test: WireId,
+    output: WireId,
+}
+
+impl ACmpChipEval {
+    pub fn new_evals(
+        slots: &[(WireId, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), ACMP_CHIP_DATA.ports.len());
+        let chip_eval = ACmpChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            test: slots[2].0,
+            output: slots[3].0,
+        };
+        vec![(3, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for ACmpChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if state.has_event(self.test) {
+            let input1 = state.recv_analog(self.input1);
+            let input2 = state.recv_analog(self.input2);
+            let output = if input1 < input2 { 1 } else { 0 };
+            state.send_event(self.output, output);
+        }
+    }
+}
+
+//===========================================================================//
+
 pub const CMP_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),

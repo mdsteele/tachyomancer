@@ -54,6 +54,15 @@ impl ScoreUnits {
 
 //===========================================================================//
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum AllowColors {
+    BehaviorsOnly,
+    EventsAndBehaviors,
+    All,
+}
+
+//===========================================================================//
+
 #[derive(
     Clone,
     Copy,
@@ -120,6 +129,7 @@ pub enum Puzzle {
     // Sandboxes:
     SandboxBehavior,
     SandboxEvent,
+    SandboxAnalog,
 }
 
 impl Puzzle {
@@ -157,8 +167,12 @@ impl Puzzle {
         self.data().instructions
     }
 
+    pub fn allows_analog(self) -> bool {
+        self.data().allow == AllowColors::All
+    }
+
     pub fn allows_events(self) -> bool {
-        self.data().allow_events
+        self.data().allow != AllowColors::BehaviorsOnly
     }
 
     pub fn initial_board_size(self) -> CoordsSize {
@@ -171,7 +185,7 @@ impl Puzzle {
             Puzzle::AutomateBeacon => &PuzzleData {
                 title: "Subspace Beacon",
                 kind: PuzzleKind::Automate,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (200, 300),
@@ -189,7 +203,7 @@ impl Puzzle {
             Puzzle::AutomateCollector => &PuzzleData {
                 title: "Collector",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
@@ -199,7 +213,7 @@ impl Puzzle {
             Puzzle::AutomateCryocycler => &PuzzleData {
                 title: "Cryocycler",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (9, 5),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
@@ -209,7 +223,7 @@ impl Puzzle {
             Puzzle::AutomateDrillingRig => &PuzzleData {
                 title: "Drilling Rig",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (5, 7),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (100, 200),
@@ -221,7 +235,7 @@ impl Puzzle {
             Puzzle::AutomateEnrichment => &PuzzleData {
                 title: "U-235 Enrichment",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (10, 7),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 300),
@@ -245,7 +259,7 @@ impl Puzzle {
             Puzzle::AutomateFuelSynthesis => &PuzzleData {
                 title: "Fuel Synthesis",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 400),
@@ -265,7 +279,7 @@ impl Puzzle {
             Puzzle::AutomateGeigerCounter => &PuzzleData {
                 title: "Geiger Counter",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (10, 9),
                 score_units: ScoreUnits::Cycles,
                 graph_bounds: (500, 5000),
@@ -277,7 +291,7 @@ impl Puzzle {
             Puzzle::AutomateGrapple => &PuzzleData {
                 title: "Grapple Launcher",
                 kind: PuzzleKind::Automate,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (6, 8),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (200, 200),
@@ -289,7 +303,7 @@ impl Puzzle {
             Puzzle::AutomateGuidance => &PuzzleData {
                 title: "Guidance System",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (5, 9),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 300),
@@ -301,7 +315,7 @@ impl Puzzle {
             Puzzle::AutomateHeliostat => &PuzzleData {
                 title: "Heliostat",
                 kind: PuzzleKind::Automate,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (6, 5),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (100, 200),
@@ -322,7 +336,7 @@ impl Puzzle {
             Puzzle::AutomateIncubator => &PuzzleData {
                 title: "Incubator",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (9, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
@@ -343,7 +357,7 @@ impl Puzzle {
             Puzzle::AutomateInjector => &PuzzleData {
                 title: "Plasma Injector",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (9, 5),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
@@ -356,7 +370,7 @@ impl Puzzle {
             Puzzle::AutomateMiningRobot => &PuzzleData {
                 title: "Mining Robot",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (100, 500),
@@ -377,7 +391,7 @@ impl Puzzle {
             Puzzle::AutomateReactor => &PuzzleData {
                 title: "Backup Reactor",
                 kind: PuzzleKind::Automate,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (6, 8),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (400, 500),
@@ -389,7 +403,7 @@ impl Puzzle {
             Puzzle::AutomateResonator => &PuzzleData {
                 title: "Strike Resonator",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (9, 7),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
@@ -401,7 +415,7 @@ impl Puzzle {
             Puzzle::AutomateRobotArm => &PuzzleData {
                 title: "Manipulator Arm",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (300, 500),
@@ -412,7 +426,7 @@ impl Puzzle {
             Puzzle::AutomateSensors => &PuzzleData {
                 title: "Main Sensors",
                 kind: PuzzleKind::Automate,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (6, 7),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (150, 150),
@@ -437,7 +451,7 @@ impl Puzzle {
             Puzzle::AutomateSonar => &PuzzleData {
                 title: "Sonar Navigation",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (9, 7),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 1000),
@@ -449,7 +463,7 @@ impl Puzzle {
             Puzzle::AutomateStorageDepot => &PuzzleData {
                 title: "Storage Depot",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 1000),
@@ -461,7 +475,7 @@ impl Puzzle {
             Puzzle::AutomateTranslator => &PuzzleData {
                 title: "Translator",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (8, 5),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 500),
@@ -472,7 +486,7 @@ impl Puzzle {
             Puzzle::AutomateXUnit => &PuzzleData {
                 title: "X-Unit",
                 kind: PuzzleKind::Automate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (12, 9),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (500, 300),
@@ -494,7 +508,7 @@ impl Puzzle {
             Puzzle::CommandLander => &PuzzleData {
                 title: "Orbital Lander",
                 kind: PuzzleKind::Command,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (6, 8),
                 score_units: ScoreUnits::ManualInputs,
                 graph_bounds: (200, 100),
@@ -506,7 +520,7 @@ impl Puzzle {
             Puzzle::CommandSapper => &PuzzleData {
                 title: "Sapper Drone",
                 kind: PuzzleKind::Command,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (9, 7),
                 score_units: ScoreUnits::ManualInputs,
                 graph_bounds: (500, 500),
@@ -519,7 +533,7 @@ impl Puzzle {
             Puzzle::CommandShields => &PuzzleData {
                 title: "Deflector Shields",
                 kind: PuzzleKind::Command,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (9, 7),
                 score_units: ScoreUnits::ManualInputs,
                 graph_bounds: (500, 100),
@@ -531,7 +545,7 @@ impl Puzzle {
             Puzzle::CommandTurret => &PuzzleData {
                 title: "Defense Turret",
                 kind: PuzzleKind::Command,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (9, 7),
                 score_units: ScoreUnits::ManualInputs,
                 graph_bounds: (500, 100),
@@ -543,7 +557,7 @@ impl Puzzle {
             Puzzle::FabricateCounter => &PuzzleData {
                 title: "Counter",
                 kind: PuzzleKind::Fabricate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (7, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 150),
@@ -557,7 +571,7 @@ impl Puzzle {
             Puzzle::FabricateEggTimer => &PuzzleData {
                 title: "Egg Timer",
                 kind: PuzzleKind::Fabricate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (7, 7),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
@@ -571,7 +585,7 @@ impl Puzzle {
             Puzzle::FabricateHalve => &PuzzleData {
                 title: "Halver",
                 kind: PuzzleKind::Fabricate,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (7, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 100),
@@ -589,7 +603,7 @@ impl Puzzle {
             Puzzle::FabricateInc => &PuzzleData {
                 title: "Incrementor",
                 kind: PuzzleKind::Fabricate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 100),
@@ -607,7 +621,7 @@ impl Puzzle {
             Puzzle::FabricateLatch => &PuzzleData {
                 title: "Latch",
                 kind: PuzzleKind::Fabricate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 100),
@@ -626,7 +640,7 @@ impl Puzzle {
             Puzzle::FabricateMul => &PuzzleData {
                 title: "Multiplier",
                 kind: PuzzleKind::Fabricate,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (7, 7),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
@@ -642,7 +656,7 @@ impl Puzzle {
             Puzzle::FabricateQueue => &PuzzleData {
                 title: "Queue Memory",
                 kind: PuzzleKind::Fabricate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (7, 6),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (500, 500),
@@ -656,7 +670,7 @@ impl Puzzle {
             Puzzle::FabricateStack => &PuzzleData {
                 title: "Stack Memory",
                 kind: PuzzleKind::Fabricate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (7, 6),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (500, 500),
@@ -670,7 +684,7 @@ impl Puzzle {
             Puzzle::FabricateStopwatch => &PuzzleData {
                 title: "Stopwatch",
                 kind: PuzzleKind::Fabricate,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (7, 7),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
@@ -684,7 +698,7 @@ impl Puzzle {
             Puzzle::FabricateXor => &PuzzleData {
                 title: "XOR Gate",
                 kind: PuzzleKind::Fabricate,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 100),
@@ -699,10 +713,24 @@ impl Puzzle {
                      * $!Note that ($/a$/ XOR $/b$/) is equivalent to \
                      ($/a$/ OR $/b$/) AND NOT ($/a$/ AND $/b$/).",
             },
+            Puzzle::SandboxAnalog => &PuzzleData {
+                title: "Analog Lab",
+                kind: PuzzleKind::Sandbox,
+                allow: AllowColors::All,
+                init_size: (8, 6),
+                score_units: ScoreUnits::Time,
+                graph_bounds: (100, 100),
+                description:
+                    "Build any circuits you want using all behavior, event, \
+                     and analog chips that are currently available.  You can \
+                     use this area for prototyping, experimentation, or \
+                     freeform design.",
+                instructions: "",
+            },
             Puzzle::SandboxBehavior => &PuzzleData {
                 title: "Behavior Lab",
                 kind: PuzzleKind::Sandbox,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (100, 100),
@@ -715,7 +743,7 @@ impl Puzzle {
             Puzzle::SandboxEvent => &PuzzleData {
                 title: "Event Lab",
                 kind: PuzzleKind::Sandbox,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (8, 6),
                 score_units: ScoreUnits::Time,
                 graph_bounds: (100, 100),
@@ -729,7 +757,7 @@ impl Puzzle {
             Puzzle::TutorialAdd => &PuzzleData {
                 title: "Adder",
                 kind: PuzzleKind::Tutorial,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 100),
@@ -749,7 +777,7 @@ impl Puzzle {
             Puzzle::TutorialAmp => &PuzzleData {
                 title: "Signal Amplifier",
                 kind: PuzzleKind::Tutorial,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (6, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 150),
@@ -766,7 +794,7 @@ impl Puzzle {
             Puzzle::TutorialClock => &PuzzleData {
                 title: "Noise Filter",
                 kind: PuzzleKind::Tutorial,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (6, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
@@ -783,7 +811,7 @@ impl Puzzle {
             Puzzle::TutorialDemux => &PuzzleData {
                 title: "Four-Way Demux",
                 kind: PuzzleKind::Tutorial,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (6, 4),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
@@ -795,7 +823,7 @@ impl Puzzle {
             Puzzle::TutorialMux => &PuzzleData {
                 title: "Two-Way Mux",
                 kind: PuzzleKind::Tutorial,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (100, 100),
@@ -813,7 +841,7 @@ impl Puzzle {
             Puzzle::TutorialOr => &PuzzleData {
                 title: "OR Gate",
                 kind: PuzzleKind::Tutorial,
-                allow_events: false,
+                allow: AllowColors::BehaviorsOnly,
                 init_size: (5, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (50, 50),
@@ -832,7 +860,7 @@ impl Puzzle {
             Puzzle::TutorialRam => &PuzzleData {
                 title: "Repeat Filter",
                 kind: PuzzleKind::Tutorial,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (6, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (200, 200),
@@ -844,7 +872,7 @@ impl Puzzle {
             Puzzle::TutorialSum => &PuzzleData {
                 title: "Running Total",
                 kind: PuzzleKind::Tutorial,
-                allow_events: true,
+                allow: AllowColors::EventsAndBehaviors,
                 init_size: (7, 7),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (150, 200),
@@ -871,7 +899,7 @@ impl Puzzle {
 struct PuzzleData {
     title: &'static str,
     kind: PuzzleKind,
-    allow_events: bool,
+    allow: AllowColors,
     init_size: (i32, i32),
     score_units: ScoreUnits,
     graph_bounds: (i32, u32),

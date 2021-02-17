@@ -197,8 +197,9 @@ impl VerificationTray {
             Puzzle::FabricateXor => {
                 FabricationVerifyView::new(right_bottom, FABRICATE_XOR_DATA)
             }
-            Puzzle::SandboxBehavior => self::shared::NullVerifyView::new(),
-            Puzzle::SandboxEvent => self::shared::NullVerifyView::new(),
+            Puzzle::SandboxAnalog
+            | Puzzle::SandboxBehavior
+            | Puzzle::SandboxEvent => self::shared::NullVerifyView::new(),
             Puzzle::TutorialAdd => {
                 FabricationVerifyView::new(right_bottom, TUTORIAL_ADD_DATA)
             }

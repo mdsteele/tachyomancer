@@ -321,7 +321,7 @@ impl PuzzleEval for TranslatorEval {
         errors
     }
 
-    fn needs_another_cycle(&self, _time_step: u32) -> bool {
+    fn needs_another_cycle(&self, _state: &CircuitState) -> bool {
         match self.pending_translation {
             Some((0, _)) => true,
             _ => false,

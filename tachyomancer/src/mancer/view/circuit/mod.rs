@@ -51,7 +51,7 @@ use crate::mancer::gui::{Event, Keycode, Resources, Sound, Ui, Window};
 use crate::mancer::save::Prefs;
 use cgmath::{self, vec2, MetricSpace, Point2};
 use std::u8;
-use tachy::geom::{AsFloat, Coords, Direction, RectSize};
+use tachy::geom::{AsFloat, Coords, Direction, Fixed, RectSize};
 use tachy::save::{
     ChipType, HotkeyCode, Puzzle, ScoreCurve, SolutionData, WireSize,
     MAX_COMMENT_CHARS,
@@ -133,6 +133,7 @@ pub struct CircuitView {
     edit_coerce_dialog: Option<(WireSizeDialogBox, Coords)>,
     edit_comment_dialog: Option<(TextDialogBox, Coords)>,
     edit_const_dialog: Option<(TextDialogBox, Coords)>,
+    edit_vref_dialog: Option<(TextDialogBox, Coords)>,
     export_image_dialog: Option<ButtonDialogBox<ExportImageDialogAction>>,
     failed_save_dialog: Option<ButtonDialogBox<FailedSaveDialogAction>>,
     victory_dialog: Option<ScoreGraphDialogBox<VictoryDialogAction>>,
@@ -196,6 +197,7 @@ impl CircuitView {
             edit_coerce_dialog: None,
             edit_comment_dialog: None,
             edit_const_dialog: None,
+            edit_vref_dialog: None,
             export_image_dialog: None,
             failed_save_dialog: None,
             victory_dialog: None,
@@ -225,6 +227,8 @@ impl CircuitView {
             dialog.draw(resources, &projection, |_| true);
         } else if let Some((ref dialog, _)) = self.edit_const_dialog {
             dialog.draw(resources, &projection, is_valid_const);
+        } else if let Some((ref dialog, _)) = self.edit_vref_dialog {
+            dialog.draw(resources, &projection, is_valid_voltage);
         } else if let Some(ref dialog) = self.export_image_dialog {
             dialog.draw(resources, &projection);
         } else if let Some(ref dialog) = self.failed_save_dialog {
@@ -290,6 +294,20 @@ impl CircuitView {
                 }
                 Some(DialogAction::Cancel) => {}
                 None => self.edit_const_dialog = Some((dialog, coords)),
+            }
+            return None;
+        }
+
+        if let Some((mut dialog, coords)) = self.edit_vref_dialog.take() {
+            match dialog.on_event(event, ui, is_valid_voltage) {
+                Some(DialogAction::Value(text)) => {
+                    if let Ok(float) = text.parse::<f64>() {
+                        let new_value = Fixed::from_f64(float);
+                        change_vref_chip_value(ui, grid, coords, new_value);
+                    }
+                }
+                Some(DialogAction::Cancel) => {}
+                None => self.edit_vref_dialog = Some((dialog, coords)),
             }
             return None;
         }
@@ -601,6 +619,19 @@ impl CircuitView {
                 self.edit_const_dialog = Some((dialog, coords));
                 ui.request_redraw();
             }
+            Some(EditGridAction::EditVref(coords, value)) => {
+                let size =
+                    RectSize::new(self.width as i32, self.height as i32);
+                let dialog = TextDialogBox::new(
+                    size,
+                    prefs,
+                    "Choose new voltage value:",
+                    &format!("{:+}", value),
+                    20,
+                );
+                self.edit_vref_dialog = Some((dialog, coords));
+                ui.request_redraw();
+            }
             None => {}
         }
         return action;
@@ -817,6 +848,13 @@ fn is_valid_const(text: &str) -> bool {
     text.parse::<u8>().is_ok()
 }
 
+fn is_valid_voltage(text: &str) -> bool {
+    match text.parse::<f64>() {
+        Ok(value) => value >= -1.0 && value <= 1.0,
+        Err(_) => false,
+    }
+}
+
 fn change_button_chip_hotkey(
     ui: &mut Ui,
     grid: &mut EditGrid,
@@ -910,6 +948,27 @@ fn change_const_chip_value(
             ui.request_redraw();
         } else {
             debug_warn!("change_const_chip_value mutation failed");
+        }
+    }
+}
+
+fn change_vref_chip_value(
+    ui: &mut Ui,
+    grid: &mut EditGrid,
+    coords: Coords,
+    new_value: Fixed,
+) {
+    if let Some((coords, ChipType::Vref(old_value), orient)) =
+        grid.chip_at(coords)
+    {
+        let changes = vec![
+            GridChange::RemoveChip(coords, ChipType::Vref(old_value), orient),
+            GridChange::AddChip(coords, ChipType::Vref(new_value), orient),
+        ];
+        if grid.try_mutate(changes) {
+            ui.request_redraw();
+        } else {
+            debug_warn!("change_vref_chip_value mutation failed");
         }
     }
 }

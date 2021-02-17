@@ -187,8 +187,8 @@ impl PuzzleEval for XUnitEval {
         Vec::new()
     }
 
-    fn needs_another_cycle(&self, time_step: u32) -> bool {
-        self.test_signals.contains_key(&time_step)
+    fn needs_another_cycle(&self, state: &CircuitState) -> bool {
+        self.test_signals.contains_key(&state.time_step())
     }
 
     fn end_time_step(&mut self, state: &CircuitState) -> Vec<EvalError> {

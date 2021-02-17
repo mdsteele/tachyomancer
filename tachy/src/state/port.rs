@@ -34,6 +34,7 @@ pub enum PortFlow {
 pub enum PortColor {
     Behavior,
     Event,
+    Analog,
 }
 
 impl PortColor {
@@ -41,6 +42,7 @@ impl PortColor {
         match self {
             PortColor::Behavior => "$OBvr$D",
             PortColor::Event => "$CEvt$D",
+            PortColor::Analog => "$GAnalog$D",
         }
     }
 }

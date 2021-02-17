@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="64" height="64">
+  <path d="M 61,32 L 16,4 L 16,60 Z"
+        fill="none" stroke="black" stroke-width="3" stroke-linejoin="round"/>
+  <g fill="black" stroke="none">
+    <rect x="21" y="29" width="22" height="6"/>
+    <rect x="29" y="21" width="6" height="22"/>
+  </g>
+</svg>

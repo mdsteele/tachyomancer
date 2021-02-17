@@ -21,13 +21,11 @@ use crate::mancer::font::{Align, Font};
 use crate::mancer::gui::Resources;
 use cgmath::{vec2, vec3, Matrix4, Point2};
 use tachy::geom::{
-    AsFloat, AsInt, Color3, Color4, Coords, CoordsSize, Direction, MatrixExt,
-    Orientation, Rect, RectSize,
+    AsFloat, AsInt, Color3, Color4, Coords, CoordsSize, Direction, Fixed,
+    MatrixExt, Orientation, Rect, RectSize,
 };
 use tachy::save::{ChipType, WireSize};
-use tachy::state::{
-    ChipExt, EditGrid, Interface, PortColor, PortFlow, PortSpec,
-};
+use tachy::state::{ChipExt, EditGrid, Interface, PortSpec};
 
 //===========================================================================//
 
@@ -127,6 +125,7 @@ impl ChipModel {
                 draw_break_chip(resources, grid_matrix, coords, enabled);
             }
             ChipType::Comment(_)
+            | ChipType::DocAn(_)
             | ChipType::DocBv(_, _)
             | ChipType::DocEv(_, _) => {
                 draw_comment_chip(
@@ -189,6 +188,36 @@ impl ChipModel {
             ChipType::Latest => {
                 draw_latest_chip(resources, grid_matrix, coords, orient);
             }
+            ChipType::Meter => {
+                draw_basic_chip(
+                    resources,
+                    grid_matrix,
+                    coords,
+                    orient,
+                    chip_size,
+                    ChipIcon::Blank,
+                );
+                let mut value = Fixed::ZERO;
+                if let Some(grid) = opt_grid {
+                    if grid.eval().is_some() {
+                        let ports = ctype.ports(coords, orient);
+                        let encoded =
+                            grid.port_value(ports[0].loc()).unwrap_or(0);
+                        value = Fixed::from_encoded(encoded);
+                    }
+                }
+                draw_chip_string(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    oriented_size,
+                    Font::Roman,
+                    0.25,
+                    &Color4::GREEN4,
+                    Orientation::default(),
+                    &format!("{:+.8}", value),
+                );
+            }
             ChipType::Screen => {
                 draw_basic_chip(
                     resources,
@@ -236,7 +265,9 @@ impl ChipModel {
         }
 
         match ctype {
-            ChipType::DocBv(_, _) | ChipType::DocEv(_, _) => {}
+            ChipType::DocAn(_)
+            | ChipType::DocBv(_, _)
+            | ChipType::DocEv(_, _) => {}
             _ => {
                 for port in ctype.ports(coords, orient) {
                     draw_port(resources, grid_matrix, &port);
@@ -246,6 +277,7 @@ impl ChipModel {
 
         match ctype {
             ChipType::Comment(bytes)
+            | ChipType::DocAn(bytes)
             | ChipType::DocBv(_, bytes)
             | ChipType::DocEv(_, bytes) => {
                 let string: String =
@@ -279,6 +311,19 @@ impl ChipModel {
                     &label,
                 );
             }
+            ChipType::Vref(value) => {
+                draw_chip_string(
+                    resources,
+                    &grid_matrix,
+                    coords,
+                    oriented_size,
+                    Font::Roman,
+                    0.25,
+                    &Color4::GREEN4,
+                    Orientation::default(),
+                    &format!("{:+.2}", value),
+                );
+            }
             _ => {}
         }
     }
@@ -293,6 +338,9 @@ impl ChipModel {
 
 fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
     match ctype {
+        ChipType::AAdd => ChipIcon::Aadd,
+        ChipType::ACmp => ChipIcon::Acmp,
+        ChipType::AMul => ChipIcon::Amul,
         ChipType::Add => ChipIcon::Add,
         ChipType::Add2Bit => {
             if orient.is_mirrored() {
@@ -303,6 +351,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         }
         ChipType::And => ChipIcon::And,
         ChipType::Break(_) => ChipIcon::Break,
+        ChipType::Buffer => ChipIcon::Buffer,
         ChipType::Clock => ChipIcon::Clock,
         ChipType::Cmp => ChipIcon::Cmp,
         ChipType::CmpEq => {
@@ -322,11 +371,19 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         ChipType::Delay => ChipIcon::Delay,
         ChipType::Demux => ChipIcon::Demux,
         ChipType::Discard => ChipIcon::Discard,
+        ChipType::DocAn(_) => ChipIcon::DocAn,
         ChipType::DocBv(_, _) => ChipIcon::DocBv,
         ChipType::DocEv(_, _) => ChipIcon::DocEv,
         ChipType::Eq => ChipIcon::Eq,
         ChipType::Halve => ChipIcon::Halve,
         ChipType::Inc => ChipIcon::Inc,
+        ChipType::Integrate => {
+            if orient.is_mirrored() {
+                ChipIcon::Integrate2
+            } else {
+                ChipIcon::Integrate1
+            }
+        }
         ChipType::Join => ChipIcon::Join,
         ChipType::Latest => ChipIcon::Latest,
         ChipType::Mul => ChipIcon::Mul,
@@ -350,6 +407,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
         }
         ChipType::Queue => ChipIcon::Queue,
         ChipType::Ram => ChipIcon::Ram,
+        ChipType::Relay => ChipIcon::Relay,
         ChipType::Sample => ChipIcon::Sample,
         ChipType::Stack => ChipIcon::Stack,
         ChipType::Sub => ChipIcon::Sub,
@@ -361,6 +419,7 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
                 ChipIcon::Unpack1
             }
         }
+        ChipType::Vref(_) => ChipIcon::Vref,
         ChipType::Xor => ChipIcon::Xor,
         _ => ChipIcon::Blank,
     }
@@ -368,6 +427,14 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
 
 fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
     match chip_icon {
+        ChipIcon::Aadd
+        | ChipIcon::Acmp
+        | ChipIcon::Amul
+        | ChipIcon::Buffer
+        | ChipIcon::Integrate1
+        | ChipIcon::Integrate2
+        | ChipIcon::Relay
+        | ChipIcon::Vref => Color3::GREEN4,
         ChipIcon::Clock
         | ChipIcon::Counter
         | ChipIcon::Delay
@@ -387,7 +454,10 @@ fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
 
 fn chip_icon_is_fixed(chip_icon: ChipIcon) -> bool {
     match chip_icon {
-        ChipIcon::Halve | ChipIcon::Random | ChipIcon::Sub => true,
+        ChipIcon::Halve
+        | ChipIcon::Random
+        | ChipIcon::Sub
+        | ChipIcon::Vref => true,
         _ => false,
     }
 }
@@ -572,10 +642,7 @@ fn draw_port(
     let shader = resources.shaders().port();
     shader.bind();
     shader.set_mvp(&matrix);
-    shader.set_port_flow_and_color(
-        port.flow == PortFlow::Send,
-        port.color == PortColor::Event,
-    );
+    shader.set_port_flow_and_color(port.flow, port.color);
     shader.set_texture(resources.textures().brushed_metal());
     let width_scale = match port.max_size {
         WireSize::Zero => 0.25,

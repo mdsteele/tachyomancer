@@ -24,6 +24,20 @@ use crate::state::{PortColor, PortFlow};
 
 //===========================================================================//
 
+pub const DOC_AN_CHIP_DATA: &ChipData = &ChipData {
+    ports: &[
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
+        (PortFlow::Send, PortColor::Analog, (0, 0), Direction::East),
+    ],
+    constraints: &[
+        AbstractConstraint::Exact(0, WireSize::ANALOG),
+        AbstractConstraint::Exact(1, WireSize::ANALOG),
+    ],
+    dependencies: &[],
+};
+
+//===========================================================================//
+
 const DOC_BV_PORTS: &[AbstractPort] = &[
     (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
     (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),

@@ -213,6 +213,7 @@ impl PuzzleExt for Puzzle {
                 self::fab_clock::STOPWATCH_INTERFACES
             }
             Puzzle::FabricateXor => self::fab_arith::XOR_INTERFACES,
+            Puzzle::SandboxAnalog => self::sandbox::ANALOG_INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_INTERFACES,
@@ -248,7 +249,9 @@ fn is_chip_allowed_in(
     puzzle: Puzzle,
     solved: &PuzzleSet,
 ) -> bool {
-    if !puzzle.allows_events() && ctype.uses_events() {
+    if !puzzle.allows_analog() && ctype.uses_analog()
+        || !puzzle.allows_events() && ctype.uses_events()
+    {
         return false;
     }
     match ctype.availibility() {
@@ -349,6 +352,9 @@ pub(super) fn new_puzzle_eval(
         }
         Puzzle::FabricateXor => {
             Box::new(FabricationEval::new(FABRICATE_XOR_DATA, slots))
+        }
+        Puzzle::SandboxAnalog => {
+            Box::new(self::sandbox::SandboxAnalogEval::new(slots))
         }
         Puzzle::SandboxBehavior => {
             Box::new(self::sandbox::SandboxBehaviorEval::new(slots))

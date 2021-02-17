@@ -180,13 +180,22 @@ impl Interface {
         } else {
             let mut fmt = format!("$*{}$*\n{}\n", self.name, self.description);
             for port in self.ports.iter() {
-                fmt.push_str(&format!(
-                    "\n$*{}$>({}-bit {} {:?})$<$*",
-                    port.name,
-                    port.size.num_bits(),
-                    port.color.tooltip_format(),
-                    port.flow
-                ));
+                if port.color == PortColor::Analog {
+                    fmt.push_str(&format!(
+                        "\n$*{}$>({} {:?})$<$*",
+                        port.name,
+                        port.color.tooltip_format(),
+                        port.flow
+                    ));
+                } else {
+                    fmt.push_str(&format!(
+                        "\n$*{}$>({}-bit {} {:?})$<$*",
+                        port.name,
+                        port.size.num_bits(),
+                        port.color.tooltip_format(),
+                        port.flow
+                    ));
+                }
                 if !port.description.is_empty() {
                     fmt.push_str(&format!("\n  $!{}", port.description));
                 }

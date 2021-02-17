@@ -231,7 +231,7 @@ impl PuzzleEval for EnrichmentEval {
         errors
     }
 
-    fn needs_another_cycle(&self, _time_step: u32) -> bool {
+    fn needs_another_cycle(&self, _state: &CircuitState) -> bool {
         !self.old_queries.is_empty()
     }
 

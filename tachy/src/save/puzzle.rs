@@ -125,6 +125,8 @@ pub enum Puzzle {
     AutomateStorageDepot,
     AutomateEnrichment,
     AutomateXUnit,
+    // Reckoning:
+    TutorialAdc,
     AutomateGuidance,
     // Sandboxes:
     SandboxBehavior,
@@ -753,6 +755,18 @@ impl Puzzle {
                      use this area for prototyping, experimentation, or \
                      freeform design.",
                 instructions: "",
+            },
+            Puzzle::TutorialAdc => &PuzzleData {
+                title: "ADC",
+                kind: PuzzleKind::Tutorial,
+                allow: AllowColors::All,
+                init_size: (5, 5),
+                score_units: ScoreUnits::WireLength,
+                graph_bounds: (200, 300),
+                description:
+                    "Build a 2-bit analog-to-digital converter using basic \
+                     analog components.",
+                instructions: "TODO",
             },
             Puzzle::TutorialAdd => &PuzzleData {
                 title: "Adder",

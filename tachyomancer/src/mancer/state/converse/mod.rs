@@ -22,6 +22,7 @@ mod lorelei;
 mod odyssey;
 mod orpheus;
 mod planetfall;
+mod reckoning;
 mod types;
 
 use self::types::ConversationBuilder;
@@ -118,8 +119,11 @@ impl ConversationExt for Conversation {
             Conversation::KeepingTime => {
                 orpheus::keeping_time(profile, &mut builder)
             }
+            Conversation::TakingStock => {
+                lorelei::taking_stock(profile, &mut builder)
+            }
             Conversation::CatchingUp => {
-                lorelei::catching_up(profile, &mut builder)
+                reckoning::catching_up(profile, &mut builder)
             }
         };
         (builder.build(), result.is_ok())

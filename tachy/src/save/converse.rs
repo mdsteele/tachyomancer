@@ -50,6 +50,7 @@ pub enum Chapter {
     Calliope,
     Orpheus,
     Lorelei,
+    Reckoning,
 }
 
 impl Chapter {
@@ -74,6 +75,7 @@ impl Chapter {
             chapters.push(Chapter::Orpheus);
         }
         chapters.push(Chapter::Lorelei);
+        chapters.push(Chapter::Reckoning);
         chapters
     }
 }
@@ -119,6 +121,8 @@ pub enum Conversation {
     // Orpheus:
     KeepingTime,
     // Lorelei:
+    TakingStock,
+    // Reckoning:
     CatchingUp,
 }
 
@@ -170,6 +174,8 @@ impl Conversation {
             // Orpheus:
             Conversation::KeepingTime => "Keeping Time",
             // Lorelei:
+            Conversation::TakingStock => "Taking Stock",
+            // Reckoning:
             Conversation::CatchingUp => "Catching Up",
         }
     }
@@ -203,7 +209,8 @@ impl Conversation {
             | Conversation::UnexpectedCompany => Chapter::Planetfall,
             Conversation::Memory => Chapter::Calliope,
             Conversation::KeepingTime => Chapter::Orpheus,
-            Conversation::CatchingUp => Chapter::Lorelei,
+            Conversation::TakingStock => Chapter::Lorelei,
+            Conversation::CatchingUp => Chapter::Reckoning,
         }
     }
 
@@ -294,6 +301,10 @@ impl Conversation {
                 &Prereq::Complete(Conversation::UnexpectedCompany) // TODO
             }
             // Lorelei:
+            Conversation::TakingStock => {
+                &Prereq::Complete(Conversation::UnexpectedCompany) // TODO
+            }
+            // Reckoning:
             Conversation::CatchingUp => {
                 &Prereq::Complete(Conversation::UnexpectedCompany) // TODO
             }

@@ -169,14 +169,24 @@ impl Interface {
     pub fn tooltip_format(&self) -> String {
         if self.ports.len() == 1 && self.ports[0].description.is_empty() {
             let port = &self.ports[0];
-            format!(
-                "$*{}$>({}-bit {} {:?})$<$*\n{}",
-                self.name,
-                port.size.num_bits(),
-                port.color.tooltip_format(),
-                port.flow,
-                self.description
-            )
+            if port.color == PortColor::Analog {
+                format!(
+                    "$*{}$>({} {:?})$<$*\n{}",
+                    self.name,
+                    port.color.tooltip_format(),
+                    port.flow,
+                    self.description
+                )
+            } else {
+                format!(
+                    "$*{}$>({}-bit {} {:?})$<$*\n{}",
+                    self.name,
+                    port.size.num_bits(),
+                    port.color.tooltip_format(),
+                    port.flow,
+                    self.description
+                )
+            }
         } else {
             let mut fmt = format!("$*{}$*\n{}\n", self.name, self.description);
             for port in self.ports.iter() {

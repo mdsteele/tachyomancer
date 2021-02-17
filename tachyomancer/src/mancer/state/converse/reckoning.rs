@@ -19,14 +19,17 @@
 
 use super::types::ConversationBuilder;
 use crate::mancer::save::Profile;
+use tachy::save::Puzzle;
 
 //===========================================================================//
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub(super) fn taking_stock(_profile: &Profile,
-                           builder: &mut ConversationBuilder)
-                           -> Result<(), ()> {
-    builder.eirene("How do we win this war?");
+pub(super) fn catching_up(profile: &Profile,
+                          builder: &mut ConversationBuilder)
+                          -> Result<(), ()> {
+    builder.trevor("Time to learn about analog signals.");
+    builder.puzzle(profile, Puzzle::TutorialAdc)?;
+    builder.trevor("Good work.");
     Ok(())
 }
 

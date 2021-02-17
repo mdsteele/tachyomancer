@@ -22,10 +22,11 @@ use crate::mancer::gui::Resources;
 use cgmath::{Matrix4, Point2};
 use std::collections::HashSet;
 use std::u32;
-use tachy::geom::{AsFloat, Color3, Rect, RectSize};
+use tachy::geom::{AsFloat, Color3, Fixed, Rect, RectSize};
 use tachy::save::WireSize;
 use tachy::state::{
     CircuitEval, EvalError, FabricationData, FabricationEval, InterfacePort,
+    PortColor,
 };
 
 //===========================================================================//
@@ -191,6 +192,7 @@ impl FabricationTable {
                 if value == u32::MAX {
                     continue;
                 }
+                let port = &self.column_ports[col];
                 let col_center = rect.x + ((col as f32) + 0.5) * column_width;
                 let font = resources.fonts().roman();
                 font.draw(
@@ -198,7 +200,9 @@ impl FabricationTable {
                     TABLE_FONT_SIZE,
                     Align::MidCenter,
                     (col_center, row_center),
-                    &if self.column_ports[col].size == WireSize::Zero {
+                    &if port.color == PortColor::Analog {
+                        format!("{:+.2}", Fixed::from_encoded(value))
+                    } else if port.size == WireSize::Zero {
                         "*".to_string()
                     } else {
                         value.to_string()

@@ -35,8 +35,25 @@ impl Fixed {
     pub const ZERO: Fixed = Fixed(0);
     pub const ONE: Fixed = Fixed(LIMIT);
 
-    pub fn new(inner: i32) -> Fixed {
-        Fixed(inner.max(-LIMIT).min(LIMIT))
+    pub const fn new(inner: i32) -> Fixed {
+        if inner >= LIMIT {
+            Fixed(LIMIT)
+        } else if inner <= -LIMIT {
+            Fixed(-LIMIT)
+        } else {
+            Fixed(inner)
+        }
+    }
+
+    pub const fn from_ratio(numerator: i32, denominator: i32) -> Fixed {
+        let quot = ((numerator as i64) << LIMIT_SHIFT) / (denominator as i64);
+        if quot >= (LIMIT as i64) {
+            Fixed(LIMIT)
+        } else if quot <= -(LIMIT as i64) {
+            Fixed(-LIMIT)
+        } else {
+            Fixed(quot as i32)
+        }
     }
 
     pub fn from_f64(value: f64) -> Fixed {
@@ -47,11 +64,11 @@ impl Fixed {
         (self.0 as f64) / (LIMIT as f64)
     }
 
-    pub fn from_encoded(encoded: u32) -> Fixed {
+    pub const fn from_encoded(encoded: u32) -> Fixed {
         Fixed::new(i32::from_le_bytes(encoded.to_le_bytes()))
     }
 
-    pub fn to_encoded(self) -> u32 {
+    pub const fn to_encoded(self) -> u32 {
         u32::from_le_bytes(self.0.to_le_bytes())
     }
 }
@@ -159,6 +176,24 @@ mod tests {
         // Clamping:
         assert_eq!(Fixed::new(i32::MAX), Fixed::ONE);
         assert_eq!(Fixed::new(-i32::MAX), -Fixed::ONE);
+    }
+
+    #[test]
+    fn fixed_from_ratio() {
+        assert_eq!(Fixed::from_ratio(0, 1), Fixed::ZERO);
+        assert_eq!(Fixed::from_ratio(1, 1), Fixed::ONE);
+        assert_eq!(Fixed::from_ratio(-1, 1), -Fixed::ONE);
+        assert_eq!(Fixed::from_ratio(1, 8), Fixed::from_f64(0.125));
+        assert_eq!(Fixed::from_ratio(-3, 4), Fixed::from_f64(-0.75));
+        assert_eq!(
+            Fixed::from_ratio(1_000_000_000, 2_000_000_000),
+            Fixed::from_f64(0.5)
+        );
+        assert_eq!(Fixed::from_ratio(3, -4), Fixed::from_f64(-0.75));
+        assert_eq!(Fixed::from_ratio(-3, -4), Fixed::from_f64(0.75));
+        // Clamping:
+        assert_eq!(Fixed::from_ratio(2, 1), Fixed::ONE);
+        assert_eq!(Fixed::from_ratio(-2, 1), -Fixed::ONE);
     }
 
     #[test]

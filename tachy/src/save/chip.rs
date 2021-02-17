@@ -609,7 +609,7 @@ impl fmt::Display for ChipType {
                 escape(bytes).trim_end()
             )),
             ChipType::Vref(value) => {
-                formatter.pad(&format!("Vref({})", value))
+                formatter.pad(&format!("Vref({:+})", value))
             }
             _ => fmt::Debug::fmt(self, formatter),
         }

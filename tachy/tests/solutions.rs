@@ -220,6 +220,11 @@ fn fabricate_xor() {
 }
 
 #[test]
+fn tutorial_adc() {
+    test_solution("tutorial_adc");
+}
+
+#[test]
 fn tutorial_add() {
     test_solution("tutorial_add");
 }

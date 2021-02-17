@@ -31,7 +31,7 @@ use tachy::save::{Chapter, Conversation, Puzzle};
 //===========================================================================//
 
 const CHAPTER_LIST_WIDTH: i32 = 120;
-const CHAPTER_LIST_HEIGHT: i32 = list_height_for_num_items(5);
+const CHAPTER_LIST_HEIGHT: i32 = list_height_for_num_items(6);
 const CONV_LIST_WIDTH: i32 = 220;
 const LIST_MARGIN_HORZ: i32 = 22;
 

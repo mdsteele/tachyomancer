@@ -95,7 +95,6 @@ impl ConversationBuilder {
         self.npc(Portrait::Cara, text, false);
     }
 
-    #[allow(dead_code)]
     pub(super) fn eirene(&mut self, text: &str) {
         self.npc(Portrait::Eirene, text, false);
     }

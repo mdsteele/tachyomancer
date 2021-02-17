@@ -127,6 +127,7 @@ impl PuzzleEval for FabricationEval {
                             }
                         }
                         PortColor::Analog => {
+                            // TODO: Smoothly vary analog value over time.
                             debug_assert_eq!(port.size, WireSize::ANALOG);
                             let fixed = Fixed::from_encoded(value);
                             state.send_analog(wire, fixed);

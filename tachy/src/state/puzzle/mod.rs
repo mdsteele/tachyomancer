@@ -48,6 +48,7 @@ mod sonar;
 mod storage;
 mod translator;
 mod turret;
+mod tutor_ana;
 mod tutor_bvr;
 mod tutor_clock;
 mod tutor_evt;
@@ -91,6 +92,7 @@ pub use self::sonar::SonarEval;
 pub use self::storage::StorageDepotEval;
 pub use self::translator::TranslatorEval;
 pub use self::turret::TurretEval;
+pub use self::tutor_ana::TUTORIAL_ADC_DATA;
 pub use self::tutor_bvr::{
     TUTORIAL_ADD_DATA, TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA,
 };
@@ -158,6 +160,7 @@ impl PuzzleExt for Puzzle {
             | Puzzle::FabricateCounter => &[Conversation::AdditionalChips],
             Puzzle::TutorialClock => &[Conversation::KeepingTime],
             Puzzle::TutorialRam => &[Conversation::Memory],
+            Puzzle::TutorialAdc => &[Conversation::CatchingUp],
             _ => &[], // TODO: origin_conversations for other puzzles
         }
     }
@@ -216,6 +219,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::SandboxAnalog => self::sandbox::ANALOG_INTERFACES,
             Puzzle::SandboxBehavior => self::sandbox::BEHAVIOR_INTERFACES,
             Puzzle::SandboxEvent => self::sandbox::EVENT_INTERFACES,
+            Puzzle::TutorialAdc => self::tutor_ana::ADC_INTERFACES,
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_INTERFACES,
             Puzzle::TutorialAmp => self::tutor_evt::AMP_INTERFACES,
             Puzzle::TutorialClock => self::tutor_clock::CLOCK_INTERFACES,
@@ -231,6 +235,7 @@ impl PuzzleExt for Puzzle {
         &self,
     ) -> &'static [(TutorialBubblePosition, &'static str)] {
         match self {
+            Puzzle::TutorialAdc => self::tutor_ana::ADC_BUBBLES,
             Puzzle::TutorialAdd => self::tutor_bvr::ADD_BUBBLES,
             Puzzle::TutorialAmp => self::tutor_evt::AMP_BUBBLES,
             Puzzle::TutorialClock => self::tutor_clock::CLOCK_BUBBLES,
@@ -361,6 +366,9 @@ pub(super) fn new_puzzle_eval(
         }
         Puzzle::SandboxEvent => {
             Box::new(self::sandbox::SandboxEventEval::new(slots))
+        }
+        Puzzle::TutorialAdc => {
+            Box::new(FabricationEval::new(TUTORIAL_ADC_DATA, slots))
         }
         Puzzle::TutorialAdd => {
             Box::new(FabricationEval::new(TUTORIAL_ADD_DATA, slots))

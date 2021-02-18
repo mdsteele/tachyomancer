@@ -24,8 +24,8 @@ use crate::save::WireSize;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PortFlow {
-    Send,
-    Recv,
+    Send, // TODO: consider renaming to Source
+    Recv, // TODO: consider renaming to Sink
 }
 
 //===========================================================================//

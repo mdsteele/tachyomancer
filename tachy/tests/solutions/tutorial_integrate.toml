@@ -1,0 +1,37 @@
+puzzle = "TutorialIntegrate"
+score = 54
+time_steps = 12
+
+[circuit]
+size = [5, 5]
+
+[circuit.chips]
+p0p2 = "t3-AMul"
+p0p3 = "t3-Vref(+0.0010000001639127731)"
+p1p2 = "t1-AAdd"
+p1p3 = "t1-Buffer"
+p2p1 = "t1-Latch"
+p2p4 = "f0-Relay"
+p3p1 = "f2-Delay"
+
+[circuit.wires]
+m1p2e = "Stub"
+p0p1e = "TurnLeft"
+p0p2s = "Stub"
+p1p1s = "TurnLeft"
+p1p2s = "Stub"
+p1p4n = "TurnLeft"
+p2p0e = "SplitTee"
+p2p1e = "Stub"
+p2p2e = "Straight"
+p2p2s = "Straight"
+p2p3s = "Straight"
+p2p4s = "Stub"
+p3p0e = "Straight"
+p3p2e = "Straight"
+p3p4e = "Straight"
+p4p0s = "TurnLeft"
+p4p1w = "TurnLeft"
+p4p2s = "SplitTee"
+p4p3s = "Straight"
+p4p4w = "TurnLeft"

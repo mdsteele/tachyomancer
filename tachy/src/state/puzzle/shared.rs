@@ -27,6 +27,10 @@ use std::u32;
 
 //===========================================================================//
 
+const EPSILON: Fixed = Fixed::from_ratio(5, 1000);
+
+//===========================================================================//
+
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum TutorialBubblePosition {
     Bounds(Direction),
@@ -249,7 +253,8 @@ impl PuzzleEval for FabricationEval {
                             self.table_values[start + column_index] =
                                 actual_fixed.to_encoded();
                             let expected_fixed = Fixed::from_encoded(expected);
-                            if actual_fixed != expected_fixed {
+                            let delta = (actual_fixed - expected_fixed).abs();
+                            if delta >= EPSILON {
                                 let msg = format!(
                                     "Expected value of {} for {}, \
                                      but got value of {}.",

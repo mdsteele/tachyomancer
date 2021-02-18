@@ -1000,6 +1000,8 @@ impl EditGrid {
                 }
             }
         }
+        // TODO: Warn if a wire is connected to one or more Recv ports, but not
+        // to a Send port.
         for error in self.errors.iter() {
             match *error {
                 WireError::MultipleSenders(id) if id == wire_id => {
@@ -1010,6 +1012,7 @@ impl EditGrid {
                     );
                 }
                 WireError::PortColorMismatch(id) if id == wire_id => {
+                    // TODO: Fix this message to account for analog wires.
                     fmt.push_str(
                         "\n\n$RError:$D This wire is connected to \
                          both a $Obehavior$D and an $Cevent$D \
@@ -1029,6 +1032,7 @@ impl EditGrid {
                 WireError::UnbrokenLoop(ref ids, contains_events)
                     if ids.contains(&wire_id) =>
                 {
+                    // TODO: Fix this message to account for analog wires.
                     fmt.push_str(
                         "\n\n$RError:$D This wire forms a closed \
                          loop",

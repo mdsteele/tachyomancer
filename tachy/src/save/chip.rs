@@ -34,7 +34,7 @@ pub const MAX_COMMENT_CHARS: usize = 5;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChipType {
     AAdd,
-    ACmp,
+    ACmp, // TODO: consider replacing this with OpAmp and Transducer
     AMul,
     Add,
     Add2Bit,

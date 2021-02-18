@@ -245,6 +245,11 @@ fn tutorial_demux() {
 }
 
 #[test]
+fn tutorial_integrate() {
+    test_solution("tutorial_integrate");
+}
+
+#[test]
 fn tutorial_mux() {
     test_solution("tutorial_mux");
 }

@@ -46,6 +46,7 @@ impl WireModel {
         let shader = resources.shaders().wire();
         let matrix = grid_matrix * obj_to_grid(coords, dir);
         let texture = resources.textures().wire();
+        // TODO: Tint wires grayer if not connected to a Send port.
         match (shape, dir) {
             (WireShape::Stub, _) => {
                 shader.draw_stub(

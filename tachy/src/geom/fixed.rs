@@ -45,15 +45,31 @@ impl Fixed {
         }
     }
 
-    pub const fn from_ratio(numerator: i32, denominator: i32) -> Fixed {
-        let quot = ((numerator as i64) << LIMIT_SHIFT) / (denominator as i64);
-        if quot >= (LIMIT as i64) {
-            Fixed(LIMIT)
-        } else if quot <= -(LIMIT as i64) {
-            Fixed(-LIMIT)
-        } else {
-            Fixed(quot as i32)
+    pub const fn from_ratio(
+        mut numerator: i32,
+        mut denominator: i32,
+    ) -> Fixed {
+        let mut sign: i32 = 1;
+        if numerator < 0 {
+            sign = -sign;
+            numerator = -numerator;
         }
+        if denominator < 0 {
+            sign = -sign;
+            denominator = -denominator;
+        }
+        let dividend = (numerator as i64) << LIMIT_SHIFT;
+        let divisor = denominator as i64;
+        let quotient = dividend / divisor;
+        let remainder = dividend % divisor;
+        let magnitude = if quotient >= (LIMIT as i64) {
+            LIMIT
+        } else if remainder * 2 >= divisor {
+            (quotient as i32) + 1
+        } else {
+            quotient as i32
+        };
+        Fixed(sign * magnitude)
     }
 
     pub fn from_f64(value: f64) -> Fixed {
@@ -70,6 +86,10 @@ impl Fixed {
 
     pub const fn to_encoded(self) -> u32 {
         u32::from_le_bytes(self.0.to_le_bytes())
+    }
+
+    pub const fn abs(self) -> Fixed {
+        Fixed(self.0.abs())
     }
 }
 
@@ -179,7 +199,7 @@ mod tests {
     }
 
     #[test]
-    fn fixed_from_ratio() {
+    fn from_ratio_basic() {
         assert_eq!(Fixed::from_ratio(0, 1), Fixed::ZERO);
         assert_eq!(Fixed::from_ratio(1, 1), Fixed::ONE);
         assert_eq!(Fixed::from_ratio(-1, 1), -Fixed::ONE);
@@ -191,9 +211,24 @@ mod tests {
         );
         assert_eq!(Fixed::from_ratio(3, -4), Fixed::from_f64(-0.75));
         assert_eq!(Fixed::from_ratio(-3, -4), Fixed::from_f64(0.75));
-        // Clamping:
+    }
+
+    #[test]
+    fn from_ratio_rounding() {
+        assert_eq!(Fixed::from_ratio(1, 3), Fixed::from_f64(1.0 / 3.0));
+        assert_eq!(Fixed::from_ratio(2, 3), Fixed::from_f64(2.0 / 3.0));
+        assert_eq!(Fixed::from_ratio(-1, 3), Fixed::from_f64(-1.0 / 3.0));
+        assert_eq!(Fixed::from_ratio(-2, 3), Fixed::from_f64(-2.0 / 3.0));
+        assert_eq!(Fixed::from_ratio(1, -3), Fixed::from_f64(-1.0 / 3.0));
+        assert_eq!(Fixed::from_ratio(2, -3), Fixed::from_f64(-2.0 / 3.0));
+    }
+
+    #[test]
+    fn from_ratio_clamping() {
         assert_eq!(Fixed::from_ratio(2, 1), Fixed::ONE);
         assert_eq!(Fixed::from_ratio(-2, 1), -Fixed::ONE);
+        assert_eq!(Fixed::from_ratio(2_000_000_000, 1), Fixed::ONE);
+        assert_eq!(Fixed::from_ratio(-2_000_000_000, 1), -Fixed::ONE);
     }
 
     #[test]
@@ -301,6 +336,14 @@ mod tests {
         let mut value = Fixed::from_f64(0.25);
         value -= Fixed::from_f64(0.5);
         assert_eq!(value, Fixed::from_f64(-0.25));
+    }
+
+    #[test]
+    fn fixed_abs() {
+        assert_eq!(Fixed::ZERO.abs(), Fixed::ZERO);
+        assert_eq!(Fixed::ONE.abs(), Fixed::ONE);
+        assert_eq!((-Fixed::ONE).abs(), Fixed::ONE);
+        assert_eq!(Fixed::from_f64(-0.375).abs(), Fixed::from_f64(0.375));
     }
 }
 

@@ -110,9 +110,7 @@ impl ChipExt for ChipType {
             | ChipType::AMul
             | ChipType::And
             | ChipType::Break(_)
-            | ChipType::Buffer
             | ChipType::Comment(_)
-            | ChipType::Integrate
             | ChipType::Meter
             | ChipType::Not
             | ChipType::Relay
@@ -187,6 +185,12 @@ impl ChipExt for ChipType {
             }
             ChipType::Stopwatch => {
                 ChipAvailability::UnlockedBy(Puzzle::FabricateStopwatch)
+            }
+            ChipType::Buffer => {
+                ChipAvailability::StartingWith(Puzzle::TutorialIntegrate)
+            }
+            ChipType::Integrate => {
+                ChipAvailability::UnlockedBy(Puzzle::TutorialIntegrate)
             }
             ChipType::Button(_) | ChipType::Toggle(_) => {
                 ChipAvailability::InteractiveOnly

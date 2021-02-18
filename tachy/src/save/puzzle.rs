@@ -127,6 +127,7 @@ pub enum Puzzle {
     AutomateXUnit,
     // Reckoning:
     TutorialAdc,
+    TutorialIntegrate,
     AutomateGuidance,
     // Sandboxes:
     SandboxBehavior,
@@ -832,6 +833,20 @@ impl Puzzle {
                 description:
                     "Route incoming events to one of four destinations, based \
                      on a 2-bit control value.",
+                instructions: "TODO",
+            },
+            Puzzle::TutorialIntegrate => &PuzzleData {
+                title: "Integrator",
+                kind: PuzzleKind::Tutorial,
+                allow: AllowColors::All,
+                init_size: (7, 7),
+                score_units: ScoreUnits::WireLength,
+                graph_bounds: (200, 300),
+                description:
+                    "Build an analog voltage integrator from other analog \
+                     components.\n\n\
+                     Once this task is completed, you will be able to use \
+                     $*Integrate$* chips in future tasks.",
                 instructions: "TODO",
             },
             Puzzle::TutorialMux => &PuzzleData {

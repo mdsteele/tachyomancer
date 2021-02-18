@@ -29,6 +29,8 @@ pub(super) fn catching_up(profile: &Profile,
                           -> Result<(), ()> {
     builder.trevor("Time to learn about analog signals.");
     builder.puzzle(profile, Puzzle::TutorialAdc)?;
+    builder.trevor("Let's do another.");
+    builder.puzzle(profile, Puzzle::TutorialIntegrate)?;
     builder.trevor("Good work.");
     Ok(())
 }

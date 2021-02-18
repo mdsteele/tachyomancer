@@ -25,6 +25,12 @@ use crate::state::{PortColor, PortFlow};
 
 //===========================================================================//
 
+const fn voltage(numerator: i32, denominator: i32) -> u32 {
+    Fixed::from_ratio(numerator, denominator).to_encoded()
+}
+
+//===========================================================================//
+
 pub const TUTORIAL_ADC_DATA: &FabricationData = &FabricationData {
     interfaces: ADC_INTERFACES,
     expected_table_values: ADC_EXPECTED_TABLE_VALUES,
@@ -82,18 +88,18 @@ pub(super) const ADC_INTERFACES: &[Interface] = &[
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 const ADC_EXPECTED_TABLE_VALUES: &[u32] = &[
-    Fixed::from_ratio( 0, 16).to_encoded(), NIL, NIL,
-    Fixed::from_ratio( 2, 16).to_encoded(),   0,   0,
-    Fixed::from_ratio(10, 16).to_encoded(),   0,   2,
-    Fixed::from_ratio( 6, 16).to_encoded(),   0,   1,
-    Fixed::from_ratio(10, 16).to_encoded(), NIL, NIL,
-    Fixed::from_ratio(16, 16).to_encoded(),   0,   3,
-    Fixed::from_ratio(-1, 16).to_encoded(),   0, NIL,
-    Fixed::from_ratio( 9, 16).to_encoded(),   0,   2,
-    Fixed::from_ratio( 0, 16).to_encoded(),   0,   0,
-    Fixed::from_ratio( 5, 16).to_encoded(),   0,   1,
-    Fixed::from_ratio(-5, 16).to_encoded(),   0, NIL,
-    Fixed::from_ratio(13, 16).to_encoded(),   0,   3,
+    voltage( 0, 16), NIL, NIL,
+    voltage( 2, 16),   0,   0,
+    voltage(10, 16),   0,   2,
+    voltage( 6, 16),   0,   1,
+    voltage(10, 16), NIL, NIL,
+    voltage(16, 16),   0,   3,
+    voltage(-1, 16),   0, NIL,
+    voltage( 9, 16),   0,   2,
+    voltage( 0, 16),   0,   0,
+    voltage( 5, 16),   0,   1,
+    voltage(-5, 16),   0, NIL,
+    voltage(13, 16),   0,   3,
 ];
 
 pub(super) const ADC_BUBBLES: &[(TutorialBubblePosition, &str)] = &[(
@@ -101,5 +107,92 @@ pub(super) const ADC_BUBBLES: &[(TutorialBubblePosition, &str)] = &[(
     "An $Ganalog$D wire carries a continuous voltage from -1 to +1 that can \
      change smoothly over time.",
 )];
+
+//===========================================================================//
+
+pub const TUTORIAL_INTEGRATE_DATA: &FabricationData = &FabricationData {
+    interfaces: INTEGRATE_INTERFACES,
+    expected_table_values: INTEGRATE_EXPECTED_TABLE_VALUES,
+};
+
+pub(super) const INTEGRATE_INTERFACES: &[Interface] = &[
+    Interface {
+        name: "In",
+        description: "The analog input voltage to be integrated.",
+        side: Direction::West,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "In",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Analog,
+            size: WireSize::ANALOG,
+        }],
+    },
+    Interface {
+        name: "Reset",
+        description:
+            "When an event arrives here, the output voltage should be reset \
+             to the current $*IC$* voltage.",
+        side: Direction::North,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Reset",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Event,
+            size: WireSize::Zero,
+        }],
+    },
+    Interface {
+        name: "IC",
+        description:
+            "The \"initial condition\" voltage to reset to when a $*Reset$* \
+             event arrives.",
+        side: Direction::South,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "IC",
+            description: "",
+            flow: PortFlow::Send,
+            color: PortColor::Analog,
+            size: WireSize::ANALOG,
+        }],
+    },
+    Interface {
+        name: "Out",
+        description:
+            "This should start at zero, and sum up the input voltages over \
+             time.",
+        side: Direction::East,
+        pos: InterfacePosition::Center,
+        ports: &[InterfacePort {
+            name: "Out",
+            description: "",
+            flow: PortFlow::Recv,
+            color: PortColor::Analog,
+            size: WireSize::ANALOG,
+        }],
+    },
+];
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+const INTEGRATE_EXPECTED_TABLE_VALUES: &[u32] = &[
+    voltage( 1, 2), NIL, voltage( 0, 1), voltage( 1, 2),
+    voltage( 1, 4), NIL, voltage( 0, 1), voltage( 3, 4),
+    voltage(-1, 2), NIL, voltage(-1, 4), voltage( 1, 4),
+    voltage( 0, 1), NIL, voltage(-1, 4), voltage( 1, 4),
+    voltage( 0, 1),   0, voltage(-1, 4), voltage(-1, 4),
+    voltage( 0, 1), NIL, voltage( 0, 1), voltage(-1, 4),
+    voltage( 3, 4), NIL, voltage( 0, 1), voltage( 1, 2),
+    voltage( 3, 4), NIL, voltage( 0, 1), voltage( 1, 1),
+    voltage( 3, 4), NIL, voltage(-1, 1), voltage( 1, 1),
+    voltage( 3, 4),   0, voltage(-1, 1), voltage(-1, 4),
+    voltage( 1, 4), NIL, voltage(-1, 1), voltage( 0, 1),
+    voltage( 1, 4), NIL, voltage(-1, 1), voltage( 1, 4),
+];
+
+pub(super) const INTEGRATE_BUBBLES: &[(TutorialBubblePosition, &str)] =
+    &[(TutorialBubblePosition::Bounds(Direction::North), "TODO")];
 
 //===========================================================================//

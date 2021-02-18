@@ -52,8 +52,8 @@ use tachy::state::{
     FABRICATE_MUL_DATA, FABRICATE_QUEUE_DATA, FABRICATE_STACK_DATA,
     FABRICATE_STOPWATCH_DATA, FABRICATE_XOR_DATA, TUTORIAL_ADC_DATA,
     TUTORIAL_ADD_DATA, TUTORIAL_AMP_DATA, TUTORIAL_CLOCK_DATA,
-    TUTORIAL_DEMUX_DATA, TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA,
-    TUTORIAL_RAM_DATA, TUTORIAL_SUM_DATA,
+    TUTORIAL_DEMUX_DATA, TUTORIAL_INTEGRATE_DATA, TUTORIAL_MUX_DATA,
+    TUTORIAL_OR_DATA, TUTORIAL_RAM_DATA, TUTORIAL_SUM_DATA,
 };
 
 //===========================================================================//
@@ -216,6 +216,10 @@ impl VerificationTray {
             Puzzle::TutorialDemux => {
                 FabricationVerifyView::new(right_bottom, TUTORIAL_DEMUX_DATA)
             }
+            Puzzle::TutorialIntegrate => FabricationVerifyView::new(
+                right_bottom,
+                TUTORIAL_INTEGRATE_DATA,
+            ),
             Puzzle::TutorialMux => {
                 FabricationVerifyView::new(right_bottom, TUTORIAL_MUX_DATA)
             }

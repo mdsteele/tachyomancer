@@ -92,7 +92,7 @@ pub use self::sonar::SonarEval;
 pub use self::storage::StorageDepotEval;
 pub use self::translator::TranslatorEval;
 pub use self::turret::TurretEval;
-pub use self::tutor_ana::TUTORIAL_ADC_DATA;
+pub use self::tutor_ana::{TUTORIAL_ADC_DATA, TUTORIAL_INTEGRATE_DATA};
 pub use self::tutor_bvr::{
     TUTORIAL_ADD_DATA, TUTORIAL_MUX_DATA, TUTORIAL_OR_DATA,
 };
@@ -160,7 +160,9 @@ impl PuzzleExt for Puzzle {
             | Puzzle::FabricateCounter => &[Conversation::AdditionalChips],
             Puzzle::TutorialClock => &[Conversation::KeepingTime],
             Puzzle::TutorialRam => &[Conversation::Memory],
-            Puzzle::TutorialAdc => &[Conversation::CatchingUp],
+            Puzzle::TutorialAdc | Puzzle::TutorialIntegrate => {
+                &[Conversation::CatchingUp]
+            }
             _ => &[], // TODO: origin_conversations for other puzzles
         }
     }
@@ -224,6 +226,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::TutorialAmp => self::tutor_evt::AMP_INTERFACES,
             Puzzle::TutorialClock => self::tutor_clock::CLOCK_INTERFACES,
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_INTERFACES,
+            Puzzle::TutorialIntegrate => self::tutor_ana::INTEGRATE_INTERFACES,
             Puzzle::TutorialMux => self::tutor_bvr::MUX_INTERFACES,
             Puzzle::TutorialOr => self::tutor_bvr::OR_INTERFACES,
             Puzzle::TutorialRam => self::tutor_ram::RAM_INTERFACES,
@@ -240,6 +243,7 @@ impl PuzzleExt for Puzzle {
             Puzzle::TutorialAmp => self::tutor_evt::AMP_BUBBLES,
             Puzzle::TutorialClock => self::tutor_clock::CLOCK_BUBBLES,
             Puzzle::TutorialDemux => self::tutor_evt::DEMUX_BUBBLES,
+            Puzzle::TutorialIntegrate => self::tutor_ana::INTEGRATE_BUBBLES,
             Puzzle::TutorialMux => self::tutor_bvr::MUX_BUBBLES,
             Puzzle::TutorialOr => self::tutor_bvr::OR_BUBBLES,
             Puzzle::TutorialRam => self::tutor_ram::RAM_BUBBLES,
@@ -381,6 +385,9 @@ pub(super) fn new_puzzle_eval(
         }
         Puzzle::TutorialDemux => {
             Box::new(FabricationEval::new(TUTORIAL_DEMUX_DATA, slots))
+        }
+        Puzzle::TutorialIntegrate => {
+            Box::new(FabricationEval::new(TUTORIAL_INTEGRATE_DATA, slots))
         }
         Puzzle::TutorialMux => {
             Box::new(FabricationEval::new(TUTORIAL_MUX_DATA, slots))

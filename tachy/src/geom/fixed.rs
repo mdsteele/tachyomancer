@@ -22,8 +22,7 @@ use std::ops;
 
 //===========================================================================//
 
-const LIMIT_SHIFT: u32 = 30;
-const LIMIT: i32 = 1 << LIMIT_SHIFT;
+const LIMIT: i32 = 1_000_000_000;
 
 //===========================================================================//
 
@@ -58,7 +57,7 @@ impl Fixed {
             sign = -sign;
             denominator = -denominator;
         }
-        let dividend = (numerator as i64) << LIMIT_SHIFT;
+        let dividend = (numerator as i64) * (LIMIT as i64);
         let divisor = denominator as i64;
         let quotient = dividend / divisor;
         let remainder = dividend % divisor;
@@ -81,11 +80,11 @@ impl Fixed {
     }
 
     pub const fn from_encoded(encoded: u32) -> Fixed {
-        Fixed::new(i32::from_le_bytes(encoded.to_le_bytes()))
+        Fixed::new(i32::from_ne_bytes(encoded.to_ne_bytes()))
     }
 
     pub const fn to_encoded(self) -> u32 {
-        u32::from_le_bytes(self.0.to_le_bytes())
+        u32::from_ne_bytes(self.0.to_ne_bytes())
     }
 
     pub const fn abs(self) -> Fixed {
@@ -118,7 +117,7 @@ impl ops::Mul for Fixed {
 
     fn mul(self, other: Fixed) -> Fixed {
         let product = (self.0 as i64) * (other.0 as i64);
-        Fixed((product >> LIMIT_SHIFT) as i32)
+        Fixed((product / (LIMIT as i64)) as i32)
     }
 }
 

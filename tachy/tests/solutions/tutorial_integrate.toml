@@ -7,7 +7,7 @@ size = [5, 5]
 
 [circuit.chips]
 p0p2 = "t3-AMul"
-p0p3 = "t3-Vref(+0.0010000001639127731)"
+p0p3 = "t3-Vref(+0.001)"
 p1p2 = "t1-AAdd"
 p1p3 = "t1-Buffer"
 p2p1 = "t1-Latch"

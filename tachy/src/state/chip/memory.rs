@@ -88,20 +88,23 @@ impl ChipEval for CounterChipEval {
 pub const INTEGRATE_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::North),
+        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::South),
         (PortFlow::Send, PortColor::Analog, (0, 0), Direction::East),
     ],
     constraints: &[
         AbstractConstraint::Exact(0, WireSize::ANALOG),
         AbstractConstraint::Exact(1, WireSize::Zero),
         AbstractConstraint::Exact(2, WireSize::ANALOG),
+        AbstractConstraint::Exact(3, WireSize::ANALOG),
     ],
-    dependencies: &[(0, 2), (1, 2)],
+    dependencies: &[(0, 3), (1, 3), (2, 3)],
 };
 
 pub struct IntegrateChipEval {
     input: WireId,
     reset: WireId,
+    ic: WireId,
     output: WireId,
     last_input: Fixed,
     value: Fixed,
@@ -115,18 +118,19 @@ impl IntegrateChipEval {
         let chip_eval = IntegrateChipEval {
             input: slots[0].0,
             reset: slots[1].0,
-            output: slots[2].0,
+            ic: slots[2].0,
+            output: slots[3].0,
             last_input: Fixed::ZERO,
             value: Fixed::ZERO,
         };
-        vec![(2, Box::new(chip_eval))]
+        vec![(3, Box::new(chip_eval))]
     }
 }
 
 impl ChipEval for IntegrateChipEval {
     fn eval(&mut self, state: &mut CircuitState) {
         if state.has_event(self.reset) {
-            self.value = Fixed::ZERO;
+            self.value = state.recv_analog(self.ic);
         }
         state.send_analog(self.output, self.value);
         self.last_input = state.recv_analog(self.input);

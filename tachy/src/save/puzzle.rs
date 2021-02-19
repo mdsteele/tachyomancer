@@ -761,7 +761,7 @@ impl Puzzle {
                 title: "ADC",
                 kind: PuzzleKind::Tutorial,
                 allow: AllowColors::All,
-                init_size: (5, 5),
+                init_size: (7, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (200, 300),
                 description:
@@ -839,7 +839,7 @@ impl Puzzle {
                 title: "Integrator",
                 kind: PuzzleKind::Tutorial,
                 allow: AllowColors::All,
-                init_size: (7, 7),
+                init_size: (7, 5),
                 score_units: ScoreUnits::WireLength,
                 graph_bounds: (200, 300),
                 description:

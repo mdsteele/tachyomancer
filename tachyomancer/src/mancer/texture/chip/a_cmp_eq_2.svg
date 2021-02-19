@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="64" height="64">
+  <path d="M 32,3 L 4,48 L 60,48 Z"
+        fill="none" stroke="black" stroke-width="3" stroke-linejoin="round"/>
+  <g fill="black" stroke="none" transform="translate(0, 66) scale(1, -1)">
+    <rect x="0" y="-2.5" width="20" height="5"
+          transform="translate(22, 29) skewY(-12)"/>
+    <rect x="0" y="-2.5" width="20" height="5"
+          transform="translate(22, 29) skewY(12)"/>
+    <rect x="22" y="37" width="20" height="5"/>
+  </g>
+</svg>

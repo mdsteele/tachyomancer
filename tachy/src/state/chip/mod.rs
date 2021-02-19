@@ -107,6 +107,7 @@ impl ChipExt for ChipType {
         match *self {
             ChipType::AAdd
             | ChipType::ACmp
+            | ChipType::ACmpEq
             | ChipType::AMul
             | ChipType::And
             | ChipType::Break(_)
@@ -284,6 +285,7 @@ fn chip_data(ctype: ChipType) -> &'static ChipData {
     match ctype {
         ChipType::AAdd => self::arith::AADD_CHIP_DATA,
         ChipType::ACmp => self::compare::ACMP_CHIP_DATA,
+        ChipType::ACmpEq => self::compare::ACMPEQ_CHIP_DATA,
         ChipType::AMul => self::arith::AMUL_CHIP_DATA,
         ChipType::Add => self::arith::ADD_CHIP_DATA,
         ChipType::Add2Bit => self::arith::ADD_2BIT_CHIP_DATA,
@@ -348,6 +350,7 @@ pub(super) fn new_chip_evals(
     match ctype {
         ChipType::AAdd => self::arith::AAddChipEval::new_evals(slots),
         ChipType::ACmp => self::compare::ACmpChipEval::new_evals(slots),
+        ChipType::ACmpEq => self::compare::ACmpEqChipEval::new_evals(slots),
         ChipType::AMul => self::arith::AMulChipEval::new_evals(slots),
         ChipType::Add => self::arith::AddChipEval::new_evals(slots),
         ChipType::Add2Bit => self::arith::Add2BitChipEval::new_evals(slots),

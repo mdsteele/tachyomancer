@@ -338,9 +338,20 @@ impl ChipModel {
 
 fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
     match ctype {
-        ChipType::AAdd => ChipIcon::Aadd,
-        ChipType::ACmp => ChipIcon::Acmp,
-        ChipType::AMul => ChipIcon::Amul,
+        ChipType::AAdd => ChipIcon::AAdd,
+        ChipType::ACmp => ChipIcon::ACmp,
+        ChipType::ACmpEq => {
+            let flip = match orient * Direction::North {
+                Direction::North | Direction::East => false,
+                Direction::South | Direction::West => true,
+            };
+            if flip {
+                ChipIcon::ACmpEq2
+            } else {
+                ChipIcon::ACmpEq1
+            }
+        }
+        ChipType::AMul => ChipIcon::AMul,
         ChipType::Add => ChipIcon::Add,
         ChipType::Add2Bit => {
             if orient.is_mirrored() {
@@ -427,9 +438,11 @@ fn chip_icon(ctype: ChipType, orient: Orientation) -> ChipIcon {
 
 fn chip_icon_color(chip_icon: ChipIcon) -> Color3 {
     match chip_icon {
-        ChipIcon::Aadd
-        | ChipIcon::Acmp
-        | ChipIcon::Amul
+        ChipIcon::AAdd
+        | ChipIcon::ACmp
+        | ChipIcon::ACmpEq1
+        | ChipIcon::ACmpEq2
+        | ChipIcon::AMul
         | ChipIcon::Buffer
         | ChipIcon::Integrate1
         | ChipIcon::Integrate2

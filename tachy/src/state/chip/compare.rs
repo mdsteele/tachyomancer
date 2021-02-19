@@ -76,6 +76,43 @@ impl ChipEval for ACmpChipEval {
 
 //===========================================================================//
 
+pub const ACMPEQ_CHIP_DATA: &ChipData = ACMP_CHIP_DATA;
+
+pub struct ACmpEqChipEval {
+    input1: WireId,
+    input2: WireId,
+    test: WireId,
+    output: WireId,
+}
+
+impl ACmpEqChipEval {
+    pub fn new_evals(
+        slots: &[(WireId, WireSize)],
+    ) -> Vec<(usize, Box<dyn ChipEval>)> {
+        debug_assert_eq!(slots.len(), ACMP_CHIP_DATA.ports.len());
+        let chip_eval = ACmpEqChipEval {
+            input1: slots[0].0,
+            input2: slots[1].0,
+            test: slots[2].0,
+            output: slots[3].0,
+        };
+        vec![(3, Box::new(chip_eval))]
+    }
+}
+
+impl ChipEval for ACmpEqChipEval {
+    fn eval(&mut self, state: &mut CircuitState) {
+        if state.has_event(self.test) {
+            let input1 = state.recv_analog(self.input1);
+            let input2 = state.recv_analog(self.input2);
+            let output = if input1 <= input2 { 1 } else { 0 };
+            state.send_event(self.output, output);
+        }
+    }
+}
+
+//===========================================================================//
+
 pub const CMP_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
         (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),

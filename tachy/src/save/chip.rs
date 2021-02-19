@@ -34,7 +34,8 @@ pub const MAX_COMMENT_CHARS: usize = 5;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChipType {
     AAdd,
-    ACmp, // TODO: consider replacing this with OpAmp and Transducer
+    ACmp,
+    ACmpEq,
     AMul,
     Add,
     Add2Bit,
@@ -117,6 +118,7 @@ pub const CHIP_CATEGORIES: &[(&str, &[ChipType])] = &[
         ChipType::CmpEq,
         ChipType::Eq,
         ChipType::ACmp,
+        ChipType::ACmpEq,
     ]),
     ("Logic", &[
         ChipType::Not,
@@ -196,8 +198,13 @@ impl ChipType {
             }
             ChipType::ACmp => {
                 "When an input event arrives, sends an output event with a \
-                 value of 1 if the one input voltage is lower than the other, \
-                 or 0 otherwise."
+                 value of 1 if the one input voltage is strictly lower than \
+                 the other, or 0 otherwise."
+            }
+            ChipType::ACmpEq => {
+                "When an input event arrives, sends an output event with a \
+                 value of 1 if the one input voltage is lower than or equal \
+                 to the other, or 0 otherwise."
             }
             ChipType::AMul => "Outputs the product of the two input voltages.",
             ChipType::Add => {
@@ -623,6 +630,7 @@ impl str::FromStr for ChipType {
         match string {
             "AAdd" => Ok(ChipType::AAdd),
             "ACmp" => Ok(ChipType::ACmp),
+            "ACmpEq" => Ok(ChipType::ACmpEq),
             "AMul" => Ok(ChipType::AMul),
             "Add" => Ok(ChipType::Add),
             "Add2Bit" => Ok(ChipType::Add2Bit),

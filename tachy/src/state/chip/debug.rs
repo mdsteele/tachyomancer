@@ -27,8 +27,8 @@ use crate::state::{PortColor, PortFlow, WireId};
 
 pub const BREAK_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Source, PortColor::Event, (0, 0), Direction::East),
     ],
     constraints: &[AbstractConstraint::Equal(0, 1)],
     dependencies: &[(0, 1)],
@@ -90,7 +90,7 @@ impl ChipEval for BreakChipEval {
 //===========================================================================//
 
 pub const BUTTON_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Send, PortColor::Event, (0, 0), Direction::East)],
+    ports: &[(PortFlow::Source, PortColor::Event, (0, 0), Direction::East)],
     constraints: &[AbstractConstraint::Exact(0, WireSize::Zero)],
     dependencies: &[],
 };
@@ -154,7 +154,7 @@ pub const COMMENT_CHIP_DATA: &ChipData =
 //===========================================================================//
 
 pub const DISPLAY_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South)],
+    ports: &[(PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::South)],
     constraints: &[],
     dependencies: &[],
 };
@@ -162,7 +162,7 @@ pub const DISPLAY_CHIP_DATA: &ChipData = &ChipData {
 //===========================================================================//
 
 pub const METER_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Recv, PortColor::Analog, (0, 1), Direction::West)],
+    ports: &[(PortFlow::Sink, PortColor::Analog, (0, 1), Direction::West)],
     constraints: &[AbstractConstraint::Exact(0, WireSize::ANALOG)],
     dependencies: &[],
 };
@@ -170,7 +170,7 @@ pub const METER_CHIP_DATA: &ChipData = &ChipData {
 //===========================================================================//
 
 pub const TOGGLE_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East)],
+    ports: &[(PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East)],
     constraints: &[AbstractConstraint::Exact(0, WireSize::One)],
     dependencies: &[],
 };

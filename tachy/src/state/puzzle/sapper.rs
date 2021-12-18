@@ -69,7 +69,7 @@ pub const INTERFACES: &[Interface] = &[
                  2 if a control satellite is detected.\n    \
                  1 if a mine is detected.\n    \
                  0 if nothing is detected.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Two,
         }],
@@ -85,21 +85,21 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Outputs the drone's current direction: 0 for north, 1 \
                      for east, 2 for south, or 3 for west.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Two,
             },
             InterfacePort {
                 name: "XPos",
                 description: "Outputs the drone's current X position (0-15).",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "YPos",
                 description: "Outputs the drone's current Y position (0-15).",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -116,7 +116,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Sends an event at the start of the simulation, and \
                      whenever the drone stops moving or turning.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -126,7 +126,7 @@ pub const INTERFACES: &[Interface] = &[
                     "Send an event here to move the drone forward one space.  \
                      It is an error to try to move while the drone is still \
                      moving or turning.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -137,7 +137,7 @@ pub const INTERFACES: &[Interface] = &[
                      or 0 to turn the drone to port (counterclockwise).  It \
                      is an error to try to turn while the drone is still \
                      moving or turning.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::One,
             },

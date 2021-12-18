@@ -51,7 +51,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Alt",
                 description: "Indicates the current altitude.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -60,7 +60,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Indicates the current descent angle, in degrees \
                      (0-180).  90 is vertical.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -69,7 +69,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Indicates how much fuel is remaining.  When this reaches \
                      zero, the thrusters will stop working.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -86,14 +86,14 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Port",
                 description: "Controls the port thrusters.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "Stbd",
                 description: "Controls the starboard thrusters.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },

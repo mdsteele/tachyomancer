@@ -39,7 +39,7 @@ pub(super) const DEMUX_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -53,7 +53,7 @@ pub(super) const DEMUX_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Ctrl",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Two,
         }],
@@ -69,28 +69,28 @@ pub(super) const DEMUX_INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Out0",
                 description: "",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
             InterfacePort {
                 name: "Out1",
                 description: "",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
             InterfacePort {
                 name: "Out2",
                 description: "",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
             InterfacePort {
                 name: "Out3",
                 description: "",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -139,7 +139,7 @@ pub(super) const AMP_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -155,7 +155,7 @@ pub(super) const AMP_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -184,7 +184,7 @@ pub(super) const AMP_BUBBLES: &[(TutorialBubblePosition, &str)] = &[
     (
         TutorialBubblePosition::Bounds(Direction::North),
         "Splitting an event wire sends the same event to multiple \
-         receiver ports.  Then each copy of the event can be used \
+         sink ports.  Then each copy of the event can be used \
          separately.",
     ),
     (
@@ -211,7 +211,7 @@ pub(super) const SUM_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Reset",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -224,7 +224,7 @@ pub(super) const SUM_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -239,7 +239,7 @@ pub(super) const SUM_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Total",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],

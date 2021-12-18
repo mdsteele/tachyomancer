@@ -27,9 +27,9 @@ use crate::state::{PortColor, PortFlow, WireId};
 
 pub const AND_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::South),
+        (PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East),
     ],
     constraints: &[
         AbstractConstraint::Equal(0, 1),
@@ -71,10 +71,10 @@ impl ChipEval for AndChipEval {
 
 pub const DEMUX_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::South),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::North),
+        (PortFlow::Sink, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Source, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Source, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::North),
     ],
     constraints: &[
         AbstractConstraint::Equal(0, 1),
@@ -123,10 +123,10 @@ impl ChipEval for DemuxChipEval {
 
 pub const MUX_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::North),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::South),
+        (PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::North),
     ],
     constraints: &[
         AbstractConstraint::Equal(0, 1),
@@ -174,8 +174,8 @@ impl ChipEval for MuxChipEval {
 
 pub const NOT_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East),
     ],
     constraints: &[AbstractConstraint::Equal(0, 1)],
     dependencies: &[(0, 1)],
@@ -244,10 +244,10 @@ impl ChipEval for OrChipEval {
 
 pub const RELAY_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::South),
-        (PortFlow::Send, PortColor::Analog, (0, 0), Direction::East),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::North),
+        (PortFlow::Sink, PortColor::Analog, (0, 0), Direction::West),
+        (PortFlow::Sink, PortColor::Analog, (0, 0), Direction::South),
+        (PortFlow::Source, PortColor::Analog, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::North),
     ],
     constraints: &[
         AbstractConstraint::Exact(0, WireSize::ANALOG),

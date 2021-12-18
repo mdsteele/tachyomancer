@@ -267,14 +267,14 @@ impl ChipExt for ChipType {
         let data = chip_data(*self);
         data.dependencies
             .iter()
-            .map(|&(recv_index, send_index)| {
-                let recv_port = &data.ports[recv_index];
-                let send_port = &data.ports[send_index];
-                debug_assert_eq!(recv_port.0, PortFlow::Recv);
-                debug_assert_eq!(send_port.0, PortFlow::Send);
+            .map(|&(sink_index, source_index)| {
+                let sink_port = &data.ports[sink_index];
+                let source_port = &data.ports[source_index];
+                debug_assert_eq!(sink_port.0, PortFlow::Sink);
+                debug_assert_eq!(source_port.0, PortFlow::Source);
                 PortDependency {
-                    recv: localize(coords, orient, size, recv_port),
-                    send: localize(coords, orient, size, send_port),
+                    sink: localize(coords, orient, size, sink_port),
+                    source: localize(coords, orient, size, source_port),
                 }
             })
             .collect()

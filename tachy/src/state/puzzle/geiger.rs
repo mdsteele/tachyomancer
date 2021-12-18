@@ -52,7 +52,7 @@ pub const INTERFACES: &[Interface] = &[
             description:
                 "Sends an event when a particle is detected (at most once \
                  per time step).",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -68,7 +68,7 @@ pub const INTERFACES: &[Interface] = &[
                 "This should be equal to the number of particles detected \
                  within the last ten time steps (including the current \
                  one).",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],

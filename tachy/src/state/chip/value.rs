@@ -27,8 +27,8 @@ use rand;
 //===========================================================================//
 
 const COERCE_PORTS: &[AbstractPort] = &[
-    (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-    (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+    (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::West),
+    (PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East),
 ];
 
 const COERCE_CHIP_DATA_1: &ChipData = &ChipData {
@@ -102,7 +102,7 @@ impl ChipEval for CoerceChipEval {
 //===========================================================================//
 
 const CONST_PORTS: &[AbstractPort] =
-    &[(PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East)];
+    &[(PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East)];
 
 const CONST_CHIP_DATA_1: &ChipData =
     &ChipData { ports: CONST_PORTS, constraints: &[], dependencies: &[] };
@@ -161,8 +161,8 @@ impl ChipEval for ConstChipEval {
 
 pub const DISCARD_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Source, PortColor::Event, (0, 0), Direction::East),
     ],
     constraints: &[
         AbstractConstraint::AtLeast(0, WireSize::One),
@@ -199,9 +199,9 @@ impl ChipEval for DiscardChipEval {
 
 pub const JOIN_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::South),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Sink, PortColor::Event, (0, 0), Direction::South),
+        (PortFlow::Source, PortColor::Event, (0, 0), Direction::East),
     ],
     constraints: &[
         AbstractConstraint::Equal(0, 1),
@@ -245,9 +245,9 @@ impl ChipEval for JoinChipEval {
 
 pub const PACK_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::North),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::North),
+        (PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East),
     ],
     constraints: &[
         AbstractConstraint::Equal(0, 1),
@@ -292,8 +292,8 @@ impl ChipEval for PackChipEval {
 
 pub const RANDOM_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Source, PortColor::Event, (0, 0), Direction::East),
     ],
     constraints: &[
         AbstractConstraint::Exact(0, WireSize::Zero),
@@ -335,9 +335,9 @@ impl ChipEval for RandomChipEval {
 
 pub const SAMPLE_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::South),
-        (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Event, (0, 0), Direction::West),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::South),
+        (PortFlow::Source, PortColor::Event, (0, 0), Direction::East),
     ],
     constraints: &[
         AbstractConstraint::Exact(0, WireSize::Zero),
@@ -379,9 +379,9 @@ impl ChipEval for SampleChipEval {
 
 pub const UNPACK_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
-        (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::North),
+        (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::West),
+        (PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East),
+        (PortFlow::Source, PortColor::Behavior, (0, 0), Direction::North),
     ],
     constraints: &[
         AbstractConstraint::Equal(1, 2),
@@ -426,7 +426,7 @@ impl ChipEval for UnpackChipEval {
 //===========================================================================//
 
 pub const VREF_CHIP_DATA: &ChipData = &ChipData {
-    ports: &[(PortFlow::Send, PortColor::Analog, (0, 0), Direction::East)],
+    ports: &[(PortFlow::Source, PortColor::Analog, (0, 0), Direction::East)],
     constraints: &[AbstractConstraint::Exact(0, WireSize::ANALOG)],
     dependencies: &[],
 };

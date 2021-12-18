@@ -55,7 +55,7 @@ impl WireId {
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum WireError {
-    MultipleSenders(WireId),
+    MultipleSources(WireId),
     PortColorMismatch(WireId),
     NoValidSize(WireId),
     UnbrokenLoop(Vec<WireId>, bool),
@@ -64,7 +64,7 @@ pub enum WireError {
 impl WireError {
     pub fn wire_ids(&self) -> Vec<WireId> {
         match self {
-            WireError::MultipleSenders(wire_id)
+            WireError::MultipleSources(wire_id)
             | WireError::PortColorMismatch(wire_id)
             | WireError::NoValidSize(wire_id) => vec![*wire_id],
             WireError::UnbrokenLoop(wire_ids, _) => wire_ids.clone(),
@@ -185,14 +185,14 @@ pub fn group_wires(
 pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
     let mut errors = Vec::<WireError>::new();
     for (index, wire) in wires.iter_mut().enumerate() {
-        let mut num_senders = 0;
+        let mut num_sources = 0;
         let mut has_behavior = false;
         let mut has_event = false;
         let mut has_analog = false;
         for &(flow, color) in wire.ports.values() {
             match flow {
-                PortFlow::Send => num_senders += 1,
-                PortFlow::Recv => {}
+                PortFlow::Source => num_sources += 1,
+                PortFlow::Sink => {}
             }
             match color {
                 PortColor::Behavior => has_behavior = true,
@@ -219,9 +219,9 @@ pub fn recolor_wires(wires: &mut Vec<WireInfo>) -> Vec<WireError> {
             wire.color = WireColor::Unknown;
             wire.size = WireSizeInterval::empty();
         }
-        if num_senders > 1 {
+        if num_sources > 1 {
             wire.has_error = true;
-            errors.push(WireError::MultipleSenders(WireId(index)));
+            errors.push(WireError::MultipleSources(WireId(index)));
         }
     }
     errors
@@ -336,9 +336,9 @@ pub fn detect_loops(
     let mut wire_successors: HashMap<WireId, Vec<WireId>> =
         wire_ids.iter().map(|&id| (id, Vec::new())).collect();
     for dependency in dependencies.into_iter() {
-        let recv = wires_for_ports[&dependency.recv];
-        let send = wires_for_ports[&dependency.send];
-        wire_successors.get_mut(&recv).unwrap().push(send);
+        let sink = wires_for_ports[&dependency.sink];
+        let source = wires_for_ports[&dependency.source];
+        wire_successors.get_mut(&sink).unwrap().push(source);
     }
 
     match topological_sort_into_groups(&wire_ids, |id| {
@@ -393,11 +393,11 @@ mod tests {
             HashMap::<(Coords, Direction), (PortFlow, PortColor)>::new();
         ports.insert(
             ((0, 0).into(), Direction::East),
-            (PortFlow::Send, PortColor::Event),
+            (PortFlow::Source, PortColor::Event),
         );
         ports.insert(
             ((2, 1).into(), Direction::West),
-            (PortFlow::Recv, PortColor::Behavior),
+            (PortFlow::Sink, PortColor::Behavior),
         );
         let mut frags =
             HashMap::<(Coords, Direction), (WireShape, WireId)>::new();
@@ -451,8 +451,8 @@ mod tests {
         let loc1: (Coords, Direction) = ((0, 0).into(), Direction::East);
         let loc2: (Coords, Direction) = ((1, 0).into(), Direction::West);
         let mut ports = HashMap::new();
-        ports.insert(loc1, (PortFlow::Send, PortColor::Event));
-        ports.insert(loc2, (PortFlow::Recv, PortColor::Event));
+        ports.insert(loc1, (PortFlow::Source, PortColor::Event));
+        ports.insert(loc2, (PortFlow::Sink, PortColor::Event));
         let mut wires = vec![WireInfo {
             fragments: HashSet::new(),
             ports,
@@ -476,8 +476,8 @@ mod tests {
         let loc1: (Coords, Direction) = ((0, 0).into(), Direction::East);
         let loc2: (Coords, Direction) = ((1, 0).into(), Direction::West);
         let mut ports = HashMap::new();
-        ports.insert(loc1, (PortFlow::Send, PortColor::Event));
-        ports.insert(loc2, (PortFlow::Recv, PortColor::Event));
+        ports.insert(loc1, (PortFlow::Source, PortColor::Event));
+        ports.insert(loc2, (PortFlow::Sink, PortColor::Event));
         let mut wires = vec![WireInfo {
             fragments: HashSet::new(),
             ports,
@@ -502,10 +502,10 @@ mod tests {
         let loc2: (Coords, Direction) = ((1, 0).into(), Direction::West);
         let loc3: (Coords, Direction) = ((1, 0).into(), Direction::East);
         let mut ports0 = HashMap::new();
-        ports0.insert(loc1, (PortFlow::Send, PortColor::Event));
-        ports0.insert(loc2, (PortFlow::Recv, PortColor::Event));
+        ports0.insert(loc1, (PortFlow::Source, PortColor::Event));
+        ports0.insert(loc2, (PortFlow::Sink, PortColor::Event));
         let mut ports1 = HashMap::new();
-        ports1.insert(loc3, (PortFlow::Send, PortColor::Event));
+        ports1.insert(loc3, (PortFlow::Source, PortColor::Event));
         let mut wires = vec![
             WireInfo {
                 fragments: HashSet::new(),

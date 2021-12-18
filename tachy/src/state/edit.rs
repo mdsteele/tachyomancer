@@ -873,7 +873,7 @@ impl EditGrid {
                     debug_assert!(!wires_for_ports.contains_key(&loc));
                     wires_for_ports.insert(loc, wire_id);
                     debug_assert!(!groups_for_ports.contains_key(&loc));
-                    if flow == PortFlow::Send {
+                    if flow == PortFlow::Source {
                         groups_for_ports.insert(loc, group_index);
                     }
                 }
@@ -1000,14 +1000,14 @@ impl EditGrid {
                 }
             }
         }
-        // TODO: Warn if a wire is connected to one or more Recv ports, but not
-        // to a Send port.
+        // TODO: Warn if a wire is connected to one or more Sink ports, but not
+        // to a Source port.
         for error in self.errors.iter() {
             match *error {
-                WireError::MultipleSenders(id) if id == wire_id => {
+                WireError::MultipleSources(id) if id == wire_id => {
                     fmt.push_str(
                         "\n\n$RError:$D This wire is connected to \
-                         multiple send ports.  Disconnect it from \
+                         multiple source ports.  Disconnect it from \
                          all but one of those ports.",
                     );
                 }

@@ -171,19 +171,19 @@ impl Interface {
             let port = &self.ports[0];
             if port.color == PortColor::Analog {
                 format!(
-                    "$*{}$>({} {:?})$<$*\n{}",
+                    "$*{}$>({} {})$<$*\n{}",
                     self.name,
                     port.color.tooltip_format(),
-                    port.flow,
+                    port.flow.tooltip_format(),
                     self.description
                 )
             } else {
                 format!(
-                    "$*{}$>({}-bit {} {:?})$<$*\n{}",
+                    "$*{}$>({}-bit {} {})$<$*\n{}",
                     self.name,
                     port.size.num_bits(),
                     port.color.tooltip_format(),
-                    port.flow,
+                    port.flow.tooltip_format(),
                     self.description
                 )
             }
@@ -192,18 +192,18 @@ impl Interface {
             for port in self.ports.iter() {
                 if port.color == PortColor::Analog {
                     fmt.push_str(&format!(
-                        "\n$*{}$>({} {:?})$<$*",
+                        "\n$*{}$>({} {})$<$*",
                         port.name,
                         port.color.tooltip_format(),
-                        port.flow
+                        port.flow.tooltip_format(),
                     ));
                 } else {
                     fmt.push_str(&format!(
-                        "\n$*{}$>({}-bit {} {:?})$<$*",
+                        "\n$*{}$>({}-bit {} {})$<$*",
                         port.name,
                         port.size.num_bits(),
                         port.color.tooltip_format(),
-                        port.flow
+                        port.flow.tooltip_format(),
                     ));
                 }
                 if !port.description.is_empty() {
@@ -235,14 +235,14 @@ mod tests {
                 InterfacePort {
                     name: "Foo",
                     description: "",
-                    flow: PortFlow::Send,
+                    flow: PortFlow::Source,
                     color: PortColor::Event,
                     size: WireSize::One,
                 },
                 InterfacePort {
                     name: "Bar",
                     description: "",
-                    flow: PortFlow::Send,
+                    flow: PortFlow::Source,
                     color: PortColor::Event,
                     size: WireSize::Two,
                 },
@@ -293,14 +293,14 @@ mod tests {
             InterfacePort {
                 name: "Foo",
                 description: "",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::One,
             },
             InterfacePort {
                 name: "Bar",
                 description: "",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Two,
             },

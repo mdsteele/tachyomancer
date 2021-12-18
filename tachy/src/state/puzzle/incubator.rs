@@ -46,7 +46,7 @@ pub const INTERFACES: &[Interface] = &[
                 "Controls whether the heater is on (1) or off (0).  It is \
                  an error for the heater to be on while an egg is being \
                  loaded or unloaded.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::One,
         }],
@@ -77,7 +77,7 @@ const SIDE_PORTS: &[InterfacePort] = &[
         description:
             "Sends an event when a new egg is available to be loaded \
              on this side.",
-        flow: PortFlow::Send,
+        flow: PortFlow::Source,
         color: PortColor::Event,
         size: WireSize::Zero,
     },
@@ -85,7 +85,7 @@ const SIDE_PORTS: &[InterfacePort] = &[
         name: "Load",
         description: "Send 1 to load an egg.\n  \
                       Send 0 to unload an egg.",
-        flow: PortFlow::Recv,
+        flow: PortFlow::Sink,
         color: PortColor::Event,
         size: WireSize::One,
     },
@@ -93,7 +93,7 @@ const SIDE_PORTS: &[InterfacePort] = &[
         name: "Done",
         description: "Sends 1 when an egg finishes loading.\n  \
                       Sends 0 when an egg finishes unloading.",
-        flow: PortFlow::Send,
+        flow: PortFlow::Source,
         color: PortColor::Event,
         size: WireSize::One,
     },

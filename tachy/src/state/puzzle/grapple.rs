@@ -60,7 +60,7 @@ pub const INTERFACES: &[Interface] = &[
                               Send 1 to decrease the charge.\n    \
                               Send 2 to increase the charge.\n    \
                               Send 3 to fire the coil.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::Two,
             },
@@ -68,7 +68,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Chrg",
                 description:
                     "Outputs the current charge for the port coil (0-100).",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -89,7 +89,7 @@ pub const INTERFACES: &[Interface] = &[
                               Send 1 to decrease the charge.\n    \
                               Send 2 to increase the charge.\n    \
                               Send 3 to fire the coil.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::Two,
             },
@@ -98,7 +98,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Outputs the current charge for the starboard coil \
                      (0-100).",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },

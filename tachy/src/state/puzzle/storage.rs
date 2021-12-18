@@ -85,7 +85,7 @@ pub const INTERFACES: &[Interface] = &[
                      at the loading dock (position 0) waiting to be stored.  \
                      Sends 1-99 when the crate with that number should be \
                      returned to the loading dock.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },
@@ -94,7 +94,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Connects to the radio transmitter.  Signal here when \
                      ready for the next command to be received.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -110,7 +110,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Pos",
                 description:
                     "Indicates the current position of the arm (0-7).",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -119,7 +119,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Indicates the number of the currently-held crate \
                      (1-99), or 0 if the arm isn't holding a crate.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -135,7 +135,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Rotate",
                 description: "Send 1 to rotate clockwise, or 0 to rotate \
                               counterclockwise.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::One,
             },
@@ -144,7 +144,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Send 1 to grab a crate from the current position, or 0 \
                      to drop the crate at the current position.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::One,
             },
@@ -153,7 +153,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Signals when the the robot arm has finished moving/\
                      grabbing/dropping.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },

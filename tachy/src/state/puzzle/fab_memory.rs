@@ -41,7 +41,7 @@ pub(super) const QUEUE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Push",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -56,7 +56,7 @@ pub(super) const QUEUE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Pop",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -69,7 +69,7 @@ pub(super) const QUEUE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -83,7 +83,7 @@ pub(super) const QUEUE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Count",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         }],
@@ -132,7 +132,7 @@ pub(super) const STACK_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Push",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -147,7 +147,7 @@ pub(super) const STACK_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Pop",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -160,7 +160,7 @@ pub(super) const STACK_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -174,7 +174,7 @@ pub(super) const STACK_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Count",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         }],

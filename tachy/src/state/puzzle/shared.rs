@@ -115,7 +115,7 @@ impl PuzzleEval for FabricationEval {
             let interface = &self.interfaces[iface_index];
             for port_index in 0..interface.ports.len() {
                 let port = &interface.ports[port_index];
-                if port.flow == PortFlow::Send {
+                if port.flow == PortFlow::Source {
                     let wire = self.slots[iface_index][port_index].1;
                     let value =
                         self.expected_table_values[start + column_index];
@@ -153,7 +153,7 @@ impl PuzzleEval for FabricationEval {
             let interface = &self.interfaces[iface_index];
             for port_index in 0..interface.ports.len() {
                 let port = &interface.ports[port_index];
-                if port.flow == PortFlow::Recv
+                if port.flow == PortFlow::Sink
                     && port.color == PortColor::Event
                 {
                     let (loc, wire) = self.slots[iface_index][port_index];
@@ -210,7 +210,7 @@ impl PuzzleEval for FabricationEval {
             let interface = &self.interfaces[iface_index];
             for port_index in 0..interface.ports.len() {
                 let port = &interface.ports[port_index];
-                if port.flow == PortFlow::Recv {
+                if port.flow == PortFlow::Sink {
                     let (loc, wire) = self.slots[iface_index][port_index];
                     let expected =
                         self.expected_table_values[start + column_index];

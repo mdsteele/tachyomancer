@@ -493,8 +493,7 @@ pub trait PuzzleEval: Downcast {
 
     /// Called at the end of each cycle; returns a list of errors (if any) that
     /// cause the puzzle to be failed (e.g. if an invalid value was sent to an
-    /// interface receiver).  The default implementation always returns no
-    /// errors.
+    /// interface sink).  The default implementation always returns no errors.
     ///
     /// This is the method that should be used for receiving events at puzzle
     /// interface ports.
@@ -510,8 +509,8 @@ pub trait PuzzleEval: Downcast {
 
     /// Called at the end of each time step; returns a list of errors (if any)
     /// that cause the puzzle to be failed (e.g. if an invalid value was sent
-    /// to an interface receiver).  The default implementation always returns
-    /// no errors.
+    /// to an interface sink).  The default implementation always returns no
+    /// errors.
     ///
     /// This is the method that should be used for receiving behavior values at
     /// puzzle interface ports.

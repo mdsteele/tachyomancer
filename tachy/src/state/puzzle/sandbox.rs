@@ -32,7 +32,7 @@ const SINE_PERIOD: u32 = 10;
 const STARTUP_PORTS: &[InterfacePort] = &[InterfacePort {
     name: "Init",
     description: "Sends a single event at the start of the first time step.",
-    flow: PortFlow::Send,
+    flow: PortFlow::Source,
     color: PortColor::Event,
     size: WireSize::Zero,
 }];
@@ -54,7 +54,7 @@ pub const ANALOG_INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Time",
                 description: "Outputs the current time step.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -62,7 +62,7 @@ pub const ANALOG_INTERFACES: &[Interface] = &[
                 name: "Tick",
                 description:
                     "Sends an event at the beginning of each time step.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -70,7 +70,7 @@ pub const ANALOG_INTERFACES: &[Interface] = &[
                 name: "Sine",
                 description:
                     "Outputs a sine wave with a period of 10 time steps.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Analog,
                 size: WireSize::ANALOG,
             },
@@ -86,7 +86,7 @@ pub const BEHAVIOR_INTERFACES: &[Interface] = &[Interface {
     ports: &[InterfacePort {
         name: "Time",
         description: "Outputs the current time step.",
-        flow: PortFlow::Send,
+        flow: PortFlow::Source,
         color: PortColor::Behavior,
         size: WireSize::Eight,
     }],
@@ -109,7 +109,7 @@ pub const EVENT_INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Time",
                 description: "Outputs the current time step.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -117,7 +117,7 @@ pub const EVENT_INTERFACES: &[Interface] = &[
                 name: "Tick",
                 description:
                     "Sends an event at the beginning of each time step.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },

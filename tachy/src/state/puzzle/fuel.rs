@@ -63,7 +63,7 @@ pub const INTERFACES: &[Interface] = &[
                     "Send an event here to drain 5 units from each tank and \
                      mix them together.   Both intake valves must remain \
                      closed during mixing.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -72,7 +72,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Sends an event when mixing is finished and the intake \
                      valves can be reopened.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -87,7 +87,7 @@ const TANK_PORTS: &[InterfacePort] = &[
             "Set to 1 to open the intake valve, or 0 to close it.  It is an \
              error for the valve to be open during mixing, or if the tank is \
              already full.",
-        flow: PortFlow::Recv,
+        flow: PortFlow::Sink,
         color: PortColor::Behavior,
         size: WireSize::One,
     },
@@ -97,7 +97,7 @@ const TANK_PORTS: &[InterfacePort] = &[
             "Sends an event whenever a unit of reagent is pumped into the \
              tank (this can only happen if the intake valve is open).  The \
              tank can hold up to 10 units of reagent at once.",
-        flow: PortFlow::Send,
+        flow: PortFlow::Source,
         color: PortColor::Event,
         size: WireSize::Zero,
     },

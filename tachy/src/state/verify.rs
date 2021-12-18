@@ -34,8 +34,8 @@ pub fn verify_solution(data: &SolutionData) -> Vec<String> {
     if !grid.start_eval() {
         for error in grid.errors() {
             errors.push(match error {
-                WireError::MultipleSenders(id) => {
-                    format!("Wire {} has multiple senders", id.0)
+                WireError::MultipleSources(id) => {
+                    format!("Wire {} has multiple sources", id.0)
                 }
                 WireError::PortColorMismatch(id) => {
                     format!("Wire {} has a color mismatch", id.0)

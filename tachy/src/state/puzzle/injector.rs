@@ -48,7 +48,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Set this to 0 to move the injection head to the left; \
                      set this to 1 to move the injection head to the right.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::One,
             },
@@ -57,7 +57,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Sends an event with the current position (0-6) at the \
                      start of each time step.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Four,
             },
@@ -66,7 +66,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Send an event here to inject at the current position.  \
                      It is an error to inject more than once per time step.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -83,7 +83,7 @@ pub const INTERFACES: &[Interface] = &[
                 "Whenever a new round of injections is needed, sends a \
                  sequence of 7 events indicating the number of injections \
                  needed at each position (from position 0 to position 6).",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Eight,
         }],

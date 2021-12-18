@@ -272,7 +272,7 @@ impl EditGridView {
                 &Color4::TRANSPARENT
             };
             // TODO: When a wire with an error is selected, we should hilight
-            //   the causes of the error (e.g. the two sender ports, or the
+            //   the causes of the error (e.g. the two source ports, or the
             //   wire loop, or whatever).
             let color = if has_error { WireColor::Ambiguous } else { color };
             if half_wire == Some((coords, dir)) {

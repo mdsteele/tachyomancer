@@ -123,7 +123,7 @@ pub const INTERFACES: &[Interface] = &[
             description:
                 "Sends (at most) one event per time step, with the next alien \
                  character to be translated.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Eight,
         }],
@@ -138,7 +138,7 @@ pub const INTERFACES: &[Interface] = &[
             description:
                 "Send translated words here, one character at a time.  Each \
                  word should be terminated by a zero.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Eight,
         }],
@@ -156,7 +156,7 @@ pub const INTERFACES: &[Interface] = &[
                      terminated by a zero; once terminated, it is an error \
                      to send more events here until the entire translation \
                      has been sent back.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },
@@ -166,7 +166,7 @@ pub const INTERFACES: &[Interface] = &[
                     "After some number of time steps, the translated word \
                      will be sent from here, one character at a time, \
                      terminated by a zero.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },

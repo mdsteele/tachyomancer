@@ -41,14 +41,14 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "XGoal",
                 description: "Outputs ideal X position.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "YGoal",
                 description: "Outputs ideal Y position.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -65,14 +65,14 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "XPos",
                 description: "Outputs current X position.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "YPos",
                 description: "Outputs current Y position.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -84,7 +84,7 @@ pub const INTERFACES: &[Interface] = &[
                               Send 2 to move left.\n    \
                               Send 1 to move right.\n  \
                               Send any other value to not move.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },

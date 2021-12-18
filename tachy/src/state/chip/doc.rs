@@ -26,8 +26,8 @@ use crate::state::{PortColor, PortFlow};
 
 pub const DOC_AN_CHIP_DATA: &ChipData = &ChipData {
     ports: &[
-        (PortFlow::Recv, PortColor::Analog, (0, 0), Direction::West),
-        (PortFlow::Send, PortColor::Analog, (0, 0), Direction::East),
+        (PortFlow::Sink, PortColor::Analog, (0, 0), Direction::West),
+        (PortFlow::Source, PortColor::Analog, (0, 0), Direction::East),
     ],
     constraints: &[
         AbstractConstraint::Exact(0, WireSize::ANALOG),
@@ -39,8 +39,8 @@ pub const DOC_AN_CHIP_DATA: &ChipData = &ChipData {
 //===========================================================================//
 
 const DOC_BV_PORTS: &[AbstractPort] = &[
-    (PortFlow::Recv, PortColor::Behavior, (0, 0), Direction::West),
-    (PortFlow::Send, PortColor::Behavior, (0, 0), Direction::East),
+    (PortFlow::Sink, PortColor::Behavior, (0, 0), Direction::West),
+    (PortFlow::Source, PortColor::Behavior, (0, 0), Direction::East),
 ];
 
 const DOC_BV_CHIP_DATA_1: &ChipData = &ChipData {
@@ -91,8 +91,8 @@ pub fn doc_bv_chip_data(size: WireSize) -> &'static ChipData {
 //===========================================================================//
 
 const DOC_EV_PORTS: &[AbstractPort] = &[
-    (PortFlow::Recv, PortColor::Event, (0, 0), Direction::West),
-    (PortFlow::Send, PortColor::Event, (0, 0), Direction::East),
+    (PortFlow::Sink, PortColor::Event, (0, 0), Direction::West),
+    (PortFlow::Source, PortColor::Event, (0, 0), Direction::East),
 ];
 
 const DOC_EV_CHIP_DATA_0: &ChipData = &ChipData {

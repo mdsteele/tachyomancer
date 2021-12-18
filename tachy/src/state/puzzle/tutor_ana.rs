@@ -45,7 +45,7 @@ pub(super) const ADC_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Analog,
             size: WireSize::ANALOG,
         }],
@@ -61,7 +61,7 @@ pub(super) const ADC_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Sample",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -79,7 +79,7 @@ pub(super) const ADC_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Two,
         }],
@@ -124,7 +124,7 @@ pub(super) const INTEGRATE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Analog,
             size: WireSize::ANALOG,
         }],
@@ -139,7 +139,7 @@ pub(super) const INTEGRATE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Reset",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -154,7 +154,7 @@ pub(super) const INTEGRATE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "IC",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Analog,
             size: WireSize::ANALOG,
         }],
@@ -169,7 +169,7 @@ pub(super) const INTEGRATE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Analog,
             size: WireSize::ANALOG,
         }],

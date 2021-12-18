@@ -60,7 +60,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Indicates which direction the radar dish is currently \
                      pointing (0-7).",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -70,7 +70,7 @@ pub const INTERFACES: &[Interface] = &[
                     "Sends an event each time step with the distance to the \
                      nearest enemy in the direction of the radar dish, if \
                      any.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },
@@ -88,14 +88,14 @@ pub const INTERFACES: &[Interface] = &[
                     "Fires the cannon in the direction the turret is \
                      currently facing.  It is an error to try to fire when \
                      the cannon is not ready.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
             InterfacePort {
                 name: "Loaded",
                 description: "Signals when the cannon is ready to fire.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -112,7 +112,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Indicates the direction the turret is currently facing \
                      (0-7).",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -122,14 +122,14 @@ pub const INTERFACES: &[Interface] = &[
                     "Send 1 to rotate the turret clockwise, 0 to rotate \
                      counterclockwise.  It is an error to try to rotate while \
                      the turret is still moving.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::One,
             },
             InterfacePort {
                 name: "Done",
                 description: "Signals when the turret has finished moving.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },

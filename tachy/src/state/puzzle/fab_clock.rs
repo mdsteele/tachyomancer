@@ -41,7 +41,7 @@ pub(super) const EGG_TIMER_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Set",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Eight,
         }],
@@ -55,7 +55,7 @@ pub(super) const EGG_TIMER_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Remain",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         }],
@@ -68,7 +68,7 @@ pub(super) const EGG_TIMER_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Alarm",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -117,7 +117,7 @@ pub(super) const STOPWATCH_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Start",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -131,7 +131,7 @@ pub(super) const STOPWATCH_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Stop",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -146,7 +146,7 @@ pub(super) const STOPWATCH_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Reset",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -159,7 +159,7 @@ pub(super) const STOPWATCH_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Time",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         }],

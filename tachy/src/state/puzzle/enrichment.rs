@@ -70,7 +70,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Child",
                 description:
                     "Send a tank ID here to request its parent tank's ID.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Four,
             },
@@ -79,7 +79,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Indicates the ID of the requested tank's parent, or 0 if \
                      it's the root.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Four,
             },
@@ -98,14 +98,14 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Origin",
                 description:
                     "Indicates the tank containing material to be moved.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "Dest",
                 description: "Indicates the destination tank.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Four,
             },
@@ -123,14 +123,14 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "From",
                 description: "The tank to drain (1-15), or 0 for none.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
             InterfacePort {
                 name: "To",
                 description: "The tank to fill (1-15), or 0 for none.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },

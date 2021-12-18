@@ -91,7 +91,7 @@ pub const INTERFACES: &[Interface] = &[
                           Send 2 to veer to starboard.\n    \
                           Send 1 to veer to port.\n    \
                           Send 0 to come to a stop.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Two,
         }],
@@ -107,7 +107,7 @@ pub const INTERFACES: &[Interface] = &[
                 "Sends an event with the total distance travelled, once at \
                  the start of the simulation, and again each time the \
                  distance increments.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Eight,
         }],
@@ -118,7 +118,7 @@ const SONAR_PORTS: &[InterfacePort] = &[
     InterfacePort {
         name: "Ping",
         description: "Send an event here to generate a sonar ping.",
-        flow: PortFlow::Recv,
+        flow: PortFlow::Sink,
         color: PortColor::Event,
         size: WireSize::Zero,
     },
@@ -128,7 +128,7 @@ const SONAR_PORTS: &[InterfacePort] = &[
             "Sends an event when the ping echo is detected.  The more time \
              before the echo arrives, the farther away the canyon wall is on \
              that side.",
-        flow: PortFlow::Send,
+        flow: PortFlow::Source,
         color: PortColor::Event,
         size: WireSize::Zero,
     },

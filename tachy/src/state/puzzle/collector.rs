@@ -55,7 +55,7 @@ pub const INTERFACES: &[Interface] = &[
                  radio command arrives.  Each command encodes an (X, Y) \
                  position that should be collected; the lower 4 bits contain \
                  X, and the upper 4 bits contain Y.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Eight,
         }],
@@ -69,7 +69,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "XPos",
                 description: "Outputs the current X position.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -77,14 +77,14 @@ pub const INTERFACES: &[Interface] = &[
                 name: "XMove",
                 description:
                     "Send 1 here to move right; send 0 here to move left.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::One,
             },
             InterfacePort {
                 name: "Done",
                 description: "Signals when X movement has finished.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -99,7 +99,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "YPos",
                 description: "Outputs the current Y position.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -107,14 +107,14 @@ pub const INTERFACES: &[Interface] = &[
                 name: "YMove",
                 description:
                     "Send 1 here to move up; send 0 here to move down.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::One,
             },
             InterfacePort {
                 name: "Done",
                 description: "Signals when Y movement has finished.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -129,14 +129,14 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Coll",
                 description: "Signal here to collect at the current position.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
             InterfacePort {
                 name: "Done",
                 description: "Signals when collection has finished.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },

@@ -53,7 +53,7 @@ pub const INTERFACES: &[Interface] = &[
             description:
                 "When an enemy figher is detected, sends an event with its \
                  X-position (1-9).",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -69,7 +69,7 @@ pub const INTERFACES: &[Interface] = &[
                 "Set this to 1 to engage the torpedo's port-side thruster, \
                  which will push the torpedo towards starboard, increasing \
                  its X-position.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::One,
         }],
@@ -82,7 +82,7 @@ pub const INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "XPos",
             description: "Outputs the torpedo's current X-position (1-9).",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],
@@ -99,7 +99,7 @@ pub const INTERFACES: &[Interface] = &[
                 "Set this to 1 to engage the torpedo's starboard-side \
                  thruster, which will push the torpedo towards port, \
                  decreasing its X-position.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::One,
         }],

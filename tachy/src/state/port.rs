@@ -24,8 +24,17 @@ use crate::save::WireSize;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PortFlow {
-    Send, // TODO: consider renaming to Source
-    Recv, // TODO: consider renaming to Sink
+    Source,
+    Sink,
+}
+
+impl PortFlow {
+    pub fn tooltip_format(self) -> &'static str {
+        match self {
+            PortFlow::Source => "source",
+            PortFlow::Sink => "sink",
+        }
+    }
 }
 
 //===========================================================================//
@@ -40,9 +49,9 @@ pub enum PortColor {
 impl PortColor {
     pub fn tooltip_format(self) -> &'static str {
         match self {
-            PortColor::Behavior => "$OBvr$D",
-            PortColor::Event => "$CEvt$D",
-            PortColor::Analog => "$GAnalog$D",
+            PortColor::Behavior => "$Obehavior$D",
+            PortColor::Event => "$Cevent$D",
+            PortColor::Analog => "$Ganalog$D",
         }
     }
 }
@@ -81,9 +90,11 @@ pub enum PortConstraint {
 
 //===========================================================================//
 
+/// Indicates that output of the specified source port depends on the value of
+/// the specified sink port.
 pub struct PortDependency {
-    pub recv: (Coords, Direction),
-    pub send: (Coords, Direction),
+    pub sink: (Coords, Direction),
+    pub source: (Coords, Direction),
 }
 
 //===========================================================================//

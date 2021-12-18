@@ -49,7 +49,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Connects to the radio receiver.  Sends an event when a \
                      radio command arrives.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Four,
             },
@@ -58,7 +58,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Connects to the radio transmitter.  Signal here when \
                      the command is completed.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -75,7 +75,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Pos",
                 description:
                     "Indicates the current position of the arm (0-7).",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -83,7 +83,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Rotate",
                 description: "Send 1 to rotate clockwise, 0 to rotate \
                               counterclockwise.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::One,
             },
@@ -91,7 +91,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Manip",
                 description:
                     "Signal here to manipulate at the current position.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -100,7 +100,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Signals when the the robot arm has finished moving/\
                      manipulating.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },

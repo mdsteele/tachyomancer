@@ -35,7 +35,7 @@ pub const INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Upper",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],
@@ -49,7 +49,7 @@ pub const INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Lower",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],
@@ -62,7 +62,7 @@ pub const INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],

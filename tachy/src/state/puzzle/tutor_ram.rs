@@ -39,7 +39,7 @@ pub(super) const RAM_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -52,7 +52,7 @@ pub(super) const RAM_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Four,
         }],

@@ -56,14 +56,14 @@ pub const INTERFACES: &[Interface] = &[Interface {
             name: "Depth",
             description: "Indicates the current depth of the drill head, in \
                           decameters.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         },
         InterfacePort {
             name: "Speed",
             description: "Controls the drilling speed.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Two,
         },
@@ -73,7 +73,7 @@ pub const INTERFACES: &[Interface] = &[Interface {
                 "Signals whenever the drill head jolts while drilling.  \
                  If three jolts occur within five time steps, the drill \
                  head will break.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         },

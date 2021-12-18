@@ -47,7 +47,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Goal",
                 description: "Outputs the ideal mirror position.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -57,7 +57,7 @@ pub const INTERFACES: &[Interface] = &[
                     "Outputs the current power generation efficiency, from 0 \
                      to 100 percent.  (You can ignore this port if you don't \
                      need it.)",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -74,7 +74,7 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Pos",
                 description: "Outputs the current mirror position.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -84,7 +84,7 @@ pub const INTERFACES: &[Interface] = &[
                               Send 1 to move clockwise.\n    \
                               Send 2 to move counterclockwise.\n  \
                               Send any other value to not move.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::Two,
             },

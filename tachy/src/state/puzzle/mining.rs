@@ -46,7 +46,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Dist",
                 description:
                     "Indicates how far away the robot is from the base.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -54,7 +54,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Back",
                 description:
                     "Signal here when the robot should return to the base.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },
@@ -71,7 +71,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Indicates how much ore the robot is currently carrying, \
                      in kilograms.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Four,
             },
@@ -80,7 +80,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Sends an event with the size of an ore deposit (from \
                      1-3kg) when the robot passes over it.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Two,
             },
@@ -88,7 +88,7 @@ pub const INTERFACES: &[Interface] = &[
                 name: "Dig",
                 description:
                     "Signal here to dig up the ore deposit under the robot.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Zero,
             },

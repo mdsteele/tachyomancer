@@ -50,7 +50,7 @@ pub const INTERFACES: &[Interface] = &[
             description:
                 "Sends an event when the radiation wave reflects off the rear \
                  side.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -67,7 +67,7 @@ pub const INTERFACES: &[Interface] = &[
             description:
                 "Sends an event when the radiation wave reflects off the \
                  front side.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -82,7 +82,7 @@ pub const INTERFACES: &[Interface] = &[
             description:
                 "Send 1 here to create a forward pulse.  Send 0 here to \
                  create a backward pulse.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::One,
         }],

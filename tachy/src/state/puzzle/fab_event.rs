@@ -41,7 +41,7 @@ pub(super) const COUNTER_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Set",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -56,7 +56,7 @@ pub(super) const COUNTER_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Inc",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -71,7 +71,7 @@ pub(super) const COUNTER_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Dec",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -85,7 +85,7 @@ pub(super) const COUNTER_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],
@@ -132,7 +132,7 @@ pub(super) const INC_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "InE",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -145,7 +145,7 @@ pub(super) const INC_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "InB",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],
@@ -160,7 +160,7 @@ pub(super) const INC_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Four,
         }],
@@ -196,7 +196,7 @@ pub(super) const LATCH_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Set",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -210,7 +210,7 @@ pub(super) const LATCH_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Rst",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -223,7 +223,7 @@ pub(super) const LATCH_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::One,
         }],

@@ -63,14 +63,14 @@ pub const INTERFACES: &[Interface] = &[
             InterfacePort {
                 name: "Pod1",
                 description: "",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },
             InterfacePort {
                 name: "Pod2",
                 description: "",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },
@@ -89,7 +89,7 @@ pub const INTERFACES: &[Interface] = &[
                  is an error to try to thaw a cryopod that wasn't signaled \
                  by the scheduler this time step, or that has already been \
                  thawed.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         }],

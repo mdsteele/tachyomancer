@@ -119,8 +119,8 @@ impl PortShader {
     pub fn set_port_flow_and_color(&self, flow: PortFlow, color: PortColor) {
         let mut value = 0;
         match flow {
-            PortFlow::Send => value |= 0x1,
-            PortFlow::Recv => {}
+            PortFlow::Source => value |= 0x1,
+            PortFlow::Sink => {}
         }
         match color {
             PortColor::Behavior => {

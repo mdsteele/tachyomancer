@@ -107,7 +107,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "Indicates the current distance to the enemy ship, in \
                      kilometers.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -117,7 +117,7 @@ pub const INTERFACES: &[Interface] = &[
                     "When the enemy ship fires a torpedo, this sends an event \
                      with the speed of that torpedo, in kilometers per time \
                      step.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },
@@ -135,7 +135,7 @@ pub const INTERFACES: &[Interface] = &[
                  steps.  While the beam is firing, shields cannot be \
                  raised.  It is an error to try to fire the beam again \
                  while it is still firing.",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -152,7 +152,7 @@ pub const INTERFACES: &[Interface] = &[
                     "Indicates the remaining shield power.  This decreases by \
                      1 each time step that the shields are up.  When this \
                      reaches zero, the shields will no longer function.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Behavior,
                 size: WireSize::Eight,
             },
@@ -163,7 +163,7 @@ pub const INTERFACES: &[Interface] = &[
                      When the shields are up, enemy torpedoes will be \
                      neutralized.  It is an error for the shields to be up \
                      while the ship's beam weapon is firing.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Behavior,
                 size: WireSize::One,
             },

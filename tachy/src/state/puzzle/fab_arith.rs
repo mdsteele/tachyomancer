@@ -39,7 +39,7 @@ pub(super) const XOR_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In1",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::One,
         }],
@@ -52,7 +52,7 @@ pub(super) const XOR_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In2",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::One,
         }],
@@ -66,7 +66,7 @@ pub(super) const XOR_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::One,
         }],
@@ -97,7 +97,7 @@ pub(super) const MUL_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In1",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         }],
@@ -110,7 +110,7 @@ pub(super) const MUL_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In2",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         }],
@@ -125,7 +125,7 @@ pub(super) const MUL_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Eight,
         }],
@@ -162,7 +162,7 @@ pub(super) const HALVE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "In",
             description: "",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],
@@ -175,7 +175,7 @@ pub(super) const HALVE_INTERFACES: &[Interface] = &[
         ports: &[InterfacePort {
             name: "Out",
             description: "",
-            flow: PortFlow::Recv,
+            flow: PortFlow::Sink,
             color: PortColor::Behavior,
             size: WireSize::Four,
         }],

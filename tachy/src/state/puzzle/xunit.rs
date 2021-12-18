@@ -63,7 +63,7 @@ pub const INTERFACES: &[Interface] = &[
             description:
                 "Indicates that the warhead should be detonated.  This will \
                  send a single event, at the beginning of the simulation.",
-            flow: PortFlow::Send,
+            flow: PortFlow::Source,
             color: PortColor::Event,
             size: WireSize::Zero,
         }],
@@ -83,7 +83,7 @@ pub const INTERFACES: &[Interface] = &[
                      a test signal.  An event will arrive at the Pong port \
                      after 2N time steps, where N is the delay for that \
                      charge.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },
@@ -93,7 +93,7 @@ pub const INTERFACES: &[Interface] = &[
                     "Send an event here with a charge number (0-255) to \
                      ignite that explosive charge.  It will detonate after N \
                      time steps, where N is the delay for that charge.",
-                flow: PortFlow::Recv,
+                flow: PortFlow::Sink,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },
@@ -102,7 +102,7 @@ pub const INTERFACES: &[Interface] = &[
                 description:
                     "When a test signal from the Ping port completes, this \
                      sends an event with the charge number.",
-                flow: PortFlow::Send,
+                flow: PortFlow::Source,
                 color: PortColor::Event,
                 size: WireSize::Eight,
             },

@@ -213,7 +213,7 @@ impl MusicStream {
                 Ok(Some(interleaved)) => {
                     debug_assert_eq!(
                         interleaved.channel_count,
-                        DESIRED_NUM_CHANNELS.into()
+                        DESIRED_NUM_CHANNELS as usize
                     );
                     self.samples = interleaved.samples;
                 }
